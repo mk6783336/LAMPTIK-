@@ -24,15 +24,31 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   const jsonLd = {
     "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${siteUrl}/#organization`,
+        name: siteConfig.name,
+        url: siteUrl,
+        email: "support@lamptik.online",
+        logo: { "@type": "ImageObject", url: `${siteUrl}/icon.svg` },
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${siteUrl}/#website`,
+        url: siteUrl,
+        name: siteConfig.name,
+        publisher: { "@id": `${siteUrl}/#organization` },
+        inLanguage: "en",
+      },
+      {
     "@type": "AboutPage",
     name: "About LAMP TIK",
     url: `${siteUrl}/about`,
     dateModified: "2026-10-19",
-    about: {
-      "@type": "Organization",
-      name: siteConfig.name,
-      url: siteUrl,
-    },
+    about: { "@id": `${siteUrl}/#organization` },
+      },
+    ],
   };
 
   return (
@@ -181,8 +197,9 @@ export default function AboutPage() {
                 </h2>
                 <p className="mt-2">
                   LAMP TIK is free and stays free. When advertising is enabled,
-                  it is served by Google AdSense through clearly labeled units —
-                  never fake download buttons or forced redirects — and our{" "}
+                  it is served by Adsterra and Monetag through clearly labeled
+                  units during the active download window only — never fake
+                  download buttons, forced redirects, or Google AdSense cookies — and our{" "}
                   <Link
                     href="/privacy"
                     className="text-[var(--accent-text)] underline underline-offset-4"

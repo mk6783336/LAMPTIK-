@@ -25,15 +25,30 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   const jsonLd = {
     "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${siteUrl}/#organization`,
+        name: siteConfig.name,
+        url: siteUrl,
+        email: "support@lamptik.online",
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${siteUrl}/#website`,
+        url: siteUrl,
+        name: siteConfig.name,
+        publisher: { "@id": `${siteUrl}/#organization` },
+        inLanguage: "en",
+      },
+      {
     "@type": "ContactPage",
     name: "Contact LAMP TIK",
     url: `${siteUrl}/contact`,
     dateModified: "2026-10-19",
-    mainEntity: {
-      "@type": "Organization",
-      name: siteConfig.name,
-      email: "support@lamptik.online",
-    },
+    mainEntity: { "@id": `${siteUrl}/#organization` },
+      },
+    ],
   };
 
   return (

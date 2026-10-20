@@ -1,0 +1,29 @@
+# LAMP TIK (lamptik.online)
+
+> Free, watermark-free HD video downloader for TikTok, Instagram Reels, and Facebook videos. No account, no app, zero server storage, true H.264 hardware-verified streams.
+
+## Core free tools
+- [TikTok Video Downloader (HD MP4 + MP3)](https://www.lamptik.online/): paste any tiktok.com / vt.tiktok.com / vm.tiktok.com link, get the clean hdplay/play H.264 stream, no watermark.
+- [Instagram Reels Downloader](https://www.lamptik.online/instagram-reels-downloader): public reels/posts/IGTV via embed + OG fallback, H.264 verified.
+- [Facebook Video Downloader](https://www.lamptik.online/facebook-video-downloader): reels/watch/fb.watch/share links via desktop+mobile+plugin+mbasic waterfall.
+
+## Technical guides (/guides/*)
+- [Download TikTok video without watermark](https://www.lamptik.online/guides/download-tiktok-video-without-watermark)
+- [Download TikTok without logo (iPhone/Android)](https://www.lamptik.online/guides/download-tiktok-without-logo-iphone-android)
+- [Download TikTok audio as MP3](https://www.lamptik.online/guides/download-tiktok-audio-as-mp3)
+- [TikTok short links not working](https://www.lamptik.online/guides/tiktok-short-links-not-working)
+- [Is downloading TikTok videos legal](https://www.lamptik.online/guides/is-downloading-tiktok-videos-legal)
+- [Repurpose TikTok videos for Shorts/Reels](https://www.lamptik.online/guides/repurpose-tiktok-videos-for-youtube-shorts-instagram-reels)
+- [Why TikTok quality drops after upload](https://www.lamptik.online/guides/why-tiktok-video-quality-drops-after-upload)
+- [TikTok audio bitrate and sound quality](https://www.lamptik.online/guides/tiktok-audio-bitrate-and-sound-quality)
+- [Browser vs app downloader safety](https://www.lamptik.online/guides/browser-vs-app-tiktok-downloaders-safety)
+- [How to download Instagram Reels in HD](https://www.lamptik.online/guides/how-to-download-instagram-reels-in-hd)
+- [How to download large Facebook videos in 1080p HD](https://www.lamptik.online/guides/how-to-download-large-facebook-videos-in-1080p-hd)
+- [Repurpose short videos across TikTok/Reels/Shorts](https://www.lamptik.online/guides/repurpose-short-videos-across-tiktok-reels-shorts)
+
+## API health & trust
+- Health: `GET https://www.lamptik.online/api/health` (200 OK JSON)
+- Resolver: `POST https://www.lamptik.online/api/fetch` { url } — 3-tier waterfall per platform, 4.5s per-provider timeout, 60s circuit-breaker.
+- Zero server storage. Zero watermarks. H.264/AAC verified by MP4 probe. DMCA: support@lamptik.online.
+- Trust: [About](https://www.lamptik.online/about) · [Contact & DMCA](https://www.lamptik.online/contact) · [Privacy](https://www.lamptik.online/privacy) · [Terms](https://www.lamptik.online/terms) · [Security](https://www.lamptik.online/.well-known/security.txt)
+- Full AI context: https://www.lamptik.online/llms-full.txt

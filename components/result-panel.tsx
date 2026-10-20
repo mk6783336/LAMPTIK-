@@ -18,7 +18,7 @@ import {
   Sparkles,
   Zap,
 } from "lucide-react";
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { formatBytes, formatCount, formatDuration, formatYear } from "@/lib/format";
 import type { ToastItem } from "@/components/toast";
@@ -34,10 +34,12 @@ import {
 } from "@/lib/library";
 import { PLATFORMS } from "@/lib/platforms";
 import {
+  adsterraBannerKey,
   monetagSmartlinkUrl,
   triggerDirectLinkMonetization,
   triggerDownloadMonetization,
 } from "@/lib/monetization";
+import { SocialShare } from "@/components/social-share";
 import type { MediaPayload } from "@/lib/media";
 import type { VideoInfo } from "@/lib/tiktok/types";
 
@@ -189,10 +191,47 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
   const [avatarFailed, setAvatarFailed] = useState(false);
   const [busyKind, setBusyKind] = useState<DownloadKind | null>(null);
   const [progress, setProgress] = useState<{ loaded: number; total: number | null } | null>(null);
+  /** Real MB/s while bytes move (from progress deltas). */
+  const [speedBps, setSpeedBps] = useState<number | null>(null);
+  /** Transient auto-heal badge during download retries. */
+  const [healingNote, setHealingNote] = useState<string | null>(null);
+  /** Post-download theater: stays 8s after completion. */
+  const [completeNote, setCompleteNote] = useState<string | null>(null);
   const busyRef = useRef<DownloadKind | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   /** Fires the Direct Link exactly once per download, at stream start. */
   const monetizedRef = useRef(false);
+  const lastTickRef = useRef<{ loaded: number; at: number } | null>(null);
+  const completeTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (completeTimerRef.current !== null) window.clearTimeout(completeTimerRef.current);
+    };
+  }, []);
+
+  function flashComplete(message: string) {
+    setCompleteNote(message);
+    if (completeTimerRef.current !== null) window.clearTimeout(completeTimerRef.current);
+    completeTimerRef.current = window.setTimeout(() => setCompleteNote(null), 8_000);
+  }
+
+  function handleProgress(state: { loaded: number; total: number | null }) {
+    setProgress(state);
+    const now = performance.now();
+    const last = lastTickRef.current;
+    if (last && now > last.at) {
+      const bps = ((state.loaded - last.loaded) / (now - last.at)) * 1000;
+      if (Number.isFinite(bps) && bps > 0) setSpeedBps(bps);
+    }
+    lastTickRef.current = { loaded: state.loaded, at: now };
+    // First bytes are moving — the stream has started, so this is the
+    // safe moment for the Direct Link + Vignette (geo-capped, fire-and-forget).
+    if (!monetizedRef.current) {
+      monetizedRef.current = true;
+      triggerDirectLinkMonetization();
+    }
+  }
 
   const platform = media.platform;
   const platformConfig = PLATFORMS[platform];
@@ -304,8 +343,12 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
 
     busyRef.current = kind;
     monetizedRef.current = false;
+    lastTickRef.current = null;
     setBusyKind(kind);
     setProgress(null);
+    setSpeedBps(null);
+    setHealingNote(null);
+    setCompleteNote(null);
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -319,9 +362,14 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
     let target = initial;
 
     try {
-
+      // Silent auto-heal: if the probe or save hits a transient hiccup or
+      // expired CDN signature, retry once in the background (attempt 2/2)
+      // with a reassuring badge before ever showing an error toast.
+      let downloadAttempt = 1;
       if (!(await probeDownload(target))) {
+        setHealingNote("Switching to backup high-speed server… (attempt 2/2)");
         const refreshed = await onRefresh();
+        setHealingNote(null);
         target =
           (kind === "hd"
             ? refreshed?.videoHd ?? refreshed?.videoSd
@@ -352,6 +400,7 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
       // browser instead of being buffered — we never hold them in memory.
       if (!shouldBuffer(declared)) {
         saveUrl(target);
+        flashComplete("✓ Download Complete — saved to your device");
         onNotify({
           kind: "success",
           title: "Downloading straight to disk",
@@ -364,32 +413,42 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
         return;
       }
 
-      const result = await saveToLibrary({
-        url: target,
-        id: `${video.id}${kind === "sd" ? "-sd" : kind === "audio" ? "-audio" : ""}`,
-        title: media.title || PLATFORMS[media.platform].videoNoun,
-        platform: media.platform,
-        kind,
-        expectedBytes: declared,
-        thumbnail: media.thumbnail ?? video.thumbnail ?? null,
-        author: media.author,
-        duration: media.duration,
-        canonicalUrl: media.canonicalUrl,
-        signal: controller.signal,
-        onProgress: (state) => {
-          setProgress(state);
-          // First bytes are moving — the stream has started, so this is the
-          // safe moment for the Direct Link (3-minute cap, fire-and-forget).
-          if (!monetizedRef.current) {
-            monetizedRef.current = true;
-            triggerDirectLinkMonetization();
-          }
-        },
-      });
+      const saveOnce = () =>
+        saveToLibrary({
+          url: target,
+          id: `${video.id}${kind === "sd" ? "-sd" : kind === "audio" ? "-audio" : ""}`,
+          title: media.title || PLATFORMS[media.platform].videoNoun,
+          platform: media.platform,
+          kind,
+          expectedBytes: declared,
+          thumbnail: media.thumbnail ?? video.thumbnail ?? null,
+          author: media.author,
+          duration: media.duration,
+          canonicalUrl: media.canonicalUrl,
+          signal: controller.signal,
+          onProgress: handleProgress,
+        });
+      let result;
+      try {
+        result = await saveOnce();
+      } catch (saveError) {
+        // One silent background retry for transient save failures.
+        if (saveError instanceof LibraryError && saveError.code !== "UNSUPPORTED") {
+          downloadAttempt = 2;
+          setHealingNote("Switching to backup high-speed server… (attempt 2/2)");
+          await new Promise((resolve) => setTimeout(resolve, 600));
+          setHealingNote(null);
+          result = await saveOnce();
+        } else {
+          throw saveError;
+        }
+      }
+      void downloadAttempt;
 
       notifyLibraryChanged();
       refreshLibraryBadge();
 
+      flashComplete(`✓ Download Complete — ${result.filename} saved to your device`);
       onNotify({
         kind: "success",
         title: "Download started",
@@ -442,6 +501,7 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
       busyRef.current = null;
       setBusyKind(null);
       setProgress(null);
+      setHealingNote(null);
       abortRef.current = null;
     }
   }
@@ -647,34 +707,78 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
             </div>
           </div>
 
-          {/* In-download sponsor unit: visible only while a download is
-              actively streaming, directly below the progress indicator. The
-              URL input and Fetch button live in the panel above and are never
-              touched by this block. */}
-          {busyKind ? (
+          {/* Active Download Sponsor Theater: real download starts instantly
+              (never delayed); this panel is purely informational. Visible
+              while streaming + 8s after completion. URL input / Fetch button
+              above are never touched. */}
+          {healingNote ? (
+            <p
+              role="status"
+              aria-live="polite"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-pill border border-[var(--warn)]/30 bg-[var(--warn)]/10 px-2.5 py-1 text-[11.5px] font-medium text-[var(--warn)]"
+            >
+              <Loader2 className="size-3 animate-spin" />
+              {healingNote}
+            </p>
+          ) : null}
+          {busyKind || completeNote ? (
             <div className="mt-3 overflow-hidden rounded-[16px] border border-white/[0.07] bg-white/[0.015] p-3">
-              <p className="micro mb-2 text-center text-[9px] text-[var(--text-3)]/70">
-                Sponsored download partner
+              <p className="flex items-center justify-center gap-1.5 text-[12.5px] font-semibold tracking-tight">
+                {busyKind ? (
+                  <>
+                    <Loader2 className="size-3.5 animate-spin text-[var(--accent-text)]" />
+                    Streaming your file from Edge CDN
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="size-3.5 text-[var(--ok)]" />
+                    {completeNote}
+                  </>
+                )}
               </p>
-              <AdSlot format="leaderboard" label="Sponsored download partner" />
-              <a
-                href={monetagSmartlinkUrl}
-                target="_blank"
-                rel="sponsored nofollow noopener"
-                className="group mt-2.5 flex items-center gap-2.5 rounded-[12px] border border-[var(--glass-border)] bg-[var(--field)] px-3 py-2.5 transition-colors duration-200 hover:border-[var(--glass-border-hover)]"
-              >
-                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-text)] transition-transform duration-200 group-hover:scale-110">
-                  <Zap className="size-4" fill="currentColor" strokeWidth={0} />
-                </span>
-                <span className="min-w-0 flex-1 text-left">
-                  <span className="block truncate text-[13px] font-semibold tracking-tight">
-                    High-speed mirror · bonus offer
+              {progress ? (
+                <p className="mt-1 text-center font-mono text-[11px] tabular-nums text-[var(--text-2)]">
+                  {formatBytes(progress.loaded)}
+                  {progress.total ? ` / ${formatBytes(progress.total)}` : ""}
+                  {speedBps ? ` · ${(speedBps / 1_048_576).toFixed(1)} MB/s` : ""}
+                  {progress.total
+                    ? ` · ${Math.min(100, Math.round((progress.loaded / progress.total) * 100))}%`
+                    : ""}
+                </p>
+              ) : null}
+              <div className="mt-2.5 rounded-[12px] border border-[var(--glass-border)] p-2.5">
+                <p className="micro mb-2 text-center text-[9px] text-[var(--text-3)]/80">
+                  Sponsored by our partners (keeps LAMP TIK 100% free)
+                </p>
+                <AdSlot
+                  format="leaderboard"
+                  label="Sponsored by our partners (keeps LAMP TIK 100% free)"
+                  zoneId={adsterraBannerKey}
+                />
+                <a
+                  href={monetagSmartlinkUrl}
+                  target="_blank"
+                  rel="sponsored nofollow noopener"
+                  className="group mt-2.5 flex items-center gap-2.5 rounded-[12px] border border-[var(--glass-border)] bg-[var(--field)] px-3 py-2.5 transition-colors duration-200 hover:border-[var(--glass-border-hover)]"
+                >
+                  <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-text)] transition-transform duration-200 group-hover:scale-110">
+                    <Zap className="size-4" fill="currentColor" strokeWidth={0} />
                   </span>
-                  <span className="block truncate text-[11px] text-[var(--text-3)]">
-                    While your file downloads — sponsored
+                  <span className="min-w-0 flex-1 text-left">
+                    <span className="block truncate text-[13px] font-semibold tracking-tight">
+                      Support free HD downloads — visit sponsor ↗
+                    </span>
+                    <span className="block truncate text-[11px] text-[var(--text-3)]">
+                      Sponsored · opens after your download starts
+                    </span>
                   </span>
-                </span>
-              </a>
+                </a>
+              </div>
+              {completeNote && !busyKind ? (
+                <div className="mt-2.5">
+                  <SocialShare />
+                </div>
+              ) : null}
             </div>
           ) : null}
 

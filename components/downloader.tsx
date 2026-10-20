@@ -128,6 +128,8 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
   const [elapsedMs, setElapsedMs] = useState(0);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [seed, setSeed] = useState({ value: "", nonce: 0 });
+  /** Shown during the single silent auto-retry (attempt 2/2). */
+  const [backupNote, setBackupNote] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -212,14 +214,22 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     inputRef.current?.focus();
   }
 
-  async function handleSubmitUrl(url: string) {
+  async function handleSubmitUrl(rawUrl: string) {
     if (isLoading) return;
+    // Sanitize messy mobile share-sheet text: extract the first valid video
+    // URL from surrounding words instead of rejecting the paste.
+    // (UrlField already submits a detected URL, but direct calls and quirky
+    // clipboard text still land here.)
+    const { detectLink: detectIncoming } = await import("@/lib/detect");
+    const detectedIncoming = detectIncoming(rawUrl);
+    const url = detectedIncoming ? detectedIncoming.url : rawUrl.trim();
 
     setError(null);
     setStatus("loading");
     setVideo(null);
     setMedia(null);
     setElapsedMs(0);
+    setBackupNote(null);
 
     // Real elapsed-time readout while the resolver runs.
     const startedAt = performance.now();
@@ -234,28 +244,65 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     const timeout = window.setTimeout(() => controller.abort(), 28_000);
 
     try {
-      const response = await fetch("/api/fetch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim() }),
-        signal: controller.signal,
-      });
-
-      const payload = (await response.json().catch(() => null)) as ApiResponse | null;
-
-      if (!response.ok || !payload || !payload.ok) {
-        const apiError = payload && !payload.ok ? payload.error : null;
-        const message = apiError?.message ?? "Couldn’t resolve this video.";
+      let payload: ApiResponse | null = null;
+      let lastApiError: { message?: string; hint?: string; code?: string } | null = null;
+      let succeeded = false;
+      // Smart client-side auto-healing: one silent background retry
+      // (attempt 2/2) on transient hiccups before ever showing an error.
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        if (attempt === 2) setBackupNote("Switching to backup high-speed server… (attempt 2/2)");
+        try {
+          const response = await fetch("/api/fetch", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url }),
+            signal: controller.signal,
+          });
+          const body = (await response.json().catch(() => null)) as ApiResponse | null;
+          if (response.ok && body && body.ok) {
+            payload = body;
+            succeeded = true;
+            break;
+          }
+          const apiError = body && !body.ok ? body.error : null;
+          lastApiError = apiError;
+          const transient =
+            !response.ok && (response.status === 502 || response.status === 503 || response.status === 504);
+          const retriableCode =
+            apiError?.code === "PROVIDER_UNAVAILABLE" || apiError?.code === "UPSTREAM_ERROR";
+          if (attempt === 1 && (transient || retriableCode || !response.ok)) {
+            // Silent retry once; the badge above reassures while we do.
+            await new Promise((resolve) => setTimeout(resolve, 700));
+            continue;
+          }
+          const message = apiError?.message ?? "Couldn’t resolve this video.";
+          setStatus("idle");
+          setBackupNote(null);
+          setError(message);
+          notify({ kind: "error", title: message, description: apiError?.hint });
+          return;
+        } catch (networkError) {
+          if (networkError instanceof DOMException && networkError.name === "AbortError") throw networkError;
+          if (attempt === 1) {
+            await new Promise((resolve) => setTimeout(resolve, 700));
+            continue;
+          }
+          throw networkError;
+        }
+      }
+      setBackupNote(null);
+      if (!succeeded || !payload || !payload.ok) {
+        const message = lastApiError?.message ?? "Couldn’t resolve this video.";
         setStatus("idle");
         setError(message);
-        notify({ kind: "error", title: message, description: apiError?.hint });
+        notify({ kind: "error", title: message, description: lastApiError?.hint });
         return;
       }
 
       setVideo(payload.video);
       setMedia(payload.media);
       setStatus("success");
-      lastUrlRef.current = url.trim();
+      lastUrlRef.current = url;
       notify({
         kind: "success",
         title: "Stream ready",
@@ -268,6 +315,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
       const timedOut =
         requestError instanceof DOMException && requestError.name === "AbortError";
       setStatus("idle");
+      setBackupNote(null);
       if (timedOut) {
         setError("The resolver timed out. Try again in a moment.");
         notify({
@@ -412,6 +460,16 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
               className="overflow-hidden"
             >
               <LoadingConsole elapsedMs={elapsedMs} />
+              {backupNote ? (
+                <p
+                  role="status"
+                  aria-live="polite"
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-pill border border-[var(--warn)]/30 bg-[var(--warn)]/10 px-2.5 py-1 text-[11.5px] font-medium text-[var(--warn)]"
+                >
+                  <Loader2 className="size-3 animate-spin" />
+                  {backupNote}
+                </p>
+              ) : null}
             </motion.div>
           ) : null}
 

@@ -1,7 +1,9 @@
 import { cacheDelete, cacheGet, cacheSet, runOnce } from "@/lib/cache";
 import { AppError } from "@/lib/errors";
+import { runWaterfall, WATERFALL_TIMEOUT_MS } from "@/lib/load-balancer";
 import { withDownloadLinks } from "@/lib/tiktok/links";
 import { parseTikTokUrl, type ParsedTikTokUrl } from "@/lib/tiktok/parse";
+import { fetchFromEmbed } from "@/lib/tiktok/providers/embed";
 import { fetchFromTikTokPage } from "@/lib/tiktok/providers/page";
 import { probeOEmbed } from "@/lib/tiktok/providers/oembed";
 import { fetchFromTikwm } from "@/lib/tiktok/providers/tikwm";
@@ -77,15 +79,32 @@ export async function resolveVideo(
 async function extractVideo(parsed: ParsedTikTokUrl): Promise<VideoInfo> {
   let lastError: unknown = null;
 
-  for (const provider of [fetchFromTikwm, fetchFromTikTokPage]) {
-    try {
-      const extracted = await provider(parsed.url);
-      return withDownloadLinks(extracted);
-    } catch (error) {
-      lastError = error;
-      // A private video is definitive; don't retry another provider.
-      if (error instanceof AppError && error.code === "VIDEO_PRIVATE") throw error;
-    }
+  // 3-tier waterfall: primary page hydration -> embed player -> public
+  // TikWM API. runWaterfall enforces a strict 4.5s per-provider timeout
+  // and deprioritizes a dead upstream for 60s after 3 straight failures.
+  try {
+    const extracted = await runWaterfall([
+      {
+        name: "tiktok:page",
+        timeoutMs: WATERFALL_TIMEOUT_MS,
+        fn: () => fetchFromTikTokPage(parsed.url),
+      },
+      {
+        name: "tiktok:embed",
+        timeoutMs: WATERFALL_TIMEOUT_MS,
+        fn: () => fetchFromEmbed(parsed.url, parsed.videoId),
+      },
+      {
+        name: "tiktok:tikwm",
+        timeoutMs: WATERFALL_TIMEOUT_MS,
+        fn: () => fetchFromTikwm(parsed.url),
+      },
+    ]);
+    return withDownloadLinks(extracted);
+  } catch (error) {
+    lastError = error;
+    // A private video is definitive; don't fall through to oEmbed checks.
+    if (error instanceof AppError && error.code === "VIDEO_PRIVATE") throw error;
   }
 
   // Both extractors failed. Check TikTok's official oEmbed endpoint to tell

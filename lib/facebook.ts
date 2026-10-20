@@ -1,4 +1,5 @@
 import { AppError } from "@/lib/errors";
+import { runWaterfall, WATERFALL_TIMEOUT_MS } from "@/lib/load-balancer";
 import {
   cleanCaption,
   DEFAULT_TIMEOUT_MS,
@@ -579,9 +580,25 @@ export async function extractFacebook(
   // to turn a resolvable video into a false "Facebook didn't serve the page".
   let fallbackHtml: string | null = null;
 
+  // 3-tier waterfall: Tier 1 canonical/share-unwrap + desktop/mobile HTML
+  // relay (browser_native_hd_url / playable_url); Tier 2 plugins/video.php
+  // embed payload (bypasses timeline rate limits); Tier 3 mbasic lightweight
+  // mobile redirect. Each tier gets a strict 4.5s timeout + circuit-breaker
+  // via runWaterfall so one slow mirror never hangs the request.
   for (const attempt of buildAttempts(finalUrl)) {
     if (signal.aborted) break;
-    const page = await fetchPage(attempt, signal);
+    let page: string | null = null;
+    try {
+      page = await runWaterfall([
+        {
+          name: `fb:page:${new URL(attempt.url).hostname}`,
+          timeoutMs: WATERFALL_TIMEOUT_MS,
+          fn: () => fetchPage(attempt, signal),
+        },
+      ]);
+    } catch {
+      continue;
+    }
     if (!page) continue;
     if (!fallbackHtml) fallbackHtml = page;
     if (/"playable_url|"hd_src|"browser_native_|<video/i.test(page)) {

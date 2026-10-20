@@ -112,6 +112,35 @@ export const AD_TRIGGER_KEY = "ad_triggered_ts";
 /** 10 minutes between legacy download-click monetizations. */
 export const DOWNLOAD_CAP_MS = 10 * 60 * 1_000;
 
+/** Tier-1 / high-RPM geos: shorter caps are tolerated, others stay quiet. */
+export const TIER1_GEO = new Set([
+  "US", "GB", "CA", "AU", "DE", "FR", "AE", "SA", "KW", "QA",
+]);
+
+/** Best-effort client geo: timezone region -> rough Tier-1 heuristic. */
+function isTier1Client(): boolean {
+  try {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone ?? "";
+    const prefix = zone.split("/")[0] ?? "";
+    // America/* + Europe/* + Australia/* + Gulf hubs cover the Tier-1 list
+    // closely enough for a frequency-cap hint (never for pricing). Zones
+    // like Asia/Dubai, Asia/Riyadh, Asia/Qatar, Asia/Kuwait hit via the
+    // explicit city check below.
+    if (/^(America|Europe|Australia)$/.test(prefix)) return true;
+    if (/Dubai|Riyadh|Qatar|Kuwait|London|Toronto|Sydney|Berlin|Paris|New_York|Los_Angeles|Chicago/i.test(zone)) {
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/** Effective Direct-Link cap: Tier-1 keeps 3 min, elsewhere 10 min. */
+export function directLinkCapMs(): number {
+  return isTier1Client() ? DIRECT_LINK_CAP_MS : DOWNLOAD_CAP_MS;
+}
+
 /** Session-storage key for the in-download Direct Link cap. */
 export const AD_DIRECT_LINK_KEY = "ad_direct_link_ts";
 
@@ -224,7 +253,8 @@ export function triggerDirectLinkMonetization(): MonetizationResult {
   try {
     const previous = Number(window.sessionStorage.getItem(AD_DIRECT_LINK_KEY) ?? 0);
     const now = Date.now();
-    if (Number.isFinite(previous) && previous > 0 && now - previous < DIRECT_LINK_CAP_MS) {
+    const cap = directLinkCapMs();
+    if (Number.isFinite(previous) && previous > 0 && now - previous < cap) {
       return { triggered: false, capped: true, reason: "capped" };
     }
 

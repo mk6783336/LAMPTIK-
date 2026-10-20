@@ -1,4 +1,5 @@
 import { AppError } from "@/lib/errors";
+import { runWaterfall, WATERFALL_TIMEOUT_MS } from "@/lib/load-balancer";
 import {
   cleanCaption,
   DEFAULT_TIMEOUT_MS,
@@ -501,10 +502,22 @@ export async function extractInstagram(
   let sawPrivate = false;
   let lastError: unknown = null;
 
+  const tierNames = ["ig:embed", "ig:json", "ig:opengraph"] as const;
   for (let index = 0; index < tiers.length; index += 1) {
     if (signal.aborted) break;
     try {
-      const result = await tiers[index](target, signal);
+      // Each tier runs through the waterfall balancer: strict 4.5s timeout
+      // + 60s cooldown after 3 straight failures, so a dead tier never
+      // blocks the next one. Tier 1 /embed/captioned/ bypasses main-page
+      // login walls; Tier 2 mobile JSON/oEmbed; Tier 3 OG meta + graceful
+      // retry hint when Vercel IPs hit an is_from_rle login redirect.
+      const result = await runWaterfall([
+        {
+          name: tierNames[index],
+          timeoutMs: WATERFALL_TIMEOUT_MS,
+          fn: () => tiers[index](target, signal),
+        },
+      ]);
       // First tier that finds an actual video stream wins — but only after
       // the candidates are checked for H.264 + audio (DASH video-only MP4s
       // and HEVC renditions are skipped).
