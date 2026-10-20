@@ -1,0 +1,766 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------------------------------------------------------------------
+   ONE primary font, self-hosted from /public — a single latin-subset woff2.
+   Next 15.x stopped injecting the font <link rel="preload"> for next/font
+   (vercel/next.js#62332), so the font is vendored here with a stable path
+   that the layout preloads explicitly. font-display=swap renders fallback
+   text instantly; the metric-adjusted "Inter Fallback" (Arial with size
+   adjustments copied from Next's own output) keeps the swap shift-free.
+--------------------------------------------------------------------------- */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/inter-latin.woff2") format("woff2");
+  unicode-range: u+00??, u+0131, u+0152-0153, u+02bb-02bc, u+02c6, u+02da,
+    u+02dc, u+0304, u+0308, u+0329, u+2000-206f, u+20ac, u+2122, u+2191,
+    u+2193, u+2212, u+2215, u+feff, u+fffd;
+}
+
+@font-face {
+  font-family: "Inter Fallback";
+  src: local("Arial");
+  ascent-override: 90.44%;
+  descent-override: 22.52%;
+  line-gap-override: 0%;
+  size-adjust: 107.12%;
+}
+
+/* ---------------------------------------------------------------------------
+   THEME — "obsidian glass".
+   Dark is the product: #050505 obsidian, cyan→violet light mesh, translucent
+   white film for surfaces. Light is a frosted daylight panel, not an
+   inversion — same geometry, same accent logic, paper-white glass.
+--------------------------------------------------------------------------- */
+:root {
+  color-scheme: dark;
+  --font-sans: "Inter", "Inter Fallback";
+
+  --bg: #050505;
+  --bg-elev: rgba(255, 255, 255, 0.035);
+  --bg-raised: rgba(255, 255, 255, 0.075);
+  --bg-sunken: rgba(0, 0, 0, 0.42);
+
+  --glass-bg: rgba(255, 255, 255, 0.028);
+  --glass-top: rgba(255, 255, 255, 0.055);
+  --glass-border: rgba(255, 255, 255, 0.09);
+  --glass-border-hover: rgba(34, 211, 238, 0.42);
+
+  --line: rgba(255, 255, 255, 0.075);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --highlight: rgba(255, 255, 255, 0.09);
+  --shadow: rgba(0, 0, 0, 0.92);
+
+  --text: #f6f7fb;
+  --text-2: #a4adbe;
+  --text-3: #6d7585;
+
+  --field: rgba(255, 255, 255, 0.035);
+  --field-strong: rgba(255, 255, 255, 0.06);
+
+  --accent: #22d3ee;
+  --accent-text: #67e8f9;
+  --accent-soft: rgba(34, 211, 238, 0.13);
+  --grad-mid: #a5b4fc;
+
+  --violet: #8b5cf6;
+  --violet-text: #a78bfa;
+  --violet-soft: rgba(139, 92, 246, 0.16);
+
+  --magenta-text: #f472b6;
+  --ok: #34d399;
+  --ok-soft: rgba(52, 211, 153, 0.13);
+  --warn: #fbbf24;
+  --err: #fb7185;
+  --err-soft: rgba(251, 113, 133, 0.13);
+
+  --grid: rgba(255, 255, 255, 0.03);
+  --glow-cyan: rgba(34, 211, 238, 0.55);
+  --glow-violet: rgba(139, 92, 246, 0.55);
+
+  --mesh-a: rgba(34, 211, 238, 0.2);
+  --mesh-b: rgba(139, 92, 246, 0.23);
+  --mesh-c: rgba(59, 130, 246, 0.15);
+  --noise-opacity: 0.035;
+}
+
+html:not(.dark) {
+  color-scheme: light;
+  --bg: #f4f6fa;
+  --bg-elev: rgba(255, 255, 255, 0.7);
+  --bg-raised: rgba(255, 255, 255, 0.95);
+  --bg-sunken: rgba(15, 23, 42, 0.04);
+
+  --glass-bg: rgba(255, 255, 255, 0.62);
+  --glass-top: rgba(255, 255, 255, 0.9);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --glass-border-hover: rgba(8, 145, 178, 0.45);
+
+  --line: rgba(15, 23, 42, 0.08);
+  --line-strong: rgba(15, 23, 42, 0.15);
+  --highlight: rgba(255, 255, 255, 0.95);
+  --shadow: rgba(15, 23, 42, 0.16);
+
+  --text: #080b12;
+  --text-2: #495468;
+  --text-3: #737d90;
+
+  --field: rgba(255, 255, 255, 0.66);
+  --field-strong: rgba(255, 255, 255, 0.9);
+
+  --accent: #06b6d4;
+  --accent-text: #0e7490;
+  --accent-soft: rgba(6, 182, 212, 0.12);
+  --grad-mid: #4338ca;
+
+  --violet: #7c3aed;
+  --violet-text: #6d28d9;
+  --violet-soft: rgba(124, 58, 237, 0.1);
+
+  --magenta-text: #be185d;
+  --ok: #059669;
+  --ok-soft: rgba(5, 150, 105, 0.1);
+  --warn: #b45309;
+  --err: #dc2643;
+  --err-soft: rgba(220, 38, 67, 0.09);
+
+  --grid: rgba(15, 23, 42, 0.04);
+  --glow-cyan: rgba(6, 182, 212, 0.32);
+  --glow-violet: rgba(124, 58, 237, 0.28);
+
+  --mesh-a: rgba(34, 211, 238, 0.22);
+  --mesh-b: rgba(167, 139, 250, 0.24);
+  --mesh-c: rgba(96, 165, 250, 0.17);
+  --noise-opacity: 0.02;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+    /* Belt-and-braces: no page may ever scroll sideways. `clip` (unlike
+       `hidden`) does not create a scroll container, so sticky headers and
+       scroll-margin anchors keep working. */
+    overflow-x: clip;
+  }
+
+  body {
+    @apply bg-[var(--bg)] font-sans text-[var(--text)] antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: clip;
+    font-feature-settings: "cv11" 0, "ss01" 0;
+  }
+
+  ::selection {
+    background: var(--accent-soft);
+    color: var(--text);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-3);
+    background-clip: content-box;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* -----------------------------------------------------------------------
+     SURFACES — Glassmorphism 2.0.
+     A translucent film with a lit top edge and a deep ambient shadow. The
+     mesh behind shows through, which is what makes it read as glass rather
+     than as a flat grey card.
+  ----------------------------------------------------------------------- */
+  .panel {
+    position: relative;
+    border-radius: theme("borderRadius.panel");
+    border: 1px solid var(--glass-border);
+    background-image: linear-gradient(
+      180deg,
+      var(--glass-top) 0%,
+      var(--glass-bg) 42%,
+      var(--glass-bg) 100%
+    );
+    box-shadow:
+      inset 0 1px 0 0 var(--highlight),
+      0 1px 0 0 rgba(0, 0, 0, 0.4),
+      0 40px 120px -64px var(--shadow);
+    backdrop-filter: blur(22px) saturate(150%);
+    -webkit-backdrop-filter: blur(22px) saturate(150%);
+  }
+
+  .glass {
+    border: 1px solid var(--glass-border);
+    background-color: var(--glass-bg);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+  }
+
+  /* Hover treatment shared by interactive glass cards. `transform` only —
+     no shadow animation on large surfaces (compositor-friendly). */
+  .glass-hover {
+    transition:
+      border-color 240ms cubic-bezier(0.22, 1, 0.36, 1),
+      background-color 240ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .glass-hover:hover {
+    border-color: var(--glass-border-hover);
+    background-color: rgba(255, 255, 255, 0.055);
+    transform: translateY(-2px);
+  }
+
+  html:not(.dark) .glass-hover:hover {
+    background-color: rgba(255, 255, 255, 0.86);
+  }
+
+  /* Gradient-word treatment for hero accents. Falls back to the accent ink
+     where background-clip:text is unsupported. */
+  .text-gradient {
+    color: var(--accent-text);
+    background-image: linear-gradient(
+      100deg,
+      var(--accent-text) 0%,
+      var(--grad-mid) 46%,
+      var(--violet-text) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    /* Never let a clipped gradient add width to a tight line box. */
+    padding-bottom: 0.04em;
+  }
+
+  .logo-ink {
+    color: var(--accent-text);
+    background-image: linear-gradient(
+      100deg,
+      var(--accent-text),
+      var(--grad-mid)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center gap-2 rounded-pill border px-3 py-1 text-[11px] font-medium uppercase tracking-label;
+    border-color: var(--glass-border);
+    background: var(--glass-bg);
+    color: var(--text-2);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .eyebrow-dot {
+    @apply size-1.5 rounded-full;
+    background: var(--accent);
+    box-shadow: 0 0 10px 1px var(--glow-cyan);
+  }
+
+  /* -----------------------------------------------------------------------
+     FORM FIELDS
+  ----------------------------------------------------------------------- */
+  .field {
+    @apply flex items-center gap-2.5 rounded-control border transition-[border-color,box-shadow,background-color] duration-200;
+    border-color: var(--glass-border);
+    background-color: var(--field);
+    box-shadow: inset 0 1px 0 0 var(--highlight);
+  }
+
+  .field:hover {
+    background-color: var(--field-strong);
+  }
+
+  .field:focus-within {
+    border-color: var(--accent);
+    box-shadow:
+      0 0 0 4px var(--accent-soft),
+      inset 0 1px 0 0 var(--highlight);
+  }
+
+  /* -----------------------------------------------------------------------
+     BUTTONS
+  ----------------------------------------------------------------------- */
+  .btn {
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-control font-medium transition-[transform,background-color,border-color,opacity,filter] duration-200 active:scale-[0.97] disabled:pointer-events-none;
+  }
+
+  .btn-primary {
+    color: #ffffff;
+    background-image: linear-gradient(
+      100deg,
+      #06b6d4 0%,
+      #2f6bff 52%,
+      #4f46e5 100%
+    );
+    box-shadow:
+      0 12px 34px -14px rgba(47, 107, 255, 0.75),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.28);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    filter: brightness(1.07) saturate(1.05);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.55;
+  }
+
+  .btn-ghost {
+    @apply border text-[var(--text)];
+    border-color: var(--glass-border);
+    background-color: var(--field);
+    box-shadow: inset 0 1px 0 0 var(--highlight);
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    border-color: var(--line-strong);
+    background-color: var(--field-strong);
+  }
+
+  .btn-ghost:disabled {
+    opacity: 0.5;
+  }
+
+  /* Mono micro-label: reserved for genuine system data, never decoration. */
+  .micro {
+    @apply font-mono text-[10px] uppercase tracking-label;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden rounded-md;
+    background-color: var(--field);
+  }
+
+  .skeleton::after {
+    content: "";
+    @apply absolute inset-0 -translate-x-full;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--line-strong),
+      transparent
+    );
+    animation: sweep 1.6s infinite;
+  }
+
+  .hairline-grid {
+    background-image:
+      linear-gradient(to right, var(--grid) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+    background-size: 64px 64px;
+  }
+
+  /* -----------------------------------------------------------------------
+     Platform-reactive accents. `data-accent` sits on the tool form and the
+     result card; the focus ring, detection badge, and CTA all consume these
+     vars — pasting an Instagram link on the TikTok page repaints the whole
+     tool in Instagram's brand without a page switch.
+  ----------------------------------------------------------------------- */
+  [data-accent="tiktok"] {
+    --tool-ring: #22d3ee;
+    --tool-ink: #67e8f9;
+    --tool-soft: rgba(34, 211, 238, 0.13);
+    --tool-grad: linear-gradient(100deg, #22d3ee 0%, #2f6bff 54%, #6366f1 100%);
+    --tool-glow: rgba(34, 211, 238, 0.45);
+  }
+
+  [data-accent="instagram"] {
+    --tool-ring: #e0427c;
+    --tool-ink: #f471a0;
+    --tool-soft: rgba(224, 66, 124, 0.15);
+    --tool-grad: linear-gradient(100deg, #f472b6 0%, #c026d3 50%, #6366f1 100%);
+    --tool-glow: rgba(224, 66, 124, 0.45);
+  }
+
+  [data-accent="facebook"] {
+    --tool-ring: #3b82f6;
+    --tool-ink: #7cb2ff;
+    --tool-soft: rgba(59, 130, 246, 0.15);
+    --tool-grad: linear-gradient(100deg, #38bdf8 0%, #2563eb 55%, #4f46e5 100%);
+    --tool-glow: rgba(59, 130, 246, 0.45);
+  }
+
+  /* Paper theme: vivid brand neons lose contrast — ink variants take over. */
+  html:not(.dark) [data-accent="tiktok"] {
+    --tool-ring: #0891b2;
+    --tool-ink: #0e7490;
+    --tool-soft: rgba(6, 182, 212, 0.14);
+    --tool-glow: rgba(6, 182, 212, 0.3);
+  }
+
+  html:not(.dark) [data-accent="instagram"] {
+    --tool-ring: #be185d;
+    --tool-ink: #be185d;
+    --tool-soft: rgba(190, 24, 93, 0.1);
+    --tool-glow: rgba(190, 24, 93, 0.28);
+  }
+
+  html:not(.dark) [data-accent="facebook"] {
+    --tool-ring: #1d4ed8;
+    --tool-ink: #1d4ed8;
+    --tool-soft: rgba(37, 99, 235, 0.1);
+    --tool-glow: rgba(37, 99, 235, 0.28);
+  }
+
+  /* Field focus ring follows the DETECTED platform (wins over .field at
+     equal specificity because it is declared later). */
+  .tool-field:focus-within {
+    border-color: var(--tool-ring);
+    box-shadow:
+      0 0 0 4px var(--tool-soft),
+      0 0 32px -12px var(--tool-glow),
+      inset 0 1px 0 0 var(--highlight);
+  }
+
+  /* Glowing detection badge — animates in the moment a link is recognized. */
+  .tool-badge {
+    @apply inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-pill border px-2.5 py-1 text-[11.5px] font-semibold tracking-tight;
+    border-color: color-mix(in srgb, var(--tool-ring) 55%, transparent);
+    background: var(--tool-soft);
+    color: var(--tool-ink);
+    animation: glow 2.6s ease-in-out infinite;
+  }
+
+  /* Compact result-card platform pill (same accent system). */
+  .tool-pill {
+    @apply inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-pill border px-2.5 py-1 text-[11px] font-semibold tracking-tight;
+    border-color: color-mix(in srgb, var(--tool-ring) 42%, transparent);
+    background: var(--tool-soft);
+    color: var(--tool-ink);
+  }
+
+  /* Primary tool CTA: platform gradient + neon ambient glow + hover sheen. */
+  .tool-cta {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    color: #ffffff;
+    background-image: var(--tool-grad);
+    box-shadow:
+      0 16px 40px -16px var(--tool-glow),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.3);
+    transition:
+      transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+      filter 200ms ease,
+      box-shadow 200ms ease;
+  }
+
+  .tool-cta::after {
+    content: "";
+    position: absolute;
+    inset: -20% -30%;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0;
+    background: linear-gradient(
+      100deg,
+      transparent 28%,
+      rgba(255, 255, 255, 0.34) 50%,
+      transparent 72%
+    );
+    transform: translateX(-160%) skewX(-12deg);
+  }
+
+  .tool-cta:hover:not(:disabled) {
+    filter: brightness(1.06) saturate(1.05);
+    box-shadow:
+      0 20px 48px -16px var(--tool-glow),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.34);
+  }
+
+  .tool-cta:hover:not(:disabled)::after {
+    opacity: 1;
+    animation: sheen 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .tool-cta:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  .tool-cta:disabled {
+    opacity: 0.6;
+    box-shadow: none;
+  }
+
+  /* Glass segmented switcher: one bar, three destinations. */
+  .seg-bar {
+    @apply flex items-center gap-1 rounded-pill border p-1.5;
+    border-color: var(--glass-border);
+    background-image: linear-gradient(
+      180deg,
+      var(--glass-top),
+      var(--glass-bg) 55%
+    );
+    box-shadow:
+      inset 0 1px 0 0 var(--highlight),
+      0 18px 44px -32px var(--shadow);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+  }
+
+  .seg-item {
+    @apply relative flex min-w-0 flex-1 items-center justify-center gap-2 rounded-pill px-2 py-2.5 text-[12.5px] font-medium transition-[color,background-color,box-shadow] duration-200;
+    color: var(--text-2);
+  }
+
+  .seg-item:hover {
+    background: var(--field);
+    color: var(--text);
+  }
+
+  .seg-item.is-active {
+    color: var(--seg-ink);
+    background: var(--seg-bg);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--seg-ink) 32%, transparent),
+      0 10px 26px -14px var(--seg-glow),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.14);
+  }
+
+  .seg-item[data-platform="tiktok"] {
+    --seg-ink: #67e8f9;
+    --seg-bg: rgba(34, 211, 238, 0.12);
+    --seg-glow: rgba(34, 211, 238, 0.45);
+  }
+
+  .seg-item[data-platform="instagram"] {
+    --seg-ink: #f471a0;
+    --seg-bg: linear-gradient(
+      100deg,
+      rgba(244, 114, 182, 0.14),
+      rgba(192, 38, 211, 0.16),
+      rgba(99, 102, 241, 0.16)
+    );
+    --seg-glow: rgba(224, 66, 124, 0.42);
+  }
+
+  .seg-item[data-platform="facebook"] {
+    --seg-ink: #7cb2ff;
+    --seg-bg: rgba(59, 130, 246, 0.14);
+    --seg-glow: rgba(59, 130, 246, 0.42);
+  }
+
+  html:not(.dark) .seg-item[data-platform="tiktok"] {
+    --seg-ink: #0e7490;
+  }
+
+  html:not(.dark) .seg-item[data-platform="instagram"] {
+    --seg-ink: #be185d;
+  }
+
+  html:not(.dark) .seg-item[data-platform="facebook"] {
+    --seg-ink: #1d4ed8;
+  }
+
+  /* Page-level platform theme: headline accents and highlights adopt the
+     platform brand. (--accent stays the site cyan — it drives shared chrome.) */
+  [data-platform-theme="instagram"] {
+    --accent-text: #f471a0;
+    --accent-soft: rgba(224, 66, 124, 0.13);
+    --accent: #e0427c;
+  }
+
+  html:not(.dark) [data-platform-theme="instagram"] {
+    --accent-text: #be185d;
+    --accent-soft: rgba(190, 24, 93, 0.1);
+    --accent: #be185d;
+  }
+
+  [data-platform-theme="facebook"] {
+    --accent-text: #7cb2ff;
+    --accent-soft: rgba(59, 130, 246, 0.14);
+    --accent: #3b82f6;
+  }
+
+  html:not(.dark) [data-platform-theme="facebook"] {
+    --accent-text: #1d4ed8;
+    --accent-soft: rgba(37, 99, 235, 0.1);
+    --accent: #1d4ed8;
+  }
+
+  /* -----------------------------------------------------------------------
+     BENTO GRID — glass tiles with a lit icon tile and a hover lift.
+  ----------------------------------------------------------------------- */
+  .bento-card {
+    @apply relative isolate overflow-hidden rounded-card border p-5 sm:p-6;
+    border-color: var(--glass-border);
+    background-image: linear-gradient(
+      165deg,
+      var(--glass-top) 0%,
+      var(--glass-bg) 38%,
+      var(--glass-bg) 100%
+    );
+    box-shadow:
+      inset 0 1px 0 0 var(--highlight),
+      0 30px 80px -56px var(--shadow);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    transition:
+      border-color 260ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .bento-card::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    background: radial-gradient(
+      120% 80% at 12% 0%,
+      var(--accent-soft),
+      transparent 62%
+    );
+    opacity: 0;
+    transition: opacity 260ms ease;
+  }
+
+  .bento-card:hover {
+    border-color: var(--glass-border-hover);
+    transform: translateY(-3px);
+    box-shadow:
+      inset 0 1px 0 0 var(--highlight),
+      0 40px 90px -56px var(--glow-cyan);
+  }
+
+  .bento-card:hover::before {
+    opacity: 1;
+  }
+
+  /* The icon tile lifts and lights up with the card — the tile is where the
+     eye lands, so it carries the hover feedback. */
+  .bento-card:hover .bento-icon {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--tool-ring) 60%, transparent);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.22),
+      0 12px 26px -12px var(--tool-glow),
+      0 0 0 1px color-mix(in srgb, var(--tool-ring) 18%, transparent);
+  }
+
+
+  .bento-icon {
+    @apply relative grid size-11 shrink-0 place-items-center rounded-[15px] border;
+    transition:
+      transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 260ms cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 260ms ease;
+    border-color: color-mix(in srgb, var(--tool-ring) 38%, transparent);
+    background-image: linear-gradient(
+      160deg,
+      var(--tool-soft),
+      rgba(255, 255, 255, 0.02)
+    );
+    color: var(--tool-ink);
+    box-shadow:
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.14),
+      0 10px 26px -16px var(--tool-glow);
+  }
+
+  /* Sticky-header scrim: fades the page out behind the floating bar. A real
+     colour mix (not a Tailwind opacity modifier, which cannot be applied to
+     an arbitrary var() colour) keeps a hint of the mesh while guaranteeing
+     legibility. */
+  .header-scrim {
+    background-color: color-mix(in srgb, var(--bg) 86%, transparent);
+    backdrop-filter: blur(18px) saturate(130%);
+    -webkit-backdrop-filter: blur(18px) saturate(130%);
+    mask-image: linear-gradient(to bottom, black 62%, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, black 62%, transparent);
+  }
+
+  /* Horizontal snap strip for the mobile platform switcher. */
+  .nav-strip {
+    @apply flex items-center gap-1.5 overflow-x-auto px-4 py-2;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .nav-strip::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Section rhythm: one shared measure and gutter across every page. */
+  .shell {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .section-pad {
+    @apply py-14 sm:py-20;
+  }
+
+  /* Hairline divider that fades out at both ends. */
+  .rule {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--line-strong) 18%,
+      var(--line-strong) 82%,
+      transparent
+    );
+  }
+}
+
+@layer utilities {
+  /* Balanced headline wrapping — kills the lonely-word line on every
+     viewport without touching copy. */
+  .balance {
+    text-wrap: balance;
+  }
+
+  .pretty {
+    text-wrap: pretty;
+  }
+
+  .no-tap {
+    -webkit-touch-callout: none;
+  }
+}

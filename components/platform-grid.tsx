@@ -1,0 +1,71 @@
+import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
+
+import { PlatformIcon } from "@/components/platform-icons";
+import { PLATFORM_LIST, PLATFORMS } from "@/lib/platforms";
+
+/**
+ * Home-page cross-links as a three-up bento: one card per platform, each
+ * carrying its own accent so the grid reads as a product family rather than
+ * three copies of the same tile.
+ */
+export function PlatformGrid() {
+  return (
+    <section className="section-pad border-t border-[var(--line)]">
+      <div className="shell">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="eyebrow">
+              <span aria-hidden="true" className="eyebrow-dot" />
+              one tool, three platforms
+            </p>
+            <h2 className="balance mt-4 text-[1.75rem] font-semibold leading-tight tracking-headline sm:text-4xl">
+              Every platform. One paste.
+            </h2>
+          </div>
+          <Link
+            href="/guides"
+            className="group inline-flex items-center gap-1.5 text-[13px] text-[var(--accent-text)] transition-opacity duration-200 hover:opacity-80"
+          >
+            Read the guides
+            <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          </Link>
+        </div>
+
+        <div className="mt-8 grid gap-3.5 md:grid-cols-3">
+          {PLATFORM_LIST.map((id) => {
+            const config = PLATFORMS[id];
+            return (
+              <Link
+                key={id}
+                href={config.path}
+                prefetch={true}
+                data-accent={id}
+                className="bento-card group flex flex-col"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="bento-icon">
+                    <PlatformIcon platform={id} className="size-5" />
+                  </span>
+                  <ArrowUpRight className="size-4 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
+                </div>
+                <h3 className="mt-6 text-[16px] font-semibold tracking-tight">
+                  {config.switcherLabel}
+                </h3>
+                <p className="pretty mt-2 text-[13.5px] leading-relaxed text-[var(--text-2)]">
+                  {config.blurb}
+                </p>
+                <span className="mt-5 inline-flex items-center gap-1.5 text-[12px] font-medium text-[var(--tool-ink)]">
+                  Open downloader
+                  <span className="transition-transform duration-300 group-hover:translate-x-1">
+                    →
+                  </span>
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
