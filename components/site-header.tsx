@@ -31,6 +31,7 @@ const NAV = [
     platform: "facebook" as Platform,
   },
   { href: "/guides", label: "Guides", short: "Guides", platform: null },
+  { href: "/app-download", label: "Download App", short: "App", platform: null },
 ] as const;
 
 function isCurrent(pathname: string, href: string): boolean {

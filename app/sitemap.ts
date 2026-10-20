@@ -53,6 +53,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const company: MetadataRoute.Sitemap = [
     {
+      url: `${siteUrl}/app-download`,
+      lastModified: updated,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
       url: `${siteUrl}/about`,
       lastModified: updated,
       changeFrequency: "monthly",
