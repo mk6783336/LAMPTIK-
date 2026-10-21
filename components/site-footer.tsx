@@ -124,6 +124,17 @@ export function SiteFooter() {
             Download only content you have the right to use.
           </p>
         </div>
+
+        <div className="mt-5 flex justify-center border-t border-[var(--line)] pt-4">
+          <a
+            href="https://github.com/mk6783336"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--field)] px-3 py-1.5 text-[11px] font-medium text-[var(--text-2)] transition-colors duration-200 hover:border-[var(--glass-border-hover)] hover:text-[var(--text)]"
+          >
+            Developed with <span aria-hidden="true">⚡</span> by <span className="font-semibold text-[var(--text)]">SHAHID ZAIB</span>
+          </a>
+        </div>
       </div>
     </footer>
   );
