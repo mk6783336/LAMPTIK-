@@ -716,6 +716,18 @@ html:not(.dark) {
     -webkit-mask-image: linear-gradient(to bottom, black 62%, transparent);
   }
 
+  /* Adsterra Social Bar may inject a fixed top-level notice over the page.
+     Keep it below the sticky nav on phones so the logo and platform links
+     remain visible and tappable. The header itself also owns the top stack. */
+  @media (max-width: 767px) {
+    body > [style*="position: fixed"][style*="top: 0"],
+    body > [style*="position:fixed"][style*="top:0"],
+    body > [style*="position: fixed"][style*="top:0"],
+    body > [style*="position:fixed"][style*="top: 0"] {
+      top: 68px !important;
+    }
+  }
+
   /* Horizontal snap strip for the mobile platform switcher. */
   .nav-strip {
     @apply flex items-center gap-1.5 overflow-x-auto px-4 py-2;

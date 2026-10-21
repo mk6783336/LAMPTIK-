@@ -43,7 +43,7 @@ export function SiteHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-40 pt-3 sm:pt-4">
+    <header className="sticky top-0 z-[2147483647] isolate pt-3 sm:pt-4">
       {/* Scrim: fades the page out behind the floating bar so content never
           shows through the gutter above a sticky header. */}
       <div

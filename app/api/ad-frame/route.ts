@@ -36,16 +36,41 @@ export function GET(request: NextRequest) {
   const tag = adsterraBannerUrl(key);
   const html = `<!doctype html>
 <html><head><meta charset="utf-8">
+<meta name="referrer" content="no-referrer-when-downgrade">
 <style>html,body{margin:0;padding:0;background:transparent;overflow:hidden}body{display:flex;align-items:center;justify-content:center}</style>
 </head><body>
 <script type="text/javascript">atOptions={"key":${JSON.stringify(key)},"format":"iframe","height":${size.height},"width":${size.width},"params":{}};</script>
 <script type="text/javascript" src="${tag}"></script>
+<script type="text/javascript">
+(function(){
+  var sent=false;
+  function signalFill(){
+    if(sent)return;
+    var frames=document.querySelectorAll('iframe');
+    for(var i=0;i<frames.length;i++){
+      var frame=frames[i];
+      var width=Number(frame.getAttribute('width'))||frame.width||0;
+      var height=Number(frame.getAttribute('height'))||frame.height||0;
+      if(width>0&&height>0){
+        sent=true;
+        parent.postMessage({type:'lamptik-ad-fill',key:${JSON.stringify(key)}},location.origin);
+        return;
+      }
+    }
+  }
+  var observer=new MutationObserver(signalFill);
+  observer.observe(document.body,{childList:true,subtree:true});
+  setTimeout(signalFill,250);
+  setTimeout(function(){observer.disconnect()},4000);
+})();
+</script>
 </body></html>`;
 
   return new NextResponse(html, {
     status: 200,
     headers: {
       "Content-Type": "text/html; charset=utf-8",
+      "Referrer-Policy": "no-referrer-when-downgrade",
       // Frame-scoped policy: the creative loader needs eval, and the
       // networks rotate hundreds of RTB creative domains that cannot be
       // enumerated — so the frame allows the full https: scheme on every
