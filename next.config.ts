@@ -114,6 +114,26 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // API routes: hardening headers without any framing or cache policy.
+        // Deliberately NO X-Frame-Options / frame-ancestors here — the
+        // same-origin `/api/ad-frame` creative must stay frameable by our
+        // own pages, and the download proxy sets its own `no-store`.
+        source: "/api/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-XSS-Protection", value: "1; mode=block" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=31536000; includeSubDomains",
+          },
+        ],
+      },
+      {
         // Hashed build assets: safe to cache forever. This was the mobile
         // "slow loading" bug — a blanket no-store header disabled browser
         // caching of JS/CSS, so every visit re-downloaded the whole bundle.

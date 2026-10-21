@@ -769,6 +769,12 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
                   label="Sponsored by our partners (keeps LAMP TIK 100% free)"
                   zoneId={adsterraBannerKey}
                 />
+                <div className="mt-2.5 flex justify-center">
+                  <AdSlot
+                    format="rectangle"
+                    label="Sponsored rectangle — keeps LAMP TIK 100% free"
+                  />
+                </div>
                 <a
                   href={monetagSmartlinkUrl}
                   target="_blank"
