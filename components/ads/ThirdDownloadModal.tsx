@@ -1,79 +1,72 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Check, Loader2, ShieldCheck, X, Zap } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Check, LockKeyhole, Play, ShieldCheck } from "lucide-react";
 
 import { AdSlot } from "@/components/ads/AdSlot";
-import { adsterraBannerKey, monetagSmartlinkUrl, triggerDirectLinkMonetization } from "@/lib/monetization";
+import {
+  adsterraBannerKey,
+  adsterraRectangleKey,
+  triggerMonetagVignette,
+  videoAdMp4Url,
+} from "@/lib/monetization";
 
 const COUNTDOWN_SECONDS = 10;
-const COUNT_KEY = "lamptik_dl_count";
 
-/**
- * Increment the lifetime download counter and report whether this download
- * is an interstitial one (every 3rd: #3, #6, #9, …). Storage failures
- * (private mode) fail open — the download is never blocked.
- */
-export function recordDownloadAndCheckThird(): boolean {
-  try {
-    const raw = window.localStorage.getItem(COUNT_KEY);
-    const count = (raw ? Number(raw) : 0) + 1;
-    window.localStorage.setItem(COUNT_KEY, String(Number.isFinite(count) ? count : 1));
-    const total = Number.isFinite(count) ? count : 1;
-    return total % 3 === 0;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * "Every 3rd Download = 10-Second Sponsored Ad" interstitial. Opens
- * immediately on the qualifying download while the file itself keeps
- * streaming underneath — the modal NEVER gates, delays, or cancels the
- * download. A live 10s countdown, the Adsterra banner, and the sponsor CTA
- * fill the pause; closing early is always allowed.
- */
 export function ThirdDownloadModal({
   open,
   filename,
   onClose,
+  onRelease,
 }: {
-  /** Controlled by the download flow (every 3rd download). */
   open: boolean;
-  /** Real filename streaming underneath, for honest status copy. */
   filename: string | null;
   onClose: () => void;
+  onRelease: () => void;
 }) {
   const [remaining, setRemaining] = useState(COUNTDOWN_SECONDS);
-  const firedRef = useRef(false);
+  const releasedRef = useRef(false);
+  const onReleaseRef = useRef(onRelease);
+  onReleaseRef.current = onRelease;
 
-  // Reset + fire the Monetag zone each time the modal opens. The zone call
-  // is fire-and-forget with its own cap; the download underneath is
-  // unaffected either way.
+  const release = useCallback(() => {
+    if (releasedRef.current) return;
+    releasedRef.current = true;
+    onReleaseRef.current();
+  }, []);
+
+  const closeAfterRelease = useCallback(() => {
+    if (releasedRef.current) onClose();
+  }, [onClose]);
+
   useEffect(() => {
-    if (!open) return;
-    setRemaining(COUNTDOWN_SECONDS);
-    firedRef.current = false;
-    const zoneTimer = window.setTimeout(() => {
-      if (!firedRef.current) {
-        firedRef.current = true;
-        triggerDirectLinkMonetization();
-      }
-    }, 600);
-    const ticker = window.setInterval(() => {
-      setRemaining((current) => (current > 0 ? current - 1 : 0));
-    }, 1000);
-    return () => {
-      window.clearTimeout(zoneTimer);
-      window.clearInterval(ticker);
-    };
-  }, [open ]);
+    if (!open) {
+      setRemaining(COUNTDOWN_SECONDS);
+      return;
+    }
 
-  // Escape closes; the download underneath keeps streaming.
+    setRemaining(COUNTDOWN_SECONDS);
+    releasedRef.current = false;
+    triggerMonetagVignette();
+
+    const startedAt = Date.now();
+    const ticker = window.setInterval(() => {
+      const next = Math.max(0, COUNTDOWN_SECONDS - Math.floor((Date.now() - startedAt) / 1000));
+      setRemaining(next);
+      if (next === 0) {
+        window.clearInterval(ticker);
+        release();
+      }
+    }, 250);
+
+    return () => window.clearInterval(ticker);
+  }, [open, release]);
+
   useEffect(() => {
     if (!open) return;
     function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape" && releasedRef.current) onClose();
+      else if (event.key === "Escape") event.preventDefault();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -81,108 +74,93 @@ export function ThirdDownloadModal({
 
   if (!open) return null;
 
-  const ready = remaining <= 0;
+  const ready = remaining === 0;
+  const progress = ((COUNTDOWN_SECONDS - remaining) / COUNTDOWN_SECONDS) * 100;
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Sponsor break — your download is already streaming"
-      className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto p-4"
+      aria-label="Sponsored video ad — your download starts after the ad"
+      className="fixed inset-0 z-[70] grid place-items-center overflow-y-auto p-3 sm:p-5"
     >
       <div
         aria-hidden="true"
-        className="fixed inset-0 bg-black/75 backdrop-blur-md"
-        onClick={onClose}
+        className="fixed inset-0 bg-black/85 backdrop-blur-md"
+        onClick={closeAfterRelease}
       />
-      <div className="panel relative w-full max-w-md p-6 text-center sm:p-7">
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close sponsor break (download continues)"
-          className="absolute right-3 top-3 grid size-8 place-items-center rounded-full text-[var(--text-3)] transition-colors duration-200 hover:text-[var(--text)]"
-        >
-          <X className="size-4" />
-        </button>
+      <section className="panel relative z-10 w-full max-w-2xl overflow-hidden rounded-[22px] border border-white/10 bg-[#090d14] p-4 text-left shadow-[0_30px_100px_-30px_rgba(0,0,0,0.9)] sm:p-5">
+        <header className="flex flex-wrap items-center justify-between gap-2">
+          <span className="inline-flex items-center gap-2 rounded-full border border-fuchsia-300/20 bg-fuchsia-300/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-fuchsia-100">
+            🎬 Sponsored Video Ad · Plays every 3rd download
+          </span>
+          <span role="status" aria-live="polite" className="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1.5 font-mono text-[11px] font-semibold tabular-nums text-cyan-100">
+            {ready ? "Your download is starting…" : `Your download starts in ${remaining}s...`}
+          </span>
+        </header>
 
-        <p className="micro text-[var(--text-3)]">10-second sponsor break</p>
-        <h2 className="balance mt-2 text-[1.25rem] font-semibold leading-tight tracking-headline">
-          Supporting free unlimited HD downloads
-        </h2>
-
-        {/* Live countdown — measurement, never a fake loop. */}
-        <div
-          role="status"
-          aria-live="polite"
-          className="mx-auto mt-4 flex h-16 w-16 items-center justify-center rounded-full border-2 border-[var(--accent)]/50 bg-[var(--accent-soft)] font-mono text-[1.1rem] font-bold tabular-nums text-[var(--accent-text)]"
-        >
-          {ready ? <Check className="size-6" /> : `${remaining}s`}
-        </div>
-        <p className="mt-2 text-[12.5px] text-[var(--text-2)]">
-          {ready ? (
-            <>Ready! Your file {filename ? <>“{filename}” </> : null}is downloading.</>
-          ) : (
-            <>Your download is streaming — {remaining}s…</>
-          )}
-        </p>
-
-        <div className="mt-4 overflow-hidden rounded-[14px] border border-[var(--glass-border)] p-2.5">
-          <p className="micro mb-2 text-center text-[9px] text-[var(--text-3)]/80">
-            Sponsored · keeps LAMP TIK 100% free
-          </p>
-          <AdSlot
-            format="leaderboard"
-            label="Sponsored — keeps LAMP TIK 100% free"
-            zoneId={adsterraBannerKey}
-          />
-          <div className="mt-2.5 flex justify-center">
-            <AdSlot
-              format="rectangle"
-              label="Sponsored rectangle — keeps LAMP TIK 100% free"
-            />
+        <div className="relative mt-4 aspect-video overflow-hidden rounded-[16px] border border-white/10 bg-[radial-gradient(ellipse_at_50%_35%,rgba(14,165,233,0.25),transparent_45%),linear-gradient(135deg,#08121f,#12131f_55%,#090b12)]">
+          <div className="absolute inset-x-0 top-0 z-20 h-1 bg-white/10">
+            <div className="h-full bg-gradient-to-r from-cyan-300 via-blue-400 to-fuchsia-400 transition-[width] duration-300 ease-linear" style={{ width: `${progress}%` }} />
           </div>
-          <a
-            href={monetagSmartlinkUrl}
-            target="_blank"
-            rel="sponsored nofollow noopener"
-            className="group mt-2.5 flex items-center gap-2.5 rounded-[12px] border border-[var(--glass-border)] bg-[var(--field)] px-3 py-2.5 text-left transition-colors duration-200 hover:border-[var(--glass-border-hover)]"
-          >
-            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-text)] transition-transform duration-200 group-hover:scale-110">
-              <Zap className="size-4" fill="currentColor" strokeWidth={0} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-[13px] font-semibold tracking-tight">
-                Support free HD downloads — visit sponsor ↗
-              </span>
-              <span className="block truncate text-[11px] text-[var(--text-3)]">
-                Sponsored · opens in a new tab
-              </span>
-            </span>
-          </a>
+          {videoAdMp4Url ? (
+            <video
+              className="absolute inset-0 h-full w-full object-cover"
+              src={videoAdMp4Url}
+              autoPlay
+              muted
+              playsInline
+              loop
+              controls
+              preload="metadata"
+              aria-label="Sponsored video advertisement"
+            />
+          ) : (
+            <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute -left-1/4 top-1/3 h-40 w-40 animate-pulse rounded-full bg-cyan-400/20 blur-3xl" />
+              <div className="absolute -right-1/4 top-1/4 h-48 w-48 animate-pulse rounded-full bg-fuchsia-500/20 blur-3xl [animation-delay:700ms]" />
+              <div className="absolute inset-0 grid place-items-center text-center">
+                <div className="mx-auto max-w-sm px-5">
+                  <span className="mx-auto grid size-14 place-items-center rounded-2xl border border-cyan-100/20 bg-cyan-100/10 text-cyan-100 shadow-[0_0_50px_-10px_rgba(34,211,238,0.5)]">
+                    <Play className="ml-0.5 size-6" fill="currentColor" />
+                  </span>
+                  <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.24em] text-cyan-100/70">LAMP TIK · Sponsor spotlight</p>
+                  <h2 className="mt-2 text-xl font-bold leading-tight tracking-tight text-white sm:text-3xl">Your next video deserves unlimited speed.</h2>
+                  <p className="mt-2 text-xs text-white/65 sm:text-sm">High-speed streaming · HD playback · no waiting</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="absolute inset-x-3 bottom-3 z-20 flex flex-wrap items-end justify-between gap-2 pointer-events-none">
+            <div className="pointer-events-auto">
+              <AdSlot format="rectangle" label="Sponsored video theater ad" zoneId={adsterraRectangleKey} />
+            </div>
+            <div className="pointer-events-auto hidden sm:block">
+              <AdSlot format="leaderboard" label="Sponsored video theater banner" zoneId={adsterraBannerKey} />
+            </div>
+          </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="btn btn-primary mt-4 h-11 w-full gap-2 text-[13.5px] font-semibold"
-        >
-          {ready ? (
-            <>
-              <Check className="size-4" />
-              Continue to my download
-            </>
-          ) : (
-            <>
-              <Loader2 className="size-4 animate-spin" />
-              Downloading… close anytime
-            </>
-          )}
-        </button>
-        <p className="mt-2.5 flex items-center justify-center gap-1.5 text-[11px] text-[var(--text-3)]">
-          <ShieldCheck className="size-3.5 text-[var(--ok)]" />
-          Closing never cancels your file.
-        </p>
-      </div>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-white">{ready ? "Your download is ready" : "Preparing your download…"}</p>
+            <p className="mt-0.5 truncate text-[11px] text-white/55">{filename ? `Queued: ${filename}` : "Your selected video is safely queued."}</p>
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {ready ? (
+              <button type="button" onClick={onClose} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-400 px-4 text-[12px] font-bold text-emerald-950">
+                <Check className="size-4" /> Download Started! Close Window
+              </button>
+            ) : (
+              <button type="button" disabled className="inline-flex h-10 cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 text-[12px] font-semibold text-white/50">
+                <LockKeyhole className="size-3.5" /> ⏳ Preparing Your HD Video... (Wait {remaining}s)
+              </button>
+            )}
+          </div>
+        </div>
+        <p className="mt-3 flex items-center gap-1.5 text-[10px] text-white/40"><ShieldCheck className="size-3 text-emerald-300" /> Your queued file starts automatically when the timer completes.</p>
+      </section>
     </div>
   );
 }

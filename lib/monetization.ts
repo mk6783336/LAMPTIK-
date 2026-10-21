@@ -116,6 +116,68 @@ export const DEFAULT_MONETAG_SMARTLINK_URL = "https://uplcm.com/4/12078941";
 export const monetagSmartlinkUrl =
   process.env.NEXT_PUBLIC_MONETAG_SMARTLINK_URL?.trim() || DEFAULT_MONETAG_SMARTLINK_URL;
 
+/** Optional HTML5 MP4 creative for the every-third-download theater. */
+const configuredVideoAdMp4Url = process.env.NEXT_PUBLIC_VIDEO_AD_MP4_URL?.trim() || "";
+export const videoAdMp4Url = /^https:\/\//i.test(configuredVideoAdMp4Url)
+  ? configuredVideoAdMp4Url
+  : "";
+
+/** Persistent per-browser download count; memory remains available if storage is blocked. */
+export const DOWNLOAD_COUNT_KEY = "lamptik_dl_count";
+let inMemoryDownloadCount: number | null = null;
+
+function readStoredDownloadCount(): number | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(DOWNLOAD_COUNT_KEY);
+    const parsed = raw === null ? 0 : Number(raw);
+    return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : 0;
+  } catch {
+    return null;
+  }
+}
+
+export function getDownloadCount(): number {
+  const stored = readStoredDownloadCount();
+  if (stored !== null) {
+    inMemoryDownloadCount = stored;
+    return stored;
+  }
+  return inMemoryDownloadCount ?? 0;
+}
+
+/** Increment on a valid download click and return the new ordinal. */
+export function recordDownloadCount(): number {
+  const count = getDownloadCount() + 1;
+  inMemoryDownloadCount = count;
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.setItem(DOWNLOAD_COUNT_KEY, String(count));
+    } catch {
+      // Private browsing / storage policy: preserve the count for this page life.
+    }
+    window.dispatchEvent(new Event("lamptik:download-count"));
+  }
+  return count;
+}
+
+export function downloadAdBadgeLabel(count: number): string {
+  const remainder = count % 3;
+  return remainder === 2
+    ? "Next download includes a 10s sponsor video"
+    : `Ad-free downloads remaining: ${remainder === 0 ? 2 : 2 - remainder}/2`;
+}
+
+/** Fire Monetag's configured Vignette zone on demand when the ad theater opens. */
+export function triggerMonetagVignette(): void {
+  if (typeof document === "undefined" || !monetagVignetteZone || !monetagVignetteSrc) return;
+  const script = document.createElement("script");
+  script.dataset.zone = monetagVignetteZone;
+  script.src = monetagVignetteSrc;
+  script.async = true;
+  document.body.appendChild(script);
+}
+
 /** Session-storage key for the download-click frequency cap. */
 export const AD_TRIGGER_KEY = "ad_triggered_ts";
 

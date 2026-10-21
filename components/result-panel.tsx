@@ -24,7 +24,7 @@ import { formatBytes, formatCount, formatDuration, formatYear } from "@/lib/form
 import type { ToastItem } from "@/components/toast";
 import { refreshLibraryBadge } from "@/components/library";
 import { AdSlot } from "@/components/ads/AdSlot";
-import { recordDownloadAndCheckThird, ThirdDownloadModal } from "@/components/ads/ThirdDownloadModal";
+import { ThirdDownloadModal } from "@/components/ads/ThirdDownloadModal";
 import { PlatformIcon } from "@/components/platform-icons";
 import { cn } from "@/lib/cn";
 import {
@@ -36,7 +36,10 @@ import {
 import { PLATFORMS } from "@/lib/platforms";
 import {
   adsterraBannerKey,
+  downloadAdBadgeLabel,
+  getDownloadCount,
   monetagSmartlinkUrl,
+  recordDownloadCount,
   triggerDirectLinkMonetization,
   triggerDownloadMonetization,
 } from "@/lib/monetization";
@@ -198,9 +201,12 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
   const [healingNote, setHealingNote] = useState<string | null>(null);
   /** Post-download theater: stays 8s after completion. */
   const [completeNote, setCompleteNote] = useState<string | null>(null);
-  /** Every-3rd-download sponsor interstitial (never blocks the download). */
+  /** Third-download sponsor interstitial queues the selected file until release. */
   const [interstitialOpen, setInterstitialOpen] = useState(false);
   const [interstitialFile, setInterstitialFile] = useState<string | null>(null);
+  const [downloadCount, setDownloadCount] = useState(0);
+  const [queuedDownload, setQueuedDownload] = useState<{ kind: DownloadKind; url: string } | null>(null);
+  const interstitialRef = useRef(false);
   const busyRef = useRef<DownloadKind | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   /** Fires the Direct Link exactly once per download, at stream start. */
@@ -209,7 +215,13 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
   const completeTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
+    setDownloadCount(getDownloadCount());
+    const syncDownloadCount = () => setDownloadCount(getDownloadCount());
+    window.addEventListener("storage", syncDownloadCount);
+    window.addEventListener("lamptik:download-count", syncDownloadCount);
     return () => {
+      window.removeEventListener("storage", syncDownloadCount);
+      window.removeEventListener("lamptik:download-count", syncDownloadCount);
       if (completeTimerRef.current !== null) window.clearTimeout(completeTimerRef.current);
     };
   }, []);
@@ -329,20 +341,25 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
    * back to the browser under the video's ORIGINAL title, and kept in this
    * device's offline Library. A failure can never become a saved, corrupt file.
    */
-  async function startDownload(kind: DownloadKind) {
-    if (busyRef.current) return;
-
-    // Every 3rd download opens the 10-second sponsor interstitial. The file
-    // keeps streaming underneath regardless — the modal can be closed at any
-    // time without affecting the download.
-    if (recordDownloadAndCheckThird()) {
-      setInterstitialFile((media.title || "your video").slice(0, 48));
-      setInterstitialOpen(true);
-    }
+  async function startDownload(kind: DownloadKind, skipInterstitial = false, queuedUrl?: string) {
+    if (busyRef.current || (interstitialRef.current && !skipInterstitial)) return;
 
     const initial =
       kind === "hd" ? hdUrl : kind === "sd" ? media.videoSd : media.audioMp3;
     if (!initial) return;
+
+    let target = queuedUrl ?? initial;
+    if (!skipInterstitial && kind !== "audio") {
+      const nextCount = recordDownloadCount();
+      setDownloadCount(nextCount);
+      if (nextCount % 3 === 0) {
+        interstitialRef.current = true;
+        setQueuedDownload({ kind, url: target });
+        setInterstitialFile((media.title || "your video").slice(0, 48));
+        setInterstitialOpen(true);
+        return;
+      }
+    }
 
     // Monetization is deliberately NOT started here. It runs only once the
     // file has been handed to the browser (see `monetize()` below): some
@@ -370,8 +387,6 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
       title: "Preparing your download…",
       description: "Checking the stream link before any bytes move.",
     });
-
-    let target = initial;
 
     try {
       // Silent auto-heal: if the probe or save hits a transient hiccup or
@@ -521,8 +536,8 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
 
   return (
     <>
-    <div data-accent={platform} className="relative">
-      {/* Header rail: success state, platform identity, codec truth. */}
+      <div data-accent={platform} className="relative" aria-hidden={interstitialOpen ? true : undefined}>
+        {/* Header rail: success state, platform identity, codec truth. */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-pill border border-[color-mix(in_srgb,var(--ok)_32%,transparent)] bg-[var(--ok-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--ok)]">
@@ -659,6 +674,9 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
               then a clean reset. Every button probes the signed URL first and
               re-resolves once if it expired. */}
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <p className="sm:col-span-2 text-center text-[11px] text-[var(--text-3)]" aria-live="polite">
+              {downloadAdBadgeLabel(downloadCount)}
+            </p>
             <div className="sm:col-span-2">
               <DownloadAction
                 primary
@@ -815,7 +833,18 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
     <ThirdDownloadModal
       open={interstitialOpen}
       filename={interstitialFile}
-      onClose={() => setInterstitialOpen(false)}
+      onClose={() => {
+        interstitialRef.current = false;
+        setInterstitialOpen(false);
+        setQueuedDownload(null);
+      }}
+      onRelease={() => {
+        const queued = queuedDownload;
+        interstitialRef.current = false;
+        setInterstitialOpen(false);
+        setQueuedDownload(null);
+        if (queued) void startDownload(queued.kind, true, queued.url);
+      }}
     />
     </>
   );
