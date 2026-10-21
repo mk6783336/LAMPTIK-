@@ -62,17 +62,27 @@ export const adsterraSocialBarSrc =
   process.env.NEXT_PUBLIC_ADSTERRA_SOCIAL_BAR_SRC?.trim() || DEFAULT_ADSTERRA_SOCIAL_BAR_SRC;
 
 /**
- * Rectangle (300×250) zone key.
+ * Rectangle (300x250) zone key (live production default).
+ * `NEXT_PUBLIC_ADSTERRA_RECT_KEY` wins when present.
  *
- * Deliberately NOT defaulted to the leaderboard key: Adsterra binds a key to
- * one creative size, and asking a 728×90 zone for a 300×250 frame either
- * returns nothing or serves a mismatched creative — the kind of invalid
- * impression that gets a publisher account flagged. Create the rectangle zone
- * in the dashboard, then set NEXT_PUBLIC_ADSTERRA_RECT_KEY here. Until then
- * the slot is mounted and reserves its space, and simply stays empty.
+ * Bound to the 300x250 creative size — never reuse the leaderboard key here:
+ * Adsterra binds a key to one size, and a mismatched request risks invalid
+ * impressions. With the live default below, every `format="rectangle"` slot
+ * renders immediately with zero env configuration.
  */
+export const DEFAULT_ADSTERRA_RECT_KEY = "f0075be743457b9b238d0d701fbd9d8b";
+
 export const adsterraRectangleKey =
-  process.env.NEXT_PUBLIC_ADSTERRA_RECT_KEY?.trim() || null;
+  process.env.NEXT_PUBLIC_ADSTERRA_RECT_KEY?.trim() || DEFAULT_ADSTERRA_RECT_KEY;
+
+/**
+ * Adsterra publisher referral link (live production default).
+ * `NEXT_PUBLIC_ADSTERRA_REFERRAL_URL` wins when present.
+ */
+export const DEFAULT_ADSTERRA_REFERRAL_URL = "https://beta.publishers.adsterra.com/referral/1qm6LQfsaC";
+
+export const adsterraReferralUrl =
+  process.env.NEXT_PUBLIC_ADSTERRA_REFERRAL_URL?.trim() || DEFAULT_ADSTERRA_REFERRAL_URL;
 
 /**
  * Monetag Vignette zone id (live production default).

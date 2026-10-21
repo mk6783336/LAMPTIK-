@@ -3,7 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "@/lib/cn";
-import { AD_RESERVED, adsterraBannerKey, type AdFormat } from "@/lib/monetization";
+import {
+  AD_RESERVED,
+  adsterraBannerKey,
+  adsterraRectangleKey,
+  type AdFormat,
+} from "@/lib/monetization";
 
 interface AdSlotProps {
   /** Adsterra zone key. Falls back to NEXT_PUBLIC_ADSTERRA_BANNER_KEY. */
@@ -28,19 +33,22 @@ interface AdSlotProps {
  *     global, and a client-side route change could leave a stale one behind.
  *     Each creative therefore runs in its own `srcdoc` iframe: its own
  *     window, its own `document.write`, zero leakage either way.
- *  3. **Mobile overflow** — the zone only serves 728×90. Under 740px the
- *     frame is CSS-scaled to fit (`transform: scale`) inside an
+ *  3. **Mobile overflow** — the leaderboard zone only serves 728×90. Under
+ *     740px the frame is CSS-scaled to fit (`transform: scale`) inside an
  *     `overflow-hidden` wrapper, so there is never horizontal scroll and
- *     never a squashed request the network can't fill.
+ *     never a squashed request the network can't fill. Rectangle slots use
+ *     the dedicated 300×250 zone key, so the creative size always matches.
  *
  * The tag itself is deferred behind an IntersectionObserver, so it costs
  * nothing during LCP and nothing at all until the slot is near the viewport.
  */
 export function AdSlot({ zoneId, format = "leaderboard", className, label }: AdSlotProps) {
-  // `undefined` means "use the configured leaderboard zone"; an explicit
-  // `null`/"" means "this slot has no zone yet" — it keeps its reserved space
-  // and stays empty rather than requesting a wrong-size creative.
-  const key = (zoneId === undefined ? adsterraBannerKey ?? "" : zoneId ?? "").trim();
+  // `undefined` means "use the live default for this format" (leaderboard
+  // zone for 728x90, rectangle zone for 300x250). An explicit `null`/`""`
+  // opts out: the slot keeps its reserved space and stays empty rather than
+  // requesting a wrong-size creative.
+  const defaultKey = format === "rectangle" ? adsterraRectangleKey : adsterraBannerKey;
+  const key = (zoneId === undefined ? defaultKey ?? "" : zoneId ?? "").trim();
   const { width, height, minPx } = AD_RESERVED[format];
 
   const hostRef = useRef<HTMLDivElement | null>(null);
