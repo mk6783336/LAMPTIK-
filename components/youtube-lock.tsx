@@ -2,37 +2,32 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import { Check, Loader2, Lock, Smartphone, Zap } from "lucide-react";
+import { Check, Download, Loader2, Lock, Zap } from "lucide-react";
 
-import { markAppInstalled, promptAppInstall } from "@/components/install-pwa";
+import { promptAppInstall } from "@/components/install-pwa";
 
 /**
- * Luxury lock screen for the App-Exclusive YouTube downloader. Shown wherever
- * a YouTube link lands without App Mode — the dedicated /youtube-downloader
- * page and any YouTube paste on the homepage.
+ * Strict App-Exclusive lock screen for the YouTube downloader.
+ *
+ * Rendered INSTEAD of the input box whenever display-mode is not standalone:
+ * no input, no fetch button, no browser unlock toggle. The only paths forward
+ * are the native install prompt (Android/Chrome) or the App Hub APK + install
+ * guide. Unlocking happens exclusively via a real install (`appinstalled`) or
+ * a launch from the home-screen icon — never from inside a browser tab.
  */
-export function YouTubeLock({ onUnlocked }: { onUnlocked?: () => void }) {
+export function YouTubeLock() {
   const [busy, setBusy] = useState(false);
 
-  const installAndUnlock = useCallback(async () => {
+  const installNow = useCallback(async () => {
     setBusy(true);
     try {
-      const accepted = await promptAppInstall();
-      if (accepted) {
-        onUnlocked?.();
-        return;
-      }
+      await promptAppInstall();
     } finally {
       setBusy(false);
     }
-    // No native prompt (iOS / dismissed): the app page explains the 3 taps.
+    // No native prompt (iOS / dismissed): the App Hub explains the 3 taps.
     document.getElementById("yt-lock-more")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [onUnlocked]);
-
-  const unlockNow = useCallback(() => {
-    markAppInstalled();
-    onUnlocked?.();
-  }, [onUnlocked]);
+  }, []);
 
   return (
     <div className="panel relative overflow-hidden p-6 text-center sm:p-8" data-accent="youtube">
@@ -44,39 +39,36 @@ export function YouTubeLock({ onUnlocked }: { onUnlocked?: () => void }) {
         <Lock className="size-5" />
       </span>
       <h2 className="balance mx-auto mt-4 max-w-md text-[1.4rem] font-semibold leading-tight tracking-headline">
-        🔒 YouTube 1080p &amp; Long-Video Downloader is an App-Exclusive Feature
+        🔒 YouTube Downloader is locked. Download and install the LAMP TIK App APK from our App Hub to
+        unlock unlimited YouTube 1080p &amp; MP3 downloads!
       </h2>
       <p className="pretty mx-auto mt-2.5 max-w-md text-[13.5px] leading-relaxed text-[var(--text-2)]">
-        Install the free LAMP TIK Web App in 1 click to unlock unlimited YouTube HD
-        1080p / 720p, Shorts &amp; MP3 downloads — no Play Store, no sign-up.
+        YouTube 1080p / 720p, Shorts &amp; MP3 downloads run only inside the installed
+        app — open this page from your home-screen icon and the downloader appears here.
       </p>
       <div className="mt-5 flex flex-col items-center gap-2.5">
         <button
           type="button"
-          onClick={installAndUnlock}
+          onClick={installNow}
           disabled={busy}
           className="btn tool-cta h-[54px] w-full gap-2 px-6 text-[15px] font-semibold sm:w-auto sm:min-w-[300px]"
         >
           {busy ? <Loader2 className="size-4 animate-spin" /> : <Zap className="size-4" fill="currentColor" strokeWidth={0} />}
           {busy ? "Opening install prompt…" : "Install & Unlock Now"}
         </button>
-        <button
-          type="button"
-          onClick={unlockNow}
-          className="btn btn-ghost h-10 gap-2 px-4 text-[12.5px]"
+        <Link
+          href="/app-download"
+          className="btn btn-ghost h-11 gap-2 px-5 text-[13px]"
         >
-          <Smartphone className="size-3.5" />
-          Already installed — Unlock here
-        </button>
+          <Download className="size-4" />
+          Get the App APK (v2.1) from App Hub
+        </Link>
       </div>
       <div id="yt-lock-more" className="mx-auto mt-4 flex max-w-md scroll-mt-24 flex-wrap items-center justify-center gap-2 text-[12px] text-[var(--text-3)]">
         <span className="inline-flex items-center gap-1.5">
           <Check className="size-3.5 text-[var(--ok)]" />
           On iPhone? Safari → Share → Add to Home Screen.
         </span>
-        <Link href="/app-download" className="font-semibold text-[var(--accent-text)] underline-offset-4 hover:underline">
-          See the 3-tap install guide →
-        </Link>
       </div>
     </div>
   );

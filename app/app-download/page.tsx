@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BellPlus, Check, MonitorPlay, Music2, ShieldCheck, Smartphone, Youtube, Zap } from "lucide-react";
+import { BellPlus, Check, Download, MonitorPlay, Music2, ShieldCheck, Smartphone, Youtube, Zap } from "lucide-react";
 
 import { AdSlot } from "@/components/ads/AdSlot";
 import { AmbientBackground } from "@/components/ambient-background";
@@ -163,6 +163,8 @@ export default function AppDownloadPage() {
         url: pageUrl,
         applicationCategory: "MultimediaApplication",
         operatingSystem: "Android, iOS, Windows, macOS, Linux, Web",
+        downloadUrl: `${siteUrl}/downloads/lamp-tik-v2.1.apk`,
+        softwareVersion: "2.1",
         offers: {
           "@type": "Offer",
           price: "0",
@@ -297,6 +299,21 @@ export default function AppDownloadPage() {
                     </Link>
                   </p>
                 </div>
+              </div>
+
+              {/* Real APK download — primary App Hub action alongside the PWA installer */}
+              <div className="mx-auto mt-6 flex max-w-xl flex-col items-center gap-2.5">
+                <a
+                  href="/downloads/lamp-tik-v2.1.apk"
+                  download="lamp-tik-v2.1.apk"
+                  className="btn tool-cta group h-[60px] w-full gap-2.5 px-6 text-[16px] font-semibold sm:w-auto sm:min-w-[340px]"
+                >
+                  <Download className="size-5 transition-transform duration-200 group-hover:translate-y-0.5" />
+                  Download LAMP TIK APK (v2.1)
+                </a>
+                <p className="text-[12px] text-[var(--text-3)]">
+                  Free · Android 8.0+ · ~1 KB setup wrapper · unlocks YouTube HD in the app
+                </p>
               </div>
 
               <div className="mt-6 flex justify-center">

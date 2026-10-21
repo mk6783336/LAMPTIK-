@@ -34,13 +34,24 @@ export function markAppInstalled(): void {
   }
 }
 
-/** True when the user is inside the installed app (or unlocked App Mode). */
+/**
+ * Strict App Mode check: true ONLY when the app is actively running as an
+ * installed app — standalone display-mode, iOS standalone, or the install
+ * cookie/localStorage written by a REAL install (`appinstalled` event) or a
+ * launch from the home-screen icon (`?source=pwa`). There is no manual
+ * unlock: a regular browser tab always returns false.
+ */
 export function isAppMode(): boolean {
   if (typeof window === "undefined") return false;
   try {
     if (window.localStorage.getItem(APP_INSTALLED_KEY) === "1") return true;
   } catch {
     // Storage unavailable — fall through to display-mode checks.
+  }
+  try {
+    if (/(?:^|;\s*)lamptik_app=1(?:;|$)/.test(document.cookie)) return true;
+  } catch {
+    // Cookie jar unavailable — fall through.
   }
   try {
     if (window.matchMedia("(display-mode: standalone)").matches) return true;

@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ArrowDown, BellPlus, Check, Share, Smartphone, X, Youtube } from "lucide-react";
+import { ArrowDown, BellPlus, Check, Download, Share, X, Youtube } from "lucide-react";
 import Link from "next/link";
 
-import { isAppMode, markAppInstalled, promptAppInstall } from "@/components/install-pwa";
+import { isAppMode, promptAppInstall } from "@/components/install-pwa";
 
 function isIosDevice(): boolean {
   if (typeof window === "undefined" || typeof navigator === "undefined") return false;
@@ -22,10 +22,10 @@ function isIosDevice(): boolean {
 }
 
 /**
- * 1-click install hero for /app-download. Android/Chrome/Edge gets the real
- * native `beforeinstallprompt`; iOS gets a visual Share → Add to Home Screen
- * modal (Apple exposes no prompt); everyone gets an "Unlock App Mode in
- * Browser" fallback that enables YouTube HD immediately on this device.
+ * Install hero for /app-download. Android/Chrome/Edge gets the real native
+ * `beforeinstallprompt`; iOS gets a visual Share → Add to Home Screen modal
+ * (Apple exposes no prompt). Strict rule: nothing here unlocks YouTube in a
+ * browser — unlocking happens only via a real install or app launch.
  */
 export function AppInstallHero() {
   const [unlocked, setUnlocked] = useState(false);
@@ -84,11 +84,6 @@ export function AppInstallHero() {
     document.getElementById("install-steps")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [unlocked]);
 
-  const onUnlockBrowser = useCallback(() => {
-    markAppInstalled();
-    setUnlocked(true);
-  }, []);
-
   return (
     <div className="flex w-full flex-col items-center gap-3">
       <div className="flex w-full flex-col items-center gap-2.5 sm:w-auto sm:flex-row">
@@ -112,20 +107,20 @@ export function AppInstallHero() {
               : "Install LAMP TIK App (Android & iOS)"}
         </button>
         {!unlocked ? (
-          <button
-            type="button"
-            onClick={onUnlockBrowser}
+          <a
+            href="/downloads/lamp-tik-v2.1.apk"
+            download="lamp-tik-v2.1.apk"
             className="btn btn-ghost h-[60px] w-full gap-2 px-5 text-[14px] sm:w-auto"
           >
-            <Smartphone className="size-4" />
-            Unlock App Mode in Browser
-          </button>
+            <Download className="size-4" />
+            Download APK (v2.1)
+          </a>
         ) : null}
       </div>
       <p className="text-[12px] text-[var(--text-3)]">
         {unlocked
-          ? "App Mode is on — YouTube 1080p / 720p / MP3 is unlocked on this device."
-          : "One tap — no Play Store, no sign-up, free forever. Already installed? Use Unlock to enable App Mode here."}
+          ? "App Mode is on — YouTube 1080p / 720p / MP3 is unlocked in the installed app."
+          : "One tap — no Play Store account, no sign-up, free forever. YouTube unlocks inside the installed app only."}
       </p>
       {unlocked ? (
         <Link
@@ -199,11 +194,11 @@ export function AppInstallHero() {
               type="button"
               onClick={() => {
                 setIosModal(false);
-                onUnlockBrowser();
+                document.getElementById("install-steps")?.scrollIntoView({ behavior: "smooth", block: "start" });
               }}
               className="btn btn-primary mt-5 h-11 w-full text-[13.5px] font-semibold"
             >
-              Done — Unlock App Mode in Browser
+              Got it — show me the install steps
             </button>
           </div>
         </div>

@@ -8,9 +8,10 @@ import { isAppMode } from "@/components/install-pwa";
 import { YouTubeLock } from "@/components/youtube-lock";
 
 /**
- * Gate wrapper: renders the full YouTube downloader in App Mode, otherwise
- * the lock card. Listens for installs/unlocks so the tool appears the moment
- * App Mode turns on — no reload required.
+ * Strict gate: the YouTube input + fetch buttons render ONLY in standalone
+ * App Mode. Any regular browser tab — including an unlocked desktop session
+ * — sees the lock screen and nothing else. Listens for real installs so the
+ * tool appears the moment App Mode turns on, no reload required.
  */
 export function YoutubeGate() {
   const [unlocked, setUnlocked] = useState(false);
@@ -20,7 +21,7 @@ export function YoutubeGate() {
     setUnlocked(isAppMode());
     setReady(true);
     function onUnlock() {
-      setUnlocked(true);
+      setUnlocked(isAppMode());
     }
     window.addEventListener("lamptik:app-installed", onUnlock);
     return () => window.removeEventListener("lamptik:app-installed", onUnlock);
@@ -36,7 +37,7 @@ export function YoutubeGate() {
   }
 
   if (!unlocked) {
-    return <YouTubeLock onUnlocked={() => setUnlocked(true)} />;
+    return <YouTubeLock />;
   }
 
   return (

@@ -32,14 +32,22 @@ const STEPS = [
   "Verifying HD CDN nodes",
 ] as const;
 
+const YT_STEPS = [
+  "Resolving high-speed stream",
+  "Trying HD mirrors (1080p / 720p / MP3)",
+  "Preparing instant download buttons",
+] as const;
+
 /**
  * Live resolve timeline. The three stages are revealed by real elapsed time
  * (the timer is a measurement, not decoration) so the user always sees
  * forward motion and a truthful duration — no frozen button, no mystery
  * spinner, no fake percentage.
  */
-function LoadingConsole({ elapsedMs }: { elapsedMs: number }) {
+function LoadingConsole({ elapsedMs, platform }: { elapsedMs: number; platform: Platform }) {
   const activeIndex = elapsedMs < 1_200 ? 0 : elapsedMs < 3_200 ? 1 : 2;
+  const isYouTube = platform === "youtube";
+  const steps = isYouTube ? YT_STEPS : STEPS;
 
   return (
     <div
@@ -60,7 +68,9 @@ function LoadingConsole({ elapsedMs }: { elapsedMs: number }) {
             />
             <Loader2 className="relative size-3.5 animate-spin text-[var(--accent-text)]" />
           </span>
-          <span className="truncate text-[13px] font-medium">Analyzing stream…</span>
+          <span className="truncate text-[13px] font-medium">
+            {isYouTube ? "Resolving high-speed stream…" : "Analyzing stream…"}
+          </span>
         </div>
         <span className="micro shrink-0 tabular-nums text-[var(--text-3)]">
           {(elapsedMs / 1000).toFixed(1)}s
@@ -68,7 +78,7 @@ function LoadingConsole({ elapsedMs }: { elapsedMs: number }) {
       </div>
 
       <ol className="mt-4 space-y-2">
-        {STEPS.map((label, index) => {
+        {steps.map((label, index) => {
           const done = index < activeIndex;
           const active = index === activeIndex;
           return (
@@ -229,9 +239,9 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     const detectedIncoming = detectIncoming(rawUrl);
     const url = detectedIncoming ? detectedIncoming.url : rawUrl.trim();
 
-    // App-Exclusive gate: YouTube links pasted anywhere (including the
-    // homepage) show the lock card until App Mode is unlocked — the server
-    // never sees the URL, so no resolve is wasted.
+    // Strict App-Exclusive gate: YouTube links pasted anywhere (including
+    // the homepage) show ONLY the lock screen outside standalone App Mode —
+    // no input, no resolve, no browser unlock. The server never sees the URL.
     if (detectedIncoming?.platform === "youtube" && !isAppMode()) {
       setError(null);
       setStatus("idle");
@@ -241,8 +251,8 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
       setYtLockedUrl(url);
       notify({
         kind: "info",
-        title: "YouTube is App-Exclusive",
-        description: "Install the free app once to unlock YouTube HD & MP3.",
+        title: "YouTube Downloader is locked",
+        description: "Install the LAMP TIK App APK from the App Hub to unlock it.",
       });
       return;
     }
@@ -266,6 +276,10 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     // Client-side bail-out just before the server's own maxDuration (30s), so
     // the UI never hangs on a request Vercel is about to kill.
     const timeout = window.setTimeout(() => controller.abort(), 28_000);
+    // YouTube resolves through the dedicated App-Exclusive route; every other
+    // platform uses the shared resolver. (The gate above guarantees YouTube
+    // only reaches this line inside standalone App Mode.)
+    const endpoint = detectedIncoming?.platform === "youtube" ? "/api/youtube" : "/api/fetch";
 
     try {
       let payload: ApiResponse | null = null;
@@ -276,7 +290,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
       for (let attempt = 1; attempt <= 2; attempt += 1) {
         if (attempt === 2) setBackupNote("Switching to backup high-speed server… (attempt 2/2)");
         try {
-          const response = await fetch("/api/fetch", {
+          const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ url }),
@@ -369,12 +383,14 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
   const refreshMedia = useCallback(async (): Promise<MediaPayload | null> => {
     const url = lastUrlRef.current;
     if (!url) return null;
+    const { detectLink: detectRefresh } = await import("@/lib/detect");
+    const endpoint = detectRefresh(url)?.platform === "youtube" ? "/api/youtube" : "/api/fetch";
 
     try {
-      const response = await fetch("/api/fetch", {
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, force: true }),
+        body: JSON.stringify(endpoint === "/api/youtube" ? { url } : { url, force: true }),
       });
       const payload = (await response.json().catch(() => null)) as ApiResponse | null;
       if (!response.ok || !payload || !payload.ok) return null;
@@ -475,13 +491,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
 
         {ytLockedUrl ? (
           <div className="mt-5">
-            <YouTubeLock
-              onUnlocked={() => {
-                const retry = ytLockedUrl;
-                setYtLockedUrl(null);
-                void handleSubmitUrl(retry);
-              }}
-            />
+            <YouTubeLock />
           </div>
         ) : null}
 
@@ -495,7 +505,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
               transition={expand}
               className="overflow-hidden"
             >
-              <LoadingConsole elapsedMs={elapsedMs} />
+              <LoadingConsole elapsedMs={elapsedMs} platform={platform} />
               {backupNote ? (
                 <p
                   role="status"
