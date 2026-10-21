@@ -141,6 +141,11 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
     comparison: TIKTOK_ROWS,
     links: [
       {
+        href: "/youtube-downloader",
+        anchor: "YouTube video downloader 1080p HD",
+        note: "App-exclusive Shorts, long videos & MP3 in full HD.",
+      },
+      {
         href: "/instagram-reels-downloader",
         anchor: "Instagram Reels downloader",
         note: "Save IG Reels and videos in original HD MP4.",
@@ -260,6 +265,11 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
     ],
     links: [
       {
+        href: "/youtube-downloader",
+        anchor: "YouTube video downloader 1080p HD",
+        note: "App-exclusive Shorts, long videos & MP3 in full HD.",
+      },
+      {
         href: "/",
         anchor: "TikTok video downloader without watermark",
         note: "HD MP4 and MP3 from any TikTok link.",
@@ -378,6 +388,11 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
       },
     ],
     links: [
+      {
+        href: "/youtube-downloader",
+        anchor: "YouTube video downloader 1080p HD",
+        note: "App-exclusive Shorts, long videos & MP3 in full HD.",
+      },
       {
         href: "/",
         anchor: "TikTok video downloader without watermark",

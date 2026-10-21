@@ -45,6 +45,10 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value: [
+              // Auto-upgrade stray http:// subresources (some ad creatives
+              // request http assets): https-capable hosts load cleanly
+              // instead of spamming console violations; the rest stay blocked.
+              "upgrade-insecure-requests",
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:",
               "style-src 'self' 'unsafe-inline' https:",

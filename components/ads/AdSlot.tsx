@@ -143,7 +143,7 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label }: AdS
               height={height}
               loading="lazy"
               scrolling="no"
-              sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+              sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
               className="absolute left-0 top-0 border-0"
               style={{
                 width,

@@ -5,9 +5,9 @@ import { PlatformIcon } from "@/components/platform-icons";
 import { PLATFORM_LIST, PLATFORMS } from "@/lib/platforms";
 
 /**
- * Home-page cross-links as a three-up bento: one card per platform, each
+ * Home-page cross-links as a four-up bento: one card per platform, each
  * carrying its own accent so the grid reads as a product family rather than
- * three copies of the same tile.
+ * four copies of the same tile.
  */
 export function PlatformGrid() {
   return (
@@ -17,7 +17,7 @@ export function PlatformGrid() {
           <div>
             <p className="eyebrow">
               <span aria-hidden="true" className="eyebrow-dot" />
-              one tool, three platforms
+              one tool, every platform
             </p>
             <h2 className="balance mt-4 text-[1.75rem] font-semibold leading-tight tracking-headline sm:text-4xl">
               Every platform. One paste.
@@ -32,7 +32,7 @@ export function PlatformGrid() {
           </Link>
         </div>
 
-        <div className="mt-8 grid gap-3.5 md:grid-cols-3">
+        <div className="mt-8 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
           {PLATFORM_LIST.map((id) => {
             const config = PLATFORMS[id];
             return (

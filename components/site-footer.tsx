@@ -10,6 +10,7 @@ const FOOTER_LINKS = {
     { href: "/", label: "TikTok Downloader" },
     { href: "/instagram-reels-downloader", label: "Instagram Reels" },
     { href: "/facebook-video-downloader", label: "Facebook HD" },
+    { href: "/youtube-downloader", label: "YouTube HD (App)" },
   ],
   Product: [
     { href: "/app-download", label: "📱 Get App (YouTube HD)" },
@@ -75,7 +76,7 @@ export function SiteFooter() {
           <div className="max-w-xs">
             <Logo />
             <p className="pretty mt-4 text-[12.5px] leading-relaxed text-[var(--text-2)]">
-              Watermark-free TikTok, Instagram &amp; Facebook downloads. Paste a link, get
+              Watermark-free TikTok, Instagram, Facebook &amp; YouTube HD downloads. Paste a link, get
               the original stream. No account, no tracking of your downloads.
             </p>
             <Link
