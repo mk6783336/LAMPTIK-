@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ArrowDown, BellPlus, Check, Download, Share, X, Youtube } from "lucide-react";
+import { ArrowDown, BellPlus, Check, Share, X, Youtube } from "lucide-react";
 import Link from "next/link";
 
 import { isAppMode, promptAppInstall } from "@/components/install-pwa";
@@ -39,11 +39,11 @@ export function AppInstallHero() {
       setNativeAvailable(true);
     }
     function onInstalled() {
-      setUnlocked(true);
+      setUnlocked(isAppMode());
       setNativeAvailable(false);
     }
     function onUnlock() {
-      setUnlocked(true);
+      setUnlocked(isAppMode());
     }
     window.addEventListener("beforeinstallprompt", onPrompt);
     window.addEventListener("appinstalled", onInstalled);
@@ -67,13 +67,17 @@ export function AppInstallHero() {
     }
     setBusy(true);
     try {
-      const accepted = await promptAppInstall();
-      if (accepted) {
+      await promptAppInstall();
+      if (isAppMode()) {
         setUnlocked(true);
         return;
       }
     } finally {
       setBusy(false);
+    }
+    if (isAppMode()) {
+      setUnlocked(true);
+      return;
     }
     // No native prompt (or dismissed): iOS gets the visual guide, everyone
     // else jumps to the 3-step instructions below.
@@ -106,21 +110,11 @@ export function AppInstallHero() {
               ? "App Installed — Open YouTube HD"
               : "Install LAMP TIK App (Android & iOS)"}
         </button>
-        {!unlocked ? (
-          <a
-            href="/downloads/lamp-tik-v2.1.apk"
-            download="lamp-tik-v2.1.apk"
-            className="btn btn-ghost h-[60px] w-full gap-2 px-5 text-[14px] sm:w-auto"
-          >
-            <Download className="size-4" />
-            Download APK (v2.1)
-          </a>
-        ) : null}
       </div>
       <p className="text-[12px] text-[var(--text-3)]">
         {unlocked
           ? "App Mode is on — YouTube 1080p / 720p / MP3 is unlocked in the installed app."
-          : "One tap — no Play Store account, no sign-up, free forever. YouTube unlocks inside the installed app only."}
+          : "Tap to open your browser’s install prompt when available, or follow the device-specific guide below. Free, no sign-up."}
       </p>
       {unlocked ? (
         <Link

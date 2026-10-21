@@ -7,6 +7,8 @@ import { getClientIp } from "@/lib/request";
 import { MAX_FETCH_BODY_BYTES, readBoundedJson } from "@/lib/security";
 import { parseYouTubeUrl } from "@/lib/youtube";
 
+const APP_SESSION_PATTERN = /(?:^|;\s*)lamptik_app=1(?:;|$)/;
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -15,15 +17,22 @@ export const maxDuration = 30;
  * POST /api/youtube — dedicated App-Exclusive YouTube resolver.
  *
  * YouTube-only front door to the same hardened pipeline as /api/fetch
- * (SSRF guard, platform allowlist, 3-minute cache, circuit-breaker). Only
- * watch / youtu.be / shorts links are accepted; everything else gets a clean
- * 400 with friendly copy — never a stack trace.
+ * (SSRF guard, platform allowlist, 3-minute cache, circuit-breaker). Requests
+ * require a short-lived same-origin app-session cookie minted only from
+ * standalone PWA or verified Android TWA mode.
  */
 export async function POST(request: NextRequest) {
-  const ip = getClientIp(request.headers);
-  // Token bucket: 35 resolve requests per minute per IP.
-  const limit = rateLimit(`youtube:${ip}`, 35, 60_000);
+  if (!APP_SESSION_PATTERN.test(request.headers.get("cookie") ?? "")) {
+    return errorResponse(
+      new AppError(
+        "BAD_REQUEST",
+        "Install LAMP TIK and open this page from the app to use YouTube downloads.",
+      ),
+    );
+  }
 
+  const ip = getClientIp(request.headers);
+  const limit = rateLimit(`youtube:${ip}`, 35, 60_000);
   if (!limit.ok) {
     return errorResponse(
       new AppError(
@@ -39,7 +48,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Payload size guard: reject bodies > 4096 bytes before parsing.
   let body: unknown;
   try {
     body = await readBoundedJson(request, MAX_FETCH_BODY_BYTES);
@@ -74,12 +82,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // request.signal aborts upstream work if the client disconnects.
     const { media, video, cached } = await resolveMedia(parsed.canonicalUrl, request.signal);
     if (media.platform !== "youtube") {
-      return errorResponse(
-        new AppError("UNSUPPORTED_URL", "That link resolved to another platform, not YouTube."),
-      );
+      return errorResponse(new AppError("UNSUPPORTED_URL", "That link resolved to another platform, not YouTube."));
     }
     return NextResponse.json(
       { ok: true, media, video, cached },

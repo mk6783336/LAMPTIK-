@@ -13,103 +13,86 @@ declare global {
   }
 }
 
-export const APP_INSTALLED_KEY = "lamptik_app_installed";
+const APP_SESSION_COOKIE = "lamptik_app=1";
+const APP_SESSION_COOKIE_PATTERN = /(?:^|;\s*)lamptik_app=1(?:;|$)/;
 
-/** Persist App Mode: localStorage + cookie so server/client both remember. */
-export function markAppInstalled(): void {
+function isAndroidTwaContext(): boolean {
+  if (typeof document === "undefined" || typeof navigator === "undefined") return false;
+  if (!/Android/i.test(navigator.userAgent)) return false;
   try {
-    window.localStorage.setItem(APP_INSTALLED_KEY, "1");
+    return new URL(document.referrer).protocol === "android-app:";
   } catch {
-    // Private mode — cookie still records the unlock for this session.
-  }
-  try {
-    document.cookie = "lamptik_app=1; path=/; max-age=31536000; SameSite=Lax";
-  } catch {
-    // Cookie jar unavailable — localStorage is the source of truth.
-  }
-  try {
-    window.dispatchEvent(new CustomEvent("lamptik:app-installed"));
-  } catch {
-    // Event dispatch is best-effort.
+    return false;
   }
 }
 
-/**
- * Strict App Mode check: true ONLY when the app is actively running as an
- * installed app — standalone display-mode, iOS standalone, or the install
- * cookie/localStorage written by a REAL install (`appinstalled` event) or a
- * launch from the home-screen icon (`?source=pwa`). There is no manual
- * unlock: a regular browser tab always returns false.
- */
-export function isAppMode(): boolean {
+function isStandaloneContext(): boolean {
   if (typeof window === "undefined") return false;
-  try {
-    if (window.localStorage.getItem(APP_INSTALLED_KEY) === "1") return true;
-  } catch {
-    // Storage unavailable — fall through to display-mode checks.
-  }
-  try {
-    if (/(?:^|;\s*)lamptik_app=1(?:;|$)/.test(document.cookie)) return true;
-  } catch {
-    // Cookie jar unavailable — fall through.
-  }
   try {
     if (window.matchMedia("(display-mode: standalone)").matches) return true;
   } catch {
-    // matchMedia unavailable — fall through.
+    // Fall back to the platform-specific display signal.
   }
   try {
-    // iOS Safari standalone flag.
-    if ((window.navigator as Navigator & { standalone?: boolean }).standalone === true) {
-      return true;
-    }
+    return (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
   } catch {
-    // Ignore.
+    return false;
   }
-  try {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("source") === "pwa") return true;
-  } catch {
-    // URL parsing failed — not in app mode.
-  }
-  return false;
 }
 
-/**
- * Global PWA installer. Mount once in the root layout: captures
- * `beforeinstallprompt` (Chrome/Edge/Android), marks App Mode when the user
- * installs or launches via `?source=pwa` / standalone, and exposes a
- * `lamptik:prompt-install` event + `window.__lamptikInstall()` helper so any
- * CTA on any page can trigger the native prompt without prop drilling.
- */
+function markAppSession(): void {
+  if (typeof window === "undefined" || (!isStandaloneContext() && !isAndroidTwaContext())) return;
+  try {
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${APP_SESSION_COOKIE}; path=/; max-age=43200; SameSite=Lax${secure}`;
+    window.dispatchEvent(new CustomEvent("lamptik:app-installed"));
+  } catch {
+    // Standalone display mode remains authoritative if cookies are disabled.
+  }
+}
+
+function registerAppServiceWorker(): void {
+  if (!("serviceWorker" in navigator)) return;
+  void navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {
+    // Browser policy may block service workers without blocking PWA installation.
+  });
+}
+
+export function isAppMode(): boolean {
+  if (isStandaloneContext() || isAndroidTwaContext()) return true;
+  if (typeof document === "undefined") return false;
+  try {
+    return APP_SESSION_COOKIE_PATTERN.test(document.cookie);
+  } catch {
+    return false;
+  }
+}
+
+/** Capture native install events and provide a common prompt API for CTAs. */
 export function InstallPwa() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
+    const globalWindow = window as Window & {
+      __lamptikDeferredPrompt?: BeforeInstallPromptEvent | null;
+    };
     function onPrompt(event: BeforeInstallPromptEvent) {
       event.preventDefault();
       setDeferred(event);
-      (window as Window & { __lamptikDeferredPrompt?: BeforeInstallPromptEvent }).__lamptikDeferredPrompt =
-        event;
+      globalWindow.__lamptikDeferredPrompt = event;
     }
     function onInstalled() {
-      markAppInstalled();
       setDeferred(null);
-      (window as Window & { __lamptikDeferredPrompt?: BeforeInstallPromptEvent | null }).__lamptikDeferredPrompt =
-        null;
-    }
-    function upgradeFromLaunch() {
-      // Launched from the home-screen icon — the install already happened.
-      if (isAppMode()) markAppInstalled();
+      globalWindow.__lamptikDeferredPrompt = null;
+      // A browser-tab install is not proof that the current window is app mode.
+      if (isStandaloneContext() || isAndroidTwaContext()) markAppSession();
     }
 
-    (window as Window & { __lamptikDeferredPrompt?: BeforeInstallPromptEvent | null }).__lamptikDeferredPrompt =
-      (window as Window & { __lamptikDeferredPrompt?: BeforeInstallPromptEvent | null }).__lamptikDeferredPrompt ??
-      null;
+    globalWindow.__lamptikDeferredPrompt = globalWindow.__lamptikDeferredPrompt ?? null;
     window.addEventListener("beforeinstallprompt", onPrompt);
     window.addEventListener("appinstalled", onInstalled);
-    upgradeFromLaunch();
-
+    registerAppServiceWorker();
+    if (isStandaloneContext() || isAndroidTwaContext()) markAppSession();
     return () => {
       window.removeEventListener("beforeinstallprompt", onPrompt);
       window.removeEventListener("appinstalled", onInstalled);
@@ -117,52 +100,48 @@ export function InstallPwa() {
   }, []);
 
   const promptInstall = useCallback(async (): Promise<boolean> => {
-    const stored =
-      deferred ??
-      (window as Window & { __lamptikDeferredPrompt?: BeforeInstallPromptEvent | null }).__lamptikDeferredPrompt;
-    if (!stored) return false;
+    const globalWindow = window as Window & {
+      __lamptikDeferredPrompt?: BeforeInstallPromptEvent | null;
+    };
+    const prompt = deferred ?? globalWindow.__lamptikDeferredPrompt;
+    if (!prompt) return false;
     try {
-      await stored.prompt();
-      const choice = await stored.userChoice;
-      if (choice?.outcome === "accepted") markAppInstalled();
-      return choice?.outcome === "accepted";
+      await prompt.prompt();
+      return (await prompt.userChoice)?.outcome === "accepted";
     } catch {
       return false;
     } finally {
       setDeferred(null);
-      (window as Window & { __lamptikDeferredPrompt?: BeforeInstallPromptEvent | null }).__lamptikDeferredPrompt =
-        null;
+      globalWindow.__lamptikDeferredPrompt = null;
     }
   }, [deferred]);
 
   useEffect(() => {
-    (window as Window & { __lamptikInstall?: () => Promise<boolean> }).__lamptikInstall = promptInstall;
-    function onRequest() {
-      void promptInstall();
-    }
+    const globalWindow = window as Window & { __lamptikInstall?: () => Promise<boolean> };
+    globalWindow.__lamptikInstall = promptInstall;
+    const onRequest = () => void promptInstall();
     window.addEventListener("lamptik:prompt-install", onRequest);
     return () => {
       window.removeEventListener("lamptik:prompt-install", onRequest);
-      delete (window as Window & { __lamptikInstall?: unknown }).__lamptikInstall;
+      delete globalWindow.__lamptikInstall;
     };
   }, [promptInstall]);
 
   return null;
 }
 
-/** Fire-and-forget helper any CTA can call: native prompt or false. */
 export async function promptAppInstall(): Promise<boolean> {
   if (typeof window === "undefined") return false;
-  const direct = (window as Window & { __lamptikInstall?: () => Promise<boolean> }).__lamptikInstall;
-  if (direct) return direct();
-  const stored = (window as Window & { __lamptikDeferredPrompt?: BeforeInstallPromptEvent | null })
-    .__lamptikDeferredPrompt;
-  if (!stored) return false;
+  const globalWindow = window as Window & {
+    __lamptikInstall?: () => Promise<boolean>;
+    __lamptikDeferredPrompt?: BeforeInstallPromptEvent | null;
+  };
+  if (globalWindow.__lamptikInstall) return globalWindow.__lamptikInstall();
+  const prompt = globalWindow.__lamptikDeferredPrompt;
+  if (!prompt) return false;
   try {
-    await stored.prompt();
-    const choice = await stored.userChoice;
-    if (choice?.outcome === "accepted") markAppInstalled();
-    return choice?.outcome === "accepted";
+    await prompt.prompt();
+    return (await prompt.userChoice)?.outcome === "accepted";
   } catch {
     return false;
   }

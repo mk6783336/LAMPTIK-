@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BellPlus, Check, Download, MonitorPlay, Music2, ShieldCheck, Smartphone, Youtube, Zap } from "lucide-react";
+import { BellPlus, Check, CircleHelp, Code2, Download, MonitorPlay, Music2, ShieldCheck, Smartphone, Youtube, Zap } from "lucide-react";
 
 import { AdSlot } from "@/components/ads/AdSlot";
 import { AmbientBackground } from "@/components/ambient-background";
@@ -163,8 +163,7 @@ export default function AppDownloadPage() {
         url: pageUrl,
         applicationCategory: "MultimediaApplication",
         operatingSystem: "Android, iOS, Windows, macOS, Linux, Web",
-        downloadUrl: `${siteUrl}/downloads/lamp-tik-v2.1.apk`,
-        softwareVersion: "2.1",
+        installUrl: pageUrl,
         offers: {
           "@type": "Offer",
           price: "0",
@@ -291,7 +290,7 @@ export default function AppDownloadPage() {
                   <p className="pretty mt-1 text-[12.5px] leading-relaxed text-[var(--text-2)]">
                     Install the free app once to unlock unlimited YouTube 1080p, 720p, 360p and
                     MP3 downloads — Shorts and long videos included.{" "}
-                    <Link
+                      <Link
                       href="/youtube-downloader"
                       className="font-semibold text-[var(--accent-text)] underline-offset-4 hover:underline"
                     >
@@ -301,18 +300,13 @@ export default function AppDownloadPage() {
                 </div>
               </div>
 
-              {/* Real APK download — primary App Hub action alongside the PWA installer */}
-              <div className="mx-auto mt-6 flex max-w-xl flex-col items-center gap-2.5">
-                <a
-                  href="/downloads/lamp-tik-v2.1.apk"
-                  download="lamp-tik-v2.1.apk"
-                  className="btn tool-cta group h-[60px] w-full gap-2.5 px-6 text-[16px] font-semibold sm:w-auto sm:min-w-[340px]"
-                >
-                  <Download className="size-5 transition-transform duration-200 group-hover:translate-y-0.5" />
-                  Download LAMP TIK APK (v2.1)
-                </a>
-                <p className="text-[12px] text-[var(--text-3)]">
-                  Free · Android 8.0+ · ~1 KB setup wrapper · unlocks YouTube HD in the app
+              <div className="mx-auto mt-6 max-w-xl rounded-[16px] border border-[var(--glass-border)] bg-[var(--field)] p-4 text-left sm:p-5">
+                <p className="flex items-center gap-2 text-[14px] font-semibold">
+                  <Smartphone className="size-4 text-[var(--accent-text)]" />
+                  Choose your install method
+                </p>
+                <p className="pretty mt-1.5 text-[12.5px] leading-relaxed text-[var(--text-2)]">
+                  Install the real web app from your browser. This page does not distribute an APK; use the Bubblewrap guide below if you build and sign your own Android wrapper.
                 </p>
               </div>
 
@@ -399,6 +393,33 @@ export default function AppDownloadPage() {
                 </div>
               </article>
 
+              <article id="android-wrapper" className="panel mt-5 p-5 sm:p-6">
+                <h3 className="flex items-center gap-2 text-[17px] font-semibold tracking-tight">
+                  <Code2 className="size-4 text-[var(--accent-text)]" />
+                  Optional Android TWA wrapper (developer guide)
+                </h3>
+                <p className="pretty mt-2 text-[13px] leading-relaxed text-[var(--text-2)]">
+                  LAMP TIK is installed directly as a PWA. If you maintain your own Android package, Bubblewrap can package this live manifest into a signed Trusted Web Activity. This project does not publish an APK, signing key, or Digital Asset Links statement, so no wrapper binary is offered here.
+                </p>
+                <pre className="mt-4 overflow-x-auto rounded-[12px] border border-[var(--glass-border)] bg-[var(--bg-sunken)] p-3 text-left text-[11px] leading-relaxed text-[var(--text-2)]"><code>{`npm install --global @bubblewrap/cli
+bubblewrap init --manifest=https://www.lamptik.online/manifest.json
+bubblewrap build`}</code></pre>
+                <p className="pretty mt-3 text-[12px] leading-relaxed text-[var(--text-3)]">
+                  Publish the generated <code>assetlinks.json</code> at <code>/.well-known/assetlinks.json</code> with your Android package ID and the SHA-256 fingerprint of the signing certificate. Verify the package and signing fingerprints before distributing a TWA.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <a href="https://github.com/GoogleChromeLabs/bubblewrap" target="_blank" rel="noopener noreferrer" className="btn btn-ghost h-10 gap-2 px-3 text-[12px]">
+                    <Code2 className="size-3.5" /> Bubblewrap CLI docs
+                  </a>
+                  <a href="https://www.pwabuilder.com/" target="_blank" rel="noopener noreferrer" className="btn btn-ghost h-10 gap-2 px-3 text-[12px]">
+                    <Download className="size-3.5" /> PWABuilder
+                  </a>
+                  <a href="https://developer.chrome.com/docs/android/trusted-web-activity/quick-start" target="_blank" rel="noopener noreferrer" className="btn btn-ghost h-10 gap-2 px-3 text-[12px]">
+                    <CircleHelp className="size-3.5" /> Google TWA guide
+                  </a>
+                </div>
+              </article>
+
               {/* Attention-peak monetization: rectangle + honest sponsor card */}
               <div className="mt-6 grid gap-4 sm:grid-cols-2 sm:items-stretch">
                 <AdSlot
@@ -481,9 +502,8 @@ export default function AppDownloadPage() {
                   Don&apos;t see “Install app”? Update Chrome/Edge to the latest version and
                   make sure you&apos;re on the live https://www.lamptik.online origin (not a
                   preview or offline copy). On iOS, “Add to Home Screen” only appears in
-                  Safari — Chrome on iPhone can&apos;t install web apps. If the YouTube
-                  downloader still shows a lock after installing, open the app from the new
-                  icon once, or tap “Unlock App Mode in Browser” above.
+                  Safari — Chrome on iPhone can&apos;t install web apps. Open the YouTube
+                  downloader from the installed app icon to use App Mode.
                 </p>
               </div>
             </section>

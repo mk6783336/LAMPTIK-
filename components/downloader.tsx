@@ -252,7 +252,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
       notify({
         kind: "info",
         title: "YouTube Downloader is locked",
-        description: "Install the LAMP TIK App APK from the App Hub to unlock it.",
+        description: "Install LAMP TIK from Chrome or add it to your home screen to unlock it.",
       });
       return;
     }

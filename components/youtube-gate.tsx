@@ -18,10 +18,11 @@ export function YoutubeGate() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setUnlocked(isAppMode());
+    const syncAppMode = () => setUnlocked(isAppMode());
+    syncAppMode();
     setReady(true);
     function onUnlock() {
-      setUnlocked(isAppMode());
+      syncAppMode();
     }
     window.addEventListener("lamptik:app-installed", onUnlock);
     return () => window.removeEventListener("lamptik:app-installed", onUnlock);

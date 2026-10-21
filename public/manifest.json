@@ -1,18 +1,23 @@
 {
+  "id": "/",
   "name": "LAMP TIK — TikTok Video Downloader",
   "short_name": "LAMP TIK",
-  "description": "Download TikTok, Instagram & Facebook videos without a watermark in HD, plus YouTube HD & MP3 in App Mode",
+  "description": "Download TikTok, Instagram and Facebook videos without a watermark in HD. Install LAMP TIK to use the app shell.",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait-primary",
   "background_color": "#050505",
   "theme_color": "#050505",
+  "categories": ["utilities", "video"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-512.png",
