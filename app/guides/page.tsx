@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowUpRight, BookOpen } from "lucide-react";
 
 import { AdSlot } from "@/components/ads/AdSlot";
+import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -69,7 +70,7 @@ export default function GuidesPage() {
         <main className="flex-1">
           {/* Top leaderboard above the guides hero. */}
           <div className="shell pt-6 sm:pt-8">
-            <AdSlot format="leaderboard" label="Advertisement" />
+            <AdSlot format="leaderboard" eager label="Advertisement" />
           </div>
 
           <section className="pb-12 pt-10 sm:pb-16 sm:pt-16">
@@ -165,9 +166,9 @@ export default function GuidesPage() {
                 ))}
               </div>
 
-              {/* Bottom leaderboard — after the guide grid. */}
+              {/* Bottom video + multi-slot ad unit — after the guide grid. */}
               <div className="mt-12">
-                <AdSlot format="leaderboard" label="Advertisement" />
+                <VideoAdUnit />
               </div>
 
               <p className="mt-10 text-[13.5px] text-[var(--text-2)]">

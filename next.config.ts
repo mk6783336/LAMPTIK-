@@ -175,6 +175,30 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // Official signed Android APK binary: serve with Android package-archive
+        // MIME type and attachment filename so Chrome on Android launches the
+        // native package installer immediately.
+        source: "/downloads/:file*.apk",
+        headers: [
+          {
+            key: "Content-Type",
+            value: "application/vnd.android.package-archive",
+          },
+          {
+            key: "Content-Disposition",
+            value: 'attachment; filename="LAMP-TIK-v2.2.apk"',
+          },
+          {
+            key: "Cache-Control",
+            value: "public, max-age=3600, stale-while-revalidate=86400",
+          },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+        ],
+      },
+      {
         // Raster/vector brand assets.
         source: "/:file(icon.svg|favicon.ico|icon.png|apple-icon.png)",
         headers: [

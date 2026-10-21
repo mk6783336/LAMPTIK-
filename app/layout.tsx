@@ -90,6 +90,12 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <link rel="preconnect" href="https://bellnewyork.org" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://bellnewyork.org" />
+        <link rel="preconnect" href="https://n6wxm.com" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://n6wxm.com" />
+        <link rel="preconnect" href="https://uplcm.com" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://uplcm.com" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="mobile-web-app-capable" content="yes" />

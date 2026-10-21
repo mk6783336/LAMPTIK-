@@ -1,0 +1,102 @@
+name: Build & Sign LAMP TIK Android APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "android-app/**"
+      - ".github/workflows/build-apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK Build-Tools 34 & Platform 34
+        run: |
+          sdkmanager "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Compile, Dex, Zipalign & Sign Release APK (v2.2)
+        run: |
+          set -e
+          BT="$ANDROID_HOME/build-tools/34.0.0"
+          PLATFORM="$ANDROID_HOME/platforms/android-34/android.jar"
+          WORK="/tmp/apk-build"
+          mkdir -p "$WORK/compiled" "$WORK/classes" "$WORK/gen" public/downloads
+          mkdir -p android-app/app/src/main/res/mipmap-xxxhdpi
+          cp public/icons/icon-192.png android-app/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+
+          "$BT/aapt2" compile --dir android-app/app/src/main/res -o "$WORK/compiled/res.zip"
+          "$BT/aapt2" link \
+            -o "$WORK/unsigned-unaligned.apk" \
+            -I "$PLATFORM" \
+            --manifest android-app/app/src/main/AndroidManifest.xml \
+            --java "$WORK/gen" \
+            --min-sdk-version 24 \
+            --target-sdk-version 34 \
+            --version-code 22 \
+            --version-name 2.2 \
+            "$WORK/compiled/res.zip"
+
+          javac -source 1.8 -target 1.8 -bootclasspath "$PLATFORM" -classpath "$PLATFORM" \
+            -d "$WORK/classes" \
+            android-app/app/src/main/java/online/lamptik/app/MainActivity.java \
+            "$WORK/gen/online/lamptik/app/R.java"
+
+          "$BT/d8" --release --min-api 24 --lib "$PLATFORM" \
+            --output "$WORK" \
+            "$WORK/classes/online/lamptik/app/"*.class
+
+          (cd "$WORK" && zip -q -u unsigned-unaligned.apk classes.dex)
+          "$BT/zipalign" -f -p 4 "$WORK/unsigned-unaligned.apk" "$WORK/unsigned.apk"
+
+          keytool -genkeypair -v \
+            -keystore "$WORK/release.keystore" \
+            -storetype PKCS12 \
+            -alias lamptik \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass lamptik2026 \
+            -keypass lamptik2026 \
+            -dname "CN=LAMP TIK, OU=Mobile, O=LampTik, L=Global, S=CA, C=US"
+
+          "$BT/apksigner" sign \
+            --min-sdk-version 21 \
+            --ks "$WORK/release.keystore" \
+            --ks-key-alias lamptik \
+            --ks-pass pass:lamptik2026 \
+            --key-pass pass:lamptik2026 \
+            --v1-signing-enabled true \
+            --v2-signing-enabled true \
+            --v3-signing-enabled true \
+            --out public/downloads/lamptik-v2.2.apk \
+            "$WORK/unsigned.apk"
+
+          "$BT/apksigner" verify --min-sdk-version 21 --verbose public/downloads/lamptik-v2.2.apk
+          unzip -l public/downloads/lamptik-v2.2.apk
+
+      - name: Commit & Push Compiled APK
+        run: |
+          git config user.name "mk6783336"
+          git config user.email "mk6783336@users.noreply.github.com"
+          git add public/downloads/lamptik-v2.2.apk
+          if ! git diff --staged --quiet; then
+            git commit -m "chore(android): update compiled signed lamptik-v2.2.apk [skip ci]"
+            git push origin HEAD:main
+          fi

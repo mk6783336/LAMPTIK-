@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowUpRight, MonitorPlay, Music2, ShieldCheck } from "lucide-react";
 
 import { AdSlot } from "@/components/ads/AdSlot";
+import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
 import { Downloader } from "@/components/downloader";
@@ -110,7 +111,7 @@ export default function HomePage() {
           {/* Slot A — top leaderboard above the hero. Reserved 90px, zero
               layout shift. */}
           <div className="shell pt-6 sm:pt-8">
-            <AdSlot format="leaderboard" label="Advertisement" />
+            <AdSlot format="leaderboard" eager label="Advertisement" />
           </div>
 
           {/* Hero: copy left, instrument right on desktop; stacked and
@@ -167,9 +168,9 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Slot B — directly below the downloader / result card. */}
+            {/* Slot B — Outstream Video Ad + 300x250 + 728x90 directly below the downloader card. */}
             <div className="shell mt-8 sm:mt-10">
-              <AdSlot format="leaderboard" label="Advertisement" />
+              <VideoAdUnit />
             </div>
 
             {/* Trust strip — the four facts people actually check, as glass

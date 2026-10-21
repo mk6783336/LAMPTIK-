@@ -11,34 +11,29 @@ import {
 } from "@/lib/monetization";
 
 interface AdSlotProps {
-  /** Adsterra zone key. Falls back to NEXT_PUBLIC_ADSTERRA_BANNER_KEY. */
+  /** Adsterra zone key. Falls back to NEXT_PUBLIC_ADSTERRA_BANNER_KEY / RECT_KEY. */
   zoneId?: string | null;
   /** leaderboard = 728×90, rectangle = 300×250. */
   format?: AdFormat;
   className?: string;
   /** Accessible label shown when a creative or house banner is visible. */
   label?: string;
+  /** Load immediately with zero IntersectionObserver delay (above-the-fold). */
+  eager?: boolean;
 }
 
+/** Track whether the first ad slot on the current page view has claimed eager load. */
+let firstSlotClaimed = false;
+
 /**
- * CLS-safe Adsterra slot.
+ * CLS-safe, zero-white-flash Adsterra slot.
  *
- * Three problems this solves, in order of how badly they break a page:
- *
- *  1. **No dead space** — a slot has no label or reserved height until an ad
- *     is detected; a house banner replaces no-fill creatives after 4 seconds.
- *  2. **Isolated requests** — each slot has a same-origin frame URL, avoiding
- *     Adsterra's page-referrer rejection and keeping its global `atOptions`
- *     state separate from other placements.
- *  3. **Mobile fit** — the fixed-size creative is scaled to its available
- *     width without asking the network for a mismatched banner size.
- *
- * Requests are deferred behind an IntersectionObserver until the slot is
- * near the viewport.
+ * - Uses `#07080d` dark background and `colorScheme: 'dark'` on the iframe and
+ *   container so mobile browsers never flash white while ads load.
+ * - Pre-warms slots 600px before they enter the viewport (`rootMargin: '600px 0px'`),
+ *   and loads the first above-the-fold slot immediately with zero delay.
  */
-export function AdSlot({ zoneId, format = "leaderboard", className, label }: AdSlotProps) {
-  // `undefined` means "use the live default for this format". Explicit
-  // `null`/`""` opts out and renders no slot at all.
+export function AdSlot({ zoneId, format = "leaderboard", className, label, eager }: AdSlotProps) {
   const defaultKey = format === "rectangle" ? adsterraRectangleKey : adsterraBannerKey;
   const key = (zoneId === undefined ? defaultKey ?? "" : zoneId ?? "").trim();
   const { width, height } = AD_RESERVED[format];
@@ -46,16 +41,30 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label }: AdS
 
   const hostRef = useRef<HTMLDivElement | null>(null);
   const frameRef = useRef<HTMLIFrameElement | null>(null);
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState<boolean>(() => Boolean(eager));
   const [scale, setScale] = useState(1);
   const [creative, setCreative] = useState<{ identity: string; state: "filled" | "fallback" } | null>(null);
   const creativeState = creative?.identity === slotIdentity ? creative.state : "pending";
 
-  // Lazy: no network until the slot is within 200px of the viewport.
+  // Load the first above-the-fold slot immediately with zero delay, and
+  // pre-load subsequent slots 600px before they scroll into view.
   useEffect(() => {
     if (!key) return;
+    if (eager || !firstSlotClaimed) {
+      firstSlotClaimed = true;
+      setVisible(true);
+      return;
+    }
     const node = hostRef.current;
     if (!node) return;
+
+    if (typeof window !== "undefined") {
+      const rect = node.getBoundingClientRect();
+      if (rect.top <= window.innerHeight + 600) {
+        setVisible(true);
+        return;
+      }
+    }
 
     if (typeof IntersectionObserver === "undefined") {
       setVisible(true);
@@ -69,20 +78,19 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label }: AdS
           observer.disconnect();
         }
       },
-      { rootMargin: "200px 0px" },
+      { rootMargin: "600px 0px" },
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [key]);
+  }, [key, eager]);
 
-  // Scale the fixed creative to the available width. ResizeObserver (not a
-  // media query) because the slot's own width is what matters — it sits in a
-  // max-width shell, not the viewport edge.
+  // Scale the fixed creative to the available width.
   useEffect(() => {
     const node = hostRef.current;
     if (!node || typeof ResizeObserver === "undefined") return;
 
     const apply = (available: number) => {
+      if (available <= 0) return;
       const next = Math.min(1, Math.max(0.3, available / width));
       setScale(next);
     };
@@ -96,9 +104,6 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label }: AdS
     return () => observer.disconnect();
   }, [width]);
 
-  // The frame route has its own CSP and posts a same-origin message only
-  // after Adsterra inserts an actual creative iframe. Until then it is clipped
-  // inside a zero-height host, so no-fill never leaves a blank ad-sized gap.
   const frameSrc = useMemo(() => {
     if (!key || !visible || creativeState === "fallback") return "";
     const params = new URLSearchParams({ key, w: String(width), h: String(height) });
@@ -118,14 +123,13 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label }: AdS
     };
 
     window.addEventListener("message", onMessage);
-    const timeout = window.setTimeout(() => setCreative({ identity: slotIdentity, state: "fallback" }), 4_000);
+    const timeout = window.setTimeout(() => setCreative({ identity: slotIdentity, state: "fallback" }), 3_200);
     return () => {
       window.removeEventListener("message", onMessage);
       window.clearTimeout(timeout);
     };
   }, [key, slotIdentity, visible, creativeState]);
 
-  // Unconfigured == no ad, no reserved space, no request.
   if (!key) return null;
 
   const isLeaderboard = format === "leaderboard";
@@ -146,15 +150,19 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label }: AdS
         ref={hostRef}
         className={cn(
           "relative mx-auto w-full max-w-[728px] overflow-hidden",
-          hasVisibleContent && "rounded-[16px] border border-white/[0.07] bg-white/[0.015] backdrop-blur-sm",
+          hasVisibleContent && "rounded-[16px] border border-white/[0.07] bg-[#07080d]",
           !isLeaderboard && "max-w-[300px]",
         )}
-        style={{ height: hasVisibleContent ? scaled.height : 0 }}
+        style={{
+          height: hasVisibleContent ? scaled.height : 0,
+          backgroundColor: "#07080d",
+          colorScheme: "dark",
+        }}
       >
         {frameSrc ? (
           <div
             className={cn("shrink-0", creativeState === "pending" ? "absolute left-1/2 top-0 -translate-x-1/2" : "relative")}
-            style={{ width: scaled.width, height: scaled.height }}
+            style={{ width: scaled.width, height: scaled.height, backgroundColor: "#07080d" }}
           >
             <iframe
               ref={frameRef}
@@ -174,10 +182,12 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label }: AdS
                 }
               }}
               referrerPolicy="no-referrer-when-downgrade"
-              className="absolute left-0 top-0 border-0"
+              className="absolute left-0 top-0 border-0 bg-[#07080d]"
               style={{
                 width,
                 height,
+                backgroundColor: "#07080d",
+                colorScheme: "dark",
                 transform: `scale(${scale})`,
                 transformOrigin: "top left",
               }}
@@ -196,6 +206,8 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label }: AdS
             style={{
               width,
               height,
+              backgroundColor: "#07080d",
+              colorScheme: "dark",
               transform: `scale(${scale})`,
               transformOrigin: "top left",
             }}

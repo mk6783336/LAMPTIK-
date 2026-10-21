@@ -7,16 +7,8 @@ export const runtime = "nodejs";
 /**
  * Isolated ad frame.
  *
- * Why a route instead of `srcdoc`: a `srcdoc` iframe inherits the embedding
- * document's Content-Security-Policy. Adsterra's creative loader calls
- * `eval()`, and its Social Bar creative fetches from cdn.show-sb.com — both of
- * which the *site* policy blocks (correctly). Serving the frame from its own
- * URL means the frame gets its own policy headers: permissive enough for the
- * network, while the page a visitor actually browses keeps a strict,
- * eval-free CSP.
- *
- * The key is validated as hex so a crafted query string cannot inject markup
- * or point the frame at a different host.
+ * Dark background (#07080d) is applied immediately on both <html> and <body>
+ * so mobile browsers never flash a white box while the RTB creative loads.
  */
 const KEY_PATTERN = /^[a-f0-9]{16,48}$/i;
 const SIZES: Record<string, { width: number; height: number }> = {
@@ -35,10 +27,13 @@ export function GET(request: NextRequest) {
 
   const tag = adsterraBannerUrl(key);
   const html = `<!doctype html>
-<html><head><meta charset="utf-8">
+<html style="background:#07080d;color:#fff;margin:0;padding:0;overflow:hidden;"><head><meta charset="utf-8">
+<meta name="color-scheme" content="dark">
 <meta name="referrer" content="no-referrer-when-downgrade">
-<style>html,body{margin:0;padding:0;background:transparent;overflow:hidden}body{display:flex;align-items:center;justify-content:center}</style>
-</head><body>
+<link rel="preconnect" href="https://bellnewyork.org" crossorigin>
+<link rel="dns-prefetch" href="https://bellnewyork.org">
+<style>html,body{margin:0;padding:0;background:#07080d;color:#fff;overflow:hidden;color-scheme:dark}body{display:flex;align-items:center;justify-content:center;min-height:100vh}</style>
+</head><body style="background:#07080d;margin:0;padding:0;display:flex;align-items:center;justify-content:center;">
 <script type="text/javascript">atOptions={"key":${JSON.stringify(key)},"format":"iframe","height":${size.height},"width":${size.width},"params":{}};</script>
 <script type="text/javascript" src="${tag}"></script>
 <script type="text/javascript">
@@ -60,7 +55,7 @@ export function GET(request: NextRequest) {
   }
   var observer=new MutationObserver(signalFill);
   observer.observe(document.body,{childList:true,subtree:true});
-  setTimeout(signalFill,250);
+  setTimeout(signalFill,120);
   setTimeout(function(){observer.disconnect()},4000);
 })();
 </script>
@@ -71,12 +66,6 @@ export function GET(request: NextRequest) {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "Referrer-Policy": "no-referrer-when-downgrade",
-      // Frame-scoped policy: the creative loader needs eval, and the
-      // networks rotate hundreds of RTB creative domains that cannot be
-      // enumerated — so the frame allows the full https: scheme on every
-      // ad-carrying directive instead of a whitelist that would silently
-      // kill live creatives (Adsterra bellnewyork.org + Monetag n6wxm.com /
-      // uplcm.com / 3nbf4.com included).
       "Content-Security-Policy": [
         "default-src 'self'",
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:",

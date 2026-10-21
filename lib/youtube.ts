@@ -44,6 +44,52 @@ export interface ResolvedYouTube {
 }
 
 const YT_ID = /^[A-Za-z0-9_-]{11}$/;
+const APP_SESSION_COOKIE_RE = /(?:^|;\s*)lamptik_app=1(?:;|$)/;
+
+/**
+ * Verify whether a request or browser context comes from the LAMP TIK Android
+ * APK (`LampTikAndroidApp`, Android WebView `; wv)`, `?app=android_apk`),
+ * installed PWA (`?source=pwa`, `display-mode: standalone`), or persisted
+ * `lamptik_app=1` session cookie.
+ */
+export function isYouTubeAppAuthorized(input: {
+  userAgent?: string | null;
+  cookie?: string | null;
+  referer?: string | null;
+  searchParams?: URLSearchParams | null;
+}): boolean {
+  const ua = input.userAgent ?? "";
+  if (/LampTikAndroidApp|;\s*wv\)/i.test(ua)) return true;
+
+  const cookie = input.cookie ?? "";
+  if (APP_SESSION_COOKIE_RE.test(cookie)) return true;
+
+  if (input.searchParams) {
+    if (
+      input.searchParams.get("app") === "android_apk" ||
+      input.searchParams.get("source") === "pwa"
+    ) {
+      return true;
+    }
+  }
+
+  const referer = input.referer ?? "";
+  if (referer) {
+    try {
+      const refUrl = new URL(referer);
+      if (
+        refUrl.searchParams.get("app") === "android_apk" ||
+        refUrl.searchParams.get("source") === "pwa"
+      ) {
+        return true;
+      }
+    } catch {
+      // Ignore malformed referer.
+    }
+  }
+
+  return false;
+}
 
 function hostIs(hostname: string, base: string): boolean {
   const host = hostname.toLowerCase();

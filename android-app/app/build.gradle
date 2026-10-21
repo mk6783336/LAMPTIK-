@@ -1,0 +1,28 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'online.lamptik.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "online.lamptik.app"
+        minSdk 24
+        targetSdk 34
+        versionCode 22
+        versionName "2.2"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}

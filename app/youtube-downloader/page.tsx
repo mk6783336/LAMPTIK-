@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowUpRight, Check, Youtube } from "lucide-react";
 
 import { AdSlot } from "@/components/ads/AdSlot";
+import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
 import { SiteFooter } from "@/components/site-footer";
@@ -144,7 +145,7 @@ export default function YouTubeDownloaderPage() {
 
         <main className="flex-1">
           <div className="shell pt-6 sm:pt-8">
-            <AdSlot format="leaderboard" label="Advertisement" />
+            <AdSlot format="leaderboard" eager label="Advertisement" />
           </div>
 
           <section className="pb-12 pt-8 sm:pb-16 sm:pt-14 lg:pt-20">
@@ -191,7 +192,7 @@ export default function YouTubeDownloaderPage() {
             </div>
 
             <div className="shell mt-8 sm:mt-10">
-              <AdSlot format="leaderboard" label="Advertisement" />
+              <VideoAdUnit />
             </div>
 
             <div className="shell mt-10 sm:mt-12">

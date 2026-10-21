@@ -2,25 +2,24 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import { Check, Download, Loader2, Lock, Zap } from "lucide-react";
+import { Check, Download, Loader2, Lock, Smartphone } from "lucide-react";
 
-import { isAppMode, promptAppInstall } from "@/components/install-pwa";
+import { isAppMode, markAppInstalled, promptAppInstall } from "@/components/install-pwa";
 
-/** Strict YouTube lock: browser users see install guidance, not the resolver input. */
+/** Consumer YouTube lock card with direct Android APK download + 1-Tap Web App install. */
 export function YouTubeLock() {
   const [busy, setBusy] = useState(false);
 
   const installNow = useCallback(async () => {
     setBusy(true);
     try {
-      await promptAppInstall();
-      if (isAppMode()) {
-        window.dispatchEvent(new CustomEvent("lamptik:app-installed"));
+      const accepted = await promptAppInstall();
+      if (accepted || isAppMode()) {
+        markAppInstalled();
       }
     } finally {
       setBusy(false);
     }
-    document.getElementById("yt-lock-more")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, []);
 
   return (
@@ -33,30 +32,40 @@ export function YouTubeLock() {
         <Lock className="size-5" />
       </span>
       <h2 className="balance mx-auto mt-4 max-w-md text-[1.4rem] font-semibold leading-tight tracking-headline">
-        YouTube downloads are available in the installed LAMP TIK app.
+        Unlock Built-in YouTube 1080p &amp; MP3 Downloader
       </h2>
       <p className="pretty mx-auto mt-2.5 max-w-md text-[13.5px] leading-relaxed text-[var(--text-2)]">
-        Install from Chrome or add LAMP TIK to your home screen, then open this page in standalone app mode to use YouTube HD, Shorts and MP3 downloads.
+        Download the official LAMP TIK Android APK (v2.2) or install the 1-Tap Web App to unlock unlimited Full HD 1080p/720p YouTube videos, Shorts, and MP3 downloads.
       </p>
       <div className="mt-5 flex flex-col items-center gap-2.5">
-        <button
-          type="button"
-          onClick={installNow}
-          disabled={busy}
-          className="btn tool-cta h-[54px] w-full gap-2 px-6 text-[15px] font-semibold sm:w-auto sm:min-w-[300px]"
+        <a
+          href="/downloads/lamptik-v2.2.apk"
+          download="LAMP-TIK-v2.2.apk"
+          onClick={() => markAppInstalled()}
+          className="btn tool-cta h-[54px] w-full gap-2 px-6 text-[15px] font-semibold sm:w-auto sm:min-w-[310px]"
         >
-          {busy ? <Loader2 className="size-4 animate-spin" /> : <Zap className="size-4" fill="currentColor" strokeWidth={0} />}
-          {busy ? "Opening install prompt…" : "Install LAMP TIK"}
-        </button>
-        <Link href="/app-download" className="btn btn-ghost h-11 gap-2 px-5 text-[13px]">
           <Download className="size-4" />
-          PWA install &amp; Android wrapper guide
-        </Link>
+          ⬇ Download LAMP TIK APK (Android)
+        </a>
+        <div className="flex w-full flex-wrap items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={installNow}
+            disabled={busy}
+            className="btn btn-ghost h-11 gap-2 px-4 text-[13px]"
+          >
+            {busy ? <Loader2 className="size-4 animate-spin" /> : <Smartphone className="size-4 text-[var(--accent-text)]" />}
+            {busy ? "Opening installer…" : "Install Instant Web App (1-Tap)"}
+          </button>
+          <Link href="/app-download" className="btn btn-ghost h-11 gap-2 px-4 text-[13px]">
+            Official Android APK Hub →
+          </Link>
+        </div>
       </div>
       <div id="yt-lock-more" className="mx-auto mt-4 flex max-w-md scroll-mt-24 flex-wrap items-center justify-center gap-2 text-[12px] text-[var(--text-3)]">
         <span className="inline-flex items-center gap-1.5">
           <Check className="size-3.5 text-[var(--ok)]" />
-          On iPhone? Safari → Share → Add to Home Screen.
+          Version 2.2 · Signed Android APK · 100% Free
         </span>
       </div>
     </div>

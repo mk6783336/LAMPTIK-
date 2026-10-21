@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowUpRight, BookOpen, Sparkles } from "lucide-react";
 
 import { AdSlot } from "@/components/ads/AdSlot";
+import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -160,7 +161,7 @@ export default async function GuidePage({
 
               {/* In-article leaderboard — below the intro, above the body. */}
               <div className="mt-8">
-                <AdSlot format="leaderboard" label="Advertisement" />
+                <AdSlot format="leaderboard" eager label="Advertisement" />
               </div>
 
               <div className="mt-11 space-y-11">
@@ -203,9 +204,9 @@ export default async function GuidePage({
                 ))}
               </div>
 
-              {/* Pre-CTA leaderboard — after the last section. */}
+              {/* Pre-CTA video + multi-slot ad unit — after the last section. */}
               <div className="mt-12">
-                <AdSlot format="leaderboard" label="Advertisement" />
+                <VideoAdUnit />
               </div>
 
               <div className="panel relative mt-12 overflow-hidden p-5 sm:p-6">

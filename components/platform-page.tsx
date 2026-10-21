@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, Check } from "lucide-react";
 
 import { AdSlot } from "@/components/ads/AdSlot";
+import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
 import { Downloader } from "@/components/downloader";
@@ -161,7 +162,7 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
           {/* Slot A — top leaderboard above the hero. Reserved 90px, zero
               layout shift. */}
           <div className="shell pt-6 sm:pt-8">
-            <AdSlot format="leaderboard" label="Advertisement" />
+            <AdSlot format="leaderboard" eager label="Advertisement" />
           </div>
 
           <section className="pb-12 pt-8 sm:pb-16 sm:pt-14 lg:pt-20">
@@ -210,9 +211,9 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
               </div>
             </div>
 
-            {/* Slot B — directly below the downloader / result card. */}
+            {/* Slot B — Outstream Video Ad + 300x250 + 728x90 directly below the downloader card. */}
             <div className="shell mt-8 sm:mt-10">
-              <AdSlot format="leaderboard" label="Advertisement" />
+              <VideoAdUnit />
             </div>
 
             <div className="shell mt-10 sm:mt-12">

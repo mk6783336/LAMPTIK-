@@ -5,9 +5,7 @@ import { resolveMedia } from "@/lib/media";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request";
 import { MAX_FETCH_BODY_BYTES, readBoundedJson } from "@/lib/security";
-import { parseYouTubeUrl } from "@/lib/youtube";
-
-const APP_SESSION_PATTERN = /(?:^|;\s*)lamptik_app=1(?:;|$)/;
+import { isYouTubeAppAuthorized, parseYouTubeUrl } from "@/lib/youtube";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,17 +14,24 @@ export const maxDuration = 30;
 /**
  * POST /api/youtube — dedicated App-Exclusive YouTube resolver.
  *
- * YouTube-only front door to the same hardened pipeline as /api/fetch
- * (SSRF guard, platform allowlist, 3-minute cache, circuit-breaker). Requests
- * require a short-lived same-origin app-session cookie minted only from
- * standalone PWA or verified Android TWA mode.
+ * Automatically unlocks when ANY of these are true:
+ *   1. User-Agent contains `LampTikAndroidApp` or Android WebView (`; wv)`),
+ *   2. URL/Referer has `?app=android_apk` or `?source=pwa` or `lamptik_app=1` cookie,
+ *   3. Standalone PWA session (`lamptik_app=1`).
  */
 export async function POST(request: NextRequest) {
-  if (!APP_SESSION_PATTERN.test(request.headers.get("cookie") ?? "")) {
+  const authorized = isYouTubeAppAuthorized({
+    userAgent: request.headers.get("user-agent"),
+    cookie: request.headers.get("cookie"),
+    referer: request.headers.get("referer"),
+    searchParams: request.nextUrl.searchParams,
+  });
+
+  if (!authorized) {
     return errorResponse(
       new AppError(
         "BAD_REQUEST",
-        "Install LAMP TIK and open this page from the app to use YouTube downloads.",
+        "Download & install the LAMP TIK Android APK (or Instant Web App) to unlock YouTube 1080p & MP3 downloads.",
       ),
     );
   }
@@ -91,6 +96,7 @@ export async function POST(request: NextRequest) {
       {
         headers: {
           "Cache-Control": "no-store",
+          "Set-Cookie": "lamptik_app=1; Path=/; Max-Age=31536000; SameSite=Lax",
           "X-RateLimit-Limit": String(limit.limit),
           "X-RateLimit-Remaining": String(limit.remaining),
         },

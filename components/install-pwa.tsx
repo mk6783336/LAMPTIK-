@@ -13,62 +13,128 @@ declare global {
   }
 }
 
+export const APP_INSTALLED_KEY = "lamptik_app_installed";
 const APP_SESSION_COOKIE = "lamptik_app=1";
 const APP_SESSION_COOKIE_PATTERN = /(?:^|;\s*)lamptik_app=1(?:;|$)/;
 
-function isAndroidTwaContext(): boolean {
-  if (typeof document === "undefined" || typeof navigator === "undefined") return false;
-  if (!/Android/i.test(navigator.userAgent)) return false;
+/** Persist App Mode in both localStorage and cookie so client & API routes recognize it immediately. */
+export function markAppInstalled(): void {
+  if (typeof window === "undefined") return;
   try {
-    return new URL(document.referrer).protocol === "android-app:";
+    window.localStorage.setItem(APP_INSTALLED_KEY, "1");
   } catch {
-    return false;
+    // Ignore private-mode storage errors.
+  }
+  try {
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${APP_SESSION_COOKIE}; path=/; max-age=31536000; SameSite=Lax${secure}`;
+  } catch {
+    // Ignore cookie errors.
+  }
+  try {
+    window.dispatchEvent(new CustomEvent("lamptik:app-installed"));
+  } catch {
+    // Ignore dispatch errors.
   }
 }
 
-function isStandaloneContext(): boolean {
+function isAndroidAppUserAgent(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  if (/LampTikAndroidApp|;\s*wv\)/i.test(ua)) return true;
+  if (typeof document !== "undefined" && /Android/i.test(ua)) {
+    try {
+      if (new URL(document.referrer).protocol === "android-app:") return true;
+    } catch {
+      // Ignore referrer parse errors.
+    }
+  }
+  return false;
+}
+
+function isStandaloneDisplayMode(): boolean {
   if (typeof window === "undefined") return false;
   try {
     if (window.matchMedia("(display-mode: standalone)").matches) return true;
   } catch {
-    // Fall back to the platform-specific display signal.
+    // Ignore.
   }
   try {
-    return (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+    if ((window.navigator as Navigator & { standalone?: boolean }).standalone === true) return true;
   } catch {
-    return false;
+    // Ignore.
   }
+  return false;
 }
 
-function markAppSession(): void {
-  if (typeof window === "undefined" || (!isStandaloneContext() && !isAndroidTwaContext())) return;
+function hasAppQueryParam(): boolean {
+  if (typeof window === "undefined") return false;
   try {
-    const secure = window.location.protocol === "https:" ? "; Secure" : "";
-    document.cookie = `${APP_SESSION_COOKIE}; path=/; max-age=43200; SameSite=Lax${secure}`;
-    window.dispatchEvent(new CustomEvent("lamptik:app-installed"));
+    const params = new URLSearchParams(window.location.search);
+    return params.get("app") === "android_apk" || params.get("source") === "pwa";
   } catch {
-    // Standalone display mode remains authoritative if cookies are disabled.
+    return false;
   }
 }
 
 function registerAppServiceWorker(): void {
-  if (!("serviceWorker" in navigator)) return;
+  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
   void navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {
-    // Browser policy may block service workers without blocking PWA installation.
+    // Service worker registration is non-blocking.
   });
 }
 
+/**
+ * Automatically unlock YouTube Downloader when ANY of these are true:
+ *   1. User-Agent contains `LampTikAndroidApp` or Android WebView (`; wv)`),
+ *   2. URL has `?app=android_apk` or `?source=pwa` (which sets cookie `lamptik_app=1`
+ *      and `localStorage.setItem('lamptik_app_installed', '1')`),
+ *   3. Browser is in `display-mode: standalone`, or `lamptik_app=1` / `lamptik_app_installed` is set.
+ */
 export function isAppMode(): boolean {
-  if (isStandaloneContext() || isAndroidTwaContext()) return true;
-  if (typeof document === "undefined") return false;
-  try {
-    return APP_SESSION_COOKIE_PATTERN.test(document.cookie);
-  } catch {
-    return false;
+  if (typeof window === "undefined") return false;
+
+  if (isAndroidAppUserAgent() || isStandaloneDisplayMode() || hasAppQueryParam()) {
+    try {
+      window.localStorage.setItem(APP_INSTALLED_KEY, "1");
+    } catch {
+      // Ignore.
+    }
+    try {
+      const secure = window.location.protocol === "https:" ? "; Secure" : "";
+      document.cookie = `${APP_SESSION_COOKIE}; path=/; max-age=31536000; SameSite=Lax${secure}`;
+    } catch {
+      // Ignore.
+    }
+    return true;
   }
+
+  try {
+    if (window.localStorage.getItem(APP_INSTALLED_KEY) === "1") {
+      try {
+        const secure = window.location.protocol === "https:" ? "; Secure" : "";
+        document.cookie = `${APP_SESSION_COOKIE}; path=/; max-age=31536000; SameSite=Lax${secure}`;
+      } catch {
+        // Ignore.
+      }
+      return true;
+    }
+  } catch {
+    // Ignore.
+  }
+
+  try {
+    if (typeof document !== "undefined" && APP_SESSION_COOKIE_PATTERN.test(document.cookie)) {
+      return true;
+    }
+  } catch {
+    // Ignore.
+  }
+
+  return false;
 }
 
-/** Capture native install events and provide a common prompt API for CTAs. */
+/** Capture native install events and synchronize App Mode on launch. */
 export function InstallPwa() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
 
@@ -82,17 +148,18 @@ export function InstallPwa() {
       globalWindow.__lamptikDeferredPrompt = event;
     }
     function onInstalled() {
+      markAppInstalled();
       setDeferred(null);
       globalWindow.__lamptikDeferredPrompt = null;
-      // A browser-tab install is not proof that the current window is app mode.
-      if (isStandaloneContext() || isAndroidTwaContext()) markAppSession();
     }
 
     globalWindow.__lamptikDeferredPrompt = globalWindow.__lamptikDeferredPrompt ?? null;
     window.addEventListener("beforeinstallprompt", onPrompt);
     window.addEventListener("appinstalled", onInstalled);
     registerAppServiceWorker();
-    if (isStandaloneContext() || isAndroidTwaContext()) markAppSession();
+    if (isAppMode()) {
+      markAppInstalled();
+    }
     return () => {
       window.removeEventListener("beforeinstallprompt", onPrompt);
       window.removeEventListener("appinstalled", onInstalled);
@@ -107,7 +174,11 @@ export function InstallPwa() {
     if (!prompt) return false;
     try {
       await prompt.prompt();
-      return (await prompt.userChoice)?.outcome === "accepted";
+      const choice = await prompt.userChoice;
+      if (choice?.outcome === "accepted") {
+        markAppInstalled();
+      }
+      return choice?.outcome === "accepted";
     } catch {
       return false;
     } finally {
@@ -141,7 +212,11 @@ export async function promptAppInstall(): Promise<boolean> {
   if (!prompt) return false;
   try {
     await prompt.prompt();
-    return (await prompt.userChoice)?.outcome === "accepted";
+    const choice = await prompt.userChoice;
+    if (choice?.outcome === "accepted") {
+      markAppInstalled();
+    }
+    return choice?.outcome === "accepted";
   } catch {
     return false;
   }

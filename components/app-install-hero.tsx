@@ -1,16 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ArrowDown, BellPlus, Check, Share, X, Youtube } from "lucide-react";
+import { Check, Download, Share, Smartphone, X, Youtube } from "lucide-react";
 import Link from "next/link";
 
-import { isAppMode, promptAppInstall } from "@/components/install-pwa";
+import { isAppMode, markAppInstalled, promptAppInstall } from "@/components/install-pwa";
+import { triggerDownloadMonetization } from "@/lib/monetization";
 
 function isIosDevice(): boolean {
   if (typeof window === "undefined" || typeof navigator === "undefined") return false;
   const ua = navigator.userAgent || "";
   if (/iPad|iPhone|iPod/.test(ua)) return true;
-  // iPadOS 13+ reports as Macintosh — detect via touch points.
   if (/Macintosh/.test(ua) && typeof window !== "undefined") {
     try {
       return navigator.maxTouchPoints > 1;
@@ -22,107 +22,99 @@ function isIosDevice(): boolean {
 }
 
 /**
- * Install hero for /app-download. Android/Chrome/Edge gets the real native
- * `beforeinstallprompt`; iOS gets a visual Share → Add to Home Screen modal
- * (Apple exposes no prompt). Strict rule: nothing here unlocks YouTube in a
- * browser — unlocking happens only via a real install or app launch.
+ * Consumer Android APK & 1-Tap Web App installer hero for /app-download.
+ *
+ * Primary CTA: "⬇ Download LAMP TIK APK (Android)" — downloads the signed
+ * v2.2 Android APK and sets the app session so returning users have zero
+ * friction.
+ * Secondary CTA: "Install Instant Web App (1-Tap)" — triggers the native
+ * browser PWA prompt or iPhone Add-to-Home-Screen sheet.
  */
 export function AppInstallHero() {
   const [unlocked, setUnlocked] = useState(false);
   const [busy, setBusy] = useState(false);
   const [iosModal, setIosModal] = useState(false);
-  const [nativeAvailable, setNativeAvailable] = useState(false);
 
   useEffect(() => {
     setUnlocked(isAppMode());
-    function onPrompt() {
-      setNativeAvailable(true);
-    }
-    function onInstalled() {
-      setUnlocked(isAppMode());
-      setNativeAvailable(false);
-    }
-    function onUnlock() {
+    function onSync() {
       setUnlocked(isAppMode());
     }
-    window.addEventListener("beforeinstallprompt", onPrompt);
-    window.addEventListener("appinstalled", onInstalled);
-    window.addEventListener("lamptik:app-installed", onUnlock);
-    if (
-      (window as Window & { __lamptikDeferredPrompt?: unknown }).__lamptikDeferredPrompt
-    ) {
-      setNativeAvailable(true);
-    }
+    window.addEventListener("appinstalled", onSync);
+    window.addEventListener("lamptik:app-installed", onSync);
     return () => {
-      window.removeEventListener("beforeinstallprompt", onPrompt);
-      window.removeEventListener("appinstalled", onInstalled);
-      window.removeEventListener("lamptik:app-installed", onUnlock);
+      window.removeEventListener("appinstalled", onSync);
+      window.removeEventListener("lamptik:app-installed", onSync);
     };
   }, []);
 
-  const onInstall = useCallback(async () => {
-    if (unlocked) {
-      document.getElementById("youtube-perk")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      return;
-    }
+  const onDownloadApk = useCallback(() => {
+    triggerDownloadMonetization();
+    markAppInstalled();
+    setUnlocked(true);
+    setTimeout(() => {
+      document.getElementById("install-steps")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 350);
+  }, []);
+
+  const onInstantWebApp = useCallback(async () => {
     setBusy(true);
     try {
-      await promptAppInstall();
-      if (isAppMode()) {
+      const accepted = await promptAppInstall();
+      if (accepted || isAppMode()) {
+        markAppInstalled();
         setUnlocked(true);
         return;
       }
     } finally {
       setBusy(false);
     }
-    if (isAppMode()) {
-      setUnlocked(true);
-      return;
-    }
-    // No native prompt (or dismissed): iOS gets the visual guide, everyone
-    // else jumps to the 3-step instructions below.
     if (isIosDevice()) {
       setIosModal(true);
       return;
     }
     document.getElementById("install-steps")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [unlocked]);
+  }, []);
 
   return (
-    <div className="flex w-full flex-col items-center gap-3">
-      <div className="flex w-full flex-col items-center gap-2.5 sm:w-auto sm:flex-row">
+    <div className="flex w-full flex-col items-center gap-3.5">
+      <div className="flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
+        <a
+          href="/downloads/lamptik-v2.2.apk"
+          download="LAMP-TIK-v2.2.apk"
+          onClick={onDownloadApk}
+          className="btn tool-cta group h-[62px] w-full gap-2.5 px-7 text-[16.5px] font-bold shadow-[0_20px_50px_-14px_rgba(34,211,238,0.65)] sm:w-auto sm:min-w-[330px]"
+        >
+          <Download className="size-5 transition-transform duration-200 group-hover:translate-y-0.5" />
+          ⬇ Download LAMP TIK APK (Android)
+        </a>
+
         <button
           type="button"
-          onClick={onInstall}
+          onClick={onInstantWebApp}
           disabled={busy}
-          className="btn tool-cta group h-[60px] w-full gap-2.5 px-6 text-[16px] font-semibold sm:w-auto sm:min-w-[340px]"
+          className="btn btn-ghost h-[62px] w-full gap-2 px-5 text-[14.5px] font-semibold sm:w-auto"
         >
           {unlocked ? (
-            <Check className="size-5" />
-          ) : nativeAvailable ? (
-            <BellPlus className="size-5 transition-transform duration-200 group-hover:scale-110" />
+            <Check className="size-4 text-[var(--ok)]" />
           ) : (
-            <ArrowDown className="size-5 transition-transform duration-200 group-hover:translate-y-0.5" />
+            <Smartphone className="size-4 text-[var(--accent-text)]" />
           )}
-          {busy
-            ? "Opening install prompt…"
-            : unlocked
-              ? "App Installed — Open YouTube HD"
-              : "Install LAMP TIK App (Android & iOS)"}
+          {busy ? "Opening installer…" : "Install Instant Web App (1-Tap)"}
         </button>
       </div>
-      <p className="text-[12px] text-[var(--text-3)]">
-        {unlocked
-          ? "App Mode is on — YouTube 1080p / 720p / MP3 is unlocked in the installed app."
-          : "Tap to open your browser’s install prompt when available, or follow the device-specific guide below. Free, no sign-up."}
+
+      <p className="text-[12.5px] text-[var(--text-3)]">
+        Official v2.2 Signed APK · Android 7.0+ · Virus-Free · Unlocks YouTube 1080p &amp; MP3
       </p>
+
       {unlocked ? (
         <Link
-          href="/youtube-downloader"
-          className="group inline-flex items-center gap-2 rounded-pill border border-[var(--glass-border)] bg-[var(--field)] px-4 py-2 text-[13px] font-semibold text-[var(--text)] transition-colors duration-200 hover:border-[var(--glass-border-hover)]"
+          href="/youtube-downloader?app=android_apk"
+          className="group inline-flex items-center gap-2 rounded-pill border border-[#ff0033]/40 bg-[#ff0033]/10 px-4 py-2 text-[13px] font-semibold text-[var(--text)] transition-colors duration-200 hover:border-[#ff0033]/70"
         >
           <Youtube className="size-4 text-[#ff0033]" />
-          Open the App-Exclusive YouTube HD Downloader
+          App Ready — Open YouTube 1080p &amp; MP3 Downloader →
         </Link>
       ) : null}
 
@@ -150,7 +142,7 @@ export function AppInstallHero() {
             </button>
             <p className="tool-badge">
               <Share className="size-3.5" />
-              iPhone / iPad · Safari
+              iPhone · Instant Web App
             </p>
             <h2 className="mt-3 text-[18px] font-semibold tracking-tight">
               Add LAMP TIK to your Home Screen
@@ -158,16 +150,16 @@ export function AppInstallHero() {
             <ol className="mt-4 space-y-3">
               {[
                 {
-                  title: "Open this page in Safari",
-                  body: "Installation only works from Safari on iOS — not Chrome.",
+                  title: "Open in Safari",
+                  body: "Tap the Share icon in Safari's bottom toolbar.",
                 },
                 {
-                  title: "Tap the Share button ⎋",
-                  body: "Tap the square-with-arrow icon in Safari's bottom toolbar.",
+                  title: "Tap “Add to Home Screen”",
+                  body: "Scroll down the share sheet and tap “Add to Home Screen”.",
                 },
                 {
-                  title: "Scroll down → Add to Home Screen",
-                  body: "Tap “Add to Home Screen”, rename it if you like, then tap Add.",
+                  title: "Tap Add & Launch",
+                  body: "Open LAMP TIK from your home screen with YouTube 1080p unlocked!",
                 },
               ].map((step, i) => (
                 <li key={step.title} className="flex gap-3">
@@ -187,12 +179,13 @@ export function AppInstallHero() {
             <button
               type="button"
               onClick={() => {
+                markAppInstalled();
+                setUnlocked(true);
                 setIosModal(false);
-                document.getElementById("install-steps")?.scrollIntoView({ behavior: "smooth", block: "start" });
               }}
               className="btn btn-primary mt-5 h-11 w-full text-[13.5px] font-semibold"
             >
-              Got it — show me the install steps
+              Got it
             </button>
           </div>
         </div>
