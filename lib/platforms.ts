@@ -3,7 +3,7 @@
  * per-platform copy used by the switcher, the detection badge, and the tool
  * CTA. Pure data — no server imports (this module ships to the browser).
  */
-export type Platform = "tiktok" | "instagram" | "facebook";
+export type Platform = "tiktok" | "instagram" | "facebook" | "youtube";
 
 export interface PlatformConfig {
   id: Platform;
@@ -59,6 +59,20 @@ export const PLATFORMS: Record<Platform, PlatformConfig> = {
     dotHex: "#dc2743",
     blurb: "Original-quality Reels, photo-post videos, and IGTV at full 1080p — no watermark, no login.",
   },
+  youtube: {
+    id: "youtube",
+    name: "YouTube",
+    switcherLabel: "YouTube HD",
+    shortLabel: "YouTube",
+    path: "/youtube-downloader",
+    detectedLabel: "YouTube Video Detected ⚡",
+    placeholder: "Paste a YouTube link (watch, Shorts, youtu.be)…",
+    panelTag: "youtube · 1080p + mp3 · app exclusive",
+    pillLabel: "YouTube",
+    videoNoun: "YouTube video",
+    dotHex: "#ff0033",
+    blurb: "App-exclusive 1080p/720p MP4, Shorts, and MP3 audio from any watch or youtu.be link.",
+  },
   facebook: {
     id: "facebook",
     name: "Facebook",
@@ -75,8 +89,8 @@ export const PLATFORMS: Record<Platform, PlatformConfig> = {
   },
 };
 
-export const PLATFORM_LIST: readonly Platform[] = ["tiktok", "instagram", "facebook"];
+export const PLATFORM_LIST: readonly Platform[] = ["tiktok", "instagram", "facebook", "youtube"];
 
 export function isPlatform(value: unknown): value is Platform {
-  return value === "tiktok" || value === "instagram" || value === "facebook";
+  return value === "tiktok" || value === "instagram" || value === "facebook" || value === "youtube";
 }

@@ -100,12 +100,12 @@ export function UrlField({
 
     const link = detectLink(input);
     if (!link) {
-      setLocalError("That isn’t a TikTok, Instagram, or Facebook video link.");
+      setLocalError("That isn’t a TikTok, Instagram, Facebook, or YouTube video link.");
       onNotify({
         kind: "error",
         title: "Invalid video link",
         description:
-          "Expected a TikTok, Instagram, or Facebook video or share link (reels, fb.watch, /share/…).",
+          "Expected a TikTok, Instagram, Facebook, or YouTube video or share link (reels, fb.watch, Shorts, youtu.be…).",
       });
       inputRef.current?.focus();
       return;
@@ -148,7 +148,7 @@ export function UrlField({
         onNotify({
           kind: "error",
           title: "No supported video link in the clipboard",
-          description: "Copy a TikTok, Instagram, or Facebook video link, then try again.",
+          description: "Copy a TikTok, Instagram, Facebook, or YouTube video link, then try again.",
         });
       }
     } catch {
@@ -221,7 +221,7 @@ export function UrlField({
     ? detected.platform === "tiktok" && detected.videoId
       ? `Detected TikTok ${detected.isShort ? "short link" : "video"} · id ${detected.videoId.slice(0, 8)}…`
       : `Detected ${accentConfig.videoNoun}${detected.isShort ? " short link" : " link"} · ready to fetch`
-    : "TikTok · Instagram · Facebook";
+    : "TikTok · Instagram · Facebook · YouTube";
 
   return (
     <form onSubmit={handleFormSubmit} noValidate data-accent={accent}>

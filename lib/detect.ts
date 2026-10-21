@@ -39,6 +39,9 @@ function hostIs(hostname: string, base: string): boolean {
   return host === base || host.endsWith(`.${base}`);
 }
 
+/** YouTube video id: 11 base64url chars. */
+const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
+
 /** Instagram video post shapes: /reel/, /reels/, /p/, /tv/ (+ instagr.am). */
 const INSTAGRAM_PATH = /^\/(?:reels?|p|tv)\/([A-Za-z0-9_-]{5,})/i;
 /** Mobile-app share links: /share/reel/<code>, /share/reels/<code>, /share/p/<code>. */
@@ -67,6 +70,55 @@ function classify(rawCandidate: string): DetectedLink | null {
       isPhoto: tiktok.isPhoto,
       videoId: tiktok.videoId,
     };
+  }
+
+  // YouTube — watch?v=, youtu.be, /shorts/, /embed/, /live/ (same shapes
+  // lib/youtube.ts parseYouTubeUrl accepts).
+  if (
+    hostIs(host, "youtube.com") ||
+    hostIs(host, "youtu.be") ||
+    hostIs(host, "youtube-nocookie.com") ||
+    hostIs(host, "music.youtube.com")
+  ) {
+    let id: string | null = null;
+    let short = false;
+    try {
+      if (hostIs(host, "youtu.be")) {
+        const slug = url.pathname.split("/").filter(Boolean)[0];
+        if (slug && YOUTUBE_ID.test(slug)) {
+          id = slug;
+          short = true;
+        }
+      } else {
+        const param = url.searchParams.get("v");
+        if (param && YOUTUBE_ID.test(param)) {
+          id = param;
+        } else {
+          const segments = url.pathname.split("/").filter(Boolean);
+          const head = segments[0]?.toLowerCase();
+          if (
+            (head === "shorts" || head === "embed" || head === "live" || head === "v") &&
+            segments[1] &&
+            YOUTUBE_ID.test(segments[1])
+          ) {
+            id = segments[1];
+            short = head === "shorts";
+          }
+        }
+      }
+    } catch {
+      id = null;
+    }
+    if (id) {
+      return {
+        platform: "youtube",
+        url: candidate,
+        isShort: short || hostIs(host, "youtu.be"),
+        isPhoto: false,
+        videoId: id,
+      };
+    }
+    return null;
   }
 
   // Instagram — same path shapes the server extractor accepts, plus the

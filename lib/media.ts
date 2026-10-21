@@ -2,6 +2,7 @@ import { cacheDelete, cacheGet, cacheSet, runOnce } from "@/lib/cache";
 import { AppError } from "@/lib/errors";
 import { extractFacebook } from "@/lib/facebook";
 import { extractInstagram } from "@/lib/instagram";
+import { extractYouTube } from "@/lib/youtube";
 import { resolveVideo } from "@/lib/tiktok";
 import { buildDownloadLinks } from "@/lib/tiktok/links";
 import type { VideoCodec, VideoInfo } from "@/lib/tiktok/types";
@@ -54,14 +55,22 @@ const MEDIA_TTL_MS = 3 * 60 * 1_000;
 function mediaFromVideo(video: VideoInfo, canonicalUrl: string): MediaPayload {
   const isHd = video.quality === "hd";
   const platform: PlatformType =
-    video.source === "instagram" ? "instagram" : video.source === "facebook" ? "facebook" : "tiktok";
+    video.source === "instagram"
+      ? "instagram"
+      : video.source === "facebook"
+        ? "facebook"
+        : video.source === "youtube"
+          ? "youtube"
+          : "tiktok";
 
   const authorUrl =
     platform === "tiktok"
       ? `https://www.tiktok.com/@${encodeURIComponent(video.author.username)}`
       : platform === "instagram"
         ? `https://www.instagram.com/${encodeURIComponent(video.author.username)}/`
-        : null;
+        : platform === "youtube"
+          ? `https://www.youtube.com/results?search_query=${encodeURIComponent(video.author.username)}`
+          : null;
 
   return {
     id: video.id,
@@ -135,6 +144,56 @@ async function resolveInstagramPlatform(url: string): Promise<{ media: MediaPayl
   };
 
   return { media: mediaFromVideo(video, source.canonicalUrl), video };
+}
+
+/** YouTube adapter: multi-tier resolver → same-origin downloads. */
+async function resolveYouTubePlatform(url: string): Promise<{ media: MediaPayload; video: VideoInfo }> {
+  const source = await extractYouTube(url);
+  const primary = source.streams.video ?? source.streams.audio;
+
+  if (!primary) {
+    throw new AppError(
+      "PROVIDER_UNAVAILABLE",
+      "YouTube exposed no downloadable stream for this video right now.",
+      "Retry in a moment — mirrors rotate automatically.",
+    );
+  }
+
+  const downloads = buildDownloadLinks(
+    {
+      video: source.streams.video ?? primary,
+      videoSd:
+        source.streams.videoSd && source.streams.videoSd !== (source.streams.video ?? primary)
+          ? source.streams.videoSd
+          : null,
+      audio: source.streams.audio,
+    },
+    { id: source.id, username: source.author, platform: "youtube" },
+  );
+
+  const video: VideoInfo = {
+    id: source.id,
+    title: source.title,
+    duration: source.duration,
+    thumbnail: source.thumbnail ?? "",
+    author: {
+      username: source.author,
+      nickname: source.author,
+      avatar: null,
+    },
+    stats: { plays: 0, likes: 0, comments: 0, shares: 0 },
+    quality: source.streams.video ? "hd" : "sd",
+    noWatermark: true,
+    source: "youtube",
+    createdAt: null,
+    musicTitle: null,
+    byteSize: null,
+    byteSizeSd: null,
+    codec: "h264",
+    downloads,
+  };
+
+  return { media: mediaFromVideo(video, `https://www.youtube.com/watch?v=${source.id}`), video };
 }
 
 /** Facebook adapter: extractor → same-origin downloads → synthetic VideoInfo. */
@@ -225,9 +284,12 @@ export async function resolveMedia(
       case "instagram":
         built = await resolveInstagramPlatform(canonical);
         break;
-      case "facebook":
-        built = await resolveFacebookPlatform(canonical);
-        break;
+    case "facebook":
+      built = await resolveFacebookPlatform(canonical);
+      break;
+    case "youtube":
+      built = await resolveYouTubePlatform(canonical);
+      break;
     }
     const result: ResolvedMedia = { ...built, cached: false };
     cacheSet(cacheKey, result, MEDIA_TTL_MS);

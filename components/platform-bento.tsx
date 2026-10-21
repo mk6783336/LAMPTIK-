@@ -22,7 +22,7 @@ interface BentoContent {
   footer: Array<[string, string]>;
 }
 
-const BENTO: Record<Platform, BentoContent> = {
+const BENTO: Record<Exclude<Platform, "youtube">, BentoContent> = {
   tiktok: {
     heading: "Built for TikTok",
     subheading:
@@ -106,7 +106,7 @@ const BENTO: Record<Platform, BentoContent> = {
   },
 };
 
-export function PlatformBento({ platform }: { platform: Platform }) {
+export function PlatformBento({ platform }: { platform: Exclude<Platform, "youtube"> }) {
   const content = BENTO[platform];
 
   return (

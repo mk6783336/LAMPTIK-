@@ -34,6 +34,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "daily",
       priority: 1,
     },
+    {
+      url: `${siteUrl}/youtube-downloader`,
+      lastModified: updated,
+      changeFrequency: "daily",
+      priority: 1,
+    },
   ];
 
   const guides: MetadataRoute.Sitemap = [

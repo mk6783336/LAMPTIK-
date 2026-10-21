@@ -3,10 +3,20 @@ import { AppError } from "@/lib/errors";
 /**
  * Unified platform identifier for the multi-platform resolver.
  */
-export type PlatformType = "tiktok" | "instagram" | "facebook";
+export type PlatformType = "tiktok" | "instagram" | "facebook" | "youtube";
 
 /** Host suffixes a user-submitted link may live on (dot-boundary matched). */
-const INPUT_HOST_SUFFIXES = ["tiktok.com", "instagram.com", "instagr.am", "facebook.com", "fb.watch", "fb.com"] as const;
+const INPUT_HOST_SUFFIXES = [
+  "tiktok.com",
+  "instagram.com",
+  "instagr.am",
+  "facebook.com",
+  "fb.watch",
+  "fb.com",
+  "youtube.com",
+  "youtu.be",
+  "youtube-nocookie.com",
+] as const;
 
 const MAX_URL_LENGTH = 2_048;
 
@@ -57,6 +67,13 @@ export function detectPlatform(input: string): PlatformType | null {
   if (INPUT_HOST_SUFFIXES.some((suffix) => hostMatches(host, suffix))) {
     if (hostMatches(host, "tiktok.com")) return "tiktok";
     if (hostMatches(host, "instagram.com") || hostMatches(host, "instagr.am")) return "instagram";
+    if (
+      hostMatches(host, "youtube.com") ||
+      hostMatches(host, "youtu.be") ||
+      hostMatches(host, "youtube-nocookie.com")
+    ) {
+      return "youtube";
+    }
     return "facebook";
   }
   return null;
@@ -104,8 +121,8 @@ export function assertInputUrl(raw: string): { url: URL; platform: PlatformType 
   if (!platform) {
     throw new AppError(
       "UNSUPPORTED_URL",
-      "Only TikTok, Instagram, and Facebook links are supported.",
-      "Try a tiktok.com, instagram.com/reel, or facebook.com video link.",
+      "Only TikTok, Instagram, Facebook, and YouTube links are supported.",
+      "Try a tiktok.com, instagram.com/reel, facebook.com, or youtube.com video link.",
     );
   }
 

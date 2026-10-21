@@ -750,6 +750,14 @@ html:not(.dark) {
 }
 
 @layer utilities {
+  /* Below-the-fold SEO sections skip layout + paint until near the viewport
+     (100% jank-free mobile scrolling with all ad slots active). The
+     intrinsic-size reserve keeps the scrollbar stable so CLS stays 0. */
+  .seo-section {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 600px;
+  }
+
   /* Balanced headline wrapping — kills the lonely-word line on every
      viewport without touching copy. */
   .balance {

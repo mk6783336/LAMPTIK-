@@ -27,6 +27,16 @@ const ALLOWED_HOST_SUFFIXES = [
   "fbcdn.net",
   "fbsbx.com",
   "facebook.com",
+  // YouTube — googlevideo media shards + Piped/Invidious proxied mirrors.
+  "googlevideo.com",
+  "youtube.com",
+  "youtu.be",
+  "ytimg.com",
+  "kavin.rocks",
+  "tokhmi.xyz",
+  "adminforge.de",
+  "reallyaweso.me",
+  "tux.pizza",
 ] as const;
 
 export function isAllowedMediaUrl(raw: string): boolean {
@@ -68,7 +78,7 @@ export function safeFilenamePart(value: string | null, fallback: string): string
   return cleaned || fallback;
 }
 
-const SAFE_PLATFORMS = ["tiktok", "instagram", "facebook"] as const;
+const SAFE_PLATFORMS = ["tiktok", "instagram", "facebook", "youtube"] as const;
 export type DownloadPlatform = (typeof SAFE_PLATFORMS)[number];
 
 /** Whitelist-validate the `platform` filename segment (default: tiktok). */

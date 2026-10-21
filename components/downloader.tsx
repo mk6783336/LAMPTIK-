@@ -4,8 +4,10 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight, Check, Loader2, ShieldCheck, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { isAppMode } from "@/components/install-pwa";
 import { PlatformSwitcher } from "@/components/platform-switcher";
 import { ResultPanel } from "@/components/result-panel";
+import { YouTubeLock } from "@/components/youtube-lock";
 import { ToastStack, type ToastItem } from "@/components/toast";
 import { UrlField } from "@/components/url-field";
 import { cn } from "@/lib/cn";
@@ -127,6 +129,8 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
   const [error, setError] = useState<string | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  /** YouTube paste held at the App-Exclusive gate (no App Mode yet). */
+  const [ytLockedUrl, setYtLockedUrl] = useState<string | null>(null);
   const [seed, setSeed] = useState({ value: "", nonce: 0 });
   /** Shown during the single silent auto-retry (attempt 2/2). */
   const [backupNote, setBackupNote] = useState<string | null>(null);
@@ -201,6 +205,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     abortRef.current?.abort();
     stopTicker();
     lastUrlRef.current = "";
+    setYtLockedUrl(null);
     setStatus("idle");
     setVideo(null);
     setMedia(null);
@@ -223,6 +228,25 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     const { detectLink: detectIncoming } = await import("@/lib/detect");
     const detectedIncoming = detectIncoming(rawUrl);
     const url = detectedIncoming ? detectedIncoming.url : rawUrl.trim();
+
+    // App-Exclusive gate: YouTube links pasted anywhere (including the
+    // homepage) show the lock card until App Mode is unlocked — the server
+    // never sees the URL, so no resolve is wasted.
+    if (detectedIncoming?.platform === "youtube" && !isAppMode()) {
+      setError(null);
+      setStatus("idle");
+      setVideo(null);
+      setMedia(null);
+      setBackupNote(null);
+      setYtLockedUrl(url);
+      notify({
+        kind: "info",
+        title: "YouTube is App-Exclusive",
+        description: "Install the free app once to unlock YouTube HD & MP3.",
+      });
+      return;
+    }
+    setYtLockedUrl(null);
 
     setError(null);
     setStatus("loading");
@@ -448,6 +472,18 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
             <ArrowUpRight className="size-3 transition-transform duration-200 group-hover:-translate-y-px group-hover:translate-x-px" />
           </button>
         </div>
+
+        {ytLockedUrl ? (
+          <div className="mt-5">
+            <YouTubeLock
+              onUnlocked={() => {
+                const retry = ytLockedUrl;
+                setYtLockedUrl(null);
+                void handleSubmitUrl(retry);
+              }}
+            />
+          </div>
+        ) : null}
 
         <AnimatePresence mode="wait" initial={false}>
           {isLoading ? (

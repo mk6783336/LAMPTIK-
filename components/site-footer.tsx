@@ -12,7 +12,7 @@ const FOOTER_LINKS = {
     { href: "/facebook-video-downloader", label: "Facebook HD" },
   ],
   Product: [
-    { href: "/app-download", label: "Download App" },
+    { href: "/app-download", label: "📱 Get App (YouTube HD)" },
     { href: "/guides", label: "Guides" },
     { href: "/#how", label: "How it works" },
     { href: "/#faq", label: "FAQ" },

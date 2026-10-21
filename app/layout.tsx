@@ -4,6 +4,7 @@ import { AdScripts } from "@/components/ads/AdScripts";
 import { DesktopSideRails } from "@/components/ads/DesktopSideRails";
 import { StickyBottomAd } from "@/components/ads/StickyBottomAd";
 import { ConsentModeScript } from "@/components/consent-mode";
+import { InstallPwa } from "@/components/install-pwa";
 import { googleSiteVerification } from "@/lib/ads";
 import { monetagVerification } from "@/lib/monetization";
 import { siteConfig, siteUrl } from "@/lib/site";
@@ -89,6 +90,12 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="LAMP TIK" />
         <link
           rel="preload"
           href={FONT_PRELOAD_URL}
@@ -100,6 +107,7 @@ export default function RootLayout({
         <ConsentModeScript />
       </head>
       <body className="min-h-dvh">
+        <InstallPwa />
         {children}
         {/* Desktop side rails (xl+ margins) + sticky bottom bar (Slot E).
             Both self-gate on configuration and reserve no space when ads

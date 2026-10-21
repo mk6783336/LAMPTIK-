@@ -24,6 +24,7 @@ import { formatBytes, formatCount, formatDuration, formatYear } from "@/lib/form
 import type { ToastItem } from "@/components/toast";
 import { refreshLibraryBadge } from "@/components/library";
 import { AdSlot } from "@/components/ads/AdSlot";
+import { recordDownloadAndCheckThird, ThirdDownloadModal } from "@/components/ads/ThirdDownloadModal";
 import { PlatformIcon } from "@/components/platform-icons";
 import { cn } from "@/lib/cn";
 import {
@@ -197,6 +198,9 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
   const [healingNote, setHealingNote] = useState<string | null>(null);
   /** Post-download theater: stays 8s after completion. */
   const [completeNote, setCompleteNote] = useState<string | null>(null);
+  /** Every-3rd-download sponsor interstitial (never blocks the download). */
+  const [interstitialOpen, setInterstitialOpen] = useState(false);
+  const [interstitialFile, setInterstitialFile] = useState<string | null>(null);
   const busyRef = useRef<DownloadKind | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   /** Fires the Direct Link exactly once per download, at stream start. */
@@ -328,6 +332,14 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
   async function startDownload(kind: DownloadKind) {
     if (busyRef.current) return;
 
+    // Every 3rd download opens the 10-second sponsor interstitial. The file
+    // keeps streaming underneath regardless — the modal can be closed at any
+    // time without affecting the download.
+    if (recordDownloadAndCheckThird()) {
+      setInterstitialFile((media.title || "your video").slice(0, 48));
+      setInterstitialOpen(true);
+    }
+
     const initial =
       kind === "hd" ? hdUrl : kind === "sd" ? media.videoSd : media.audioMp3;
     if (!initial) return;
@@ -448,6 +460,7 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
       notifyLibraryChanged();
       refreshLibraryBadge();
 
+      setInterstitialFile(result.filename);
       flashComplete(`✓ Download Complete — ${result.filename} saved to your device`);
       onNotify({
         kind: "success",
@@ -507,6 +520,7 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
   }
 
   return (
+    <>
     <div data-accent={platform} className="relative">
       {/* Header rail: success state, platform identity, codec truth. */}
       <div className="flex items-start justify-between gap-2">
@@ -792,5 +806,11 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
         </div>
       </div>
     </div>
+    <ThirdDownloadModal
+      open={interstitialOpen}
+      filename={interstitialFile}
+      onClose={() => setInterstitialOpen(false)}
+    />
+    </>
   );
 }

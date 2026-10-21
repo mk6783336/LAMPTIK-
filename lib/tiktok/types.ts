@@ -1,4 +1,4 @@
-export type VideoSource = "tikwm" | "tiktok-page" | "instagram" | "facebook";
+export type VideoSource = "tikwm" | "tiktok-page" | "instagram" | "facebook" | "youtube";
 
 export type VideoQuality = "hd" | "sd";
 

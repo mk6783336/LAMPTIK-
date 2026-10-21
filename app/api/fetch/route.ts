@@ -4,6 +4,7 @@ import { AppError, errorResponse } from "@/lib/errors";
 import { resolveMedia } from "@/lib/media";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request";
+import { MAX_FETCH_BODY_BYTES, readBoundedJson } from "@/lib/security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,8 +18,8 @@ export const maxDuration = 30;
  */
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers);
-  // Token bucket: 20 resolve requests per minute per IP.
-  const limit = rateLimit(`fetch:${ip}`, 20, 60_000);
+  // Sliding-window token bucket: max 35 resolve requests per minute per IP.
+  const limit = rateLimit(`fetch:${ip}`, 35, 60_000);
 
   if (!limit.ok) {
     return errorResponse(
@@ -35,13 +36,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Payload size guard: reject bodies > 4096 bytes before parsing.
   let body: unknown;
   try {
-    body = await request.json();
-  } catch {
-    return errorResponse(
-      new AppError("BAD_REQUEST", "The request body must be valid JSON."),
-    );
+    body = await readBoundedJson(request, MAX_FETCH_BODY_BYTES);
+  } catch (error) {
+    return errorResponse(error);
   }
 
   const url =
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       new AppError(
         "INVALID_URL",
         "Paste a video link first.",
-        "Supported: TikTok, Instagram (reel/p/tv/share), and Facebook (videos/reels/watch/fb.watch/share) links.",
+        "Supported: TikTok, Instagram (reel/p/tv/share), Facebook (videos/reels/watch/fb.watch/share), and YouTube (watch/shorts/youtu.be) links.",
       ),
     );
   }

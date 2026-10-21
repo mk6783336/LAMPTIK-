@@ -4,6 +4,7 @@ import { AppError, errorResponse } from "@/lib/errors";
 import { DESKTOP_UA } from "@/lib/http";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request";
+import { assertPublicMediaUrl } from "@/lib/security";
 import {
   contentDisposition,
   isAllowedMediaUrl,
@@ -49,6 +50,7 @@ const PLATFORM_PROFILES: Record<DownloadPlatform, PlatformProfile> = {
   tiktok: { referer: "https://www.tiktok.com/" },
   instagram: { referer: "https://www.instagram.com/" },
   facebook: { referer: "https://www.facebook.com/" },
+  youtube: { referer: "https://www.youtube.com/" },
 };
 
 /** Response types that mean "this is an error page / playlist, not media". */
@@ -275,7 +277,12 @@ function parseRequest(request: NextRequest): ParsedRequest | AppError {
   if (kind !== "video" && kind !== "audio") {
     return new AppError("BAD_REQUEST", "Choose either a video or audio download.");
   }
-  if (!isAllowedMediaUrl(upstreamUrl)) {
+  // Strict SSRF gate: https-only, no credentials, no private/loopback host,
+  // and a match against the platform CDN allowlist — before any fetch.
+  try {
+    assertPublicMediaUrl(upstreamUrl);
+  } catch (error) {
+    if (error instanceof AppError) return error;
     return new AppError("BAD_REQUEST", "That media source isn't allowed.");
   }
 

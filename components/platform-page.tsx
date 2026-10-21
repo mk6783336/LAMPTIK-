@@ -25,7 +25,7 @@ import { siteUrl } from "@/lib/site";
 
 /** Per-page hero + structured data. Static strings — no client state. */
 const PAGE_CONTENT: Record<
-  Platform,
+  Exclude<Platform, "youtube">,
   {
     eyebrow: string;
     headlineLead: string;
@@ -95,13 +95,13 @@ const PAGE_CONTENT: Record<
   },
 };
 
-const APP_NAMES: Record<Platform, string> = {
+const APP_NAMES: Record<Exclude<Platform, "youtube">, string> = {
   tiktok: "LAMP TIK TikTok Downloader",
   instagram: "LAMP TIK Instagram Reels Downloader",
   facebook: "LAMP TIK Facebook Video Downloader",
 };
 
-const CANONICALS: Record<Platform, string> = {
+const CANONICALS: Record<Exclude<Platform, "youtube">, string> = {
   tiktok: "/",
   instagram: "/instagram-reels-downloader",
   facebook: "/facebook-video-downloader",
@@ -113,7 +113,7 @@ const CANONICALS: Record<Platform, string> = {
  * Downloader pre-configured for the platform, the bento capability grid, and
  * one-click cross-links to the other downloaders.
  */
-export function PlatformPage({ platform }: { platform: Platform }) {
+export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtube"> }) {
   const content = PAGE_CONTENT[platform];
   const canonical = CANONICALS[platform];
   const others = PLATFORM_LIST.filter((id) => id !== platform);
