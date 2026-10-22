@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "verify": "tsc --noEmit && next lint --max-warnings=0 && next build"
   },
   "dependencies": {
     "@distube/ytdl-core": "^4.16.12",

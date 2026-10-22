@@ -146,7 +146,7 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label, eager
           its frame; the compact fallback bar carries its own inline label —
           so there is never a duplicate "Sponsored" pill stacked on top. */}
       {creativeState === "filled" ? (
-        <p className="mb-1 text-center text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--text-3)]">
+        <p className="mb-1 text-center text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-3)]">
           Sponsored
         </p>
       ) : null}
@@ -216,7 +216,7 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label, eager
               <span className="text-amber-300/90">Sponsored</span> · Recommended tools &amp;
               offers
             </span>
-            <span className="shrink-0 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-200">
+            <span className="shrink-0 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-200">
               Open ↗
             </span>
           </a>
