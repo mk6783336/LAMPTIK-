@@ -19,6 +19,10 @@ export function ThemeToggle() {
   function setTheme(nextIsDark: boolean) {
     const root = document.documentElement;
     root.classList.toggle("dark", nextIsDark);
+    // The explicit toggle is the ONLY thing that can leave Obsidian dark:
+    // it records the choice, which the layout's boot script honours later.
+    root.setAttribute("data-theme", nextIsDark ? "dark" : "light");
+    root.style.colorScheme = nextIsDark ? "dark" : "light";
     setIsDark(nextIsDark);
     try {
       localStorage.setItem("lamptik-theme", nextIsDark ? "dark" : "light");

@@ -4,6 +4,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, Check, Info, X } from "lucide-react";
 import { useEffect } from "react";
 
+import { cn } from "@/lib/cn";
+
 export type ToastKind = "success" | "error" | "info";
 
 export interface ToastItem {
@@ -42,11 +44,16 @@ function ToastCard({
       exit={{ opacity: 0, y: 6, scale: 0.98 }}
       transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
       role={toast.kind === "error" ? "alert" : "status"}
-      // Solid opaque surface (NOT the translucent glass `.panel`): this stack
-      // is `fixed bottom-4` over page content, and on 390px viewports the
-      // error toast sat directly on top of the Download CTA with button text
-      // bleeding through the glass. Opaque bg + blur + shadow keeps it legible.
-      className="pointer-events-auto relative w-full overflow-hidden rounded-2xl border border-white/10 bg-[#0b0c12]/95 p-3.5 shadow-2xl backdrop-blur-2xl"
+      // 100% solid opaque surfaces, rendered IN-FLOW below the tool buttons
+      // (see ToastStack): nothing floats over the form any more, so no
+      // underlying button text can bleed through. Error cards get the solid
+      // `#120b10` + rose border treatment.
+      className={cn(
+        "pointer-events-auto relative w-full overflow-hidden rounded-2xl p-3.5 shadow-2xl",
+        toast.kind === "error"
+          ? "border-2 border-rose-500/50 bg-[#120b10]"
+          : "border border-white/10 bg-[#0b0c12]",
+      )}
     >
       <div className="flex gap-3">
         <Icon className="mt-0.5 size-4 shrink-0" style={{ color: style.color }} />
@@ -89,7 +96,11 @@ export function ToastStack({
   return (
     <div
       aria-live="polite"
-      className="pointer-events-none fixed inset-x-4 bottom-4 z-50 flex flex-col items-center gap-2 sm:inset-x-auto sm:bottom-6 sm:right-6 sm:items-end"
+      // In-flow block below the tool buttons — deliberately NOT `position:
+      // fixed`/`absolute`. On 390px screens the old fixed stack landed right
+      // on top of the Download CTA and the translucent toast let the button
+      // text bleed through.
+      className="pointer-events-auto flex w-full flex-col gap-2"
     >
       <AnimatePresence initial={false}>
         {toasts.map((toast) => (

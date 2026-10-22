@@ -56,7 +56,7 @@ export function GET(request: NextRequest) {
   var observer=new MutationObserver(signalFill);
   observer.observe(document.body,{childList:true,subtree:true});
   setTimeout(signalFill,120);
-  setTimeout(function(){observer.disconnect()},4000);
+  setTimeout(function(){observer.disconnect()},8000);
 })();
 </script>
 </body></html>`;
@@ -66,6 +66,10 @@ export function GET(request: NextRequest) {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "Referrer-Policy": "no-referrer-when-downgrade",
+      // Same-origin framing only: this document is embedded by our own pages
+      // (AdSlot <iframe>). `DENY` / `frame-ancestors 'none'` here would block
+      // that embed and force every slot into the no-fill fallback card.
+      "X-Frame-Options": "SAMEORIGIN",
       "Content-Security-Policy": [
         "default-src 'self'",
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:",
@@ -77,6 +81,7 @@ export function GET(request: NextRequest) {
         "font-src 'self' data: https:",
         "media-src * blob:",
         "object-src 'none'",
+        "frame-ancestors 'self'",
       ].join("; "),
       "Cache-Control": "public, max-age=300, s-maxage=300",
       "X-Content-Type-Options": "nosniff",

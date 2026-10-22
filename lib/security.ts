@@ -1,17 +1,24 @@
 import { AppError } from "@/lib/errors";
-import { isAllowedMediaUrl } from "@/lib/tiktok/allowlist";
 import { isPrivateHostname } from "@/lib/url-guard";
 
 /**
  * Production security hardening: SSRF + payload guards shared by the API
  * routes. Layered on top of the existing per-route checks (defense in depth):
  *
- *  - `assertPublicMediaUrl` — strictly validates a download target: https
- *    only, no credentials, no private/loopback/link-local host
- *    (10/8, 172.16/12, 192.168/16, 127/8, 169.254/16, ::1, localhost), and a
- *    match against the platform CDN allowlist.
+ *  - `assertPublicMediaUrl` — validates a download target: https only, no
+ *    credentials, and no private/loopback/link-local host (10/8, 172.16/12,
+ *    192.168/16, 127/8, 169.254/16, ::1, localhost).
  *  - `readBoundedJson` — rejects oversized JSON bodies before parsing so a
  *    hostile client can't force the server to buffer megabytes.
+ *
+ * IMPORTANT: the old policy also matched every host against a fixed CDN
+ * suffix list. That list could not keep up with reality — TikTok/TikWM/
+ * Instagram/Facebook rotate dozens of dynamic regional CDN domains
+ * (`*.muscdn.com`, `*.akamaized.net`, `*.tiktokcdn-*.com` variants, signed
+ * one-shot hosts) — and a valid signed URL on an unlisted host was rejected
+ * as "That media source isn't allowed", which surfaced to users as
+ * "The CDN link has expired". The SSRF core is the *private-network* check,
+ * not a hostname regex, so any public https host is now allowed.
  */
 
 /** Maximum /api/fetch JSON body: 4 KiB (a video URL is ~100 bytes). */
@@ -27,7 +34,25 @@ export function isBlockedHost(hostname: string): boolean {
   return isPrivateHostname(host);
 }
 
-/** Throw a BAD_REQUEST AppError unless `raw` is a public, allowlisted https media URL. */
+/**
+ * True when `raw` is a public https URL with no embedded credentials and no
+ * private/loopback/link-local host. Used both for the initial download target
+ * and for every redirect hop (a CDN 302 must not walk into internal space).
+ */
+export function isPublicMediaUrl(raw: string): boolean {
+  if (!raw || raw.length > 4_096) return false;
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return false;
+  }
+  if (url.protocol !== "https:") return false;
+  if (url.username || url.password) return false;
+  return !isBlockedHost(url.hostname);
+}
+
+/** Throw a BAD_REQUEST AppError unless `raw` is a public https media URL. */
 export function assertPublicMediaUrl(raw: string): URL {
   if (!raw || raw.length > 4_096) {
     throw new AppError("BAD_REQUEST", "That media source isn't allowed.");
@@ -45,9 +70,6 @@ export function assertPublicMediaUrl(raw: string): URL {
     throw new AppError("BAD_REQUEST", "That media source isn't allowed.");
   }
   if (isBlockedHost(url.hostname)) {
-    throw new AppError("BAD_REQUEST", "That media source isn't allowed.");
-  }
-  if (!isAllowedMediaUrl(raw)) {
     throw new AppError("BAD_REQUEST", "That media source isn't allowed.");
   }
   return url;

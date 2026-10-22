@@ -79,11 +79,21 @@ export async function resolveVideo(
 async function extractVideo(parsed: ParsedTikTokUrl): Promise<VideoInfo> {
   let lastError: unknown = null;
 
-  // 3-tier waterfall: primary page hydration -> embed player -> public
-  // TikWM API. runWaterfall enforces a strict 4.5s per-provider timeout
-  // and deprioritizes a dead upstream for 60s after 3 straight failures.
+  // 3-tier waterfall: TikWM first, then page hydration, then embed player.
+  // TikWM goes first on purpose: its `hdplay`/`play` URLs are stable direct
+  // play streams that need no browser session cookies and don't expire mid-
+  // click, so `/api/download` streams the MP4 reliably — the page/embed
+  // providers return TikTok-signed CDN URLs that can expire or demand a
+  // session before the user's download starts. runWaterfall enforces a
+  // strict 4.5s per-provider timeout and deprioritizes a dead upstream for
+  // 60s after 3 straight failures.
   try {
     const extracted = await runWaterfall([
+      {
+        name: "tiktok:tikwm",
+        timeoutMs: WATERFALL_TIMEOUT_MS,
+        fn: () => fetchFromTikwm(parsed.url),
+      },
       {
         name: "tiktok:page",
         timeoutMs: WATERFALL_TIMEOUT_MS,
@@ -93,11 +103,6 @@ async function extractVideo(parsed: ParsedTikTokUrl): Promise<VideoInfo> {
         name: "tiktok:embed",
         timeoutMs: WATERFALL_TIMEOUT_MS,
         fn: () => fetchFromEmbed(parsed.url, parsed.videoId),
-      },
-      {
-        name: "tiktok:tikwm",
-        timeoutMs: WATERFALL_TIMEOUT_MS,
-        fn: () => fetchFromTikwm(parsed.url),
       },
     ]);
     return withDownloadLinks(extracted);

@@ -10,8 +10,11 @@ import type { NextConfig } from "next";
  * deliberately permissive on the five ad-carrying directives (`https:` +
  * `unsafe-inline`/`unsafe-eval` + `data:`/`blob:`), while the hardening that
  * actually matters stays strict: `object-src 'none'`, `base-uri 'self'`,
- * `form-action 'self'`, `frame-ancestors 'none'` (clickjacking), and the
- * matching `X-Frame-Options: DENY` / COOP / CORP headers below.
+ * `form-action 'self'`, and same-origin framing only (`frame-ancestors 'self'`
+ * + `X-Frame-Options: SAMEORIGIN`) — plus COOP / CORP below. Framing is
+ * SAMEORIGIN rather than DENY because our own pages embed `/api/ad-frame` in
+ * an <iframe>: `DENY` / `frame-ancestors 'none'` blocked that frame and every
+ * inline ad slot fell back to the house card.
  *
  * The isolated `/api/ad-frame` route carries its own frame-scoped policy so
  * the eval-heavy creative loader runs there, not in the page.
@@ -63,7 +66,8 @@ const nextConfig: NextConfig = {
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",
-              "frame-ancestors 'none'",
+              // Same-origin framing only: our own pages embed /api/ad-frame.
+              "frame-ancestors 'self'",
             ].join("; "),
           },
           // Prevent MIME-type sniffing
@@ -91,10 +95,10 @@ const nextConfig: NextConfig = {
             key: "Cache-Control",
             value: "public, max-age=0, must-revalidate",
           },
-          // Prevent the page from being embedded in frames (clickjacking)
+          // Clickjacking guard that still allows our own /api/ad-frame embeds
           {
             key: "X-Frame-Options",
-            value: "DENY",
+            value: "SAMEORIGIN",
           },
           // Modern isolation: no cross-origin window/credential leakage, and
           // our own documents/images can't be embedded or framed by others.
@@ -118,12 +122,14 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // API routes: hardening headers without any framing or cache policy.
-        // Deliberately NO X-Frame-Options / frame-ancestors here — the
-        // same-origin `/api/ad-frame` creative must stay frameable by our
-        // own pages, and the download proxy sets its own `no-store`.
+        // API routes: hardening headers without any cache policy (the
+        // download proxy sets its own `no-store`). Framing is SAMEORIGIN /
+        // `frame-ancestors 'self'`: `/api/ad-frame` must stay embeddable by
+        // our own pages while third-party sites still cannot frame it.
         source: "/api/:path*",
         headers: [
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-XSS-Protection", value: "1; mode=block" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

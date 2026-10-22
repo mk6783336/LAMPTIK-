@@ -63,20 +63,14 @@ interface ResultPanelProps {
 type DownloadKind = "hd" | "sd" | "audio";
 
 /**
- * HEAD probe against our own proxy: verifies the signed CDN URL still serves
- * media before the browser is allowed to navigate to it. Returns false for
- * expired/403 links and JSON error payloads.
+ * NOTE: the old client-side `HEAD` pre-probe is deliberately gone. Signed
+ * TikTok/Facebook CDN URLs are often single-use or reject `HEAD` with 403
+ * while serving `GET` fine — probing first either consumed the one-shot URL
+ * or tripped the 403, and the download that followed failed with "The CDN
+ * link has expired". The stream now starts directly; the download proxy
+ * validates content type / size / first bytes server-side before anything
+ * is saved, so the probe added nothing but failures.
  */
-async function probeDownload(url: string): Promise<boolean> {
-  try {
-    const response = await fetch(url, { method: "HEAD", cache: "no-store" });
-    if (!response.ok) return false;
-    const type = (response.headers.get("content-type") ?? "").toLowerCase();
-    return type.startsWith("video/") || type.startsWith("audio/");
-  } catch {
-    return false;
-  }
-}
 
 /** Programmatic same-origin download — the server supplies the filename. */
 function saveUrl(url: string): void {
@@ -337,8 +331,8 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
   }
 
   /**
-   * Download flow: probe the signed URL, re-resolve once when it expired,
-   * then stream the bytes through our own proxy, where they are validated
+   * Download flow: stream the bytes straight through our own proxy (no
+   * pre-probe — signed CDN URLs are single-use), where they are validated
    * (content type, sniffing, declared length, container signature), handed
    * back to the browser under the video's ORIGINAL title, and kept in this
    * device's offline Library. A failure can never become a saved, corrupt file.
@@ -395,42 +389,10 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
     onNotify({
       kind: "info",
       title: "Preparing your download…",
-      description: "Checking the stream link before any bytes move.",
+      description: "Opening the stream connection now.",
     });
 
     try {
-      // Silent auto-heal: if the probe or save hits a transient hiccup or
-      // expired CDN signature, retry once in the background (attempt 2/2)
-      // with a reassuring badge before ever showing an error toast.
-      let downloadAttempt = 1;
-      if (!(await probeDownload(target))) {
-        setHealingNote("Switching to backup high-speed server… (attempt 2/2)");
-        const refreshed = await onRefresh();
-        setHealingNote(null);
-        target =
-          (kind === "hd"
-            ? refreshed?.videoHd ?? refreshed?.videoSd
-            : kind === "sd"
-              ? refreshed?.videoSd
-              : refreshed?.audioMp3) ?? "";
-
-        if (!target || !(await probeDownload(target))) {
-          onNotify({
-            kind: "error",
-            title: "The CDN link has expired",
-            description:
-              "We refreshed the stream, but the media server is still blocking it. Fetch the video again.",
-          });
-          return;
-        }
-
-        onNotify({
-          kind: "info",
-          title: "Stream refreshed",
-          description: "Downloading from a freshly signed CDN link.",
-        });
-      }
-
       const declared = expectedBytesFor(kind);
 
       // Very large files (1 GB+ Facebook uploads) are handed straight to the
@@ -450,9 +412,9 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
         return;
       }
 
-      const saveOnce = () =>
+      const saveOnce = (url: string) =>
         saveToLibrary({
-          url: target,
+          url,
           id: `${video.id}${kind === "sd" ? "-sd" : kind === "audio" ? "-audio" : ""}`,
           title: media.title || PLATFORMS[media.platform].videoNoun,
           platform: media.platform,
@@ -467,20 +429,27 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
         });
       let result;
       try {
-        result = await saveOnce();
+        result = await saveOnce(target);
       } catch (saveError) {
-        // One silent background retry for transient save failures.
+        // One silent background retry with a freshly re-resolved stream
+        // (attempt 2/2) for transient/expired-CDN save failures.
         if (saveError instanceof LibraryError && saveError.code !== "UNSUPPORTED") {
-          downloadAttempt = 2;
           setHealingNote("Switching to backup high-speed server… (attempt 2/2)");
-          await new Promise((resolve) => setTimeout(resolve, 600));
+          const refreshed = await onRefresh();
           setHealingNote(null);
-          result = await saveOnce();
+          const fresh =
+            (kind === "hd"
+              ? (refreshed?.videoHd ?? refreshed?.videoSd)
+              : kind === "sd"
+                ? refreshed?.videoSd
+                : refreshed?.audioMp3) ?? "";
+          if (fresh) target = fresh;
+          await new Promise((resolve) => setTimeout(resolve, 400));
+          result = await saveOnce(target);
         } else {
           throw saveError;
         }
       }
-      void downloadAttempt;
 
       notifyLibraryChanged();
       refreshLibraryBadge();

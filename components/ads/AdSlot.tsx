@@ -26,9 +26,9 @@ interface AdSlotProps {
  * CLS-safe, zero-white-flash Adsterra slot with an explicit sponsorship
  * disclosure.
  *
- * - Every unit renders inside `role="complementary"` carrying the visible
- *   `AD · SPONSORED PARTNER` pill, so a visitor can always tell advertising
- *   from site functionality.
+ * - Every unit renders inside `role="complementary"` carrying ONE visible
+ *   `Sponsored` pill, so a visitor can always tell advertising from site
+ *   functionality (never a duplicate badge inside the card itself).
  * - `#07080d` background + `colorScheme: 'dark'` on the frame and container:
  *   no white flash while the RTB creative loads.
  * - Slots pre-warm 600px before entering the viewport; the first
@@ -117,7 +117,10 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label, eager
     };
 
     window.addEventListener("message", onMessage);
-    const timeout = window.setTimeout(() => setCreative({ identity: slotIdentity, state: "fallback" }), 3_200);
+    // 8s (was 4s): over mobile data Adsterra's RTB creative often needs more
+    // than a few seconds to win the auction and paint — falling back early
+    // was throwing away live paid impressions.
+    const timeout = window.setTimeout(() => setCreative({ identity: slotIdentity, state: "fallback" }), 8_000);
     return () => {
       window.removeEventListener("message", onMessage);
       window.clearTimeout(timeout);
@@ -139,20 +142,24 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label, eager
       data-ad-slot={format}
       data-ad-state={creativeState}
     >
-      {/* Disclosure pill — always visible, amber, never styled like a CTA. */}
+      {/* ONE disclosure pill — always visible, amber, never styled like a
+          CTA, and never duplicated inside the creative/fallback card. */}
       <p className="mb-1.5 flex justify-center">
         <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/[0.03] px-2.5 py-1 text-xs font-medium text-amber-300/90">
           <span aria-hidden="true" className="size-1.5 rounded-full bg-amber-400/80" />
-          AD · SPONSORED PARTNER
+          Sponsored
         </span>
       </p>
 
       <div
         ref={hostRef}
         className={cn(
-          "relative mx-auto w-full max-w-[728px] overflow-hidden",
-          hasVisibleContent && "rounded-2xl border border-amber-500/15 bg-[#07080d]",
+          "relative mx-auto box-border w-full max-w-full overflow-hidden",
+          // Border only around a live creative; the fallback card carries its
+          // own border so there is never a clipped or doubled outline.
+          creativeState === "filled" && "rounded-2xl border border-amber-500/15 bg-[#07080d]",
           !isLeaderboard && "max-w-[300px]",
+          isLeaderboard && "max-w-[728px]",
         )}
         style={{
           height: hasVisibleContent ? scaled.height : 0,
@@ -201,40 +208,37 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label, eager
             rel="sponsored nofollow noopener"
             aria-label="Sponsored partner offer — opens in a new tab"
             className={cn(
-              "absolute left-0 top-0 flex overflow-hidden rounded-2xl border border-amber-500/25 bg-[linear-gradient(135deg,#12100a_0%,#0d0f14_55%,#090b12_100%)] p-4 text-white transition-colors hover:border-amber-400/50",
-              isLeaderboard ? "items-center justify-between gap-4" : "flex-col justify-between gap-4",
+              // Fluid inside the reserved slot (`w-full max-w-full box-border
+              // overflow-hidden`): the old fixed-width scaled card was wider
+              // than its parent on 390px screens and its right border was
+              // clipped. No second "Sponsored" label inside — the pill above
+              // is the single disclosure.
+              "absolute inset-0 box-border flex w-full max-w-full overflow-hidden rounded-2xl border border-amber-500/25 bg-[linear-gradient(135deg,#12100a_0%,#0d0f14_55%,#090b12_100%)] p-2.5 text-white transition-colors hover:border-amber-400/50 sm:p-4",
+              isLeaderboard
+                ? "items-center justify-between gap-2 sm:gap-4"
+                : "flex-col justify-between gap-3",
             )}
-            style={{
-              width,
-              height,
-              backgroundColor: "#07080d",
-              colorScheme: "dark",
-              transform: `scale(${scale})`,
-              transformOrigin: "top left",
-            }}
+            style={{ backgroundColor: "#07080d", colorScheme: "dark" }}
           >
-            <span className="flex min-w-0 items-center gap-3">
+            <span className="flex min-w-0 items-center gap-2 sm:gap-3">
               <span
                 aria-hidden="true"
-                className="grid size-10 shrink-0 place-items-center rounded-xl border border-amber-500/25 bg-amber-500/10 text-base text-amber-300"
+                className="grid size-8 shrink-0 place-items-center rounded-xl border border-amber-500/25 bg-amber-500/10 text-sm text-amber-300 sm:size-10 sm:text-base"
               >
                 ↗
               </span>
-              <span className="min-w-0">
-                <span className="block text-xs font-medium text-amber-300/90">Sponsored partner</span>
-                <span
-                  className={cn(
-                    "mt-1 block font-semibold leading-snug text-slate-100",
-                    isLeaderboard ? "text-sm" : "text-base",
-                  )}
-                >
-                  Discover Recommended Tools &amp; Offers
-                </span>
+              <span
+                className={cn(
+                  "min-w-0 font-semibold leading-snug text-slate-100",
+                  isLeaderboard ? "text-xs sm:text-sm" : "text-sm sm:text-base",
+                )}
+              >
+                Discover Recommended Tools &amp; Offers
               </span>
             </span>
             <span
               className={cn(
-                "inline-flex shrink-0 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs font-semibold text-amber-200",
+                "inline-flex shrink-0 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-semibold text-amber-200 sm:px-3.5 sm:py-2 sm:text-xs",
                 !isLeaderboard && "self-start",
               )}
             >

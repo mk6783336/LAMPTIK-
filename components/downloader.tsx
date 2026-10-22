@@ -444,7 +444,6 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
 
   return (
     <div id="tool" data-ad-guard="tool" className="relative scroll-mt-24">
-      <ToastStack toasts={toasts} onDismiss={dismissToast} />
 
       {/* Ambient halo behind the tool — a pre-painted radial gradient, not a
           blur filter, so it costs nothing to composite. */}
@@ -574,6 +573,14 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
             </motion.div>
           ) : null}
         </AnimatePresence>
+      </div>
+
+      {/* Notifications render IN-FLOW below the tool buttons as solid opaque
+          blocks — never a floating overlay on top of the form (on 390px
+          screens the old fixed toast sat over the Download CTA with the
+          button text bleeding through). */}
+      <div className="mt-3">
+        <ToastStack toasts={toasts} onDismiss={dismissToast} />
       </div>
 
       {/* Keyboard hint: desktop only — mobile users tap the Paste button. */}

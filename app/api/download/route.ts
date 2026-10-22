@@ -4,10 +4,9 @@ import { AppError, errorResponse } from "@/lib/errors";
 import { DESKTOP_UA } from "@/lib/http";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request";
-import { assertPublicMediaUrl } from "@/lib/security";
+import { assertPublicMediaUrl, isPublicMediaUrl } from "@/lib/security";
 import {
   contentDisposition,
-  isAllowedMediaUrl,
   safeFilenamePart,
   safePlatform,
   type DownloadPlatform,
@@ -24,11 +23,11 @@ import {
  * response has started within 25s). The body is piped chunk-by-chunk with
  * native backpressure — memory stays flat at any file size.
  *
- * Safety: every hop is checked against the platform CDN allowlist, the
- * upstream payload is validated (content type, size, first bytes) BEFORE
- * `Content-Disposition: attachment` is attached, and any failure returns a
- * JSON error *without* an attachment header so a browser can never save
- * `download.json` to the user's gallery.
+ * Safety: every hop must stay a public https host (private/loopback targets
+ * are rejected — SSRF), the upstream payload is validated (content type,
+ * size, first bytes) BEFORE `Content-Disposition: attachment` is attached,
+ * and any failure returns a JSON error *without* an attachment header so a
+ * browser can never save `download.json` to the user's gallery.
  */
 
 export const runtime = "edge";
@@ -64,8 +63,20 @@ function profileFor(platform: DownloadPlatform, upstreamUrl: string): PlatformPr
     if (hostname === "tikwm.com" || hostname.endsWith(".tikwm.com")) {
       return { referer: "https://www.tikwm.com/" };
     }
+    // Loader.to / OceanSaver proxy renditions (including their rotating
+    // download hosts like `*.savenow.to`) require their own Referer.
+    if (
+      hostname === "loader.to" ||
+      hostname.endsWith(".loader.to") ||
+      hostname === "oceansaver.in" ||
+      hostname.endsWith(".oceansaver.in") ||
+      hostname === "savenow.to" ||
+      hostname.endsWith(".savenow.to")
+    ) {
+      return { referer: "https://loader.to/" };
+    }
   } catch {
-    // Allowlist validation already rejected malformed URLs.
+    // URL validation already rejected malformed inputs.
   }
   return PLATFORM_PROFILES[platform];
 }
@@ -94,7 +105,10 @@ async function fetchAllowedMedia(
   let currentUrl = startUrl;
 
   for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
-    if (!isAllowedMediaUrl(currentUrl)) {
+    // Public https only: any platform CDN host is fine (they rotate dozens of
+    // dynamic regional domains), but a redirect must never walk into
+    // localhost / private / link-local space.
+    if (!isPublicMediaUrl(currentUrl)) {
       throw new AppError("BAD_REQUEST", "That media source isn't allowed.");
     }
 
@@ -277,8 +291,8 @@ function parseRequest(request: NextRequest): ParsedRequest | AppError {
   if (kind !== "video" && kind !== "audio") {
     return new AppError("BAD_REQUEST", "Choose either a video or audio download.");
   }
-  // Strict SSRF gate: https-only, no credentials, no private/loopback host,
-  // and a match against the platform CDN allowlist — before any fetch.
+  // Strict SSRF gate: https-only, no credentials, and no private/loopback
+  // host — before any fetch. Any public platform CDN host is accepted.
   try {
     assertPublicMediaUrl(upstreamUrl);
   } catch (error) {
@@ -338,6 +352,14 @@ export async function GET(request: NextRequest) {
     const headers = upstreamHeadersFor(platform, upstreamUrl);
     if (range) headers.Range = range;
     upstream = await fetchAllowedMedia(upstreamUrl, headers, abort.signal);
+
+    // Some signed CDN URLs reject `Range` outright (403/416) while serving a
+    // plain GET fine — retry once without the Range header before giving up.
+    if (range && (upstream.status === 403 || upstream.status === 416)) {
+      await upstream.body?.cancel().catch(() => undefined);
+      const plainHeaders = upstreamHeadersFor(platform, upstreamUrl);
+      upstream = await fetchAllowedMedia(upstreamUrl, plainHeaders, abort.signal);
+    }
   } catch (error) {
     if (error instanceof AppError && error.code === "BAD_REQUEST") return errorResponse(error);
     return errorResponse(

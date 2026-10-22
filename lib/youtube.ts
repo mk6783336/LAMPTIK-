@@ -8,17 +8,26 @@ import { runWaterfall, WATERFALL_TIMEOUT_MS } from "@/lib/load-balancer";
  * Bulletproof multi-provider YouTube resolution engine.
  *
  * Chain (first stream wins; metadata-only Phase B never 500s):
- *   1. `@distube/ytdl-core` — clean signature-deciphered extraction of muxed
- *      progressive MP4 (720p itag 22 / 360p itag 18) + highest-bitrate audio.
- *   2. Innertube `/youtubei/v1/player` (ANDROID / IOS / TV_EMBEDDED clients)
+ *   1. Loader.to / OceanSaver conversion API (`loader.to/ajax/download.php`) —
+ *      runs on residential proxy pools, so it keeps working from datacenter
+ *      IPs (Vercel) where YouTube bot-checks everything else. Start a 1080p
+ *      MP4 + MP3 job, poll the returned `progress_url` until `success`
+ *      yields a `download_url`. (The legacy `p.oceansaver.in` host is dead —
+ *      NXDOMAIN — the same API now lives on `loader.to`.)
+ *   2. Public Invidious / Piped API cluster (2026-active instances:
+ *      inv.nadeko.net, invidious.nerdvpn.de, pipedapi.adminforge.de) —
+ *      muxed MP4 + audio mirrors. The legacy kavin.rocks / tokhmi.xyz /
+ *      reallyaweso.me / tux.pizza hosts are dead and were removed.
+ *   3. `@distube/ytdl-core` (TV_EMBEDDED / IOS player clients) — clean
+ *      signature-deciphered extraction of muxed progressive MP4 (720p itag
+ *      22 / 360p itag 18) + highest-bitrate audio.
+ *   4. Innertube `/youtubei/v1/player` (ANDROID / IOS / TV_EMBEDDED clients)
  *      via direct fetch — same streams, no dependency in the loop.
- *   3. Public Piped / Invidious API cluster — 1080p-capable muxed MP4 +
- *      audio when Vercel's IP hits a YouTube bot check.
+ *   5. noembed / oEmbed metadata — proves the video exists so failures answer
+ *      with a friendly retry message, never a raw error dump.
  *      (NOTE: the legacy cobalt `co.wuk.sh/api/json` endpoint was shut down
  *      2024-11-11 and current cobalt instances require per-owner API keys /
  *      Turnstile, so cobalt is deliberately NOT in this chain.)
- *   4. noembed / oEmbed metadata — proves the video exists so failures answer
- *      with a friendly retry message, never a raw error dump.
  *
  * Everything here resolves small-JSON metadata only — no media bytes are ever
  * buffered. Files stream through `/api/download` chunk-by-chunk (Range
@@ -93,6 +102,25 @@ export function parseYouTubeUrl(raw: string): { id: string; canonicalUrl: string
 }
 
 /* ------------------------------------------------------------------ Tier 1 */
+
+/**
+ * Loader.to / OceanSaver conversion API.
+ *
+ * `download.php` starts a conversion job and returns `id` + `progress_url`
+ * (plus title/thumbnail metadata); polling that `progress_url` reports
+ * `success` and the final `download_url` once the file is ready. The service
+ * extracts streams through its own residential proxy pool, so it resolves
+ * videos that bot-check datacenter IPs.
+ */
+const LOADER_DOWNLOAD_API = "https://loader.to/ajax/download.php";
+const LOADER_FALLBACK_PROGRESS = "https://loader.to/ajax/progress.php";
+const LOADER_POLL_MS = 1_000;
+const LOADER_MAX_POLLS = 22;
+/** Budget for the conversion path (job start + polling). Measured: real
+ *  conversions land between ~2s (Shorts) and ~30s (long 1080p uploads).
+ *  It runs in parallel with the direct providers, so a slow conversion never
+ *  delays a fast mirror — and a bot-checked direct path never starves it. */
+const LOADER_TIMEOUT_MS = 25_000;
 
 interface TierHit {
   id: string;
@@ -174,6 +202,102 @@ async function ytdlCoreResolve(videoId: string, canonicalUrl: string): Promise<T
       videoSd: primary && sd?.url && sd.url !== primary ? sd.url : null,
       audio,
     },
+  };
+}
+
+interface LoaderJob {
+  progressUrl: string;
+  downloadUrl: string | null;
+  title: string | null;
+  thumbnail: string | null;
+}
+
+/** Start one conversion job (`1080` MP4 or `mp3`). */
+async function loaderStartJob(format: string, canonicalUrl: string): Promise<LoaderJob> {
+  const endpoint = `${LOADER_DOWNLOAD_API}?format=${format}&url=${encodeURIComponent(canonicalUrl)}`;
+  const response = await fetch(endpoint, {
+    headers: {
+      Accept: "application/json",
+      Referer: "https://loader.to/",
+      Origin: "https://loader.to",
+      "User-Agent": DESKTOP_UA,
+    },
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    throw new AppError("PROVIDER_UNAVAILABLE", "The converter mirror didn't answer.");
+  }
+  const data = asRecord(await response.json().catch(() => null));
+  if (!data) {
+    throw new AppError("PROVIDER_UNAVAILABLE", "The converter mirror returned an empty response.");
+  }
+  const direct = httpsUrl(data.download_url);
+  const id = asString(data.id) ?? asString(data.hid) ?? "";
+  const progressUrl =
+    httpsUrl(data.progress_url) ??
+    (id ? `${LOADER_FALLBACK_PROGRESS}?id=${encodeURIComponent(id)}` : "");
+  if (!direct && !progressUrl) {
+    throw new AppError("PROVIDER_UNAVAILABLE", "The converter mirror didn't accept this video.");
+  }
+  const info = asRecord(data.info);
+  return {
+    progressUrl,
+    downloadUrl: direct,
+    title: asString(info?.title) ?? asString(data.title) ?? null,
+    thumbnail: httpsUrl(data.thumbnail_url) ?? httpsUrl(info?.image) ?? null,
+  };
+}
+
+/** Poll a conversion job until `success` yields a `download_url`. */
+async function loaderAwaitJob(job: LoaderJob): Promise<string> {
+  if (job.downloadUrl) return job.downloadUrl;
+  for (let poll = 0; poll < LOADER_MAX_POLLS; poll += 1) {
+    if (poll > 0) await new Promise((resolve) => setTimeout(resolve, LOADER_POLL_MS));
+    // A transient network hiccup mid-poll must not kill the whole conversion
+    // path — skip the beat and keep polling until the budget is spent.
+    const data = await fetch(job.progressUrl, {
+      headers: {
+        Accept: "application/json",
+        Referer: "https://loader.to/",
+        "User-Agent": DESKTOP_UA,
+      },
+      cache: "no-store",
+    })
+      .then(async (response) => (response.ok ? asRecord(await response.json().catch(() => null)) : null))
+      .catch(() => null);
+    if (!data) continue;
+    // `success == 1` marks completion; the `download_url` is what we need.
+    const done =
+      httpsUrl(data.download_url) ?? httpsUrl(data.downloadUrl) ?? httpsUrl(data.file_url);
+    if (done) return done;
+  }
+  throw new AppError("PROVIDER_UNAVAILABLE", "The converter mirror is still processing this video.");
+}
+
+/** Primary: Loader.to/OceanSaver — works from datacenter IPs. */
+async function loaderResolve(videoId: string, canonicalUrl: string): Promise<TierHit> {
+  // The author name comes from YouTube's public oEmbed (the converter only
+  // exposes title/thumbnail), fetched concurrently with the conversion jobs.
+  const metaPromise = oembedMeta(videoId, canonicalUrl).catch(() => null);
+
+  const [videoJob, audioJob] = await Promise.all([
+    loaderStartJob("1080", canonicalUrl),
+    loaderStartJob("mp3", canonicalUrl).catch(() => null),
+  ]);
+
+  const [videoUrl, audioUrl, meta] = await Promise.all([
+    loaderAwaitJob(videoJob),
+    audioJob ? loaderAwaitJob(audioJob).catch(() => null) : Promise.resolve(null),
+    metaPromise,
+  ]);
+
+  return {
+    id: videoId,
+    title: videoJob.title ?? meta?.title ?? `YouTube video ${videoId}`,
+    author: meta?.author ?? "YouTube",
+    duration: meta?.duration ?? 0,
+    thumbnail: videoJob.thumbnail ?? meta?.thumbnail ?? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+    streams: { video: videoUrl, videoSd: null, audio: audioUrl },
   };
 }
 
@@ -317,14 +441,11 @@ async function innertubePlayer(
 
 /* ------------------------------------------------------------------ Tier 3 */
 
-const PIPED_APIS = [
-  "https://pipedapi.kavin.rocks",
-  "https://pipedapi.tokhmi.xyz",
-  "https://pipedapi.adminforge.de",
-  "https://pipedapi.reallyaweso.me",
-];
+// 2026-active public instances. The legacy kavin.rocks / tokhmi.xyz /
+// reallyaweso.me / tux.pizza domains are dead and were removed.
+const PIPED_APIS = ["https://pipedapi.adminforge.de"];
 
-const INVIDIOUS_APIS = ["https://inv.tux.pizza", "https://invidious.adminforge.de"];
+const INVIDIOUS_APIS = ["https://inv.nadeko.net", "https://invidious.nerdvpn.de"];
 
 interface PipedStream {
   url?: unknown;
@@ -485,6 +606,58 @@ async function oembedMeta(videoId: string, canonicalUrl: string): Promise<TierHi
   };
 }
 
+/** Hard wall-clock bound around a provider that manages its own polling. */
+function withDeadline<T>(promise: Promise<T>, timeoutMs: number, name: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_resolve, reject) => {
+      setTimeout(() => {
+        reject(new AppError("PROVIDER_UNAVAILABLE", `${name} timed out after ${timeoutMs}ms.`));
+      }, timeoutMs);
+    }),
+  ]);
+}
+
+/** Errors that describe the VIDEO itself (not the provider path). */
+function isDefinitiveVideoError(error: unknown): boolean {
+  return (
+    error instanceof AppError &&
+    (error.code === "VIDEO_PRIVATE" ||
+      error.code === "VIDEO_NOT_FOUND" ||
+      error.code === "UNSUPPORTED_URL")
+  );
+}
+
+/**
+ * Race two resolution paths: the FIRST stream wins. Rejection, however, waits
+ * for BOTH sides to finish — a bot-checked Innertube answer must not
+ * short-circuit a converter job that is seconds away from a real stream
+ * (that mismatch is exactly what surfaced to users as "YouTube is
+ * rate-limiting this network"). When both sides fail, a definitive video
+ * error (private / deleted / livestream) is preferred over provider noise.
+ */
+function firstDefinitiveHit(direct: Promise<TierHit>, conversion: Promise<TierHit>): Promise<TierHit> {
+  return new Promise<TierHit>((resolve, reject) => {
+    let pending = 2;
+    let definitive: unknown = null;
+    let lastError: unknown = null;
+    const fail = (error: unknown) => {
+      if (isDefinitiveVideoError(error)) definitive = definitive ?? error;
+      lastError = error;
+      pending -= 1;
+      if (pending === 0) {
+        reject(
+          definitive ??
+            lastError ??
+            new AppError("PROVIDER_UNAVAILABLE", "No stream provider answered."),
+        );
+      }
+    };
+    direct.then(resolve, fail);
+    conversion.then(resolve, fail);
+  });
+}
+
 /* --------------------------------------------------------------- resolution */
 
 /**
@@ -504,7 +677,31 @@ export async function extractYouTube(rawUrl: string): Promise<ResolvedYouTube> {
   const { id, canonicalUrl } = parsed;
 
   try {
-    const hit = await runWaterfall<TierHit>([
+    // Tier 1 (Loader/OceanSaver conversion) runs CONCURRENTLY with the
+    // direct-mirror waterfall (Tiers 2–4) and the first stream wins. The
+    // converter needs 2–30s to transcode while the direct mirrors answer in
+    // milliseconds when they work — so racing them gives the fast path when
+    // YouTube isn't bot-checking this network, and still lands a stream from
+    // datacenter IPs where every direct call is blocked. A definitive answer
+    // (private / deleted / livestream) ends the race immediately.
+    const conversionChain = withDeadline(
+      loaderResolve(id, canonicalUrl),
+      LOADER_TIMEOUT_MS,
+      "youtube:loader",
+    );
+    const directChain = runWaterfall<TierHit>([
+      // Tier 2: active Invidious / Piped mirrors.
+      ...INVIDIOUS_APIS.map((api) => ({
+        name: `youtube:invidious:${new URL(api).hostname}`,
+        timeoutMs: WATERFALL_TIMEOUT_MS,
+        fn: () => invidiousStreams(id, api),
+      })),
+      ...PIPED_APIS.map((api) => ({
+        name: `youtube:piped:${new URL(api).hostname}`,
+        timeoutMs: WATERFALL_TIMEOUT_MS,
+        fn: () => pipedStreams(id, api),
+      })),
+      // Tier 3: direct extraction (ytdl-core + Innertube clients).
       {
         name: "youtube:ytdl-core",
         timeoutMs: WATERFALL_TIMEOUT_MS,
@@ -515,17 +712,9 @@ export async function extractYouTube(rawUrl: string): Promise<ResolvedYouTube> {
         timeoutMs: WATERFALL_TIMEOUT_MS,
         fn: () => innertubePlayer(id, client),
       })),
-      ...PIPED_APIS.map((api) => ({
-        name: `youtube:piped:${new URL(api).hostname}`,
-        timeoutMs: WATERFALL_TIMEOUT_MS,
-        fn: () => pipedStreams(id, api),
-      })),
-      ...INVIDIOUS_APIS.map((api) => ({
-        name: `youtube:invidious:${new URL(api).hostname}`,
-        timeoutMs: WATERFALL_TIMEOUT_MS,
-        fn: () => invidiousStreams(id, api),
-      })),
     ]);
+
+    const hit = await firstDefinitiveHit(directChain, conversionChain);
     if (!hit.streams || (!hit.streams.video && !hit.streams.audio)) {
       throw new AppError(
         "PROVIDER_UNAVAILABLE",

@@ -85,7 +85,7 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-const bootScript = `(function(){try{var s=localStorage.getItem("lamptik-theme");var light=s==="light";document.documentElement.classList.toggle("dark",!light);document.documentElement.style.colorScheme=light?"light":"dark";}catch(e){document.documentElement.classList.add("dark");}})();`;
+const bootScript = `(function(){try{var s=localStorage.getItem("lamptik-theme");var light=s==="light";var r=document.documentElement;r.classList.toggle("dark",!light);r.setAttribute("data-theme",light?"light":"dark");r.style.colorScheme=light?"light":"dark";}catch(e){var r=document.documentElement;r.classList.add("dark");r.setAttribute("data-theme","dark");}})();`;
 
 /** `hreflang` cluster for the regional landing pages. */
 const HREFLANG_LINKS = [
@@ -104,6 +104,7 @@ export default function RootLayout({
     <html
       lang="en"
       className="dark"
+      data-theme="dark"
       suppressHydrationWarning
     >
       <head>
