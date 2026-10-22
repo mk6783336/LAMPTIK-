@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 
 import { AdScripts } from "@/components/ads/AdScripts";
 import { DesktopSideRails } from "@/components/ads/DesktopSideRails";
-import { StickyBottomAd } from "@/components/ads/StickyBottomAd";
 import { ConsentModeScript } from "@/components/consent-mode";
 import { InstallPwa } from "@/components/install-pwa";
 import { googleSiteVerification } from "@/lib/ads";
@@ -76,7 +75,12 @@ export const metadata: Metadata = {
  * light — or any browser that reports light by default — got a washed-out
  * grey page that is not the product. Dark is now unconditional: the only way
  * to see light mode is to press the toggle, which writes an explicit
- * `lamptik-theme=light` that this boot script honours on later visits.
+ * `lamptik_theme_v3=light` that this boot script honours on later visits.
+ *
+ * The storage KEY is versioned on purpose: older builds stored a
+ * `lamptik-theme=light` choice that kept returning visitors in light mode
+ * forever. Reading a fresh key means every existing browser starts in
+ * Obsidian dark (#050505) once, with no stale value carried over.
  */
 export const viewport: Viewport = {
   themeColor: "#050505",
@@ -85,7 +89,7 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-const bootScript = `(function(){try{var s=localStorage.getItem("lamptik-theme");var light=s==="light";var r=document.documentElement;r.classList.toggle("dark",!light);r.setAttribute("data-theme",light?"light":"dark");r.style.colorScheme=light?"light":"dark";}catch(e){var r=document.documentElement;r.classList.add("dark");r.setAttribute("data-theme","dark");}})();`;
+const bootScript = `(function(){try{var s=localStorage.getItem("lamptik_theme_v3");var light=s==="light";var r=document.documentElement;r.classList.toggle("dark",!light);r.setAttribute("data-theme",light?"light":"dark");r.style.colorScheme=light?"light":"dark";}catch(e){var r=document.documentElement;r.classList.add("dark");r.setAttribute("data-theme","dark");}})();`;
 
 /** `hreflang` cluster for the regional landing pages. */
 const HREFLANG_LINKS = [
@@ -142,11 +146,11 @@ export default function RootLayout({
       <body className="min-h-dvh">
         <InstallPwa />
         {children}
-        {/* Desktop side rails (xl+ margins) + sticky bottom bar (Slot E).
-            Both self-gate on configuration and reserve no space when ads
-            are absent. */}
+        {/* Desktop side rails (xl+ margins) only. The fixed sticky bottom bar
+            was removed: on phones it parked a blurred bar over the last
+            control and, together with the inline slots, produced a pile of
+            stacked dark ad boxes. Inline slots live in the document flow. */}
         <DesktopSideRails />
-        <StickyBottomAd />
         {/* Adsterra Social Bar + Monetag Vignette. Loaded for every visitor
             (no consent gate) after hydration, so first paint and LCP are
             untouched while every pageview is monetized. */}

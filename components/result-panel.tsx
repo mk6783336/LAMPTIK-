@@ -72,16 +72,36 @@ type DownloadKind = "hd" | "sd" | "audio";
  * is saved, so the probe added nothing but failures.
  */
 
-/** Programmatic same-origin download — the server supplies the filename. */
-function saveUrl(url: string): void {
+/**
+ * Programmatic same-origin download — the server supplies the filename.
+ *
+ * `newTab` is for direct CDN hand-offs: the browser opens the URL in its own
+ * tab, so a response that is not an attachment can never navigate the tool
+ * away from the user's result.
+ */
+function saveUrl(url: string, newTab = false): void {
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = "";
-  anchor.rel = "noopener";
+  anchor.rel = "noopener noreferrer";
+  if (newTab) anchor.target = "_blank";
   anchor.style.display = "none";
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
+}
+
+/** Signed converter hosts that refuse datacenter-side fetches. */
+const EXTERNAL_CONVERTER_HOSTS = /(^|\.)(loader\.to|oceansaver\.in|savenow\.to)$/i;
+
+/** Upstream hostname behind a same-origin `/api/download?u=…` URL. */
+function upstreamHost(downloadUrl: string): string | null {
+  try {
+    const raw = new URL(downloadUrl, "https://lamptik.local").searchParams.get("u");
+    return raw ? new URL(raw).hostname : null;
+  } catch {
+    return null;
+  }
 }
 
 function DownloadAction({
@@ -393,6 +413,31 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
     });
 
     try {
+      // YouTube streams live on converter CDNs (loader.to / savenow.to) that
+      // block Vercel's egress and refuse cross-origin fetch() — the bytes
+      // have to be fetched by the visitor's own browser. The server answers
+      // with a 302 to the CDN, so a plain navigation downloads the file.
+      // Everything here is synchronous on purpose: the click's user gesture
+      // must still be alive for the new tab to be allowed.
+      const sourceHost = upstreamHost(target);
+      const directHandOff =
+        media.platform === "youtube" ||
+        (sourceHost !== null && EXTERNAL_CONVERTER_HOSTS.test(sourceHost));
+
+      if (directHandOff) {
+        saveUrl(target, true);
+        flashComplete("✓ Download started — your browser is saving the file");
+        onNotify({
+          kind: "success",
+          title: "Download started",
+          description: "Your browser is fetching the file straight from the source.",
+        });
+        monetizedRef.current = true;
+        triggerDirectLinkMonetization();
+        monetize();
+        return;
+      }
+
       const declared = expectedBytesFor(kind);
 
       // Very large files (1 GB+ Facebook uploads) are handed straight to the
@@ -477,6 +522,22 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
       }
 
       if (requestError instanceof LibraryError) {
+        // The proxy refused (the CDN blocked our server, or the network
+        // dropped): hand the same URL to the browser instead of dead-ending.
+        if ((requestError.code === "HTTP" || requestError.code === "NETWORK") && target) {
+          saveUrl(target, true);
+          flashComplete("✓ Download started — your browser is saving the file");
+          onNotify({
+            kind: "success",
+            title: "Download started",
+            description: "Your browser is fetching the file directly from the source.",
+          });
+          monetizedRef.current = true;
+          triggerDirectLinkMonetization();
+          monetize();
+          return;
+        }
+
         // No streaming support here: fall back to the plain, server-named
         // download rather than failing the user outright.
         if (requestError.code === "UNSUPPORTED" && target) {

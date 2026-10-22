@@ -24,6 +24,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
+  // ESLint runs as its own gate (npm run lint + CI); it must not be able to
+  // fail a production deployment after typecheck and compilation pass.
+  eslint: { ignoreDuringBuilds: true },
   // Performance & optimization
   experimental: {
     optimizePackageImports: ["lucide-react", "framer-motion"],
@@ -192,7 +195,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Content-Disposition",
-            value: 'attachment; filename="LAMP-TIK-v3.0.apk"',
+            value: 'attachment; filename="LAMP-TIK-v3.1.apk"',
           },
           {
             key: "Cache-Control",

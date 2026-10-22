@@ -49,7 +49,10 @@ function ToastCard({
       // underlying button text can bleed through. Error cards get the solid
       // `#120b10` + rose border treatment.
       className={cn(
-        "pointer-events-auto relative w-full overflow-hidden rounded-2xl p-3.5 shadow-2xl",
+        // Explicit light text on the dark card: the card's background is dark
+        // in BOTH themes, so inheriting `var(--text)` made error titles black
+        // on near-black in light mode (the unreadable box in the screenshot).
+        "pointer-events-auto relative w-full overflow-hidden rounded-2xl p-3.5 text-white shadow-2xl",
         toast.kind === "error"
           ? "border-2 border-rose-500/50 bg-[#120b10]"
           : "border border-white/10 bg-[#0b0c12]",
@@ -60,7 +63,12 @@ function ToastCard({
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium leading-snug">{toast.title}</p>
           {toast.description ? (
-            <p className="mt-1 text-sm leading-relaxed text-[var(--text-2)]">
+            <p
+              className={cn(
+                "mt-1 text-sm leading-relaxed",
+                toast.kind === "error" ? "text-rose-200" : "text-[#c3cbdb]",
+              )}
+            >
               {toast.description}
             </p>
           ) : null}
@@ -69,7 +77,7 @@ function ToastCard({
           type="button"
           onClick={() => onDismiss(toast.id)}
           aria-label="Dismiss notification"
-          className="-mr-1 -mt-1 grid size-7 shrink-0 place-items-center rounded-lg text-[var(--text-3)] transition-colors duration-100 hover:bg-[var(--field)] hover:text-[var(--text)]"
+          className="-mr-1 -mt-1 grid size-7 shrink-0 place-items-center rounded-lg text-white/60 transition-colors duration-100 hover:bg-white/10 hover:text-white"
         >
           <X className="size-3.5" />
         </button>

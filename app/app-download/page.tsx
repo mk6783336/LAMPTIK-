@@ -219,7 +219,7 @@ export default function AppDownloadPage() {
               <div className="mt-4 flex flex-wrap items-center justify-center gap-2 px-1">
                 <span className="inline-flex max-w-full flex-wrap items-center justify-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--field)] px-3 py-1.5 text-center text-xs text-[var(--text-2)]">
                   <ShieldCheck className="size-3.5 shrink-0 text-[var(--ok)]" />
-                  Version 3.0 · Official Signed App
+                  Version {androidApp.version} · Official Signed App
                 </span>
                 <span className="inline-flex max-w-full flex-wrap items-center justify-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--field)] px-3 py-1.5 text-center text-xs text-[var(--text-2)]">
                   Android 7.0+ · 100% Free

@@ -4,6 +4,7 @@ import android.app.DownloadManager;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Environment;
@@ -524,14 +525,20 @@ final class DownloaderScreen extends ScrollView {
             DownloadManager manager =
                     (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
             if (manager == null) {
-                host.toast("Android download manager is unavailable.");
+                if (!openInBrowser(url)) host.toast("Android download manager is unavailable.");
                 return;
             }
             DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
             request.setTitle(item.title);
             request.setDescription("LAMP TIK · " + label);
             request.setMimeType("audio".equals(kind) ? "audio/mpeg" : "video/mp4");
-            request.addRequestHeader("User-Agent", ApiClient.USER_AGENT);
+            // Browser UA + platform Referer: signed CDNs (TikTok edges,
+            // Loader.to/savenow.to) reject requests that look like a bare API
+            // client but stream a normal Chrome request perfectly. The same
+            // headers let the server's 302 hand-off to the CDN succeed too.
+            request.addRequestHeader("User-Agent", ApiClient.BROWSER_UA);
+            request.addRequestHeader("Referer", refererFor(url));
+            request.addRequestHeader("Accept", "*/*");
             request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
             request.setAllowedOverMetered(true);
             request.setAllowedOverRoaming(true);
@@ -546,7 +553,35 @@ final class DownloaderScreen extends ScrollView {
             host.toast(label + " download started — check your notifications.");
             host.onDownloadQueued();
         } catch (Exception error) {
-            host.toast("Could not start the download.");
+            // DownloadManager refused the request (bad URI, storage scope,
+            // unsupported scheme). Hand the exact URL to a browser instead of
+            // dead-ending — the link itself is valid.
+            if (!openInBrowser(url)) host.toast("Could not start the download.");
+        }
+    }
+
+    /** Platform-matching Referer for the upstream CDN. */
+    private String refererFor(String url) {
+        String lower = url == null ? "" : url.toLowerCase();
+        if (lower.contains("savenow.to") || lower.contains("loader.to") || lower.contains("oceansaver.in")) {
+            return "https://loader.to/";
+        }
+        if (lower.contains("tikwm.com")) return "https://www.tikwm.com/";
+        if (lower.contains("instagram")) return "https://www.instagram.com/";
+        if (lower.contains("facebook") || lower.contains("fbcdn")) return "https://www.facebook.com/";
+        if (lower.contains("googlevideo") || lower.contains("youtube")) return "https://www.youtube.com/";
+        return "https://www.tiktok.com/";
+    }
+
+    /** Last-resort fallback: open the resolved URL in the device browser. */
+    private boolean openInBrowser(String url) {
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+            return true;
+        } catch (Exception ignored) {
+            return false;
         }
     }
 

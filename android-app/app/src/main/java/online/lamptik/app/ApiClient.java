@@ -25,7 +25,18 @@ final class ApiClient {
 
     static final String BASE = "https://www.lamptik.online";
     /** Lets the server recognise the native client for logs and support. */
-    static final String USER_AGENT = "LampTikAndroidApp/3.0 (Android; native)";
+    static final String USER_AGENT = "LampTikAndroidApp/3.1 (Android; native)";
+
+    /**
+     * Browser UA used for the media download itself.
+     *
+     * Several signed CDNs (TikTok edges, Loader.to/savenow.to renditions)
+     * serve a normal browser fine but reject bare API-client requests, so the
+     * DownloadManager request must look like Chrome on Android.
+     */
+    static final String BROWSER_UA =
+            "Mozilla/5.0 (Linux; Android 13; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) "
+                    + "Chrome/131.0.0.0 Mobile Safari/537.36";
 
     private static final int CONNECT_TIMEOUT_MS = 12_000;
     private static final int READ_TIMEOUT_MS = 30_000;

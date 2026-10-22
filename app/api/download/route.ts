@@ -1,4 +1,4 @@
-import type { NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 import { AppError, errorResponse } from "@/lib/errors";
 import { DESKTOP_UA } from "@/lib/http";
@@ -139,6 +139,34 @@ async function fetchAllowedMedia(
     "The media server redirected too many times.",
     "Fetch the video again to refresh the stream.",
   );
+}
+
+/**
+ * Last-resort hand-off: let the VISITOR'S browser fetch the bytes directly
+ * from the CDN.
+ *
+ * Vercel's datacenter egress is blocked or rate-limited by some signed hosts
+ * (Loader.to's `*.savenow.to` renditions, selected TikTok/Facebook edges) even
+ * while the same URL serves the user's own mobile/residential IP normally. A
+ * 302 turns that into a working download instead of a JSON error — and since
+ * the target already passed the public-https SSRF gate, the browser can only
+ * be sent to a public host.
+ */
+function handOffToCdn(upstreamUrl: string): Response {
+  return new NextResponse(null, {
+    status: 302,
+    headers: {
+      Location: upstreamUrl,
+      "Cache-Control": "no-store, max-age=0",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
+}
+
+function isBlockedUpstream(status: number): boolean {
+  // 401/403/416/429: the CDN refused this *server*. 5xx: their edge failed.
+  // All of them are routinely served fine to a normal browser IP.
+  return status === 401 || status === 403 || status === 416 || status === 429 || status >= 500;
 }
 
 function expiredError(): AppError {
@@ -338,14 +366,10 @@ export async function GET(request: NextRequest) {
   // Header phase only: connect + redirects are bounded, then the timer is
   // cleared so a 500 MB body can stream for as long as the client reads it.
   const abort = new AbortController();
-  let timedOut = false;
   const onClientAbort = () => abort.abort();
   if (request.signal.aborted) onClientAbort();
   else request.signal.addEventListener("abort", onClientAbort, { once: true });
-  const headerTimer = setTimeout(() => {
-    timedOut = true;
-    abort.abort();
-  }, HEADER_TIMEOUT_MS);
+  const headerTimer = setTimeout(() => abort.abort(), HEADER_TIMEOUT_MS);
 
   let upstream: Response;
   try {
@@ -362,21 +386,18 @@ export async function GET(request: NextRequest) {
     }
   } catch (error) {
     if (error instanceof AppError && error.code === "BAD_REQUEST") return errorResponse(error);
-    return errorResponse(
-      timedOut
-        ? new AppError(
-            "UPSTREAM_ERROR",
-            "The media server didn't respond within 10 seconds.",
-            "The CDN link may have expired — fetch the video again.",
-          )
-        : expiredError(),
-    );
+    // Network refusal / timeout: do not fail the user. Their browser reaches
+    // the CDN on a different network path; redirect it there.
+    return handOffToCdn(upstreamUrl);
   } finally {
     clearTimeout(headerTimer);
   }
 
   if (upstream.status !== 200 && upstream.status !== 206) {
     await upstream.body?.cancel().catch(() => undefined);
+    if (isBlockedUpstream(upstream.status)) {
+      return handOffToCdn(upstreamUrl);
+    }
     return errorResponse(expiredError());
   }
 

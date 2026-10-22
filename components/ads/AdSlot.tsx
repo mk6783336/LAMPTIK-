@@ -7,6 +7,7 @@ import {
   AD_RESERVED,
   adsterraBannerKey,
   adsterraRectangleKey,
+  monetagSmartlinkUrl,
   type AdFormat,
 } from "@/lib/monetization";
 
@@ -132,7 +133,6 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label, eager
 
   const isLeaderboard = format === "leaderboard";
   const scaled = { width: width * scale, height: height * scale };
-  const hasVisibleContent = creativeState !== "pending";
 
   return (
     <aside
@@ -142,14 +142,14 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label, eager
       data-ad-slot={format}
       data-ad-state={creativeState}
     >
-      {/* ONE disclosure pill — always visible, amber, never styled like a
-          CTA, and never duplicated inside the creative/fallback card. */}
-      <p className="mb-1.5 flex justify-center">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/[0.03] px-2.5 py-1 text-xs font-medium text-amber-300/90">
-          <span aria-hidden="true" className="size-1.5 rounded-full bg-amber-400/80" />
+      {/* ONE subtle disclosure. A filled creative gets a tiny caption above
+          its frame; the compact fallback bar carries its own inline label —
+          so there is never a duplicate "Sponsored" pill stacked on top. */}
+      {creativeState === "filled" ? (
+        <p className="mb-1 text-center text-[10px] font-medium uppercase tracking-[0.14em] text-[var(--text-3)]">
           Sponsored
-        </span>
-      </p>
+        </p>
+      ) : null}
 
       <div
         ref={hostRef}
@@ -162,7 +162,10 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label, eager
           isLeaderboard && "max-w-[728px]",
         )}
         style={{
-          height: hasVisibleContent ? scaled.height : 0,
+          // Filled: the scaled creative's exact height. Fallback: one compact
+          // 56px line (never a giant reserved black box). Pending: zero.
+          height:
+            creativeState === "filled" ? scaled.height : creativeState === "fallback" ? 56 : 0,
           backgroundColor: "#07080d",
           colorScheme: "dark",
         }}
@@ -203,46 +206,18 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label, eager
           </div>
         ) : creativeState === "fallback" ? (
           <a
-            href="https://uplcm.com/4/12078941"
+            href={monetagSmartlinkUrl}
             target="_blank"
             rel="sponsored nofollow noopener"
             aria-label="Sponsored partner offer — opens in a new tab"
-            className={cn(
-              // Fluid inside the reserved slot (`w-full max-w-full box-border
-              // overflow-hidden`): the old fixed-width scaled card was wider
-              // than its parent on 390px screens and its right border was
-              // clipped. No second "Sponsored" label inside — the pill above
-              // is the single disclosure.
-              "absolute inset-0 box-border flex w-full max-w-full overflow-hidden rounded-2xl border border-amber-500/25 bg-[linear-gradient(135deg,#12100a_0%,#0d0f14_55%,#090b12_100%)] p-2.5 text-white transition-colors hover:border-amber-400/50 sm:p-4",
-              isLeaderboard
-                ? "items-center justify-between gap-2 sm:gap-4"
-                : "flex-col justify-between gap-3",
-            )}
-            style={{ backgroundColor: "#07080d", colorScheme: "dark" }}
+            className="absolute inset-x-0 top-0 box-border flex h-14 max-h-[72px] w-full max-w-full items-center justify-between gap-3 overflow-hidden rounded-xl border border-amber-500/20 bg-[#0b0c12] px-3 text-white transition-colors hover:border-amber-400/40"
           >
-            <span className="flex min-w-0 items-center gap-2 sm:gap-3">
-              <span
-                aria-hidden="true"
-                className="grid size-8 shrink-0 place-items-center rounded-xl border border-amber-500/25 bg-amber-500/10 text-sm text-amber-300 sm:size-10 sm:text-base"
-              >
-                ↗
-              </span>
-              <span
-                className={cn(
-                  "min-w-0 font-semibold leading-snug text-slate-100",
-                  isLeaderboard ? "text-xs sm:text-sm" : "text-sm sm:text-base",
-                )}
-              >
-                Discover Recommended Tools &amp; Offers
-              </span>
+            <span className="min-w-0 truncate text-xs font-medium text-slate-300">
+              <span className="text-amber-300/90">Sponsored</span> · Recommended tools &amp;
+              offers
             </span>
-            <span
-              className={cn(
-                "inline-flex shrink-0 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 text-[11px] font-semibold text-amber-200 sm:px-3.5 sm:py-2 sm:text-xs",
-                !isLeaderboard && "self-start",
-              )}
-            >
-              Visit Sponsor ↗
+            <span className="shrink-0 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold text-amber-200">
+              Open ↗
             </span>
           </a>
         ) : null}

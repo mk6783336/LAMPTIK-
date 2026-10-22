@@ -25,7 +25,9 @@ export function ThemeToggle() {
     root.style.colorScheme = nextIsDark ? "dark" : "light";
     setIsDark(nextIsDark);
     try {
-      localStorage.setItem("lamptik-theme", nextIsDark ? "dark" : "light");
+      // Versioned key: stale `lamptik-theme=light` from older builds is
+      // ignored by the layout boot script, so dark is the real default.
+      localStorage.setItem("lamptik_theme_v3", nextIsDark ? "dark" : "light");
     } catch {
       // Storage blocked — the toggle still applies for this page view.
     }

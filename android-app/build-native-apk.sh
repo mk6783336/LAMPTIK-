@@ -14,7 +14,15 @@ OUT="$ROOT/public/downloads"
 WORK="${WORK:-$ROOT/.scratch/apk-build30}"
 
 SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-${LOCALAPPDATA:-$HOME}/Android/Sdk}}"
-BT="${BUILD_TOOLS:-$SDK/build-tools/34.0.0}"
+# Newest installed build-tools by default. d8 34.0.0 crashes with an internal
+# NullPointerException on class files from JDK 18+: javac now emits a
+# MethodParameters attribute (with null names) on anonymous-class constructors,
+# which that R8 version cannot parse. 35.0.0+ handles them fine, so never pin
+# the old tools.
+if [ -z "${BUILD_TOOLS:-}" ]; then
+  BT="$(ls -d "$SDK"/build-tools/*/ 2>/dev/null | sed 's:/*$::' | sort -V | tail -1)"
+fi
+BT="${BUILD_TOOLS:-${BT:-$SDK/build-tools/34.0.0}}"
 PLATFORM="${ANDROID_JAR:-$SDK/platforms/android-34/android.jar}"
 
 # Windows build-tools ship .bat/.exe wrappers; POSIX ones don't.
@@ -26,8 +34,8 @@ APKSIGNER="$(exe "$BT/apksigner")"
 ZIPALIGN="$(exe "$BT/zipalign")"
 AAPT2="$(exe "$BT/aapt2")"
 
-VERSION_CODE="${VERSION_CODE:-30}"
-VERSION_NAME="${VERSION_NAME:-3.0}"
+VERSION_CODE="${VERSION_CODE:-31}"
+VERSION_NAME="${VERSION_NAME:-3.1}"
 KEYSTORE="${KEYSTORE:-$WORK/release.keystore}"
 KS_PASS="${KS_PASS:-lamptik2026}"
 KS_ALIAS="${KS_ALIAS:-lamptik}"
@@ -102,7 +110,7 @@ if [ ! -f "$KEYSTORE" ]; then
     -dname "CN=LAMP TIK, OU=Mobile, O=LampTik, L=Global, ST=CA, C=US"
 fi
 
-APK="$OUT/lamptik-v3.0.apk"
+APK="$OUT/lamptik-v${VERSION_NAME}.apk"
 echo "==> apksigner"
 "$APKSIGNER" sign \
   --min-sdk-version 21 \
@@ -118,4 +126,12 @@ echo "==> apksigner"
 
 rm -f "$OUT"/*.idsig
 "$APKSIGNER" verify --min-sdk-version 21 --verbose "$APK"
+
+# Keep the previous filename pointing at the SAME signed binary so links that
+# were cached by users and search engines never 404.
+LEGACY="$OUT/lamptik-v3.0.apk"
+if [ "$APK" != "$LEGACY" ]; then
+  cp -f "$APK" "$LEGACY"
+  echo "==> legacy alias $(basename "$LEGACY")"
+fi
 ls -l "$APK"
