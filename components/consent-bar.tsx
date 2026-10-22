@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import {
@@ -42,12 +43,12 @@ export function ConsentBar() {
           Ads here are served by Adsterra and Monetag. Accept to allow
           cookie-based personalisation; decline for contextual only. Stored on
           this device.{" "}
-          <a
-            href="/privacy"
+          <Link
+            href="/privacy/"
             className="text-[var(--accent-text)] underline decoration-[var(--accent-soft)] underline-offset-2"
           >
             Policy
-          </a>
+          </Link>
         </p>
         <div className="mt-2.5 flex gap-2">
           <button
