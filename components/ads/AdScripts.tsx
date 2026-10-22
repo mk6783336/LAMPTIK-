@@ -1,40 +1,59 @@
+"use client";
+
 import Script from "next/script";
+import { useEffect, useState } from "react";
 
 import {
-  adsterraSocialBarSrc,
-  monetagVignetteSrc,
-  monetagVignetteZone,
-} from "@/lib/monetization";
+  CONSENT_EVENT,
+  readConsent,
+  type ConsentDecision,
+} from "@/components/consent-mode";
+import { adsterraSocialBarSrc } from "@/lib/monetization";
 
 /**
- * Global third-party ad loaders — Adsterra Social Bar (+ optional Monetag
- * Vignette).
+ * Global third-party ad loaders — the smallest set that is safe to load
+ * before a user action.
  *
- * These load for every visitor, immediately after hydration, with
- * `strategy="lazyOnload"`: Next injects them in an idle callback once the
- * page has fully loaded, so they contribute 0 ms to FCP/LCP and never
- * compete with the download tool for bandwidth during first paint.
+ * Two hard rules learned the hard way in production:
  *
- * Server component on purpose — there is no state to hold and no reason to
- * ship a byte of client JS for two script tags.
+ * 1. Consent first. The Adsterra Social Bar (an in-page push / pop-under
+ *    format that sets advertising cookies) is injected ONLY after the visitor
+ *    presses "Accept". Until then — and for every visitor who declines — the
+ *    page runs the contextual banner inventory alone, which is what the
+ *    privacy policy promises.
+ *
+ * 2. No page-load interstitials. The Monetag Vignette injects a fixed
+ *    full-viewport iframe at `z-index: 2147483647` the moment its script
+ *    runs, which sits on top of the download button and swallows the click.
+ *    It is therefore fired on demand from `ThirdDownloadModal` (a real user
+ *    gesture, every third download) via `triggerMonetagVignette()` — never
+ *    from the document shell.
+ *
+ * The Social Bar is `lazyOnload`: Next injects it in an idle callback once
+ * the document is complete, so it costs 0 ms of FCP/LCP and never competes
+ * with the download tool for bandwidth during first paint.
  */
 export function AdScripts() {
+  const [consent, setConsent] = useState<ConsentDecision | null>(null);
+
+  useEffect(() => {
+    setConsent(readConsent());
+    const onConsent = (event: Event) => {
+      const detail = (event as CustomEvent<ConsentDecision>).detail;
+      if (detail === "granted" || detail === "denied") setConsent(detail);
+    };
+    window.addEventListener(CONSENT_EVENT, onConsent);
+    return () => window.removeEventListener(CONSENT_EVENT, onConsent);
+  }, []);
+
   /**
-   * Register Monetag's worker at the domain root. Their verification and push
-   * channel both depend on `/sw.js` existing AND being registered; doing it
-   * here means it is active even before a Vignette zone id is configured.
-   * Failure is swallowed: a blocked or unsupported registration must never
-   * surface as a console error on a download page.
+   * Register Monetag's worker at the domain root. Their domain verification
+   * and the on-demand vignette both depend on `/sw.js` existing AND being
+   * registered — the worker itself shows nothing. Failure is swallowed: a
+   * blocked or unsupported registration must never surface as a console error
+   * on a download page.
    */
   const registerWorker = `(function(){try{if(!("serviceWorker" in navigator))return;var go=function(){navigator.serviceWorker.register("/sw.js").catch(function(){})};if(document.readyState==="complete"){go()}else{window.addEventListener("load",go,{once:true})}}catch(e){}})();`;
-
-  const vignette = monetagVignetteZone
-    ? `(function(){try{var s=document.createElement("script");s.dataset.zone=${JSON.stringify(
-        monetagVignetteZone,
-      )};s.src=${JSON.stringify(
-        monetagVignetteSrc,
-      )};s.async=true;document.body.appendChild(s);}catch(e){}})();`
-    : null;
 
   return (
     <>
@@ -42,20 +61,12 @@ export function AdScripts() {
         {registerWorker}
       </Script>
 
-      {adsterraSocialBarSrc ? (
+      {consent === "granted" && adsterraSocialBarSrc ? (
         <Script
           id="adsterra-social-bar"
           strategy="lazyOnload"
           src={adsterraSocialBarSrc}
           data-cfasync="false"
-        />
-      ) : null}
-
-      {vignette ? (
-        <Script
-          id="monetag-vignette"
-          strategy="lazyOnload"
-          dangerouslySetInnerHTML={{ __html: vignette }}
         />
       ) : null}
     </>

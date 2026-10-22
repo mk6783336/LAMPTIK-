@@ -86,6 +86,15 @@
   --mesh-b: rgba(139, 92, 246, 0.23);
   --mesh-c: rgba(59, 130, 246, 0.15);
   --noise-opacity: 0.035;
+
+  /* Platform-reactive tool tokens. Defaults live here so `.tool-cta`,
+     `.tool-badge` and `.tool-field` still paint a real gradient and glow
+     outside a `data-accent` subtree (e.g. the APK install hero). */
+  --tool-ring: var(--accent);
+  --tool-ink: var(--accent-text);
+  --tool-soft: var(--accent-soft);
+  --tool-grad: linear-gradient(100deg, #22d3ee 0%, #2f6bff 54%, #6366f1 100%);
+  --tool-glow: rgba(34, 211, 238, 0.45);
 }
 
 html:not(.dark) {
@@ -163,7 +172,7 @@ html:not(.dark) {
   :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
-    border-radius: 6px;
+    border-radius: 8px;
   }
 
   summary::-webkit-details-marker {
@@ -286,11 +295,17 @@ html:not(.dark) {
     -webkit-text-fill-color: transparent;
   }
 
+  /* Section eyebrow: sentence case, 13px, neutral tracking. Never uppercase
+     (all-caps at small sizes is the classic legibility failure) and never
+     below the 12px floor. */
   .eyebrow {
-    @apply inline-flex items-center gap-2 rounded-pill border px-3 py-1 text-[11px] font-medium uppercase tracking-label;
+    @apply inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-medium;
     border-color: var(--glass-border);
     background: var(--glass-bg);
     color: var(--text-2);
+    font-size: 0.8125rem;
+    text-transform: none;
+    letter-spacing: 0.01em;
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
   }
@@ -305,7 +320,7 @@ html:not(.dark) {
      FORM FIELDS
   ----------------------------------------------------------------------- */
   .field {
-    @apply flex items-center gap-2.5 rounded-control border transition-[border-color,box-shadow,background-color] duration-200;
+    @apply flex items-center gap-2.5 rounded-xl border transition-[border-color,box-shadow,background-color] duration-200;
     border-color: var(--glass-border);
     background-color: var(--field);
     box-shadow: inset 0 1px 0 0 var(--highlight);
@@ -325,11 +340,16 @@ html:not(.dark) {
   /* -----------------------------------------------------------------------
      BUTTONS
   ----------------------------------------------------------------------- */
+  /* THREE canonical variants only:
+       1. .btn-primary   — high-contrast brand-gradient CTA
+       2. .btn-secondary — obsidian glass surface action
+       3. .btn-ghost      — minimal text/tab/icon action */
   .btn {
-    @apply inline-flex select-none items-center justify-center gap-2 rounded-control font-medium transition-[transform,background-color,border-color,opacity,filter] duration-200 active:scale-[0.97] disabled:pointer-events-none;
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-xl text-sm font-medium transition-[transform,background-color,border-color,opacity,filter] duration-200 active:scale-[0.97] disabled:pointer-events-none;
   }
 
   .btn-primary {
+    @apply rounded-xl text-sm font-semibold;
     color: #ffffff;
     background-image: linear-gradient(
       100deg,
@@ -350,29 +370,60 @@ html:not(.dark) {
     opacity: 0.55;
   }
 
-  .btn-ghost {
-    @apply border text-[var(--text)];
-    border-color: var(--glass-border);
-    background-color: var(--field);
+  /* Obsidian glass surface action. */
+  .btn-secondary {
+    @apply rounded-xl border border-white/[0.12] bg-white/[0.05] text-sm font-medium text-[var(--text)];
     box-shadow: inset 0 1px 0 0 var(--highlight);
   }
 
+  .btn-secondary:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  html:not(.dark) .btn-secondary {
+    background-color: rgba(15, 23, 42, 0.05);
+    border-color: rgba(15, 23, 42, 0.12);
+  }
+
+  html:not(.dark) .btn-secondary:hover:not(:disabled) {
+    background-color: rgba(15, 23, 42, 0.09);
+    border-color: rgba(15, 23, 42, 0.2);
+  }
+
+  .btn-secondary:disabled {
+    opacity: 0.5;
+  }
+
+  /* Minimal text/tab/icon action — no surface, no border. */
+  .btn-ghost {
+    @apply rounded-lg text-sm text-[var(--text-2)];
+  }
+
   .btn-ghost:hover:not(:disabled) {
-    border-color: var(--line-strong);
-    background-color: var(--field-strong);
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  html:not(.dark) .btn-ghost:hover:not(:disabled) {
+    color: var(--text);
+    background-color: rgba(15, 23, 42, 0.05);
   }
 
   .btn-ghost:disabled {
     opacity: 0.5;
   }
 
-  /* Mono micro-label: reserved for genuine system data, never decoration. */
+  /* Mono micro-label: reserved for genuine system metadata, never decoration.
+     Sentence case (not uppercase) at the 12px floor with readable contrast. */
   .micro {
-    @apply font-mono text-[10px] uppercase tracking-label;
+    @apply font-mono text-xs text-[var(--text-2)];
+    text-transform: none;
+    letter-spacing: 0.01em;
   }
 
   .skeleton {
-    @apply relative overflow-hidden rounded-md;
+    @apply relative overflow-hidden rounded-lg;
     background-color: var(--field);
   }
 
@@ -459,7 +510,7 @@ html:not(.dark) {
 
   /* Glowing detection badge — animates in the moment a link is recognized. */
   .tool-badge {
-    @apply inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-pill border px-2.5 py-1 text-[11.5px] font-semibold tracking-tight;
+    @apply inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold tracking-tight;
     border-color: color-mix(in srgb, var(--tool-ring) 55%, transparent);
     background: var(--tool-soft);
     color: var(--tool-ink);
@@ -468,13 +519,16 @@ html:not(.dark) {
 
   /* Compact result-card platform pill (same accent system). */
   .tool-pill {
-    @apply inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-pill border px-2.5 py-1 text-[11px] font-semibold tracking-tight;
+    @apply inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold tracking-tight;
     border-color: color-mix(in srgb, var(--tool-ring) 42%, transparent);
     background: var(--tool-soft);
     color: var(--tool-ink);
   }
 
-  /* Primary tool CTA: platform gradient + neon ambient glow + hover sheen. */
+  /* Brand modifier for the primary CTA — always paired with `.btn-primary`
+     (`btn btn-primary tool-cta`). It swaps the site gradient for the active
+     platform gradient and adds the neon ambient glow + hover sheen. It is a
+     modifier, never a fourth button variant. */
   .tool-cta {
     position: relative;
     overflow: hidden;
@@ -529,7 +583,7 @@ html:not(.dark) {
 
   /* Glass segmented switcher: one bar, three destinations. */
   .seg-bar {
-    @apply flex items-center gap-1 rounded-pill border p-1.5;
+    @apply flex items-center gap-1 rounded-full border p-1.5;
     border-color: var(--glass-border);
     background-image: linear-gradient(
       180deg,
@@ -544,7 +598,7 @@ html:not(.dark) {
   }
 
   .seg-item {
-    @apply relative flex min-w-0 flex-1 items-center justify-center gap-2 rounded-pill px-2 py-2.5 text-[12.5px] font-medium transition-[color,background-color,box-shadow] duration-200;
+    @apply relative flex min-w-0 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-full px-2.5 py-2.5 text-sm font-medium transition-[color,background-color,box-shadow] duration-200;
     color: var(--text-2);
   }
 
@@ -627,7 +681,7 @@ html:not(.dark) {
      BENTO GRID — glass tiles with a lit icon tile and a hover lift.
   ----------------------------------------------------------------------- */
   .bento-card {
-    @apply relative isolate overflow-hidden rounded-card border p-5 sm:p-6;
+    @apply relative isolate overflow-hidden rounded-2xl border p-5 sm:p-6;
     border-color: var(--glass-border);
     background-image: linear-gradient(
       165deg,
@@ -687,7 +741,7 @@ html:not(.dark) {
 
 
   .bento-icon {
-    @apply relative grid size-11 shrink-0 place-items-center rounded-[15px] border;
+    @apply relative grid size-11 shrink-0 place-items-center rounded-xl border;
     transition:
       transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
       box-shadow 260ms cubic-bezier(0.22, 1, 0.36, 1),

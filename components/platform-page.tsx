@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight, Check } from "lucide-react";
 
-import { AdSlot } from "@/components/ads/AdSlot";
 import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
@@ -38,7 +37,7 @@ const PAGE_CONTENT: Record<
   }
 > = {
   tiktok: {
-    eyebrow: "tiktok downloader",
+    eyebrow: "TikTok downloader",
     headlineLead: "TikTok video downloader,",
     headlineAccent: "without the watermark.",
     lede: "Download TikTok videos in HD MP4 — up to Full HD 1080p, no logo, no app — or convert to MP3 with the original sound. Paste any tiktok.com or vt/vm short link and the clean file saves straight to your device.",
@@ -57,7 +56,7 @@ const PAGE_CONTENT: Record<
     ],
   },
   instagram: {
-    eyebrow: "instagram reels",
+    eyebrow: "Instagram Reels",
     headlineLead: "Instagram Reels",
     headlineAccent: "downloader, in original HD.",
     lede: "Save any public Reel as the exact 1080p MP4 Instagram's own player streams — no watermark, no login, no app. Paste a /reel/, /p/, /tv/ or instagr.am link and the clean file lands straight in your iPhone or Android gallery.",
@@ -76,7 +75,7 @@ const PAGE_CONTENT: Record<
     ],
   },
   facebook: {
-    eyebrow: "facebook hd video",
+    eyebrow: "Facebook HD video",
     headlineLead: "Facebook video",
     headlineAccent: "downloader, in full HD.",
     lede: "Save Watch videos, page uploads, and Reels at native HD — even long 1GB+ files. fb.watch and /share/v/ share links resolve instantly. No watermark, no app, no login: paste a link, keep the MP4.",
@@ -159,15 +158,9 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
         <SiteHeader />
 
         <main className="flex-1">
-          {/* Slot A — top leaderboard above the hero. Reserved 90px, zero
-              layout shift. */}
-          <div className="shell pt-6 sm:pt-8">
-            <AdSlot format="leaderboard" eager label="Advertisement" />
-          </div>
-
-          <section className="pb-12 pt-8 sm:pb-16 sm:pt-14 lg:pt-20">
-            <div className="shell grid items-start gap-7 sm:gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center lg:gap-12 xl:gap-16">
-              <div className="animate-rise min-w-0">
+          <section className="pb-12 pt-10 sm:pb-16 sm:pt-14 lg:pt-20">
+            <div className="shell grid items-start gap-6 lg:grid-cols-12 lg:gap-8">
+              <div className="animate-rise min-w-0 lg:col-span-5">
                 <p className="eyebrow">
                   <PlatformIcon
                     platform={platform}
@@ -176,12 +169,12 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
                   {content.eyebrow}
                 </p>
 
-                <h1 className="balance mt-4 text-[2.3rem] font-semibold leading-[1.02] tracking-headline sm:mt-5 sm:text-[3.1rem] lg:text-[3.4rem]">
+                <h1 className="balance mt-4 text-4xl font-semibold leading-[1.02] tracking-headline sm:mt-5 sm:text-5xl">
                   {content.headlineLead}
                   <span className="text-gradient mt-1 block">{content.headlineAccent}</span>
                 </h1>
 
-                <p className="pretty mt-4 max-w-lg text-[14.5px] leading-relaxed text-[var(--text-2)] sm:mt-5 sm:text-[15.5px]">
+                <p className="pretty mt-4 max-w-lg text-base leading-relaxed text-[var(--text-2)] sm:mt-5 sm:text-base">
                   {content.lede}
                 </p>
 
@@ -189,7 +182,7 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
                   {content.chips.map((chip) => (
                     <span
                       key={chip}
-                      className="inline-flex items-center gap-1.5 rounded-pill border border-[var(--glass-border)] bg-[var(--glass-bg)] px-2.5 py-1 text-[11.5px] text-[var(--text-2)] backdrop-blur"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--glass-bg)] px-2.5 py-1 text-xs text-[var(--text-2)] backdrop-blur"
                     >
                       <Check className="size-3 text-[var(--accent-text)]" />
                       {chip}
@@ -199,14 +192,14 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
 
                 <Link
                   href="/guides"
-                  className="group mt-7 hidden items-center gap-1.5 text-[12.5px] text-[var(--text-2)] transition-colors duration-200 hover:text-[var(--text)] sm:inline-flex"
+                  className="group mt-7 hidden items-center gap-1.5 text-sm text-[var(--text-2)] transition-colors duration-200 hover:text-[var(--text)] sm:inline-flex"
                 >
                   Read the download guides
                   <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </Link>
               </div>
 
-              <div className="animate-rise min-w-0 [animation-delay:80ms]">
+              <div className="animate-rise min-w-0 lg:col-span-7 [animation-delay:80ms]">
                 <Downloader platform={platform} />
               </div>
             </div>
@@ -221,12 +214,12 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
                 {content.facts.map(([term, value]) => (
                   <div
                     key={term}
-                    className="rounded-[16px] border border-[var(--glass-border)] bg-[var(--glass-bg)] px-4 py-3 backdrop-blur-md"
+                    className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-4 py-3 backdrop-blur-md"
                   >
-                    <dt className="micro truncate text-[9.5px] text-[var(--text-3)]">
+                    <dt className="micro text-xs text-[var(--text-3)]">
                       {term}
                     </dt>
-                    <dd className="mt-1 truncate text-[14px] font-medium tracking-tight">
+                    <dd className="mt-1 text-sm font-medium leading-snug tracking-tight">
                       {value}
                     </dd>
                   </div>
@@ -234,10 +227,6 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
               </dl>
             </div>
           </section>
-
-          <div className="shell pb-2">
-            <AdSlot format="leaderboard" />
-          </div>
 
           <PlatformBento platform={platform} />
 
@@ -248,15 +237,15 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
                 <div>
                   <p className="eyebrow">
                     <span aria-hidden="true" className="eyebrow-dot" />
-                    more downloaders
+                    More downloaders
                   </p>
-                  <h2 className="balance mt-4 text-[1.75rem] font-semibold leading-tight tracking-headline sm:text-4xl">
+                  <h2 className="balance mt-4 text-4xl font-semibold leading-tight tracking-headline">
                     Save from anywhere
                   </h2>
                 </div>
                 <Link
                   href="/guides"
-                  className="group inline-flex items-center gap-1.5 text-[13px] text-[var(--accent-text)] transition-opacity duration-200 hover:opacity-80"
+                  className="group inline-flex items-center gap-1.5 text-sm text-[var(--accent-text)] transition-opacity duration-200 hover:opacity-80"
                 >
                   Read the guides
                   <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
@@ -277,12 +266,12 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center justify-between gap-2">
-                        <span className="text-[15px] font-semibold tracking-tight">
+                        <span className="text-base font-semibold tracking-tight">
                           {PLATFORMS[id].switcherLabel}
                         </span>
                         <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
                       </span>
-                      <span className="pretty mt-1.5 block text-[13px] leading-relaxed text-[var(--text-2)]">
+                      <span className="pretty mt-1.5 block text-sm leading-relaxed text-[var(--text-2)]">
                         {PLATFORMS[id].blurb}
                       </span>
                     </span>

@@ -243,7 +243,7 @@ export function UrlField({
         ) : (
           <span
             key="link-icon"
-            className="inline-flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-[var(--field)] text-[var(--text-3)]"
+            className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-[var(--field)] text-[var(--text-3)]"
           >
             <Link2 className="size-4" />
           </span>
@@ -265,7 +265,7 @@ export function UrlField({
           placeholder={accentConfig.placeholder}
           aria-invalid={Boolean(displayError)}
           aria-describedby="url-status"
-          className="h-11 min-w-0 flex-1 bg-transparent text-[14.5px] font-medium outline-none placeholder:font-normal placeholder:text-[var(--text-3)] disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-11 min-w-0 flex-1 bg-transparent text-base font-medium outline-none placeholder:font-normal placeholder:text-[var(--text-3)] disabled:cursor-not-allowed disabled:opacity-50"
         />
 
         {input && !busy ? (
@@ -276,7 +276,7 @@ export function UrlField({
               inputRef.current?.focus();
             }}
             aria-label="Clear link"
-            className="grid size-8 shrink-0 place-items-center rounded-[10px] text-[var(--text-3)] transition-colors duration-200 hover:bg-[var(--field-strong)] hover:text-[var(--text)]"
+            className="grid size-8 shrink-0 place-items-center rounded-lg text-[var(--text-3)] transition-colors duration-200 hover:bg-[var(--field-strong)] hover:text-[var(--text)]"
           >
             <X className="size-4" />
           </button>
@@ -288,7 +288,7 @@ export function UrlField({
           disabled={isPasting || busy}
           aria-label="Paste video link from clipboard"
           title="Paste from clipboard"
-          className="btn btn-ghost h-9 shrink-0 gap-1.5 px-2.5 text-[12px] sm:h-10"
+          className="btn btn-ghost h-9 shrink-0 gap-1.5 px-2.5 text-sm sm:h-10"
         >
           {isPasting ? (
             <Loader2 className="size-3.5 animate-spin" />
@@ -304,7 +304,7 @@ export function UrlField({
       <div
         id="url-status"
         aria-live="polite"
-        className="mt-2 flex min-h-[18px] items-center justify-between gap-3 px-0.5 text-[12px]"
+        className="mt-2 flex min-h-[18px] items-center justify-between gap-3 px-0.5 text-sm"
       >
         <span
           className={cn(
@@ -322,7 +322,12 @@ export function UrlField({
               <span className="hidden sm:inline">{statusDetail}</span>
             </>
           ) : (
-            statusDetail
+            <>
+              {/* Phones get a short, never-truncated prompt; the full four
+                  platform list only renders where it fits. */}
+              <span className="sm:hidden">Paste a link to start</span>
+              <span className="hidden sm:inline">{statusDetail}</span>
+            </>
           )}
         </span>
         <span className="micro hidden shrink-0 items-center gap-1 text-[var(--text-3)] sm:flex">
@@ -335,7 +340,7 @@ export function UrlField({
         disabled={busy || !isHydrated}
         aria-busy={busy}
         className={cn(
-          "btn tool-cta group mt-3 h-[54px] w-full gap-2.5 px-5 text-[15px] font-semibold tracking-tight",
+          "btn btn-primary tool-cta group mt-3 h-[54px] w-full gap-2.5 px-5 text-base font-semibold tracking-tight",
           busy && "opacity-70",
         )}
       >
@@ -349,7 +354,10 @@ export function UrlField({
             <span className="grid size-6 place-items-center rounded-full bg-white/15">
               <Zap className="size-3.5" fill="currentColor" strokeWidth={0} />
             </span>
-            <span className="truncate">Download Without Watermark</span>
+            <span className="whitespace-nowrap">
+              <span className="sm:hidden">Download</span>
+              <span className="hidden sm:inline">Download Without Watermark</span>
+            </span>
             <ArrowRight className="size-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
           </>
         )}

@@ -76,14 +76,14 @@ export default function AboutPage() {
               <span>About</span>
             </nav>
 
-            <h1 className="mt-4 text-[2rem] font-semibold leading-tight tracking-headline sm:text-[2.6rem]">
+            <h1 className="mt-4 text-4xl font-semibold leading-tight tracking-headline sm:text-5xl">
               About LAMP TIK
             </h1>
-            <p className="mt-3 text-[13.5px] text-[var(--text-3)]">
+            <p className="mt-3 text-sm text-[var(--text-3)]">
               Last updated: October 19, 2026
             </p>
 
-            <div className="mt-10 space-y-9 text-[14.5px] leading-relaxed text-[var(--text-2)]">
+            <div className="mt-10 space-y-9 text-base leading-relaxed text-[var(--text-2)]">
               <section>
                 <h2 className="text-lg font-semibold text-[var(--text)]">
                   Our mission
@@ -208,7 +208,7 @@ export default function AboutPage() {
                   </Link>{" "}
                   explains consent before any advertising cookie is set. Direct
                   sponsor placements, when sold, carry a{" "}
-                  <code className="font-mono text-[13px]">rel=&quot;sponsored&quot;</code>{" "}
+                  <code className="font-mono text-sm">rel=&quot;sponsored&quot;</code>{" "}
                   link and a visible “Sponsor” label.
                 </p>
               </section>
@@ -238,16 +238,16 @@ export default function AboutPage() {
             </div>
 
             <div className="panel mt-12 p-5 sm:p-6">
-              <p className="text-[15px] font-medium tracking-tight">
+              <p className="text-base font-medium tracking-tight">
                 Ready to save your video in HD?
               </p>
-              <p className="mt-1.5 text-[13.5px] leading-relaxed text-[var(--text-2)]">
+              <p className="mt-1.5 text-sm leading-relaxed text-[var(--text-2)]">
                 Paste a link, get the watermark-free original stream — no
                 account, nothing stored.
               </p>
               <Link
                 href="/#tool"
-                className="btn btn-primary mt-4 h-11 px-5 text-[14px] font-semibold"
+                className="btn btn-primary mt-4 h-11 px-5 text-sm font-semibold"
               >
                 Try the LAMP TIK Downloader →
               </Link>

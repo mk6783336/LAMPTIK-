@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-const APK_PATH = path.join(process.cwd(), "public", "downloads", "lamptik-v2.2.apk");
+const APK_PATH = path.join(process.cwd(), "public", "downloads", "lamptik-v2.3.apk");
 
 /**
  * GET /api/apk — serves the compiled, cryptographically signed LAMP TIK
@@ -17,13 +17,13 @@ export async function GET() {
       status: 200,
       headers: {
         "Content-Type": "application/vnd.android.package-archive",
-        "Content-Disposition": 'attachment; filename="LAMP-TIK-v2.2.apk"',
+        "Content-Disposition": 'attachment; filename="LAMP-TIK-v2.3.apk"',
         "Content-Length": String(buffer.byteLength),
         "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
         "X-Content-Type-Options": "nosniff",
       },
     });
   } catch {
-    return NextResponse.redirect(new URL("/downloads/lamptik-v2.2.apk", "https://www.lamptik.online"), 302);
+    return NextResponse.redirect(new URL("/downloads/lamptik-v2.3.apk", "https://www.lamptik.online"), 302);
   }
 }

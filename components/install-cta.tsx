@@ -62,7 +62,7 @@ export function InstallCta() {
     return (
       <p
         role="status"
-        className="btn tool-cta h-[60px] w-full gap-2.5 px-6 text-[16px] font-semibold sm:w-auto sm:min-w-[340px]"
+        className="btn btn-primary tool-cta h-[60px] w-full gap-2.5 px-6 text-base font-semibold sm:w-auto sm:min-w-[340px]"
       >
         <Smartphone className="size-5" />
         App installed — launch it from your home screen
@@ -76,7 +76,7 @@ export function InstallCta() {
         type="button"
         onClick={onClick}
         disabled={busy}
-        className="btn tool-cta group h-[60px] w-full gap-2.5 px-6 text-[16px] font-semibold sm:w-auto sm:min-w-[340px]"
+        className="btn btn-primary tool-cta group h-[60px] w-full gap-2.5 px-6 text-base font-semibold sm:w-auto sm:min-w-[340px]"
       >
         {deferred ? (
           <BellPlus className="size-5 transition-transform duration-200 group-hover:scale-110" />
@@ -85,7 +85,7 @@ export function InstallCta() {
         )}
         {busy ? "Opening install prompt…" : deferred ? "Install Web App Now" : "Add to Home Screen"}
       </button>
-      <p className="text-[12px] text-[var(--text-3)]">
+      <p className="text-sm text-[var(--text-3)]">
         {deferred
           ? "One tap — no app store, no sign-up, free forever."
           : "Tap to jump to the 3-step guide for your phone below."}

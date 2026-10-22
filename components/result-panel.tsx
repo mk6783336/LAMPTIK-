@@ -42,6 +42,7 @@ import {
   recordDownloadCount,
   triggerDirectLinkMonetization,
   triggerDownloadMonetization,
+  triggerMonetagVignette,
 } from "@/lib/monetization";
 import { SocialShare } from "@/components/social-share";
 import type { MediaPayload } from "@/lib/media";
@@ -130,8 +131,8 @@ function DownloadAction({
       className={cn(
         "btn h-[52px] w-full justify-between gap-3 px-4 text-left",
         primary
-          ? "tool-cta text-[14px] font-semibold"
-          : "btn-ghost text-[13.5px] font-medium hover:border-[var(--glass-border-hover)]",
+          ? "btn-primary tool-cta text-sm font-semibold"
+          : "btn-ghost text-sm font-medium hover:border-[var(--glass-border-hover)]",
       )}
     >
       <span className="flex min-w-0 items-center gap-2.5">
@@ -147,7 +148,7 @@ function DownloadAction({
           <span className="block truncate">{busy ? statusLabel : label}</span>
           <span
             className={cn(
-              "mt-0.5 block truncate text-[11px] font-normal",
+              "mt-0.5 block truncate text-xs font-normal",
               primary ? "text-white/75" : "text-[var(--text-3)]",
             )}
           >
@@ -158,7 +159,7 @@ function DownloadAction({
       {meta && !busy ? (
         <span
           className={cn(
-            "shrink-0 font-mono text-[11px] tabular-nums",
+            "shrink-0 font-mono text-xs tabular-nums",
             primary ? "text-white/85" : "text-[var(--text-3)]",
           )}
         >
@@ -540,7 +541,7 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
         {/* Header rail: success state, platform identity, codec truth. */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-pill border border-[color-mix(in_srgb,var(--ok)_32%,transparent)] bg-[var(--ok-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--ok)]">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--ok)_32%,transparent)] bg-[var(--ok-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--ok)]">
             <Sparkles className="size-3" />
             Stream ready
           </span>
@@ -554,7 +555,7 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
           type="button"
           onClick={onReset}
           aria-label="Fetch another video"
-          className="btn btn-ghost h-8 shrink-0 gap-1.5 px-2.5 text-[12px]"
+          className="btn btn-ghost h-8 shrink-0 gap-1.5 px-2.5 text-sm"
         >
           <RefreshCw className="size-3.5" />
           New<span className="hidden sm:inline">&nbsp;video</span>
@@ -566,7 +567,7 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
             shimmer beneath the image means the card never reflows while the
             CDN responds. Width-agnostic, so it fits the tool column and a
             phone alike. */}
-        <div className="group relative aspect-[16/9] w-full overflow-hidden rounded-[16px] border border-[var(--glass-border)] bg-[var(--bg-sunken)]">
+        <div className="group relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-[var(--bg-sunken)]">
           {!thumbnailLoaded && !thumbnailFailed ? (
             <div aria-hidden="true" className="skeleton absolute inset-0 rounded-none" />
           ) : null}
@@ -591,11 +592,11 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
           )}
 
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-          <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-md border border-white/15 bg-black/60 px-1.5 py-0.5 font-mono text-[11px] tabular-nums text-white backdrop-blur">
+          <span className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-lg border border-white/15 bg-black/60 px-1.5 py-0.5 font-mono text-xs tabular-nums text-white backdrop-blur">
             <Clock3 className="size-3" />
             {formatDuration(video.duration)}
           </span>
-          <span className="absolute bottom-2.5 right-2.5 rounded-md border border-white/15 bg-black/60 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-white/90">
+          <span className="absolute bottom-2.5 right-2.5 rounded-lg border border-white/15 bg-black/60 px-1.5 py-0.5 font-mono text-xs uppercase tracking-wider text-white/90">
             {video.quality === "hd" ? "HD" : "SD"}
           </span>
         </div>
@@ -603,7 +604,7 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
         {/* Metadata + actions */}
         <div className="flex min-w-0 flex-col">
           <h2
-            className="line-clamp-2 text-[15.5px] font-semibold leading-snug tracking-tight"
+            className="line-clamp-2 text-base font-semibold leading-snug tracking-tight"
             title={media.title}
           >
             {media.title}
@@ -620,13 +621,13 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
                 className="size-8 rounded-full object-cover ring-1 ring-[var(--glass-border)]"
               />
             ) : (
-              <span className="grid size-8 place-items-center rounded-full border border-[var(--glass-border)] bg-[var(--bg-raised)] text-[13px] font-semibold text-[var(--text-2)]">
+              <span className="grid size-8 place-items-center rounded-full border border-[var(--glass-border)] bg-[var(--bg-raised)] text-sm font-semibold text-[var(--text-2)]">
                 {initial}
               </span>
             )}
             <div className="min-w-0">
-              <p className="truncate text-[13px] font-medium">@{media.author}</p>
-              <p className="truncate text-[11.5px] text-[var(--text-3)]">
+              <p className="truncate text-sm font-medium">@{media.author}</p>
+              <p className="truncate text-xs text-[var(--text-3)]">
                 {video.author.nickname}
               </p>
             </div>
@@ -636,7 +637,7 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`Open @${media.author} on ${platformConfig.name}`}
-                className="ml-auto grid size-8 shrink-0 place-items-center rounded-[10px] border border-[var(--glass-border)] bg-[var(--field)] text-[var(--text-3)] transition-colors duration-200 hover:border-[var(--glass-border-hover)] hover:text-[var(--text)]"
+                className="ml-auto grid size-8 shrink-0 place-items-center rounded-lg border border-[var(--glass-border)] bg-[var(--field)] text-[var(--text-3)] transition-colors duration-200 hover:border-[var(--glass-border-hover)] hover:text-[var(--text)]"
               >
                 <ExternalLink className="size-3.5" />
               </a>
@@ -648,13 +649,13 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
             {specs.map((spec) => (
               <div
                 key={spec.term}
-                className="min-w-0 rounded-[11px] border border-[var(--glass-border)] bg-[var(--field)] px-2.5 py-1.5"
+                className="min-w-0 rounded-lg border border-[var(--glass-border)] bg-[var(--field)] px-2.5 py-1.5"
               >
                 <dt className="flex min-w-0 items-center gap-1 text-[var(--text-3)]">
                   <span className="shrink-0 text-[var(--accent-text)]">{spec.icon}</span>
-                  <span className="micro truncate text-[9.5px]">{spec.term}</span>
+                  <span className="micro truncate text-xs">{spec.term}</span>
                 </dt>
-                <dd className="mt-0.5 truncate font-mono text-[12px] tabular-nums">
+                <dd className="mt-0.5 truncate font-mono text-sm tabular-nums">
                   {spec.value}
                 </dd>
               </div>
@@ -662,7 +663,7 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
           </dl>
 
           {video.musicTitle ? (
-            <p className="mt-2.5 flex items-center gap-1.5 text-[11.5px] text-[var(--text-3)]">
+            <p className="mt-2.5 flex items-center gap-1.5 text-xs text-[var(--text-3)]">
               <Music2 className="size-3.5 shrink-0" />
               <span className="truncate" title={video.musicTitle}>
                 {video.musicTitle}
@@ -674,7 +675,7 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
               then a clean reset. Every button probes the signed URL first and
               re-resolves once if it expired. */}
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            <p className="sm:col-span-2 text-center text-[11px] text-[var(--text-3)]" aria-live="polite">
+            <p className="sm:col-span-2 text-center text-xs text-[var(--text-3)]" aria-live="polite">
               {downloadAdBadgeLabel(downloadCount)}
             </p>
             <div className="sm:col-span-2">
@@ -719,7 +720,7 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
               <button
                 type="button"
                 disabled
-                className="btn btn-ghost h-[52px] px-4 text-[13.5px]"
+                className="btn btn-ghost h-[52px] px-4 text-sm"
                 title="No audio stream was exposed for this video."
               >
                 <Music2 className="size-4" />
@@ -731,7 +732,7 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
               <button
                 type="button"
                 onClick={onReset}
-                className="btn btn-ghost group h-11 w-full gap-2 px-4 text-[13px]"
+                className="btn btn-ghost group h-11 w-full gap-2 px-4 text-sm"
               >
                 <RefreshCw className="size-3.5 transition-transform duration-300 group-hover:rotate-180" />
                 Download another video
@@ -747,15 +748,15 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
             <p
               role="status"
               aria-live="polite"
-              className="mt-3 inline-flex items-center gap-1.5 rounded-pill border border-[var(--warn)]/30 bg-[var(--warn)]/10 px-2.5 py-1 text-[11.5px] font-medium text-[var(--warn)]"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[var(--warn)]/30 bg-[var(--warn)]/10 px-2.5 py-1 text-xs font-medium text-[var(--warn)]"
             >
               <Loader2 className="size-3 animate-spin" />
               {healingNote}
             </p>
           ) : null}
           {busyKind || completeNote ? (
-            <div className="mt-3 overflow-hidden rounded-[16px] border border-white/[0.07] bg-white/[0.015] p-3">
-              <p className="flex items-center justify-center gap-1.5 text-[12.5px] font-semibold tracking-tight">
+            <div className="mt-3 overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.015] p-3">
+              <p className="flex items-center justify-center gap-1.5 text-sm font-semibold tracking-tight">
                 {busyKind ? (
                   <>
                     <Loader2 className="size-3.5 animate-spin text-[var(--accent-text)]" />
@@ -769,7 +770,7 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
                 )}
               </p>
               {progress ? (
-                <p className="mt-1 text-center font-mono text-[11px] tabular-nums text-[var(--text-2)]">
+                <p className="mt-1 text-center font-mono text-xs tabular-nums text-[var(--text-2)]">
                   {formatBytes(progress.loaded)}
                   {progress.total ? ` / ${formatBytes(progress.total)}` : ""}
                   {speedBps ? ` · ${(speedBps / 1_048_576).toFixed(1)} MB/s` : ""}
@@ -778,8 +779,8 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
                     : ""}
                 </p>
               ) : null}
-              <div className="mt-2.5 rounded-[12px] border border-[var(--glass-border)] p-2.5">
-                <p className="micro mb-2 text-center text-[9px] text-[var(--text-3)]/80">
+              <div className="mt-2.5 rounded-xl border border-[var(--glass-border)] p-2.5">
+                <p className="micro mb-2 text-center text-xs text-[var(--text-3)]/80">
                   Sponsored by our partners (keeps LAMP TIK 100% free)
                 </p>
                 <AdSlot
@@ -797,16 +798,16 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
                   href={monetagSmartlinkUrl}
                   target="_blank"
                   rel="sponsored nofollow noopener"
-                  className="group mt-2.5 flex items-center gap-2.5 rounded-[12px] border border-[var(--glass-border)] bg-[var(--field)] px-3 py-2.5 transition-colors duration-200 hover:border-[var(--glass-border-hover)]"
+                  className="group mt-2.5 flex items-center gap-2.5 rounded-xl border border-[var(--glass-border)] bg-[var(--field)] px-3 py-2.5 transition-colors duration-200 hover:border-[var(--glass-border-hover)]"
                 >
                   <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-text)] transition-transform duration-200 group-hover:scale-110">
                     <Zap className="size-4" fill="currentColor" strokeWidth={0} />
                   </span>
                   <span className="min-w-0 flex-1 text-left">
-                    <span className="block truncate text-[13px] font-semibold tracking-tight">
+                    <span className="block truncate text-sm font-semibold tracking-tight">
                       Support free HD downloads — visit sponsor ↗
                     </span>
-                    <span className="block truncate text-[11px] text-[var(--text-3)]">
+                    <span className="block truncate text-xs text-[var(--text-3)]">
                       Sponsored · opens after your download starts
                     </span>
                   </span>
@@ -820,7 +821,7 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
             </div>
           ) : null}
 
-          <p className="mt-2.5 flex items-start gap-1.5 text-[11px] leading-relaxed text-[var(--text-3)]">
+          <p className="mt-2.5 flex items-start gap-1.5 text-xs leading-relaxed text-[var(--text-3)]">
             <ShieldCheck className="mt-px size-3.5 shrink-0 text-[var(--ok)]" />
             <span>
               Saved under its original title — a copy stays in your Library on this
@@ -844,6 +845,11 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
         setInterstitialOpen(false);
         setQueuedDownload(null);
         if (queued) void startDownload(queued.kind, true, queued.url);
+        // Real user gesture, and the sponsor theater is already closed: this
+        // is the only safe moment for the Monetag Vignette. Firing it while
+        // the dialog is open would stack a max-z-index overlay over the
+        // "Continue" button and block the download entirely.
+        triggerMonetagVignette();
       }}
     />
     </>

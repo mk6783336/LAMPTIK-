@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="online.lamptik.app"
-    android:versionCode="22"
-    android:versionName="2.2">
+    android:versionCode="23"
+    android:versionName="2.3">
 
     <uses-sdk
         android:minSdkVersion="24"
@@ -43,6 +43,13 @@
                 <data
                     android:host="lamptik.online"
                     android:scheme="https" />
+            </intent-filter>
+            <!-- Share-sheet target: "Share → LAMP TIK" from TikTok, YouTube,
+                 Instagram, Facebook or any app that sends plain text. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
     </application>

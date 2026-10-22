@@ -51,7 +51,7 @@ export function SiteHeader() {
         className="header-scrim pointer-events-none absolute inset-x-0 top-0 -z-10 h-[calc(100%+0.5rem)]"
       />
       <div className="mx-auto w-full max-w-6xl px-3 sm:px-6">
-        <div className="glass overflow-hidden rounded-[20px] shadow-[0_24px_60px_-48px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
+        <div className="glass overflow-hidden rounded-2xl shadow-[0_24px_60px_-48px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
           <div className="flex h-14 items-center justify-between gap-2 pl-3 pr-2 sm:pl-4 sm:pr-2.5">
             <Logo />
 
@@ -66,7 +66,7 @@ export function SiteHeader() {
                     aria-current={active ? "page" : undefined}
                     data-accent={item.platform ?? undefined}
                     className={cn(
-                      "group relative flex items-center gap-2 rounded-pill px-3 py-2 text-[13px] transition-colors duration-200",
+                      "group relative flex items-center gap-2 rounded-full px-3 py-2 text-sm transition-colors duration-200",
                       active
                         ? "bg-[var(--field-strong)] text-[var(--text)] shadow-[inset_0_1px_0_0_var(--highlight)]"
                         : "text-[var(--text-2)] hover:bg-[var(--field)] hover:text-[var(--text)]",
@@ -91,7 +91,7 @@ export function SiteHeader() {
               <LibraryButton />
               <Link
                 href="/#tool"
-                className="btn btn-primary hidden h-9 gap-1.5 px-3.5 text-[12.5px] font-semibold sm:inline-flex"
+                className="btn btn-primary hidden h-9 gap-1.5 px-3.5 text-sm font-semibold sm:inline-flex"
               >
                 Open downloader
                 <ArrowUpRight className="size-3.5" />
@@ -116,7 +116,7 @@ export function SiteHeader() {
                   aria-current={active ? "page" : undefined}
                   data-accent={item.platform ?? undefined}
                   className={cn(
-                    "shrink-0 whitespace-nowrap rounded-pill px-2.5 py-1.5 text-[12px] transition-colors duration-200",
+                    "shrink-0 whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm transition-colors duration-200",
                     active
                       ? item.platform
                         ? "tool-pill px-2.5 py-1.5"

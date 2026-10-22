@@ -29,8 +29,8 @@ export function PlatformSwitcher({ active }: { active: Platform }) {
             className={cn("seg-item", isActive && "is-active")}
           >
             <PlatformIcon platform={id} className="size-4 shrink-0" />
-            <span className="truncate sm:hidden">{config.shortLabel}</span>
-            <span className="hidden truncate sm:inline">{config.switcherLabel}</span>
+            <span className="whitespace-nowrap sm:hidden">{config.shortLabel}</span>
+            <span className="hidden whitespace-nowrap sm:inline">{config.switcherLabel}</span>
           </Link>
         );
       })}

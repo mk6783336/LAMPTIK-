@@ -22,16 +22,17 @@ interface AdSlotProps {
   eager?: boolean;
 }
 
-/** Track whether the first ad slot on the current page view has claimed eager load. */
-let firstSlotClaimed = false;
-
 /**
- * CLS-safe, zero-white-flash Adsterra slot.
+ * CLS-safe, zero-white-flash Adsterra slot with an explicit sponsorship
+ * disclosure.
  *
- * - Uses `#07080d` dark background and `colorScheme: 'dark'` on the iframe and
- *   container so mobile browsers never flash white while ads load.
- * - Pre-warms slots 600px before they enter the viewport (`rootMargin: '600px 0px'`),
- *   and loads the first above-the-fold slot immediately with zero delay.
+ * - Every unit renders inside `role="complementary"` carrying the visible
+ *   `AD · SPONSORED PARTNER` pill, so a visitor can always tell advertising
+ *   from site functionality.
+ * - `#07080d` background + `colorScheme: 'dark'` on the frame and container:
+ *   no white flash while the RTB creative loads.
+ * - Slots pre-warm 600px before entering the viewport; the first
+ *   above-the-fold slot takes `eager` and loads with zero delay.
  */
 export function AdSlot({ zoneId, format = "leaderboard", className, label, eager }: AdSlotProps) {
   const defaultKey = format === "rectangle" ? adsterraRectangleKey : adsterraBannerKey;
@@ -46,15 +47,9 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label, eager
   const [creative, setCreative] = useState<{ identity: string; state: "filled" | "fallback" } | null>(null);
   const creativeState = creative?.identity === slotIdentity ? creative.state : "pending";
 
-  // Load the first above-the-fold slot immediately with zero delay, and
-  // pre-load subsequent slots 600px before they scroll into view.
+  // Eager slots load now; everything else pre-warms within 600px of the fold.
   useEffect(() => {
-    if (!key) return;
-    if (eager || !firstSlotClaimed) {
-      firstSlotClaimed = true;
-      setVisible(true);
-      return;
-    }
+    if (!key || eager) return;
     const node = hostRef.current;
     if (!node) return;
 
@@ -91,8 +86,7 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label, eager
 
     const apply = (available: number) => {
       if (available <= 0) return;
-      const next = Math.min(1, Math.max(0.3, available / width));
-      setScale(next);
+      setScale(Math.min(1, Math.max(0.3, available / width)));
     };
 
     apply(node.clientWidth);
@@ -130,6 +124,7 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label, eager
     };
   }, [key, slotIdentity, visible, creativeState]);
 
+  // Unconfigured == no ad, no disclosure, no reserved space, no request.
   if (!key) return null;
 
   const isLeaderboard = format === "leaderboard";
@@ -138,19 +133,25 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label, eager
 
   return (
     <aside
-      aria-label={label ?? "Advertisement"}
+      role="complementary"
+      aria-label="Sponsored Advertisement"
       className={cn("w-full", className)}
       data-ad-slot={format}
       data-ad-state={creativeState}
     >
-      {hasVisibleContent ? (
-        <p className="micro mb-1.5 text-center text-[9px] text-[var(--text-3)]/70">Advertisement</p>
-      ) : null}
+      {/* Disclosure pill — always visible, amber, never styled like a CTA. */}
+      <p className="mb-1.5 flex justify-center">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/[0.03] px-2.5 py-1 text-xs font-medium text-amber-300/90">
+          <span aria-hidden="true" className="size-1.5 rounded-full bg-amber-400/80" />
+          AD · SPONSORED PARTNER
+        </span>
+      </p>
+
       <div
         ref={hostRef}
         className={cn(
           "relative mx-auto w-full max-w-[728px] overflow-hidden",
-          hasVisibleContent && "rounded-[16px] border border-white/[0.07] bg-[#07080d]",
+          hasVisibleContent && "rounded-2xl border border-amber-500/15 bg-[#07080d]",
           !isLeaderboard && "max-w-[300px]",
         )}
         style={{
@@ -166,7 +167,7 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label, eager
           >
             <iframe
               ref={frameRef}
-              title={label ?? "Advertisement"}
+              title={label ?? "Sponsored advertisement"}
               src={frameSrc}
               width={width}
               height={height}
@@ -198,10 +199,10 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label, eager
             href="https://uplcm.com/4/12078941"
             target="_blank"
             rel="sponsored nofollow noopener"
-            aria-label="Sponsored: High-Speed Unlimited HD Video Stream Server"
+            aria-label="Sponsored partner offer — opens in a new tab"
             className={cn(
-              "absolute left-0 top-0 flex overflow-hidden rounded-[15px] border border-cyan-300/20 bg-[radial-gradient(ellipse_at_top_left,_rgba(8,145,178,0.24),_transparent_55%),linear-gradient(135deg,#08121f_0%,#111827_52%,#090b12_100%)] p-4 text-white shadow-[0_18px_48px_-24px_rgba(34,211,238,0.4)] transition-colors hover:border-cyan-200/50",
-              isLeaderboard ? "items-center justify-between gap-4" : "flex-col justify-between gap-5",
+              "absolute left-0 top-0 flex overflow-hidden rounded-2xl border border-amber-500/25 bg-[linear-gradient(135deg,#12100a_0%,#0d0f14_55%,#090b12_100%)] p-4 text-white transition-colors hover:border-amber-400/50",
+              isLeaderboard ? "items-center justify-between gap-4" : "flex-col justify-between gap-4",
             )}
             style={{
               width,
@@ -213,18 +214,31 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label, eager
             }}
           >
             <span className="flex min-w-0 items-center gap-3">
-              <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-cyan-200/20 bg-cyan-300/10 text-xl text-cyan-200">
-                ⚡
+              <span
+                aria-hidden="true"
+                className="grid size-10 shrink-0 place-items-center rounded-xl border border-amber-500/25 bg-amber-500/10 text-base text-amber-300"
+              >
+                ↗
               </span>
               <span className="min-w-0">
-                <span className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-200/70">Sponsored</span>
-                <span className={cn("mt-1 block font-semibold leading-snug", isLeaderboard ? "text-[15px]" : "text-[17px]")}>
-                  High-Speed Unlimited HD Video Stream Server
+                <span className="block text-xs font-medium text-amber-300/90">Sponsored partner</span>
+                <span
+                  className={cn(
+                    "mt-1 block font-semibold leading-snug text-slate-100",
+                    isLeaderboard ? "text-sm" : "text-base",
+                  )}
+                >
+                  Discover Recommended Tools &amp; Offers
                 </span>
               </span>
             </span>
-            <span className={cn("inline-flex shrink-0 items-center justify-center rounded-full bg-cyan-300 px-4 py-2 text-[11px] font-bold uppercase tracking-wide text-slate-950", !isLeaderboard && "self-start")}>
-              Explore server
+            <span
+              className={cn(
+                "inline-flex shrink-0 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-xs font-semibold text-amber-200",
+                !isLeaderboard && "self-start",
+              )}
+            >
+              Visit Sponsor ↗
             </span>
           </a>
         ) : null}

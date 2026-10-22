@@ -37,8 +37,8 @@ export function ConsentBar() {
       className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-sm sm:inset-x-auto sm:bottom-5 sm:right-5"
     >
       <div className="panel animate-rise p-3.5">
-        <p className="text-[12px] leading-relaxed text-[var(--text-2)]">
-          <span className="micro mr-1.5 text-[9px] text-[var(--text-3)]">Privacy</span>
+        <p className="text-sm leading-relaxed text-[var(--text-2)]">
+          <span className="micro mr-1.5 text-xs text-[var(--text-3)]">Privacy</span>
           Ads here are served by Adsterra and Monetag. Accept to allow
           cookie-based personalisation; decline for contextual only. Stored on
           this device.{" "}
@@ -53,14 +53,14 @@ export function ConsentBar() {
           <button
             type="button"
             onClick={() => decide("granted")}
-            className="btn btn-primary h-8 flex-1 px-3 text-[12px] font-semibold"
+            className="btn btn-primary h-8 flex-1 px-3 text-sm font-semibold"
           >
             Accept
           </button>
           <button
             type="button"
             onClick={() => decide("denied")}
-            className="btn btn-ghost h-8 flex-1 px-3 text-[12px]"
+            className="btn btn-ghost h-8 flex-1 px-3 text-sm"
           >
             Decline
           </button>

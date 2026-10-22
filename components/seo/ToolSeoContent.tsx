@@ -1,10 +1,28 @@
 import Link from "next/link";
-import { ArrowUpRight, Check, Minus, Plus } from "lucide-react";
+import { ArrowUpRight, Check, Plus, X } from "lucide-react";
 
 import { AdSlot } from "@/components/ads/AdSlot";
 import type { ToolId, ToolSeo } from "@/lib/content/tool-seo";
 import { TOOL_SEO } from "@/lib/content/tool-seo";
-import { adsterraRectangleKey } from "@/lib/monetization";
+
+/** High-contrast 24px verdict badge — readable at a glance, never a dim glyph. */
+function VerdictBadge({ positive }: { positive: boolean }) {
+  return positive ? (
+    <span
+      aria-hidden="true"
+      className="grid size-6 shrink-0 place-items-center rounded-full border border-emerald-500/40 bg-emerald-500/20 text-emerald-300"
+    >
+      <Check className="size-3.5" strokeWidth={3} />
+    </span>
+  ) : (
+    <span
+      aria-hidden="true"
+      className="grid size-6 shrink-0 place-items-center rounded-full border border-rose-500/30 bg-rose-500/15 text-rose-300"
+    >
+      <X className="size-3.5" strokeWidth={3} />
+    </span>
+  );
+}
 
 /**
  * Below-the-fold semantic content for the three tool routes.
@@ -31,10 +49,10 @@ export function ToolSeoContent({ platform }: { platform: ToolId }) {
                 <span aria-hidden="true" className="eyebrow-dot" />
                 {seo.eyebrow}
               </p>
-              <h2 className="balance mt-4 max-w-2xl text-[1.75rem] font-semibold leading-tight tracking-headline sm:text-4xl">
+              <h2 className="balance mt-4 max-w-2xl text-4xl font-semibold leading-tight tracking-headline">
                 {seo.heading}
               </h2>
-              <p className="pretty mt-3 max-w-xl text-[14px] leading-relaxed text-[var(--text-2)]">
+              <p className="pretty mt-3 max-w-xl text-sm leading-relaxed text-[var(--text-2)]">
                 {seo.lede}
               </p>
             </div>
@@ -44,12 +62,12 @@ export function ToolSeoContent({ platform }: { platform: ToolId }) {
             {seo.steps.map((step, index) => (
               <li key={step.title} className="bento-card flex flex-col">
                 <div className="flex items-center gap-3">
-                  <span className="grid size-9 shrink-0 place-items-center rounded-[12px] border border-white/[0.07] bg-white/[0.015] font-mono text-[11px] tabular-nums text-[var(--accent-text)]">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-white/[0.07] bg-white/[0.015] font-mono text-xs tabular-nums text-[var(--accent-text)]">
                     {String(index + 1).padStart(2, "0")}
                   </span>
-                  <h3 className="text-[15px] font-semibold tracking-tight">{step.title}</h3>
+                  <h3 className="text-base font-semibold tracking-tight">{step.title}</h3>
                 </div>
-                <p className="pretty mt-3 text-[13px] leading-relaxed text-[var(--text-2)]">
+                <p className="pretty mt-3 text-sm leading-relaxed text-[var(--text-2)]">
                   {step.body}
                 </p>
               </li>
@@ -58,23 +76,17 @@ export function ToolSeoContent({ platform }: { platform: ToolId }) {
         </div>
       </section>
 
-      {/* Slot C — leaderboard between the How-It-Works steps and the
-          comparison table. */}
-      <div className="shell pb-2">
-        <AdSlot format="leaderboard" label="Advertisement" />
-      </div>
-
       {/* 2 — Comparison table --------------------------------------------- */}
       <section className="section-pad border-t border-[var(--line)]">
         <div className="shell">
           <p className="eyebrow">
             <span aria-hidden="true" className="eyebrow-dot" />
-            comparison
+            Comparison
           </p>
-          <h2 className="balance mt-4 max-w-2xl text-[1.75rem] font-semibold leading-tight tracking-headline sm:text-4xl">
+          <h2 className="balance mt-4 max-w-2xl text-4xl font-semibold leading-tight tracking-headline">
             Why this downloader beats the copycats
           </h2>
-          <p className="pretty mt-3 max-w-xl text-[14px] leading-relaxed text-[var(--text-2)]">
+          <p className="pretty mt-3 max-w-xl text-sm leading-relaxed text-[var(--text-2)]">
             {seo.comparisonLede}
           </p>
 
@@ -84,24 +96,24 @@ export function ToolSeoContent({ platform }: { platform: ToolId }) {
             {seo.comparison.map((row) => (
               <li
                 key={row.label}
-                className="rounded-[16px] border border-white/[0.07] bg-white/[0.015] p-4"
+                className="rounded-2xl border border-white/[0.07] bg-white/[0.015] p-5"
               >
-                <p className="text-[12.5px] font-medium tracking-tight text-[var(--text)]">
+                <p className="text-base font-semibold tracking-tight text-[var(--text)]">
                   {row.label}
                 </p>
-                <p className="mt-2 flex items-start gap-2 text-[12.5px] leading-relaxed text-[var(--text-2)]">
-                  <Check className="mt-0.5 size-3.5 shrink-0 text-[var(--ok)]" />
-                  <span>{row.ours}</span>
+                <p className="mt-3 flex items-start gap-2.5 text-sm leading-relaxed text-[var(--text-2)]">
+                  <VerdictBadge positive />
+                  <span className="pt-0.5">{row.ours}</span>
                 </p>
-                <p className="mt-1.5 flex items-start gap-2 text-[12px] leading-relaxed text-[var(--text-3)]">
-                  <Minus className="mt-0.5 size-3.5 shrink-0 opacity-60" />
-                  <span>{row.theirs}</span>
+                <p className="mt-2.5 flex items-start gap-2.5 text-sm leading-relaxed text-[var(--text-3)]">
+                  <VerdictBadge positive={false} />
+                  <span className="pt-0.5">{row.theirs}</span>
                 </p>
               </li>
             ))}
           </ul>
 
-          <div className="mt-8 hidden overflow-hidden rounded-[18px] border border-white/[0.07] bg-white/[0.015] sm:block">
+          <div className="mt-8 hidden overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.015] sm:block">
             <table className="w-full border-collapse text-left">
               <caption className="sr-only">
                 LAMP TIK compared with typical {seo.noun} downloaders
@@ -110,19 +122,19 @@ export function ToolSeoContent({ platform }: { platform: ToolId }) {
                 <tr className="border-b border-white/[0.07]">
                   <th
                     scope="col"
-                    className="micro px-4 py-3 text-[9.5px] font-normal text-[var(--text-3)] sm:px-5"
+                    className="px-5 py-4 text-xs font-medium text-[var(--text-3)]"
                   >
                     Feature
                   </th>
                   <th
                     scope="col"
-                    className="micro px-4 py-3 text-[9.5px] font-normal text-[var(--accent-text)] sm:px-5"
+                    className="px-5 py-4 text-xs font-medium text-[var(--accent-text)]"
                   >
                     LAMP TIK
                   </th>
                   <th
                     scope="col"
-                    className="micro px-4 py-3 text-[9.5px] font-normal text-[var(--text-3)] sm:px-5"
+                    className="px-5 py-4 text-xs font-medium text-[var(--text-3)]"
                   >
                     Typical downloader
                   </th>
@@ -136,20 +148,20 @@ export function ToolSeoContent({ platform }: { platform: ToolId }) {
                   >
                     <th
                       scope="row"
-                      className="w-[28%] px-4 py-3.5 text-[12.5px] font-medium leading-snug tracking-tight text-[var(--text)] sm:px-5"
+                      className="w-[28%] px-5 py-4 text-sm font-medium leading-snug tracking-tight text-[var(--text)] sm:text-base"
                     >
                       {row.label}
                     </th>
-                    <td className="px-4 py-3.5 text-[12.5px] leading-relaxed text-[var(--text-2)] sm:px-5">
-                      <span className="flex items-start gap-2">
-                        <Check className="mt-0.5 size-3.5 shrink-0 text-[var(--ok)]" />
-                        <span>{row.ours}</span>
+                    <td className="px-5 py-4 text-sm leading-relaxed text-[var(--text-2)] sm:text-base">
+                      <span className="flex items-start gap-2.5">
+                        <VerdictBadge positive />
+                        <span className="pt-0.5">{row.ours}</span>
                       </span>
                     </td>
-                    <td className="px-4 py-3.5 text-[12.5px] leading-relaxed text-[var(--text-3)] sm:px-5">
-                      <span className="flex items-start gap-2">
-                        <Minus className="mt-0.5 size-3.5 shrink-0 opacity-60" />
-                        <span>{row.theirs}</span>
+                    <td className="px-5 py-4 text-sm leading-relaxed text-[var(--text-3)] sm:text-base">
+                      <span className="flex items-start gap-2.5">
+                        <VerdictBadge positive={false} />
+                        <span className="pt-0.5">{row.theirs}</span>
                       </span>
                     </td>
                   </tr>
@@ -160,23 +172,12 @@ export function ToolSeoContent({ platform }: { platform: ToolId }) {
         </div>
       </section>
 
-      {/* 2b — Rectangle unit (300×250). Mounted after the comparison and
-          before the FAQ: below the tool, above the questions. Reserved height
-          on first paint, so it never shifts the FAQ. */}
-      {/* Slot D — between the comparison table and the FAQ: leaderboard
-          plus the 300x250 rectangle. Reserved heights on first paint, so
-          neither shifts the FAQ. */}
-      <section className="section-pad border-t border-[var(--line)]">
+      {/* The single static-page ad slot before the FAQ. Together with the
+          unit under the tool this is the whole scroll-path inventory — no
+          back-to-back banners. */}
+      <section className="border-t border-[var(--line)] py-10 sm:py-12">
         <div className="shell">
           <AdSlot format="leaderboard" label="Advertisement" />
-        </div>
-        <div className="shell mt-8 flex justify-center">
-          <AdSlot
-            format="rectangle"
-            zoneId={adsterraRectangleKey}
-            label="Advertisement"
-            className="max-w-[300px]"
-          />
         </div>
       </section>
 
@@ -186,12 +187,12 @@ export function ToolSeoContent({ platform }: { platform: ToolId }) {
           <div className="lg:sticky lg:top-28 lg:self-start">
             <p className="eyebrow">
               <span aria-hidden="true" className="eyebrow-dot" />
-              faq
+              FAQ
             </p>
-            <h2 className="balance mt-4 text-[1.75rem] font-semibold leading-tight tracking-headline sm:text-4xl">
-              {seo.noun} questions, answered
+            <h2 className="balance mt-4 text-4xl font-semibold leading-tight tracking-headline">
+              {seo.noun}, answered
             </h2>
-            <p className="pretty mt-3 max-w-sm text-[14px] leading-relaxed text-[var(--text-2)]">
+            <p className="pretty mt-3 max-w-sm text-sm leading-relaxed text-[var(--text-2)]">
               Straight answers about quality, legality and storage. Still stuck?{" "}
               <Link
                 href="/contact"
@@ -207,10 +208,10 @@ export function ToolSeoContent({ platform }: { platform: ToolId }) {
             {seo.faqs.map((item) => (
               <details
                 key={item.question}
-                className="group rounded-[16px] border border-white/[0.07] bg-white/[0.015] px-4 py-1 backdrop-blur-md transition-colors duration-200 hover:border-[var(--line-strong)] [&[open]]:bg-[var(--field)]"
+                className="group rounded-2xl border border-white/[0.07] bg-white/[0.015] px-4 py-1 backdrop-blur-md transition-colors duration-200 hover:border-[var(--line-strong)] [&[open]]:bg-[var(--field)]"
               >
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-3.5 text-left">
-                  <h3 className="balance text-[14px] font-medium leading-snug tracking-tight">
+                  <h3 className="balance text-sm font-medium leading-snug tracking-tight">
                     {item.question}
                   </h3>
                   <span
@@ -220,7 +221,7 @@ export function ToolSeoContent({ platform }: { platform: ToolId }) {
                     <Plus className="size-3.5" />
                   </span>
                 </summary>
-                <p className="pretty mt-0.5 max-w-2xl pb-4 pr-8 text-[13.5px] leading-relaxed text-[var(--text-2)]">
+                <p className="pretty mt-0.5 max-w-2xl pb-4 pr-8 text-sm leading-relaxed text-[var(--text-2)]">
                   {item.answer}
                 </p>
               </details>
@@ -234,9 +235,9 @@ export function ToolSeoContent({ platform }: { platform: ToolId }) {
         <div className="shell">
           <p className="eyebrow">
             <span aria-hidden="true" className="eyebrow-dot" />
-            keep reading
+            Keep reading
           </p>
-          <h2 className="balance mt-4 max-w-2xl text-[1.75rem] font-semibold leading-tight tracking-headline sm:text-4xl">
+          <h2 className="balance mt-4 max-w-2xl text-4xl font-semibold leading-tight tracking-headline">
             Every tool and guide, in one place
           </h2>
 
@@ -245,13 +246,13 @@ export function ToolSeoContent({ platform }: { platform: ToolId }) {
               <Link
                 key={link.href}
                 href={link.href}
-                className="group flex items-start justify-between gap-4 rounded-[16px] border border-white/[0.07] bg-white/[0.015] p-4 transition-colors duration-200 hover:border-[var(--line-strong)]"
+                className="group flex items-start justify-between gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.015] p-4 transition-colors duration-200 hover:border-[var(--line-strong)]"
               >
                 <span className="min-w-0">
-                  <span className="block text-[13.5px] font-medium leading-snug tracking-tight transition-colors duration-200 group-hover:text-[var(--accent-text)]">
+                  <span className="block text-sm font-medium leading-snug tracking-tight transition-colors duration-200 group-hover:text-[var(--accent-text)]">
                     {link.anchor}
                   </span>
-                  <span className="pretty mt-1.5 block text-[12.5px] leading-relaxed text-[var(--text-3)]">
+                  <span className="pretty mt-1.5 block text-sm leading-relaxed text-[var(--text-3)]">
                     {link.note}
                   </span>
                 </span>

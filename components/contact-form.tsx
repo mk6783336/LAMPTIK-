@@ -84,10 +84,10 @@ export function ContactForm() {
         role="status"
         className="panel p-5 sm:p-6"
       >
-        <p className="text-[15px] font-medium tracking-tight">
+        <p className="text-base font-medium tracking-tight">
           Your email app should be opening now.
         </p>
-        <p className="mt-2 text-[13.5px] leading-relaxed text-[var(--text-2)]">
+        <p className="mt-2 text-sm leading-relaxed text-[var(--text-2)]">
           Press send in the composed message and we&apos;ll reply to your
           address. If nothing opened, email us directly at{" "}
           <a
@@ -104,7 +104,7 @@ export function ContactForm() {
             setForm(EMPTY);
             setSent(false);
           }}
-          className="btn btn-ghost mt-4 h-10 px-4 text-[13px]"
+          className="btn btn-ghost mt-4 h-10 px-4 text-sm"
         >
           Write another message
         </button>
@@ -113,12 +113,12 @@ export function ContactForm() {
   }
 
   const fieldClass =
-    "mt-1.5 w-full rounded-control border border-[var(--line)] bg-[var(--field)] px-3.5 py-2.5 text-[14px] text-[var(--text)] outline-none transition-colors duration-150 placeholder:text-[var(--text-3)] focus:border-[var(--accent)]";
+    "mt-1.5 w-full rounded-xl border border-[var(--line)] bg-[var(--field)] px-3.5 py-2.5 text-sm text-[var(--text)] outline-none transition-colors duration-150 placeholder:text-[var(--text-3)] focus:border-[var(--accent)]";
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className="block text-[13px] font-medium text-[var(--text-2)]">
+        <label className="block text-sm font-medium text-[var(--text-2)]">
           Your name
           <input
             type="text"
@@ -131,7 +131,7 @@ export function ContactForm() {
             className={fieldClass}
           />
         </label>
-        <label className="block text-[13px] font-medium text-[var(--text-2)]">
+        <label className="block text-sm font-medium text-[var(--text-2)]">
           Email
           <input
             type="email"
@@ -146,7 +146,7 @@ export function ContactForm() {
         </label>
       </div>
 
-      <label className="block text-[13px] font-medium text-[var(--text-2)]">
+      <label className="block text-sm font-medium text-[var(--text-2)]">
         Topic
         <select
           name="topic"
@@ -162,7 +162,7 @@ export function ContactForm() {
         </select>
       </label>
 
-      <label className="block text-[13px] font-medium text-[var(--text-2)]">
+      <label className="block text-sm font-medium text-[var(--text-2)]">
         Message
         <textarea
           name="message"
@@ -176,16 +176,16 @@ export function ContactForm() {
       </label>
 
       {error ? (
-        <p role="alert" className="text-[13px] text-[var(--err)]">
+        <p role="alert" className="text-sm text-[var(--err)]">
           {error}
         </p>
       ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <button type="submit" className="btn btn-primary h-11 px-5 text-[14px] font-semibold">
+        <button type="submit" className="btn btn-primary h-11 px-5 text-sm font-semibold">
           Send message
         </button>
-        <p className="text-[12px] text-[var(--text-3)]">
+        <p className="text-sm text-[var(--text-3)]">
           Opens your email app, prefilled — nothing is stored here.
         </p>
       </div>

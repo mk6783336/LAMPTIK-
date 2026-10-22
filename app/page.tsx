@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight, MonitorPlay, Music2, ShieldCheck } from "lucide-react";
 
-import { AdSlot } from "@/components/ads/AdSlot";
 import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
@@ -108,30 +107,26 @@ export default function HomePage() {
         <SiteHeader />
 
         <main className="flex-1">
-          {/* Slot A — top leaderboard above the hero. Reserved 90px, zero
-              layout shift. */}
-          <div className="shell pt-6 sm:pt-8">
-            <AdSlot format="leaderboard" eager label="Advertisement" />
-          </div>
-
           {/* Hero: copy left, instrument right on desktop; stacked and
-              full-width on phones. */}
-          <section className="pb-12 pt-8 sm:pb-16 sm:pt-14 lg:pt-20">
-            <div className="shell grid items-start gap-7 sm:gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center lg:gap-12 xl:gap-16">
-              <div className="animate-rise min-w-0">
+              full-width on phones. A 12-column grid ties the value
+              proposition and the tool card together instead of leaving a
+              dead horizontal gap between them. */}
+          <section className="pb-12 pt-10 sm:pb-16 sm:pt-14 lg:pt-20">
+            <div className="shell grid items-start gap-6 lg:grid-cols-12 lg:gap-8">
+              <div className="animate-rise min-w-0 lg:col-span-5">
                 <p className="eyebrow">
                   <span aria-hidden="true" className="eyebrow-dot" />
-                  free · no app · no watermark
+                  Free · No app required · No watermark
                 </p>
 
-                <h1 className="balance mt-4 text-[2.3rem] font-semibold leading-[1.02] tracking-headline sm:mt-5 sm:text-[3.1rem] lg:text-[3.5rem]">
+                <h1 className="balance mt-4 text-4xl font-semibold leading-[1.02] tracking-headline sm:mt-5 sm:text-5xl">
                   TikTok videos.
                   <span className="text-gradient mt-1 block">
                     Without the watermark.
                   </span>
                 </h1>
 
-                <p className="pretty mt-4 max-w-lg text-[14.5px] leading-relaxed text-[var(--text-2)] sm:mt-5 sm:text-[15.5px]">
+                <p className="pretty mt-4 max-w-lg text-base leading-relaxed text-[var(--text-2)] sm:mt-5 sm:text-base">
                   Download TikTok in HD MP4 — up to Full HD 1080p, no logo, no app — or
                   convert to MP3 with the original sound. Paste any tiktok.com,
                   vt.tiktok.com, or vm.tiktok.com link and the clean file saves straight
@@ -146,7 +141,7 @@ export default function HomePage() {
                   ].map(({ label, Icon }) => (
                     <span
                       key={label}
-                      className="inline-flex items-center gap-1.5 rounded-pill border border-[var(--glass-border)] bg-[var(--glass-bg)] px-2.5 py-1 text-[11.5px] text-[var(--text-2)] backdrop-blur"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--glass-bg)] px-2.5 py-1 text-xs text-[var(--text-2)] backdrop-blur"
                     >
                       <Icon className="size-3 text-[var(--accent-text)]" />
                       {label}
@@ -156,14 +151,14 @@ export default function HomePage() {
 
                 <Link
                   href="#how"
-                  className="group mt-7 hidden items-center gap-1.5 text-[12.5px] text-[var(--text-2)] transition-colors duration-200 hover:text-[var(--text)] sm:inline-flex"
+                  className="group mt-7 hidden items-center gap-1.5 text-sm text-[var(--text-2)] transition-colors duration-200 hover:text-[var(--text)] sm:inline-flex"
                 >
                   See how it works
                   <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </Link>
               </div>
 
-              <div className="animate-rise min-w-0 [animation-delay:80ms]">
+              <div className="animate-rise min-w-0 lg:col-span-7 [animation-delay:80ms]">
                 <Downloader />
               </div>
             </div>
@@ -180,23 +175,18 @@ export default function HomePage() {
                 {facts.map(([term, value]) => (
                   <div
                     key={term}
-                    className="rounded-[16px] border border-[var(--glass-border)] bg-[var(--glass-bg)] px-4 py-3 backdrop-blur-md"
+                    className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-4 py-3 backdrop-blur-md"
                   >
-                    <dt className="micro truncate text-[9.5px] text-[var(--text-3)]">
+                    <dt className="micro text-xs text-[var(--text-3)]">
                       {term}
                     </dt>
-                    <dd className="mt-1 truncate text-[14px] font-medium tracking-tight">
+                    <dd className="mt-1 text-sm font-medium leading-snug tracking-tight">
                       {value}
                     </dd>
                   </div>
                 ))}
               </dl>
             </div>
-          </section>
-
-          {/* In-feed leaderboard — reserved 90px, zero layout shift. */}
-          <section className="shell pb-2">
-            <AdSlot format="leaderboard" />
           </section>
 
           <PlatformGrid />
@@ -208,15 +198,15 @@ export default function HomePage() {
                 <div>
                   <p className="eyebrow">
                     <span aria-hidden="true" className="eyebrow-dot" />
-                    guides
+                    Guides
                   </p>
-                  <h2 className="balance mt-4 text-[1.75rem] font-semibold leading-tight tracking-headline sm:text-4xl">
+                  <h2 className="balance mt-4 text-4xl font-semibold leading-tight tracking-headline">
                     Learn the details
                   </h2>
                 </div>
                 <Link
                   href="/guides"
-                  className="group inline-flex items-center gap-1.5 text-[13px] text-[var(--accent-text)] transition-opacity duration-200 hover:opacity-80"
+                  className="group inline-flex items-center gap-1.5 text-sm text-[var(--accent-text)] transition-opacity duration-200 hover:opacity-80"
                 >
                   All guides
                   <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
@@ -231,10 +221,10 @@ export default function HomePage() {
                     className="bento-card group flex flex-col justify-between gap-6"
                   >
                     <div>
-                      <h3 className="balance text-[15px] font-semibold leading-snug tracking-tight transition-colors duration-200 group-hover:text-[var(--accent-text)]">
+                      <h3 className="balance text-base font-semibold leading-snug tracking-tight transition-colors duration-200 group-hover:text-[var(--accent-text)]">
                         {guide.title}
                       </h3>
-                      <p className="pretty mt-2 text-[13px] leading-relaxed text-[var(--text-2)]">
+                      <p className="pretty mt-2 text-sm leading-relaxed text-[var(--text-2)]">
                         {guide.description}
                       </p>
                     </div>

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight, BookOpen } from "lucide-react";
 
-import { AdSlot } from "@/components/ads/AdSlot";
 import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { SiteFooter } from "@/components/site-footer";
@@ -68,11 +67,6 @@ export default function GuidesPage() {
         <SiteHeader />
 
         <main className="flex-1">
-          {/* Top leaderboard above the guides hero. */}
-          <div className="shell pt-6 sm:pt-8">
-            <AdSlot format="leaderboard" eager label="Advertisement" />
-          </div>
-
           <section className="pb-12 pt-10 sm:pb-16 sm:pt-16">
             <div className="shell">
               <nav aria-label="Breadcrumb" className="micro flex items-center gap-2 text-[var(--text-3)]">
@@ -85,13 +79,13 @@ export default function GuidesPage() {
 
               <p className="eyebrow mt-6">
                 <span aria-hidden="true" className="eyebrow-dot" />
-                the library
+                The library
               </p>
-              <h1 className="balance mt-4 max-w-2xl text-[2.4rem] font-semibold leading-[1.03] tracking-headline sm:text-5xl">
+              <h1 className="balance mt-4 max-w-2xl text-4xl font-semibold leading-[1.03] tracking-headline sm:text-5xl">
                 Guides for{" "}
                 <span className="text-gradient">clean downloads.</span>
               </h1>
-              <p className="pretty mt-4 max-w-xl text-[15px] leading-relaxed text-[var(--text-2)]">
+              <p className="pretty mt-4 max-w-xl text-base leading-relaxed text-[var(--text-2)]">
                 Short, practical articles about downloading TikTok videos the right way —
                 quality, formats, broken links, and the legal side. No fluff, no affiliate
                 detours.
@@ -108,14 +102,14 @@ export default function GuidesPage() {
                 className="bento-card group grid gap-6 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] sm:items-center"
               >
                 <div className="min-w-0">
-                  <span className="inline-flex items-center gap-1.5 rounded-pill border border-[var(--glass-border)] bg-[var(--field)] px-2.5 py-1 text-[11px] font-medium text-[var(--accent-text)]">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--field)] px-2.5 py-1 text-xs font-medium text-[var(--accent-text)]">
                     <BookOpen className="size-3" />
                     Start here
                   </span>
-                  <h2 className="balance mt-4 text-[1.4rem] font-semibold leading-tight tracking-tight sm:text-2xl">
+                  <h2 className="balance mt-4 text-2xl font-semibold leading-tight tracking-tight sm:text-2xl">
                     {featured.title}
                   </h2>
-                  <p className="pretty mt-2.5 max-w-lg text-[13.5px] leading-relaxed text-[var(--text-2)]">
+                  <p className="pretty mt-2.5 max-w-lg text-sm leading-relaxed text-[var(--text-2)]">
                     {featured.description}
                   </p>
                 </div>
@@ -126,7 +120,7 @@ export default function GuidesPage() {
                   >
                     Updated {featured.updatedAt}
                   </time>
-                  <span className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-[var(--accent-text)]">
+                  <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent-text)]">
                     Read the guide
                     <ArrowUpRight className="size-3.5 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                   </span>
@@ -141,10 +135,10 @@ export default function GuidesPage() {
                     className="bento-card group flex flex-col justify-between gap-6"
                   >
                     <div className="min-w-0">
-                      <h2 className="balance text-[15.5px] font-semibold leading-snug tracking-tight transition-colors duration-200 group-hover:text-[var(--accent-text)]">
+                      <h2 className="balance text-base font-semibold leading-snug tracking-tight transition-colors duration-200 group-hover:text-[var(--accent-text)]">
                         {guide.title}
                       </h2>
-                      <p className="pretty mt-2 text-[13px] leading-relaxed text-[var(--text-2)]">
+                      <p className="pretty mt-2 text-sm leading-relaxed text-[var(--text-2)]">
                         {guide.description}
                       </p>
                     </div>
@@ -171,7 +165,7 @@ export default function GuidesPage() {
                 <VideoAdUnit />
               </div>
 
-              <p className="mt-10 text-[13.5px] text-[var(--text-2)]">
+              <p className="mt-10 text-sm text-[var(--text-2)]">
                 Ready to download?{" "}
                 <Link
                   href="/#tool"

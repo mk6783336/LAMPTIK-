@@ -28,9 +28,9 @@ import {
 import { adsterraRectangleKey, monetagSmartlinkUrl } from "@/lib/monetization";
 import { pageAlternates, siteConfig, siteUrl } from "@/lib/site";
 
-const TITLE = "LAMP TIK for Android (Official APK v2.2) — Free HD Video Downloader";
+const TITLE = "LAMP TIK for Android (Official APK v2.3) — Free HD Video Downloader";
 const DESCRIPTION =
-  "Download the official LAMP TIK Android APK (v2.2): built-in YouTube 1080p & MP3 downloader, watermark-free TikTok, Instagram Reels & Facebook HD downloads, and direct background saving to your phone gallery. 100% free, no Play Store needed.";
+  "Download the official LAMP TIK Android APK (v2.3): built-in YouTube 1080p & MP3 downloader, watermark-free TikTok, Instagram Reels & Facebook HD downloads, and direct background saving to your phone gallery. 100% free, no Play Store needed.";
 
 export const metadata: Metadata = {
   title: "LAMP TIK for Android (Official APK) — Free Download",
@@ -88,11 +88,11 @@ const APP_FEATURES = [
 const INSTALL_STEPS = [
   {
     title: "Tap “Download LAMP TIK APK” above",
-    body: "Tap the primary download button at the top of this page to save the official signed LAMP-TIK-v2.2.apk file to your phone.",
+    body: "Tap the primary download button at the top of this page to save the official signed LAMP-TIK-v2.3.apk file to your phone.",
   },
   {
     title: "Open the downloaded .apk file",
-    body: "Tap the download complete notification in your Android notification bar, or open LAMP-TIK-v2.2.apk from your phone's Downloads folder.",
+    body: "Tap the download complete notification in your Android notification bar, or open LAMP-TIK-v2.3.apk from your phone's Downloads folder.",
   },
   {
     title: "Tap “Install” and launch LAMP TIK",
@@ -137,8 +137,8 @@ export default function AppDownloadPage() {
         url: pageUrl,
         applicationCategory: "MultimediaApplication",
         operatingSystem: "Android 7.0+",
-        softwareVersion: "2.2",
-        downloadUrl: `${siteUrl}/downloads/lamptik-v2.2.apk`,
+        softwareVersion: "2.3",
+        downloadUrl: `${siteUrl}/downloads/lamptik-v2.3.apk`,
         installUrl: `${siteUrl}/api/apk`,
         offers: {
           "@type": "Offer",
@@ -200,12 +200,7 @@ export default function AppDownloadPage() {
         <SiteHeader />
 
         <main className="flex-1">
-          <div className="shell pb-20 pt-8 sm:pt-12">
-            {/* Top Ad Slot */}
-            <div className="mb-6">
-              <AdSlot format="leaderboard" eager label="Sponsored — download partner" />
-            </div>
-
+          <div className="shell pb-20 pt-10 sm:pt-12">
             {/* Hero Section — TubeMate / SnapTube style consumer APK download hub */}
             <section className="panel relative overflow-hidden p-6 text-center sm:p-10">
               <div
@@ -214,7 +209,7 @@ export default function AppDownloadPage() {
               />
 
               {/* Official App Icon */}
-              <div className="mx-auto grid size-20 place-items-center rounded-[22px] border border-white/20 bg-[linear-gradient(150deg,#22d3ee_0%,#3b82f6_52%,#6366f1_100%)] text-white shadow-[0_18px_42px_-12px_rgba(34,211,238,0.75),inset_0_1px_0_rgba(255,255,255,0.45)]">
+              <div className="mx-auto grid size-20 place-items-center rounded-2xl border border-white/20 bg-[linear-gradient(150deg,#22d3ee_0%,#3b82f6_52%,#6366f1_100%)] text-white shadow-[0_18px_42px_-12px_rgba(34,211,238,0.75),inset_0_1px_0_rgba(255,255,255,0.45)]">
                 <Zap className="size-10" fill="currentColor" strokeWidth={0} />
               </div>
 
@@ -222,15 +217,15 @@ export default function AppDownloadPage() {
               <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
                 <span className="tool-badge">
                   <ShieldCheck className="size-3.5 text-[var(--ok)]" />
-                  Version 2.2 · Official Signed Android App · Android 7.0+ · 100% Free
+                  Version 2.3 · Official Signed Android App · Android 7.0+ · 100% Free
                 </span>
               </div>
 
-              <h1 className="balance mx-auto mt-4 max-w-2xl text-[2rem] font-semibold leading-tight tracking-headline sm:text-[2.65rem]">
+              <h1 className="balance mx-auto mt-4 max-w-2xl text-4xl font-semibold leading-tight tracking-headline sm:text-5xl">
                 LAMP TIK for Android (Official APK)
               </h1>
 
-              <p className="pretty mx-auto mt-3 max-w-xl text-[14.5px] leading-relaxed text-[var(--text-2)]">
+              <p className="pretty mx-auto mt-3 max-w-xl text-base leading-relaxed text-[var(--text-2)]">
                 The all-in-one HD video &amp; MP3 downloader for Android. Save TikTok, Instagram
                 Reels, Facebook Watch, and <strong className="text-[var(--text)]">App-Exclusive YouTube 1080p &amp; MP3</strong> straight to your phone gallery.
               </p>
@@ -243,16 +238,16 @@ export default function AppDownloadPage() {
               {/* App-Exclusive YouTube Perk Banner */}
               <div
                 id="youtube-perk"
-                className="mx-auto mt-7 flex max-w-xl scroll-mt-24 items-start gap-3 rounded-[16px] border border-[#ff0033]/35 bg-[#ff0033]/[0.08] p-4 text-left"
+                className="mx-auto mt-7 flex max-w-xl scroll-mt-24 items-start gap-3 rounded-2xl border border-[#ff0033]/35 bg-[#ff0033]/[0.08] p-4 text-left"
               >
                 <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#ff0033]/15 text-[#ff5c7a]">
                   <Youtube className="size-5" />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-[14px] font-semibold tracking-tight">
+                  <p className="text-sm font-semibold tracking-tight">
                     🎬 Built-in YouTube 1080p/720p &amp; MP3 Downloader Unlocked!
                   </p>
-                  <p className="pretty mt-1 text-[12.5px] leading-relaxed text-[var(--text-2)]">
+                  <p className="pretty mt-1 text-sm leading-relaxed text-[var(--text-2)]">
                     Opening LAMP TIK from the Android APK automatically unlocks unlimited Full HD
                     YouTube videos, Shorts, and 320kbps MP3 audio downloads.{" "}
                     <Link
@@ -268,20 +263,20 @@ export default function AppDownloadPage() {
               {/* Quick Package Specs */}
               <dl className="mx-auto mt-6 grid max-w-xl grid-cols-2 gap-2.5 sm:grid-cols-4">
                 {[
-                  { icon: <Smartphone className="size-3.5" />, term: "Package", value: "LAMP-TIK-v2.2.apk" },
+                  { icon: <Smartphone className="size-3.5" />, term: "Package", value: "LAMP-TIK-v2.3.apk" },
                   { icon: <ShieldCheck className="size-3.5" />, term: "Signature", value: "v1/v2 Verified" },
                   { icon: <Rocket className="size-3.5" />, term: "Requires", value: "Android 7.0+" },
                   { icon: <Check className="size-3.5" />, term: "License", value: "100% Free" },
                 ].map((fact) => (
                   <div
                     key={fact.term}
-                    className="rounded-[12px] border border-[var(--glass-border)] bg-[var(--field)] px-3 py-2.5"
+                    className="rounded-xl border border-[var(--glass-border)] bg-[var(--field)] px-3 py-2.5"
                   >
                     <dt className="flex items-center justify-center gap-1 text-[var(--text-3)]">
                       <span className="text-[var(--accent-text)]">{fact.icon}</span>
-                      <span className="micro text-[10px]">{fact.term}</span>
+                      <span className="micro text-xs">{fact.term}</span>
                     </dt>
-                    <dd className="mt-0.5 truncate text-[12.5px] font-semibold">{fact.value}</dd>
+                    <dd className="mt-0.5 break-words text-sm font-semibold leading-snug">{fact.value}</dd>
                   </div>
                 ))}
               </dl>
@@ -297,9 +292,9 @@ export default function AppDownloadPage() {
               <div className="text-center sm:text-left">
                 <p className="eyebrow justify-center sm:justify-start">
                   <span aria-hidden="true" className="eyebrow-dot" />
-                  built for android
+                  Built for Android
                 </p>
-                <h2 className="mt-3 text-[1.55rem] font-semibold tracking-headline sm:text-[1.9rem]">
+                <h2 className="mt-3 text-2xl font-semibold tracking-headline sm:text-4xl">
                   Why Use the LAMP TIK App?
                 </h2>
               </div>
@@ -317,10 +312,10 @@ export default function AppDownloadPage() {
                       {feature.emoji}
                     </span>
                     <div className="min-w-0">
-                      <h3 className="text-[15.5px] font-semibold tracking-tight">
+                      <h3 className="text-base font-semibold tracking-tight">
                         {feature.title}
                       </h3>
-                      <p className="pretty mt-1.5 text-[13px] leading-relaxed text-[var(--text-2)]">
+                      <p className="pretty mt-1.5 text-sm leading-relaxed text-[var(--text-2)]">
                         {feature.body}
                       </p>
                     </div>
@@ -336,19 +331,19 @@ export default function AppDownloadPage() {
                   <div>
                     <p className="eyebrow">
                       <span aria-hidden="true" className="eyebrow-dot" />
-                      3-step android install guide
+                      3-step Android install guide
                     </p>
-                    <h2 className="mt-2.5 text-[1.5rem] font-semibold tracking-headline sm:text-[1.8rem]">
+                    <h2 className="mt-2.5 text-2xl font-semibold tracking-headline sm:text-4xl">
                       How to Install LAMP TIK APK on Android
                     </h2>
                   </div>
                   <a
-                    href="/downloads/lamptik-v2.2.apk"
-                    download="LAMP-TIK-v2.2.apk"
-                    className="btn btn-primary h-10 gap-2 px-4 text-[13px] font-semibold"
+                    href="/downloads/lamptik-v2.3.apk"
+                    download="LAMP-TIK-v2.3.apk"
+                    className="btn btn-primary h-10 gap-2 px-4 text-sm font-semibold"
                   >
                     <Download className="size-4" />
-                    Download APK (v2.2)
+                    Download APK (v2.3)
                   </a>
                 </div>
 
@@ -356,24 +351,24 @@ export default function AppDownloadPage() {
                   {INSTALL_STEPS.map((step, index) => (
                     <li
                       key={step.title}
-                      className="relative flex flex-col justify-between rounded-[16px] border border-[var(--glass-border)] bg-[var(--field)] p-5"
+                      className="relative flex flex-col justify-between rounded-2xl border border-[var(--glass-border)] bg-[var(--field)] p-5"
                     >
                       <div>
                         <div className="flex items-center justify-between gap-2">
                           <span
                             aria-hidden="true"
-                            className="grid size-9 place-items-center rounded-full bg-[var(--accent-soft)] font-mono text-[14px] font-bold text-[var(--accent-text)]"
+                            className="grid size-9 place-items-center rounded-full bg-[var(--accent-soft)] font-mono text-sm font-bold text-[var(--accent-text)]"
                           >
                             {index + 1}
                           </span>
-                          <span className="micro text-[10px] text-[var(--text-3)]">
+                          <span className="micro text-xs text-[var(--text-3)]">
                             STEP {index + 1} OF 3
                           </span>
                         </div>
-                        <p className="mt-3.5 text-[15px] font-semibold tracking-tight">
+                        <p className="mt-3.5 text-base font-semibold tracking-tight">
                           {step.title}
                         </p>
-                        <p className="pretty mt-1.5 text-[13px] leading-relaxed text-[var(--text-2)]">
+                        <p className="pretty mt-1.5 text-sm leading-relaxed text-[var(--text-2)]">
                           {step.body}
                         </p>
                       </div>
@@ -393,26 +388,26 @@ export default function AppDownloadPage() {
                   href={monetagSmartlinkUrl}
                   target="_blank"
                   rel="sponsored nofollow noopener"
-                  className="group flex flex-col justify-between rounded-[16px] border border-[var(--glass-border)] bg-[var(--field)] p-5 transition-colors duration-200 hover:border-[var(--glass-border-hover)]"
+                  className="group flex flex-col justify-between rounded-2xl border border-[var(--glass-border)] bg-[var(--field)] p-5 transition-colors duration-200 hover:border-[var(--glass-border-hover)]"
                 >
                   <div className="flex items-start gap-3.5">
                     <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent-text)] transition-transform duration-200 group-hover:scale-110">
                       <Sparkles className="size-5" />
                     </span>
                     <div className="min-w-0 text-left">
-                      <span className="micro text-[10px] text-[var(--accent-text)]">
-                        Sponsored Partner
+                      <span className="micro text-xs text-[var(--accent-text)]">
+                        Ad · Sponsored partner
                       </span>
-                      <span className="mt-1 block text-[15px] font-semibold tracking-tight">
+                      <span className="mt-1 block text-base font-semibold tracking-tight">
                         High-Speed Unlimited Cloud Video Saver
                       </span>
-                      <span className="mt-1 block text-[12.5px] leading-relaxed text-[var(--text-2)]">
+                      <span className="mt-1 block text-sm leading-relaxed text-[var(--text-2)]">
                         Tap to visit our sponsor — supports free 1080p YouTube &amp; TikTok servers
                         for all LAMP TIK users.
                       </span>
                     </div>
                   </div>
-                  <span className="mt-4 inline-flex w-fit items-center gap-1.5 rounded-pill bg-[var(--accent-soft)] px-3.5 py-1.5 text-[12px] font-semibold text-[var(--accent-text)]">
+                  <span className="mt-4 inline-flex w-fit items-center gap-1.5 rounded-full bg-[var(--accent-soft)] px-3.5 py-1.5 text-sm font-semibold text-[var(--accent-text)]">
                     Open Sponsor Offer →
                   </span>
                 </a>
@@ -421,19 +416,19 @@ export default function AppDownloadPage() {
 
             {/* Quick Links & FAQ */}
             <section className="seo-section mt-10">
-              <h2 className="text-[1.5rem] font-semibold tracking-headline sm:text-[1.8rem]">
+              <h2 className="text-2xl font-semibold tracking-headline sm:text-4xl">
                 Frequently Asked Questions
               </h2>
               <div className="mt-4 space-y-3">
                 {FAQS.map((faq) => (
                   <details
                     key={faq.question}
-                    className="group rounded-[14px] border border-[var(--glass-border)] bg-[var(--field)] p-4"
+                    className="group rounded-xl border border-[var(--glass-border)] bg-[var(--field)] p-4"
                   >
-                    <summary className="cursor-pointer list-none text-[14px] font-semibold tracking-tight">
+                    <summary className="cursor-pointer list-none text-sm font-semibold tracking-tight">
                       {faq.question}
                     </summary>
-                    <p className="pretty mt-2 text-[13px] leading-relaxed text-[var(--text-2)]">
+                    <p className="pretty mt-2 text-sm leading-relaxed text-[var(--text-2)]">
                       {faq.answer}
                     </p>
                   </details>
@@ -442,21 +437,21 @@ export default function AppDownloadPage() {
 
               <div className="mt-7 flex flex-wrap items-center gap-3">
                 <a
-                  href="/downloads/lamptik-v2.2.apk"
-                  download="LAMP-TIK-v2.2.apk"
-                  className="btn tool-cta h-11 gap-2 px-5 text-[13.5px] font-semibold"
+                  href="/downloads/lamptik-v2.3.apk"
+                  download="LAMP-TIK-v2.3.apk"
+                  className="btn btn-primary tool-cta h-11 gap-2 px-5 text-sm font-semibold"
                 >
                   <Download className="size-4" />
                   ⬇ Download LAMP TIK APK (Android)
                 </a>
                 <Link
                   href="/youtube-downloader"
-                  className="btn btn-primary h-11 gap-2 px-5 text-[13.5px] font-semibold"
+                  className="btn btn-primary h-11 gap-2 px-5 text-sm font-semibold"
                 >
                   <Youtube className="size-4" />
                   Open YouTube 1080p Downloader
                 </Link>
-                <Link href="/#tool" className="btn btn-ghost h-11 gap-2 px-5 text-[13.5px]">
+                <Link href="/#tool" className="btn btn-ghost h-11 gap-2 px-5 text-sm">
                   <Lock className="size-3.5" />
                   TikTok / Reels / Facebook Downloader
                 </Link>

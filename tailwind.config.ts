@@ -49,10 +49,12 @@ const config: Config = {
         tightest: "-0.045em",
         headline: "-0.035em",
       },
+      // Strict 4-value radius system: lg 8 · xl 12 · 2xl 16 · full.
+      // `panel`/`card`/`control` are aliases into that set, never new values.
       borderRadius: {
-        panel: "24px",
-        card: "20px",
-        control: "14px",
+        panel: "16px",
+        card: "16px",
+        control: "12px",
         pill: "999px",
       },
       boxShadow: {

@@ -51,12 +51,12 @@ export function LibraryButton() {
         aria-haspopup="dialog"
         aria-label={`Saved on this device${count > 0 ? `: ${count}` : ""}`}
         title="Library — saved on this device"
-        className="btn btn-ghost relative h-9 gap-1.5 px-2.5 text-[12.5px] sm:h-9"
+        className="btn btn-ghost relative h-9 gap-1.5 px-2.5 text-sm sm:h-9"
       >
         <FolderDown className="size-4 text-[var(--accent-text)]" />
         <span className="hidden lg:inline">Library</span>
         {count > 0 ? (
-          <span className="grid h-4 min-w-4 place-items-center rounded-full bg-[linear-gradient(120deg,#22d3ee,#6366f1)] px-1 font-mono text-[9.5px] font-semibold tabular-nums text-white">
+          <span className="grid h-4 min-w-4 place-items-center rounded-full bg-[linear-gradient(120deg,#22d3ee,#6366f1)] px-1 font-mono text-xs font-semibold tabular-nums text-white">
             {count > 99 ? "99+" : count}
           </span>
         ) : null}
@@ -139,14 +139,14 @@ function LibraryModal({ onClose, onCount }: LibraryModalProps) {
       >
         <header className="flex items-center justify-between gap-3 border-b border-[var(--glass-border)] px-4 py-3 sm:px-5">
           <div className="flex min-w-0 items-center gap-2.5">
-            <span className="grid size-8 shrink-0 place-items-center rounded-[10px] border border-[color-mix(in_srgb,var(--accent)_35%,transparent)] bg-[var(--accent-soft)] text-[var(--accent-text)]">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-[color-mix(in_srgb,var(--accent)_35%,transparent)] bg-[var(--accent-soft)] text-[var(--accent-text)]">
               <FolderDown className="size-4" />
             </span>
             <div className="min-w-0">
-              <p className="truncate text-[13.5px] font-semibold tracking-tight">
+              <p className="truncate text-sm font-semibold tracking-tight">
                 Saved on this device
               </p>
-              <p className="micro text-[8.5px] text-[var(--text-3)]">
+              <p className="micro text-xs text-[var(--text-3)]">
                 offline library · nothing on our servers
               </p>
             </div>
@@ -159,7 +159,7 @@ function LibraryModal({ onClose, onCount }: LibraryModalProps) {
               type="button"
               onClick={onClose}
               aria-label="Close library"
-              className="grid size-8 place-items-center rounded-[10px] text-[var(--text-3)] transition-colors duration-200 hover:bg-[var(--field-strong)] hover:text-[var(--text)]"
+              className="grid size-8 place-items-center rounded-lg text-[var(--text-3)] transition-colors duration-200 hover:bg-[var(--field-strong)] hover:text-[var(--text)]"
             >
               <X className="size-4" />
             </button>
@@ -183,12 +183,12 @@ function LibraryModal({ onClose, onCount }: LibraryModalProps) {
         </div>
 
         <footer className="flex items-center justify-between gap-3 border-t border-[var(--glass-border)] px-4 py-2.5 sm:px-5">
-          <span className="inline-flex min-w-0 items-center gap-1.5 truncate text-[11px] text-[var(--text-3)]">
+          <span className="inline-flex min-w-0 items-center gap-1.5 truncate text-xs text-[var(--text-3)]">
             <ShieldCheck className="size-3.5 shrink-0 text-[var(--ok)]" />
             Kept in this browser only
           </span>
           {usage.quota ? (
-            <span className="shrink-0 font-mono text-[10px] tabular-nums text-[var(--text-3)]">
+            <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--text-3)]">
               {formatBytes(usage.usage ?? 0)} / {formatBytes(usage.quota)}
             </span>
           ) : null}
@@ -231,7 +231,7 @@ function ClearAllButton({ onCleared }: { onCleared: () => void | Promise<void> }
           // Storage refused the wipe — the list stays as it is.
         }
       }}
-      className="btn btn-ghost h-8 gap-1.5 px-2.5 text-[11.5px]"
+      className="btn btn-ghost h-8 gap-1.5 px-2.5 text-xs"
     >
       <Trash2 className="size-3.5" />
       {confirming ? "Clear everything?" : "Clear all"}
@@ -289,9 +289,9 @@ function LibraryRow({
   }
 
   return (
-    <li className="rounded-[14px] border border-[var(--glass-border)] bg-[var(--field)] p-2.5">
+    <li className="rounded-xl border border-[var(--glass-border)] bg-[var(--field)] p-2.5">
       <div className="flex gap-3">
-        <div className="relative aspect-[2/3] w-12 shrink-0 overflow-hidden rounded-[9px] border border-[var(--glass-border)] bg-[var(--bg-sunken)]">
+        <div className="relative aspect-[2/3] w-12 shrink-0 overflow-hidden rounded-lg border border-[var(--glass-border)] bg-[var(--bg-sunken)]">
           {item.thumbnail && !failed ? (
             <img
               src={item.thumbnail}
@@ -313,10 +313,10 @@ function LibraryRow({
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <p className="line-clamp-2 text-[13px] font-medium leading-snug tracking-tight">
+          <p className="line-clamp-2 text-sm font-medium leading-snug tracking-tight">
             {item.title}
           </p>
-          <p className="mt-1 truncate font-mono text-[10px] tabular-nums text-[var(--text-3)]">
+          <p className="mt-1 truncate font-mono text-xs tabular-nums text-[var(--text-3)]">
             {PLATFORMS[item.platform].name} · {KIND_LABEL[item.kind]} · {formatBytes(item.bytes)} ·{" "}
             {new Date(item.savedAt).toLocaleDateString(undefined, {
               month: "short",
@@ -329,7 +329,7 @@ function LibraryRow({
               type="button"
               onClick={handleExport}
               disabled={exporting}
-              className="btn btn-primary h-7 gap-1.5 px-2.5 text-[11.5px]"
+              className="btn btn-primary h-7 gap-1.5 px-2.5 text-xs"
             >
               {exporting ? (
                 <Loader2 className="size-3 animate-spin" />
@@ -351,7 +351,7 @@ function LibraryRow({
                 void handleDelete();
               }}
               className={cn(
-                "btn h-7 gap-1.5 px-2.5 text-[11.5px] transition-colors duration-200",
+                "btn h-7 gap-1.5 px-2.5 text-xs transition-colors duration-200",
                 confirming ? "btn-ghost border-[color-mix(in_srgb,var(--err)_45%,transparent)] text-[var(--err)]" : "btn-ghost",
               )}
             >
@@ -360,14 +360,14 @@ function LibraryRow({
             </button>
           </div>
 
-          <p className="mt-1.5 truncate font-mono text-[9.5px] text-[var(--text-3)]" title={item.filename}>
+          <p className="mt-1.5 truncate font-mono text-xs text-[var(--text-3)]" title={item.filename}>
             {item.filename}
           </p>
         </div>
       </div>
 
       {error ? (
-        <p className="mt-2 text-[11px] text-[var(--err)]" role="alert">
+        <p className="mt-2 text-xs text-[var(--err)]" role="alert">
           {error}
         </p>
       ) : null}
@@ -378,12 +378,12 @@ function LibraryRow({
 function LibraryEmpty() {
   return (
     <div className="grid place-items-center gap-3 py-14 text-center">
-      <span className="grid size-11 place-items-center rounded-[14px] border border-[var(--glass-border)] bg-[var(--field)] text-[var(--text-3)]">
+      <span className="grid size-11 place-items-center rounded-xl border border-[var(--glass-border)] bg-[var(--field)] text-[var(--text-3)]">
         <Inbox className="size-5" />
       </span>
       <div>
-        <p className="text-[13.5px] font-medium">Nothing saved yet</p>
-        <p className="mx-auto mt-1 max-w-xs text-[12px] leading-relaxed text-[var(--text-3)]">
+        <p className="text-sm font-medium">Nothing saved yet</p>
+        <p className="mx-auto mt-1 max-w-xs text-sm leading-relaxed text-[var(--text-3)]">
           Every file you download is kept here automatically — under its original
           title, in this browser only.
         </p>

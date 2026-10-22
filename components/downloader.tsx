@@ -53,7 +53,7 @@ function LoadingConsole({ elapsedMs, platform }: { elapsedMs: number; platform: 
     <div
       role="status"
       aria-live="polite"
-      className="relative mt-4 overflow-hidden rounded-[18px] border border-[var(--glass-border)] bg-[var(--bg-sunken)] px-4 py-4"
+      className="relative mt-4 overflow-hidden rounded-2xl border border-[var(--glass-border)] bg-[var(--bg-sunken)] px-4 py-4"
     >
       <div
         aria-hidden="true"
@@ -68,7 +68,7 @@ function LoadingConsole({ elapsedMs, platform }: { elapsedMs: number; platform: 
             />
             <Loader2 className="relative size-3.5 animate-spin text-[var(--accent-text)]" />
           </span>
-          <span className="truncate text-[13px] font-medium">
+          <span className="truncate text-sm font-medium">
             {isYouTube ? "Resolving high-speed stream…" : "Analyzing stream…"}
           </span>
         </div>
@@ -104,7 +104,7 @@ function LoadingConsole({ elapsedMs, platform }: { elapsedMs: number; platform: 
               </span>
               <span
                 className={cn(
-                  "truncate text-[12.5px] transition-colors duration-300",
+                  "truncate text-sm transition-colors duration-300",
                   done
                     ? "text-[var(--text-2)]"
                     : active
@@ -151,6 +151,9 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
   const tickerRef = useRef<number | null>(null);
   /** Last URL that resolved successfully — used for forced re-resolves. */
   const lastUrlRef = useRef<string>("");
+  /** Always-current submit handler, so the share-sheet effect can call it
+      without re-subscribing on every render. */
+  const submitRef = useRef<(url: string) => Promise<void>>(async () => {});
   const reduceMotion = useReducedMotion();
 
   const isLoading = status === "loading";
@@ -176,6 +179,58 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
   }, []);
 
   useEffect(() => stopTicker, [stopTicker]);
+
+  // Keep the deferred submit handler current (function declarations hoist, so
+  // this reference is valid on the very first render).
+  useEffect(() => {
+    submitRef.current = handleSubmitUrl;
+  });
+
+  /**
+   * Android share-sheet hand-off.
+   *
+   * The native APK forwards `Share → LAMP TIK` as
+   * `?app=android_apk&shared_url=<encoded text>`. Consume it exactly once:
+   * extract the link, strip the parameter from the address bar, then pre-fill
+   * and resolve it automatically. YouTube links are re-routed to the
+   * dedicated app-exclusive page so the right engine and gate apply.
+   */
+  const sharedHandledRef = useRef(false);
+  useEffect(() => {
+    if (sharedHandledRef.current) return;
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    const shared = params.get("shared_url");
+    if (!shared || !shared.trim()) return;
+    sharedHandledRef.current = true;
+
+    params.delete("shared_url");
+    const cleaned = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+    try {
+      window.history.replaceState(window.history.state, "", cleaned);
+    } catch {
+      // History API unavailable — the handled ref still prevents a re-fire.
+    }
+
+    void (async () => {
+      const { detectLink } = await import("@/lib/detect");
+      const detected = detectLink(shared);
+      if (!detected) {
+        setSeed((current) => ({ value: shared.trim(), nonce: current.nonce + 1 }));
+        inputRef.current?.focus();
+        return;
+      }
+      if (detected.platform === "youtube" && !isAppMode()) {
+        window.location.assign(
+          `/youtube-downloader?app=android_apk&shared_url=${encodeURIComponent(shared.trim())}`,
+        );
+        return;
+      }
+      setSeed((current) => ({ value: detected.url, nonce: current.nonce + 1 }));
+      void submitRef.current(detected.url);
+    })();
+  }, []);
 
   // Bring the expanded result into view on small screens, after the
   // expand animation settles.
@@ -453,11 +508,11 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
                 )}
               />
             </span>
-            <span className="micro truncate text-[var(--text-3)]">
-              {isLoading ? "resolving" : status === "success" ? "stream ready" : "ready"}
+            <span className="micro whitespace-nowrap">
+              {isLoading ? "Resolving" : status === "success" ? "Stream ready" : "Ready"}
             </span>
           </div>
-          <span className="micro hidden shrink-0 text-[var(--text-3)] sm:block">
+          <span className="micro hidden shrink-0 whitespace-nowrap sm:block">
             {PLATFORMS[platform].panelTag}
           </span>
         </div>
@@ -474,10 +529,10 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
           onNotify={notify}
         />
 
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-[11.5px] text-[var(--text-3)]">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-xs text-[var(--text-2)] sm:text-sm">
           <span className="inline-flex min-w-0 items-center gap-1.5">
             <ShieldCheck className="size-3.5 shrink-0 text-[var(--ok)]" />
-            <span className="truncate">Server-side · nothing stored</span>
+            <span>Server-side · nothing stored</span>
           </span>
           <button
             type="button"
@@ -510,7 +565,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
                 <p
                   role="status"
                   aria-live="polite"
-                  className="mt-2 inline-flex items-center gap-1.5 rounded-pill border border-[var(--warn)]/30 bg-[var(--warn)]/10 px-2.5 py-1 text-[11.5px] font-medium text-[var(--warn)]"
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-[var(--warn)]/30 bg-[var(--warn)]/10 px-2.5 py-1 text-xs font-medium text-[var(--warn)]"
                 >
                   <Loader2 className="size-3 animate-spin" />
                   {backupNote}
@@ -546,14 +601,14 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
       </div>
 
       {/* Keyboard hint: desktop only — mobile users tap the Paste button. */}
-      <p className="mt-3 hidden items-center gap-1.5 text-[11.5px] text-[var(--text-3)] sm:flex">
-        <Sparkles className="size-3.5 text-[var(--accent-text)]" />
+      <p className="mt-3 hidden items-center gap-1.5 text-xs text-[var(--text-2)] sm:flex sm:text-sm">
+        <Sparkles className="size-3.5 shrink-0 text-[var(--accent-text)]" />
         Press
-        <kbd className="rounded-md border border-[var(--glass-border)] bg-[var(--field)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--text-2)]">
+        <kbd className="rounded-lg border border-[var(--glass-border)] bg-[var(--field)] px-1.5 py-0.5 font-mono text-xs text-[var(--text-2)]">
           Enter
         </kbd>
         to fetch ·
-        <kbd className="rounded-md border border-[var(--glass-border)] bg-[var(--field)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--text-2)]">
+        <kbd className="rounded-lg border border-[var(--glass-border)] bg-[var(--field)] px-1.5 py-0.5 font-mono text-xs text-[var(--text-2)]">
           Esc
         </kbd>
         to clear

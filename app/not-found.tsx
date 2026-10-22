@@ -39,14 +39,14 @@ export default function NotFound() {
             <div className="shell">
               <span className="eyebrow">
                 <span aria-hidden="true" className="eyebrow-dot" />
-                error 404
+                Error 404
               </span>
 
-              <h1 className="balance mt-5 max-w-2xl text-[2.3rem] font-semibold leading-[1.03] tracking-headline sm:text-[3rem]">
+              <h1 className="balance mt-5 max-w-2xl text-4xl font-semibold leading-[1.03] tracking-headline sm:text-5xl">
                 This page isn’t{" "}
                 <span className="text-gradient">on the reel.</span>
               </h1>
-              <p className="pretty mt-4 max-w-xl text-[15px] leading-relaxed text-[var(--text-2)]">
+              <p className="pretty mt-4 max-w-xl text-base leading-relaxed text-[var(--text-2)]">
                 The link may be mistyped, or the page has moved. The downloader
                 itself is one click away — paste any TikTok, Instagram, or
                 Facebook link and it works exactly as before.
@@ -55,14 +55,14 @@ export default function NotFound() {
               <div className="mt-7 flex flex-wrap gap-2">
                 <Link
                   href="/#tool"
-                  className="btn btn-primary h-11 gap-2 px-5 text-[13.5px] font-semibold"
+                  className="btn btn-primary h-11 gap-2 px-5 text-sm font-semibold"
                 >
                   <SearchX className="size-4" />
                   Open the downloader
                 </Link>
                 <Link
                   href="/guides"
-                  className="btn btn-ghost h-11 gap-2 px-4 text-[13.5px]"
+                  className="btn btn-ghost h-11 gap-2 px-4 text-sm"
                 >
                   <Compass className="size-4" />
                   Browse the guides
@@ -88,12 +88,12 @@ export default function NotFound() {
                       </span>
                       <span className="min-w-0">
                         <span className="flex items-center justify-between gap-2">
-                          <span className="text-[15.5px] font-semibold tracking-tight">
+                          <span className="text-base font-semibold tracking-tight">
                             {item.title}
                           </span>
                           <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
                         </span>
-                        <span className="pretty mt-2 block text-[13px] leading-relaxed text-[var(--text-2)]">
+                        <span className="pretty mt-2 block text-sm leading-relaxed text-[var(--text-2)]">
                           {item.body}
                         </span>
                       </span>
@@ -102,7 +102,7 @@ export default function NotFound() {
                 })}
               </div>
 
-              <p className="mt-8 text-[13px] text-[var(--text-2)]">
+              <p className="mt-8 text-sm text-[var(--text-2)]">
                 Looking for something specific?{" "}
                 <Link
                   href="/contact"

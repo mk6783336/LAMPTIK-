@@ -37,15 +37,15 @@ function Rail({ side }: { side: "left" | "right" }) {
         target="_blank"
         rel="sponsored nofollow noopener"
         title="Sponsored: bonus high-speed offer"
-        className="group flex flex-col items-center gap-1.5 overflow-hidden rounded-[14px] border border-white/[0.07] bg-white/[0.02] px-1.5 py-3 text-center backdrop-blur-sm transition-colors duration-200 hover:border-[var(--glass-border-hover)] 2xl:px-2.5"
+        className="group flex flex-col items-center gap-1.5 overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.02] px-1.5 py-3 text-center backdrop-blur-sm transition-colors duration-200 hover:border-[var(--glass-border-hover)] 2xl:px-2.5"
       >
         <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-text)] transition-transform duration-200 group-hover:scale-110">
           <Zap className="size-3.5" fill="currentColor" strokeWidth={0} />
         </span>
-        <span className="hidden text-[10.5px] font-semibold leading-tight tracking-tight 2xl:block">
+        <span className="hidden text-xs font-semibold leading-tight tracking-tight 2xl:block">
           High-speed mirror
         </span>
-        <span className="hidden text-[9.5px] leading-snug text-[var(--text-3)] 2xl:block">
+        <span className="hidden text-xs leading-snug text-[var(--text-3)] 2xl:block">
           Bonus offer from our download partner
         </span>
       </a>

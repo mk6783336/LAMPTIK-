@@ -144,24 +144,20 @@ export default function YouTubeDownloaderPage() {
         <SiteHeader />
 
         <main className="flex-1">
-          <div className="shell pt-6 sm:pt-8">
-            <AdSlot format="leaderboard" eager label="Advertisement" />
-          </div>
-
-          <section className="pb-12 pt-8 sm:pb-16 sm:pt-14 lg:pt-20">
-            <div className="shell grid items-start gap-7 sm:gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center lg:gap-12 xl:gap-16">
-              <div className="animate-rise min-w-0">
+          <section className="pb-12 pt-10 sm:pb-16 sm:pt-14 lg:pt-20">
+            <div className="shell grid items-start gap-6 lg:grid-cols-12 lg:gap-8">
+              <div className="animate-rise min-w-0 lg:col-span-5">
                 <p className="eyebrow">
                   <Youtube className="size-3.5 text-[#ff5c7a]" />
-                  youtube · app exclusive
+                  YouTube · App exclusive
                 </p>
 
-                <h1 className="balance mt-4 text-[2.3rem] font-semibold leading-[1.02] tracking-headline sm:mt-5 sm:text-[3.1rem] lg:text-[3.4rem]">
+                <h1 className="balance mt-4 text-4xl font-semibold leading-[1.02] tracking-headline sm:mt-5 sm:text-5xl">
                   YouTube videos.
                   <span className="text-gradient mt-1 block">In full 1080p HD.</span>
                 </h1>
 
-                <p className="pretty mt-4 max-w-lg text-[14.5px] leading-relaxed text-[var(--text-2)] sm:mt-5 sm:text-[15.5px]">
+                <p className="pretty mt-4 max-w-lg text-base leading-relaxed text-[var(--text-2)] sm:mt-5 sm:text-base">
                   {DESCRIPTION}
                 </p>
 
@@ -169,7 +165,7 @@ export default function YouTubeDownloaderPage() {
                   {["1080p Full HD", "Shorts + long videos", "MP3 audio"].map((chip) => (
                     <span
                       key={chip}
-                      className="inline-flex items-center gap-1.5 rounded-pill border border-[var(--glass-border)] bg-[var(--glass-bg)] px-2.5 py-1 text-[11.5px] text-[var(--text-2)] backdrop-blur"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--glass-bg)] px-2.5 py-1 text-xs text-[var(--text-2)] backdrop-blur"
                     >
                       <Check className="size-3 text-[var(--accent-text)]" />
                       {chip}
@@ -179,14 +175,14 @@ export default function YouTubeDownloaderPage() {
 
                 <Link
                   href="/app-download"
-                  className="group mt-7 hidden items-center gap-1.5 text-[12.5px] text-[var(--text-2)] transition-colors duration-200 hover:text-[var(--text)] sm:inline-flex"
+                  className="group mt-7 hidden items-center gap-1.5 text-sm text-[var(--text-2)] transition-colors duration-200 hover:text-[var(--text)] sm:inline-flex"
                 >
                   How app install works
                   <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </Link>
               </div>
 
-              <div className="animate-rise min-w-0 [animation-delay:80ms]">
+              <div className="animate-rise min-w-0 lg:col-span-7 [animation-delay:80ms]">
                 <YoutubeGate />
               </div>
             </div>
@@ -205,28 +201,24 @@ export default function YouTubeDownloaderPage() {
                 ].map(([term, value]) => (
                   <div
                     key={term}
-                    className="rounded-[16px] border border-[var(--glass-border)] bg-[var(--glass-bg)] px-4 py-3 backdrop-blur-md"
+                    className="rounded-2xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-4 py-3 backdrop-blur-md"
                   >
-                    <dt className="micro truncate text-[9.5px] text-[var(--text-3)]">{term}</dt>
-                    <dd className="mt-1 truncate text-[14px] font-medium tracking-tight">{value}</dd>
+                    <dt className="micro text-xs text-[var(--text-3)]">{term}</dt>
+                    <dd className="mt-1 text-sm font-medium leading-snug tracking-tight">{value}</dd>
                   </div>
                 ))}
               </dl>
             </div>
           </section>
 
-          <div className="shell pb-2">
-            <AdSlot format="leaderboard" />
-          </div>
-
           {/* Cross-links to the other downloaders */}
           <section className="section-pad border-t border-[var(--line)]">
             <div className="shell">
               <p className="eyebrow">
                 <span aria-hidden="true" className="eyebrow-dot" />
-                more downloaders
+                More downloaders
               </p>
-              <h2 className="balance mt-4 text-[1.75rem] font-semibold leading-tight tracking-headline sm:text-4xl">
+              <h2 className="balance mt-4 text-4xl font-semibold leading-tight tracking-headline">
                 Save from anywhere
               </h2>
               <div className="mt-8 grid gap-3.5 sm:grid-cols-3">
@@ -239,12 +231,12 @@ export default function YouTubeDownloaderPage() {
                   >
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center justify-between gap-2">
-                        <span className="text-[15px] font-semibold tracking-tight">
+                        <span className="text-base font-semibold tracking-tight">
                           {PLATFORMS[id].switcherLabel}
                         </span>
                         <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
                       </span>
-                      <span className="pretty mt-1.5 block text-[13px] leading-relaxed text-[var(--text-2)]">
+                      <span className="pretty mt-1.5 block text-sm leading-relaxed text-[var(--text-2)]">
                         {PLATFORMS[id].blurb}
                       </span>
                     </span>
@@ -256,29 +248,32 @@ export default function YouTubeDownloaderPage() {
 
           {/* How + FAQ (mirrors the JSON-LD) */}
           <section id="how" className="seo-section section-pad scroll-mt-24 border-t border-[var(--line)]">
+            <div className="shell mb-10">
+              <AdSlot format="leaderboard" label="Advertisement" />
+            </div>
             <div className="shell max-w-3xl">
               <p className="eyebrow">
                 <span aria-hidden="true" className="eyebrow-dot" />
-                how it works
+                How it works
               </p>
-              <h2 className="balance mt-4 text-[1.75rem] font-semibold leading-tight tracking-headline sm:text-4xl">
+              <h2 className="balance mt-4 text-4xl font-semibold leading-tight tracking-headline">
                 YouTube HD in three steps
               </h2>
               <ol className="mt-6 space-y-3">
                 {STEPS.map((step, i) => (
                   <li
                     key={step.title}
-                    className="flex gap-3.5 rounded-[14px] border border-[var(--glass-border)] bg-[var(--field)] p-4"
+                    className="flex gap-3.5 rounded-xl border border-[var(--glass-border)] bg-[var(--field)] p-4"
                   >
                     <span
                       aria-hidden="true"
-                      className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] font-mono text-[13px] font-bold text-[var(--accent-text)]"
+                      className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] font-mono text-sm font-bold text-[var(--accent-text)]"
                     >
                       {i + 1}
                     </span>
                     <div>
-                      <p className="text-[14px] font-semibold tracking-tight">{step.title}</p>
-                      <p className="pretty mt-1 text-[13px] leading-relaxed text-[var(--text-2)]">
+                      <p className="text-sm font-semibold tracking-tight">{step.title}</p>
+                      <p className="pretty mt-1 text-sm leading-relaxed text-[var(--text-2)]">
                         {step.body}
                       </p>
                     </div>
@@ -286,19 +281,19 @@ export default function YouTubeDownloaderPage() {
                 ))}
               </ol>
 
-              <h2 className="mt-10 text-[1.4rem] font-semibold tracking-headline">
+              <h2 className="mt-10 text-2xl font-semibold tracking-headline">
                 YouTube downloader FAQ
               </h2>
               <div className="mt-4 space-y-3">
                 {FAQS.map((faq) => (
                   <details
                     key={faq.question}
-                    className="rounded-[14px] border border-[var(--glass-border)] bg-[var(--field)] p-4"
+                    className="rounded-xl border border-[var(--glass-border)] bg-[var(--field)] p-4"
                   >
-                    <summary className="cursor-pointer list-none text-[14px] font-semibold tracking-tight">
+                    <summary className="cursor-pointer list-none text-sm font-semibold tracking-tight">
                       {faq.question}
                     </summary>
-                    <p className="pretty mt-2 text-[13px] leading-relaxed text-[var(--text-2)]">
+                    <p className="pretty mt-2 text-sm leading-relaxed text-[var(--text-2)]">
                       {faq.answer}
                     </p>
                   </details>

@@ -43,7 +43,7 @@ export function YoutubeGate() {
 
   return (
     <div>
-      <p className="mb-3 inline-flex items-center gap-1.5 rounded-pill border border-[color-mix(in_srgb,var(--ok)_32%,transparent)] bg-[var(--ok-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--ok)]">
+      <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--ok)_32%,transparent)] bg-[var(--ok-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--ok)]">
         <Youtube className="size-3" />
         App Mode unlocked — unlimited YouTube HD &amp; MP3
       </p>

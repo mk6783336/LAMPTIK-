@@ -28,7 +28,7 @@ export function SocialShare({ compact = false }: { compact?: boolean }) {
     {
       label: "X",
       href: `https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`,
-      icon: <span aria-hidden="true" className="text-[13px] font-bold leading-none">𝕏</span>,
+      icon: <span aria-hidden="true" className="text-sm font-bold leading-none">𝕏</span>,
     },
   ];
 
@@ -52,11 +52,11 @@ export function SocialShare({ compact = false }: { compact?: boolean }) {
       className={
         compact
           ? "flex flex-wrap items-center gap-1.5"
-          : "rounded-[14px] border border-[var(--glass-border)] bg-[var(--field)] p-3"
+          : "rounded-xl border border-[var(--glass-border)] bg-[var(--field)] p-3"
       }
     >
       {!compact ? (
-        <p className="text-[12.5px] font-semibold tracking-tight">
+        <p className="text-sm font-semibold tracking-tight">
           Loved the speed? Share or bookmark LAMP TIK
         </p>
       ) : null}
@@ -68,7 +68,7 @@ export function SocialShare({ compact = false }: { compact?: boolean }) {
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`Share on ${link.label}`}
-            className="btn btn-ghost h-8 gap-1.5 px-2.5 text-[12px]"
+            className="btn btn-ghost h-8 gap-1.5 px-2.5 text-sm"
           >
             {link.icon}
             {link.label}
@@ -77,7 +77,7 @@ export function SocialShare({ compact = false }: { compact?: boolean }) {
         <button
           type="button"
           onClick={copyLink}
-          className="btn btn-ghost h-8 gap-1.5 px-2.5 text-[12px]"
+          className="btn btn-ghost h-8 gap-1.5 px-2.5 text-sm"
         >
           {copied ? <Check className="size-3.5 text-[var(--ok)]" /> : <Copy className="size-3.5" />}
           {copied ? "Copied!" : "Copy Link"}

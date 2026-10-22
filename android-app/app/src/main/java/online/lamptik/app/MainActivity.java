@@ -16,7 +16,6 @@ import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.URLUtil;
-import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -25,9 +24,13 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+
 public class MainActivity extends Activity {
-    private static final String HOME_URL = "https://www.lamptik.online/?app=android_apk";
-    private static final String UA_SUFFIX = " LampTikAndroidApp/2.2";
+    private static final String ORIGIN = "https://www.lamptik.online";
+    private static final String HOME_URL = ORIGIN + "/?app=android_apk";
+    private static final String UA_SUFFIX = " LampTikAndroidApp/2.3";
     private WebView webView;
 
     @Override
@@ -73,7 +76,7 @@ public class MainActivity extends Activity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             cookieManager.setAcceptThirdPartyCookies(webView, true);
         }
-        cookieManager.setCookie("https://www.lamptik.online", "lamptik_app=1; path=/; max-age=31536000; SameSite=Lax; Secure");
+        cookieManager.setCookie(ORIGIN, "lamptik_app=1; path=/; max-age=31536000; SameSite=Lax; Secure");
         cookieManager.setCookie("https://lamptik.online", "lamptik_app=1; path=/; max-age=31536000; SameSite=Lax; Secure");
 
         webView.setWebViewClient(new WebViewClient() {
@@ -135,13 +138,53 @@ public class MainActivity extends Activity {
         ));
         setContentView(root);
 
-        Intent intent = getIntent();
-        Uri data = intent != null ? intent.getData() : null;
-        if (data != null && ("www.lamptik.online".equalsIgnoreCase(data.getHost()) || "lamptik.online".equalsIgnoreCase(data.getHost()))) {
-            webView.loadUrl(data.toString());
-        } else {
+        routeIntent(getIntent());
+    }
+
+    /**
+     * Route an incoming intent: a shared plain-text link (ACTION_SEND from the
+     * TikTok / YouTube / Instagram / Facebook share sheet) is forwarded to the
+     * web app as `?app=android_apk&shared_url=<encoded>` so the downloader can
+     * pre-fill and resolve it automatically. A direct VIEW link keeps its URL.
+     */
+    private void routeIntent(Intent intent) {
+        if (intent == null || webView == null) return;
+
+        if (Intent.ACTION_SEND.equals(intent.getAction())) {
+            String shared = intent.getStringExtra(Intent.EXTRA_TEXT);
+            if (shared == null) shared = intent.getStringExtra(Intent.EXTRA_SUBJECT);
+            if (shared != null && shared.trim().length() > 0) {
+                webView.loadUrl(ORIGIN + "/?app=android_apk&shared_url=" + encode(shared.trim()));
+                return;
+            }
             webView.loadUrl(HOME_URL);
+            return;
         }
+
+        Uri data = intent.getData();
+        if (data != null
+                && ("www.lamptik.online".equalsIgnoreCase(data.getHost())
+                || "lamptik.online".equalsIgnoreCase(data.getHost()))) {
+            webView.loadUrl(data.toString());
+            return;
+        }
+
+        webView.loadUrl(HOME_URL);
+    }
+
+    private static String encode(String value) {
+        try {
+            return URLEncoder.encode(value, "UTF-8");
+        } catch (UnsupportedEncodingException | RuntimeException e) {
+            return "";
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        routeIntent(intent);
     }
 
     private boolean handleUri(WebView view, Uri uri) {

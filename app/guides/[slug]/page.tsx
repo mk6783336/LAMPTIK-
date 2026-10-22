@@ -112,7 +112,7 @@ export default async function GuidePage({
             <div className="mx-auto max-w-3xl">
               <nav
                 aria-label="Breadcrumb"
-                className="flex flex-wrap items-center gap-2 text-[11.5px] text-[var(--text-3)]"
+                className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-3)]"
               >
                 <Link href="/" className="transition-colors hover:text-[var(--text-2)]">
                   Home
@@ -127,7 +127,7 @@ export default async function GuidePage({
 
               <header className="mt-6">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-pill border border-[var(--glass-border)] bg-[var(--field)] px-2.5 py-1 text-[11px] text-[var(--text-2)]">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--field)] px-2.5 py-1 text-xs text-[var(--text-2)]">
                     <BookOpen className="size-3 text-[var(--accent-text)]" />
                     Guide
                   </span>
@@ -136,18 +136,18 @@ export default async function GuidePage({
                   </time>
                 </div>
 
-                <h1 className="balance mt-4 text-[2.05rem] font-semibold leading-[1.08] tracking-headline sm:text-[2.6rem]">
+                <h1 className="balance mt-4 text-4xl font-semibold leading-[1.08] tracking-headline sm:text-5xl">
                   {guide.title}
                 </h1>
 
                 {/* Short answer, formatted for featured snippets. */}
-                <p className="pretty mt-5 rounded-[16px] border border-[var(--glass-border)] border-l-2 border-l-[var(--accent)] bg-[var(--glass-bg)] px-4 py-3.5 text-[14.5px] leading-relaxed text-[var(--text-2)] backdrop-blur-md">
+                <p className="pretty mt-5 rounded-2xl border border-[var(--glass-border)] border-l-2 border-l-[var(--accent)] bg-[var(--glass-bg)] px-4 py-3.5 text-base leading-relaxed text-[var(--text-2)] backdrop-blur-md">
                   {guide.shortAnswer}
                 </p>
 
                 {/* Contextual inline link to the tool this article is about.
                     Exact-match anchor text, high on the page, one click away. */}
-                <p className="mt-3 text-[13.5px] leading-relaxed text-[var(--text-2)]">
+                <p className="mt-3 text-sm leading-relaxed text-[var(--text-2)]">
                   Ready to try it? You can{" "}
                   <Link
                     href={tool.href}
@@ -173,13 +173,13 @@ export default async function GuidePage({
                       </span>
                       <span aria-hidden="true" className="rule flex-1" />
                     </div>
-                    <h2 className="balance mt-3 text-[1.25rem] font-semibold tracking-tight sm:text-[1.4rem]">
+                    <h2 className="balance mt-3 text-2xl font-semibold tracking-tight sm:text-2xl">
                       {section.heading}
                     </h2>
                     {section.paragraphs.map((paragraph) => (
                       <p
                         key={paragraph.slice(0, 48)}
-                        className="pretty mt-3 text-[14.5px] leading-[1.75] text-[var(--text-2)]"
+                        className="pretty mt-3 text-base leading-[1.75] text-[var(--text-2)]"
                       >
                         {paragraph}
                       </p>
@@ -189,7 +189,7 @@ export default async function GuidePage({
                         {section.list.map((item) => (
                           <li
                             key={item.slice(0, 48)}
-                            className="flex gap-3 text-[14px] leading-relaxed text-[var(--text-2)]"
+                            className="flex gap-3 text-sm leading-relaxed text-[var(--text-2)]"
                           >
                             <span
                               aria-hidden="true"
@@ -220,8 +220,8 @@ export default async function GuidePage({
                 />
                 <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
-                    <p className="text-[15px] font-semibold tracking-tight">{tool.heading}</p>
-                    <p className="pretty mt-1 text-[13.5px] leading-relaxed text-[var(--text-2)]">
+                    <p className="text-base font-semibold tracking-tight">{tool.heading}</p>
+                    <p className="pretty mt-1 text-sm leading-relaxed text-[var(--text-2)]">
                       {tool.body}{" "}
                       <Link
                         href={tool.href}
@@ -233,7 +233,7 @@ export default async function GuidePage({
                   </div>
                   <Link
                     href={tool.href}
-                    className="btn btn-primary group h-10 shrink-0 gap-1.5 px-4 text-[13px] font-semibold"
+                    className="btn btn-primary group h-10 shrink-0 gap-1.5 px-4 text-sm font-semibold"
                   >
                     <Sparkles className="size-3.5" />
                     {tool.cta}
@@ -250,9 +250,9 @@ export default async function GuidePage({
                       <li key={entry.slug}>
                         <Link
                           href={`/guides/${entry.slug}`}
-                          className="group flex items-center justify-between gap-4 rounded-[14px] border border-[var(--glass-border)] bg-[var(--glass-bg)] px-4 py-3 transition-colors duration-200 hover:border-[var(--glass-border-hover)] hover:bg-[var(--field)]"
+                          className="group flex items-center justify-between gap-4 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] px-4 py-3 transition-colors duration-200 hover:border-[var(--glass-border-hover)] hover:bg-[var(--field)]"
                         >
-                          <span className="min-w-0 text-[13.5px] font-medium transition-colors duration-200 group-hover:text-[var(--accent-text)]">
+                          <span className="min-w-0 text-sm font-medium transition-colors duration-200 group-hover:text-[var(--accent-text)]">
                             {entry.title}
                           </span>
                           <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--accent-text)]" />

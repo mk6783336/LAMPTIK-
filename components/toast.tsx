@@ -46,14 +46,14 @@ function ToastCard({
       // is `fixed bottom-4` over page content, and on 390px viewports the
       // error toast sat directly on top of the Download CTA with button text
       // bleeding through the glass. Opaque bg + blur + shadow keeps it legible.
-      className="pointer-events-auto relative w-full overflow-hidden rounded-[16px] border border-white/10 bg-[#0b0c12]/95 p-3.5 shadow-2xl backdrop-blur-2xl"
+      className="pointer-events-auto relative w-full overflow-hidden rounded-2xl border border-white/10 bg-[#0b0c12]/95 p-3.5 shadow-2xl backdrop-blur-2xl"
     >
       <div className="flex gap-3">
         <Icon className="mt-0.5 size-4 shrink-0" style={{ color: style.color }} />
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-medium leading-snug">{toast.title}</p>
+          <p className="text-sm font-medium leading-snug">{toast.title}</p>
           {toast.description ? (
-            <p className="mt-1 text-[12px] leading-relaxed text-[var(--text-2)]">
+            <p className="mt-1 text-sm leading-relaxed text-[var(--text-2)]">
               {toast.description}
             </p>
           ) : null}
@@ -62,7 +62,7 @@ function ToastCard({
           type="button"
           onClick={() => onDismiss(toast.id)}
           aria-label="Dismiss notification"
-          className="-mr-1 -mt-1 grid size-7 shrink-0 place-items-center rounded-md text-[var(--text-3)] transition-colors duration-100 hover:bg-[var(--field)] hover:text-[var(--text)]"
+          className="-mr-1 -mt-1 grid size-7 shrink-0 place-items-center rounded-lg text-[var(--text-3)] transition-colors duration-100 hover:bg-[var(--field)] hover:text-[var(--text)]"
         >
           <X className="size-3.5" />
         </button>

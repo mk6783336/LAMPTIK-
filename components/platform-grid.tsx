@@ -17,15 +17,15 @@ export function PlatformGrid() {
           <div>
             <p className="eyebrow">
               <span aria-hidden="true" className="eyebrow-dot" />
-              one tool, every platform
+              One tool, every platform
             </p>
-            <h2 className="balance mt-4 text-[1.75rem] font-semibold leading-tight tracking-headline sm:text-4xl">
+            <h2 className="balance mt-4 text-4xl font-semibold leading-tight tracking-headline">
               Every platform. One paste.
             </h2>
           </div>
           <Link
             href="/guides"
-            className="group inline-flex items-center gap-1.5 text-[13px] text-[var(--accent-text)] transition-opacity duration-200 hover:opacity-80"
+            className="group inline-flex items-center gap-1.5 text-sm text-[var(--accent-text)] transition-opacity duration-200 hover:opacity-80"
           >
             Read the guides
             <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
@@ -49,13 +49,13 @@ export function PlatformGrid() {
                   </span>
                   <ArrowUpRight className="size-4 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
                 </div>
-                <h3 className="mt-6 text-[16px] font-semibold tracking-tight">
+                <h3 className="mt-6 text-base font-semibold tracking-tight">
                   {config.switcherLabel}
                 </h3>
-                <p className="pretty mt-2 text-[13.5px] leading-relaxed text-[var(--text-2)]">
+                <p className="pretty mt-2 text-sm leading-relaxed text-[var(--text-2)]">
                   {config.blurb}
                 </p>
-                <span className="mt-5 inline-flex items-center gap-1.5 text-[12px] font-medium text-[var(--tool-ink)]">
+                <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--tool-ink)]">
                   Open downloader
                   <span className="transition-transform duration-300 group-hover:translate-x-1">
                     →

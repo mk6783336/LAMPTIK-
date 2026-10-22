@@ -114,12 +114,12 @@ export function PlatformBento({ platform }: { platform: Exclude<Platform, "youtu
       <div className="shell">
         <p className="eyebrow">
           <span aria-hidden="true" className="eyebrow-dot" />
-          capabilities
+          Capabilities
         </p>
-        <h2 className="balance mt-4 text-[1.75rem] font-semibold leading-tight tracking-headline sm:text-4xl">
+        <h2 className="balance mt-4 text-4xl font-semibold leading-tight tracking-headline">
           {content.heading}
         </h2>
-        <p className="pretty mt-3 max-w-xl text-[14.5px] leading-relaxed text-[var(--text-2)]">
+        <p className="pretty mt-3 max-w-xl text-base leading-relaxed text-[var(--text-2)]">
           {content.subheading}
         </p>
 
@@ -129,10 +129,10 @@ export function PlatformBento({ platform }: { platform: Exclude<Platform, "youtu
               <span data-accent={platform} className="bento-icon">
                 {card.icon}
               </span>
-              <h3 className="balance mt-6 text-[16px] font-semibold leading-snug tracking-tight">
+              <h3 className="balance mt-6 text-base font-semibold leading-snug tracking-tight">
                 {card.title}
               </h3>
-              <p className="pretty mt-2 text-[13.5px] leading-relaxed text-[var(--text-2)]">
+              <p className="pretty mt-2 text-sm leading-relaxed text-[var(--text-2)]">
                 {card.body}
               </p>
             </article>
@@ -154,10 +154,10 @@ export function PlatformBento({ platform }: { platform: Exclude<Platform, "youtu
                   {content.cards[2].icon}
                 </span>
                 <div className="min-w-0">
-                  <h3 className="balance text-[16px] font-semibold leading-snug tracking-tight">
+                  <h3 className="balance text-base font-semibold leading-snug tracking-tight">
                     {content.cards[2].title}
                   </h3>
-                  <p className="pretty mt-1.5 max-w-md text-[13.5px] leading-relaxed text-[var(--text-2)]">
+                  <p className="pretty mt-1.5 max-w-md text-sm leading-relaxed text-[var(--text-2)]">
                     {content.cards[2].body}
                   </p>
                 </div>
@@ -168,11 +168,11 @@ export function PlatformBento({ platform }: { platform: Exclude<Platform, "youtu
                   <div
                     key={term}
                     className={cn(
-                      "min-w-0 rounded-[12px] border border-[var(--glass-border)] bg-[var(--field)] px-3 py-2",
+                      "min-w-0 rounded-xl border border-[var(--glass-border)] bg-[var(--field)] px-3 py-2",
                     )}
                   >
-                    <dt className="micro truncate text-[9.5px] text-[var(--text-3)]">{term}</dt>
-                    <dd className="mt-1 truncate font-mono text-[12px] tabular-nums">{value}</dd>
+                    <dt className="micro text-xs text-[var(--text-3)]">{term}</dt>
+                    <dd className="mt-1 font-mono text-sm tabular-nums leading-snug">{value}</dd>
                   </div>
                 ))}
               </dl>

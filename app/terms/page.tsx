@@ -63,14 +63,14 @@ export default function TermsPage() {
               <span>Terms</span>
             </nav>
 
-            <h1 className="mt-4 text-[2rem] font-semibold leading-tight tracking-headline sm:text-[2.6rem]">
+            <h1 className="mt-4 text-4xl font-semibold leading-tight tracking-headline sm:text-5xl">
               Terms of service
             </h1>
-            <p className="mt-3 text-[13.5px] text-[var(--text-3)]">
+            <p className="mt-3 text-sm text-[var(--text-3)]">
               Last updated: October 19, 2026
             </p>
 
-            <div className="mt-10 space-y-9 text-[14.5px] leading-relaxed text-[var(--text-2)]">
+            <div className="mt-10 space-y-9 text-base leading-relaxed text-[var(--text-2)]">
               <section>
                 <h2 className="text-lg font-semibold text-[var(--text)]">
                   1. What LAMP TIK is

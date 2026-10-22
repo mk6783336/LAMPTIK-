@@ -51,7 +51,7 @@ export function TikTokIcon({ className, title }: IconProps) {
   );
 }
 
-/** Instagram glyph (official rounded-square + lens), filled. */
+/** Instagram glyph (official rounded-lg + lens), filled. */
 export function InstagramIcon({ className, title }: IconProps) {
   return (
     <svg

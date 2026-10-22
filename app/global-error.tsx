@@ -40,9 +40,8 @@ export default function GlobalError({
               borderRadius: 999,
               border: "1px solid rgba(255,255,255,0.12)",
               background: "rgba(255,255,255,0.04)",
-              fontSize: 11,
-              letterSpacing: "0.16em",
-              textTransform: "uppercase",
+              fontSize: 12,
+              letterSpacing: "0.01em",
               color: "#A4ADBE",
             }}
           >
@@ -61,7 +60,7 @@ export default function GlobalError({
           <h1
             style={{
               marginTop: 20,
-              fontSize: 34,
+              fontSize: 36,
               lineHeight: 1.06,
               letterSpacing: "-0.035em",
               fontWeight: 600,
@@ -69,7 +68,7 @@ export default function GlobalError({
           >
             The app couldn’t start.
           </h1>
-          <p style={{ marginTop: 12, fontSize: 15, lineHeight: 1.7, color: "#A4ADBE" }}>
+          <p style={{ marginTop: 12, fontSize: 16, lineHeight: 1.7, color: "#A4ADBE" }}>
             This is on us, not your device. A reload usually clears it — if it
             doesn’t, the status page and support inbox are below.
           </p>
@@ -79,8 +78,8 @@ export default function GlobalError({
               style={{
                 marginTop: 16,
                 fontFamily: "ui-monospace, monospace",
-                fontSize: 11,
-                color: "#6D7585",
+                fontSize: 12,
+                color: "#75808F",
               }}
             >
               digest {error.digest}
@@ -105,7 +104,7 @@ export default function GlobalError({
                 border: "none",
                 color: "#ffffff",
                 fontWeight: 600,
-                fontSize: 13.5,
+                fontSize: 14,
                 cursor: "pointer",
                 backgroundImage:
                   "linear-gradient(100deg, #06b6d4 0%, #2f6bff 52%, #4f46e5 100%)",
@@ -124,7 +123,7 @@ export default function GlobalError({
                 border: "1px solid rgba(255,255,255,0.14)",
                 background: "rgba(255,255,255,0.04)",
                 color: "#F6F7FB",
-                fontSize: 13.5,
+                fontSize: 14,
                 cursor: "pointer",
               }}
             >

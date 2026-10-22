@@ -25,7 +25,7 @@ function isIosDevice(): boolean {
  * Consumer Android APK & 1-Tap Web App installer hero for /app-download.
  *
  * Primary CTA: "⬇ Download LAMP TIK APK (Android)" — downloads the signed
- * v2.2 Android APK and sets the app session so returning users have zero
+ * v2.3 Android APK and sets the app session so returning users have zero
  * friction.
  * Secondary CTA: "Install Instant Web App (1-Tap)" — triggers the native
  * browser PWA prompt or iPhone Add-to-Home-Screen sheet.
@@ -80,10 +80,10 @@ export function AppInstallHero() {
     <div className="flex w-full flex-col items-center gap-3.5">
       <div className="flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
         <a
-          href="/downloads/lamptik-v2.2.apk"
-          download="LAMP-TIK-v2.2.apk"
+          href="/downloads/lamptik-v2.3.apk"
+          download="LAMP-TIK-v2.3.apk"
           onClick={onDownloadApk}
-          className="btn tool-cta group h-[62px] w-full gap-2.5 px-7 text-[16.5px] font-bold shadow-[0_20px_50px_-14px_rgba(34,211,238,0.65)] sm:w-auto sm:min-w-[330px]"
+          className="btn btn-primary tool-cta group h-[62px] w-full gap-2.5 px-7 text-base font-bold shadow-[0_20px_50px_-14px_rgba(34,211,238,0.65)] sm:w-auto sm:min-w-[330px]"
         >
           <Download className="size-5 transition-transform duration-200 group-hover:translate-y-0.5" />
           ⬇ Download LAMP TIK APK (Android)
@@ -93,7 +93,7 @@ export function AppInstallHero() {
           type="button"
           onClick={onInstantWebApp}
           disabled={busy}
-          className="btn btn-ghost h-[62px] w-full gap-2 px-5 text-[14.5px] font-semibold sm:w-auto"
+          className="btn btn-ghost h-[62px] w-full gap-2 px-5 text-base font-semibold sm:w-auto"
         >
           {unlocked ? (
             <Check className="size-4 text-[var(--ok)]" />
@@ -104,14 +104,14 @@ export function AppInstallHero() {
         </button>
       </div>
 
-      <p className="text-[12.5px] text-[var(--text-3)]">
-        Official v2.2 Signed APK · Android 7.0+ · Virus-Free · Unlocks YouTube 1080p &amp; MP3
+      <p className="text-sm text-[var(--text-3)]">
+        Official v2.3 Signed APK · Android 7.0+ · Virus-Free · Unlocks YouTube 1080p &amp; MP3
       </p>
 
       {unlocked ? (
         <Link
           href="/youtube-downloader?app=android_apk"
-          className="group inline-flex items-center gap-2 rounded-pill border border-[#ff0033]/40 bg-[#ff0033]/10 px-4 py-2 text-[13px] font-semibold text-[var(--text)] transition-colors duration-200 hover:border-[#ff0033]/70"
+          className="group inline-flex items-center gap-2 rounded-full border border-[#ff0033]/40 bg-[#ff0033]/10 px-4 py-2 text-sm font-semibold text-[var(--text)] transition-colors duration-200 hover:border-[#ff0033]/70"
         >
           <Youtube className="size-4 text-[#ff0033]" />
           App Ready — Open YouTube 1080p &amp; MP3 Downloader →
@@ -144,7 +144,7 @@ export function AppInstallHero() {
               <Share className="size-3.5" />
               iPhone · Instant Web App
             </p>
-            <h2 className="mt-3 text-[18px] font-semibold tracking-tight">
+            <h2 className="mt-3 text-lg font-semibold tracking-tight">
               Add LAMP TIK to your Home Screen
             </h2>
             <ol className="mt-4 space-y-3">
@@ -165,13 +165,13 @@ export function AppInstallHero() {
                 <li key={step.title} className="flex gap-3">
                   <span
                     aria-hidden="true"
-                    className="grid size-7 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] font-mono text-[12px] font-bold text-[var(--accent-text)]"
+                    className="grid size-7 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] font-mono text-sm font-bold text-[var(--accent-text)]"
                   >
                     {i + 1}
                   </span>
                   <div>
-                    <p className="text-[13.5px] font-semibold">{step.title}</p>
-                    <p className="mt-0.5 text-[12.5px] text-[var(--text-2)]">{step.body}</p>
+                    <p className="text-sm font-semibold">{step.title}</p>
+                    <p className="mt-0.5 text-sm text-[var(--text-2)]">{step.body}</p>
                   </div>
                 </li>
               ))}
@@ -183,7 +183,7 @@ export function AppInstallHero() {
                 setUnlocked(true);
                 setIosModal(false);
               }}
-              className="btn btn-primary mt-5 h-11 w-full text-[13.5px] font-semibold"
+              className="btn btn-primary mt-5 h-11 w-full text-sm font-semibold"
             >
               Got it
             </button>
