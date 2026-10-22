@@ -140,8 +140,8 @@ export default function YouTubeDownloaderPage() {
 
         <main className="flex-1">
           <section className="pb-12 pt-10 sm:pb-16 sm:pt-14 lg:pt-20">
-            <div className="shell grid items-start gap-6 lg:grid-cols-12 lg:gap-8">
-              <div className="animate-rise min-w-0 lg:col-span-5">
+            <div className="hero-stage shell grid items-start gap-6 lg:grid-cols-12 lg:gap-8">
+              <div className="animate-rise hero-copy min-w-0 lg:col-span-5">
                 <p className="eyebrow">
                   <Youtube className="size-3.5 text-[#ff5c7a]" />
                   YouTube · Free · No app required
@@ -175,6 +175,13 @@ export default function YouTubeDownloaderPage() {
                   Optional: get the Android app
                   <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </Link>
+
+                {/* Result mode only (lg+): fills the column beside the result
+                    card with the sponsor showcase instead of empty space. */}
+                <div className="hero-ads mt-8 space-y-3">
+                  <AdSlot format="rectangle" label="Sponsored — keeps LAMP TIK free" />
+                  <AdSlot format="leaderboard" label="Sponsored — keeps LAMP TIK free" />
+                </div>
               </div>
 
               <div className="animate-rise min-w-0 lg:col-span-7 [animation-delay:80ms]">

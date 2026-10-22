@@ -25,9 +25,9 @@ function isIosDevice(): boolean {
 /**
  * Consumer Android APK & 1-Tap Web App installer hero for /app-download.
  *
- * Primary CTA: "⬇ Download LAMP TIK APK v3.0 (4.2 MB)" — downloads the signed
- * native Android APK and sets the app session so returning users have zero
- * friction.
+ * Primary CTA: "⬇ Download LAMP TIK APK v<version> (4.2 MB)" — downloads the
+ * signed native Android APK and sets the app session so returning users have
+ * zero friction. The version label comes from `lib/site.ts`, never hardcoded.
  * Secondary CTA: "Install Instant Web App (1-Tap)" — triggers the native
  * browser PWA prompt or iPhone Add-to-Home-Screen sheet.
  */

@@ -876,6 +876,25 @@ html:not(.dark) {
       transparent
     );
   }
+
+  /* ---------------------------------------------------------------- result
+     mode
+     A fetched video makes the tool column far taller than the hero copy, so
+     the left column used to end in a tall empty void while the result card sat
+     squashed on the right. In result mode (the Downloader tags its root with
+     `data-stage="result"`) the hero column reveals the sponsor showcase that
+     balances the row: column 1 = showcase, column 2 = result + actions. Phones
+     keep the single column; the gate inside the result card carries the ad
+     there instead, so nothing ever doubles up. */
+  .hero-ads {
+    display: none;
+  }
+
+  @media (min-width: 1024px) {
+    .hero-stage:has([data-stage="result"]) .hero-ads {
+      display: block;
+    }
+  }
 }
 
 @layer utilities {

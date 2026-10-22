@@ -34,8 +34,8 @@ APKSIGNER="$(exe "$BT/apksigner")"
 ZIPALIGN="$(exe "$BT/zipalign")"
 AAPT2="$(exe "$BT/aapt2")"
 
-VERSION_CODE="${VERSION_CODE:-31}"
-VERSION_NAME="${VERSION_NAME:-3.1}"
+VERSION_CODE="${VERSION_CODE:-32}"
+VERSION_NAME="${VERSION_NAME:-3.2}"
 KEYSTORE="${KEYSTORE:-$WORK/release.keystore}"
 KS_PASS="${KS_PASS:-lamptik2026}"
 KS_ALIAS="${KS_ALIAS:-lamptik}"
@@ -127,11 +127,12 @@ echo "==> apksigner"
 rm -f "$OUT"/*.idsig
 "$APKSIGNER" verify --min-sdk-version 21 --verbose "$APK"
 
-# Keep the previous filename pointing at the SAME signed binary so links that
+# Keep every earlier filename pointing at the SAME signed binary so links that
 # were cached by users and search engines never 404.
-LEGACY="$OUT/lamptik-v3.0.apk"
-if [ "$APK" != "$LEGACY" ]; then
-  cp -f "$APK" "$LEGACY"
-  echo "==> legacy alias $(basename "$LEGACY")"
-fi
+for legacy in "$OUT/lamptik-v3.0.apk" "$OUT/lamptik-v3.1.apk"; do
+  if [ "$APK" != "$legacy" ]; then
+    cp -f "$APK" "$legacy"
+    echo "==> legacy alias $(basename "$legacy")"
+  fi
+done
 ls -l "$APK"

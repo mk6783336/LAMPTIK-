@@ -74,7 +74,7 @@ final class StreamScreen extends LinearLayout {
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);
         settings.setMediaPlaybackRequiresUserGesture(true);
-        settings.setUserAgentString(settings.getUserAgentString() + " LampTikAndroidApp/3.1");
+        settings.setUserAgentString(settings.getUserAgentString() + " LampTikAndroidApp/3.2");
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {

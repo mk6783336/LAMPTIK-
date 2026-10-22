@@ -25,7 +25,7 @@ final class ApiClient {
 
     static final String BASE = "https://www.lamptik.online";
     /** Lets the server recognise the native client for logs and support. */
-    static final String USER_AGENT = "LampTikAndroidApp/3.1 (Android; native)";
+    static final String USER_AGENT = "LampTikAndroidApp/3.2 (Android; native)";
 
     /**
      * Browser UA used for the media download itself.

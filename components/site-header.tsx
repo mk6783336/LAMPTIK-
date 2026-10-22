@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowUpRight } from "lucide-react";
 
+import { InstallAppButton } from "@/components/install-app-button";
 import { Logo } from "@/components/logo";
-import { LibraryButton } from "@/components/library";
 import { PlatformIcon } from "@/components/platform-icons";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/cn";
@@ -17,8 +16,10 @@ import type { Platform } from "@/lib/platforms";
  * every visitor — nothing is gated behind an install.
  *
  * The desktop row appears at `lg` (not `md`): six destinations plus the logo,
- * library, CTA and theme toggle need the full 1152px shell to stay on one
- * line, and the strip below carries the same links on smaller screens.
+ * the Install App CTA and the theme toggle need the full 1152px shell to stay
+ * on one line, and the strip below carries the same links on smaller screens.
+ * The old Library button is gone with the IndexedDB store: downloads are handed
+ * to the browser's own download manager, so there is nothing to browse here.
  */
 const NAV = [
   { href: "/", label: "TikTok", short: "TikTok", platform: "tiktok" as Platform },
@@ -98,14 +99,7 @@ export function SiteHeader() {
             </nav>
 
             <div className="flex shrink-0 items-center gap-2">
-              <LibraryButton />
-              <Link
-                href="/#tool"
-                className="btn btn-primary hidden h-9 gap-1.5 px-3.5 text-sm font-semibold sm:inline-flex"
-              >
-                Open downloader
-                <ArrowUpRight className="size-3.5" />
-              </Link>
+              <InstallAppButton />
               <ThemeToggle />
             </div>
           </div>

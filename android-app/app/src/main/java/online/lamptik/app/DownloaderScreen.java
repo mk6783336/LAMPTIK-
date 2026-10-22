@@ -65,6 +65,16 @@ final class DownloaderScreen extends ScrollView {
     };
     private int selectedChip = 0;
 
+    /** Result card body of the current render — the sponsor gate appends here. */
+    private LinearLayout resultBody;
+    /** True while the 10-second sponsor gate is counting down. */
+    private boolean gateRunning;
+    /** Download buttons of the current result, disabled during the gate. */
+    private final java.util.List<TextView> resultButtons = new java.util.ArrayList<>();
+
+    /** Sponsor gate length, matching the website's countdown exactly. */
+    private static final int GATE_SECONDS = 10;
+
     DownloaderScreen(Context context, Host host) {
         super(context);
         this.context = context;
@@ -423,6 +433,9 @@ final class DownloaderScreen extends ScrollView {
         int p = Ui.dp(context, 16f);
         body.setPadding(p, p, p, p);
         resultCard.addView(body);
+        resultBody = body;
+        resultButtons.clear();
+        gateRunning = false;
 
         if (!TextUtils.isEmpty(item.thumbnail)) {
             final int target = Ui.dp(context, 420f);
@@ -469,10 +482,11 @@ final class DownloaderScreen extends ScrollView {
         LinearLayout.LayoutParams hdLp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
         hdLp.topMargin = Ui.dp(context, 14f);
         body.addView(hd, hdLp);
+        resultButtons.add(hd);
         hd.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                enqueue(item, "video", item.hdUrl, "HD MP4");
+                startGate(item, "video", item.hdUrl, "HD MP4");
             }
         });
 
@@ -481,10 +495,11 @@ final class DownloaderScreen extends ScrollView {
             LinearLayout.LayoutParams lp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
             lp.topMargin = Ui.dp(context, 8f);
             body.addView(sd, lp);
+            resultButtons.add(sd);
             sd.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    enqueue(item, "video", item.sdUrl, "SD MP4");
+                    startGate(item, "video", item.sdUrl, "SD MP4");
                 }
             });
         }
@@ -494,10 +509,11 @@ final class DownloaderScreen extends ScrollView {
             LinearLayout.LayoutParams lp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
             lp.topMargin = Ui.dp(context, 8f);
             body.addView(mp3, lp);
+            resultButtons.add(mp3);
             mp3.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    enqueue(item, "audio", item.mp3Url, "MP3");
+                    startGate(item, "audio", item.mp3Url, "MP3");
                 }
             });
         }
@@ -513,6 +529,139 @@ final class DownloaderScreen extends ScrollView {
     private String label(String base, long bytes) {
         String size = Ui.formatBytes(bytes);
         return size.isEmpty() ? base : base + " · " + size;
+    }
+
+    /* ---------------------------------------------------------- sponsor gate */
+
+    /**
+     * 10-second sponsor gate, identical to the website's.
+     *
+     * The app never streams bytes itself: once the countdown reaches zero the
+     * resolved URL goes to Android's DownloadManager, which writes it to
+     * Downloads with a notification and keeps going in the background. That is
+     * why the card immediately offers "Download another video" — the transfer
+     * no longer owns the screen.
+     */
+    private void startGate(final MediaItem item, final String kind, final String url, final String label) {
+        if (gateRunning || resultBody == null) return;
+        if (TextUtils.isEmpty(url)) {
+            host.toast("That format is unavailable for this video.");
+            return;
+        }
+        gateRunning = true;
+        setButtonsEnabled(false);
+
+        final LinearLayout theater = new LinearLayout(context);
+        theater.setOrientation(LinearLayout.VERTICAL);
+        theater.setBackground(Ui.roundStroke(context, 0x1422D3EE, 16f, 0x5522D3EE));
+        int pad = Ui.dp(context, 16f);
+        theater.setPadding(pad, pad, pad, pad);
+
+        LinearLayout row = new LinearLayout(context);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        theater.addView(row);
+
+        final TextView counter = Ui.text(context, String.valueOf(GATE_SECONDS), 26f, Ui.ACCENT_INK, Ui.W_SEMIBOLD);
+        counter.setGravity(Gravity.CENTER);
+        counter.setBackground(Ui.roundStroke(context, 0x2622D3EE, 999f, 0x5522D3EE));
+        counter.setMinWidth(Ui.dp(context, 58f));
+        counter.setPadding(Ui.dp(context, 10f), Ui.dp(context, 8f), Ui.dp(context, 10f), Ui.dp(context, 8f));
+        row.addView(counter);
+
+        LinearLayout copy = new LinearLayout(context);
+        copy.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams copyLp = Ui.lp(0, LayoutParams.WRAP_CONTENT, 1f);
+        copyLp.leftMargin = Ui.dp(context, 12f);
+        row.addView(copy, copyLp);
+        copy.addView(Ui.text(context, "Preparing your direct high-speed link…", 14f, Ui.TEXT, Ui.W_SEMIBOLD));
+        final TextView sub = Ui.text(context,
+                "Your download starts in " + GATE_SECONDS + "s — keep the app open.",
+                12f, Ui.TEXT_2, Ui.W_REGULAR);
+        copy.addView(sub);
+
+        LinearLayout.LayoutParams theaterLp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        theaterLp.topMargin = Ui.dp(context, 12f);
+        resultBody.addView(theater, theaterLp);
+
+        final int[] remaining = {GATE_SECONDS};
+        main.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                remaining[0] -= 1;
+                if (remaining[0] > 0) {
+                    counter.setText(String.valueOf(remaining[0]));
+                    sub.setText("Your download starts in " + remaining[0] + "s — keep the app open.");
+                    main.postDelayed(this, 1000);
+                    return;
+                }
+                gateRunning = false;
+                setButtonsEnabled(true);
+                if (resultBody != null) resultBody.removeView(theater);
+                enqueue(item, kind, url, label);
+                showSent(label);
+            }
+        }, 1_000);
+    }
+
+    private void setButtonsEnabled(boolean enabled) {
+        for (TextView button : resultButtons) {
+            button.setEnabled(enabled);
+            button.setAlpha(enabled ? 1f : 0.55f);
+        }
+    }
+
+    /** Post-download card: the file is Android's now, so offer the next video. */
+    private void showSent(String label) {
+        if (resultBody == null) return;
+
+        LinearLayout sent = new LinearLayout(context);
+        sent.setOrientation(LinearLayout.VERTICAL);
+        sent.setBackground(Ui.roundStroke(context, 0x1434D399, 16f, 0x5534D399));
+        int pad = Ui.dp(context, 16f);
+        sent.setPadding(pad, pad, pad, pad);
+        sent.setGravity(Gravity.CENTER_HORIZONTAL);
+
+        TextView title = Ui.text(context, "✅ Sent to Android Downloads!", 14f, Ui.OK, Ui.W_SEMIBOLD);
+        title.setGravity(Gravity.CENTER);
+        sent.addView(title);
+
+        TextView detail = Ui.text(context,
+                label + " is downloading in your notification tray and keeps going in the background.",
+                12f, Ui.TEXT_2, Ui.W_REGULAR);
+        detail.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams detailLp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        detailLp.topMargin = Ui.dp(context, 4f);
+        sent.addView(detail, detailLp);
+
+        TextView again = Ui.primaryButton(context, "🔄 Download another video");
+        LinearLayout.LayoutParams againLp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        againLp.topMargin = Ui.dp(context, 12f);
+        sent.addView(again, againLp);
+        again.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                resetForNext();
+            }
+        });
+
+        LinearLayout.LayoutParams sentLp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        sentLp.topMargin = Ui.dp(context, 12f);
+        resultBody.addView(sent, sentLp);
+    }
+
+    /** Clear the card and focus the field so the next link can be pasted at once. */
+    private void resetForNext() {
+        input.setText("");
+        resultCard.removeAllViews();
+        resultCard.setVisibility(View.GONE);
+        resultBody = null;
+        resultButtons.clear();
+        gateRunning = false;
+        status.setTextColor(Ui.TEXT_3);
+        status.setText("Server-side · nothing stored");
+        input.requestFocus();
+        host.toast("Paste your next video link.");
     }
 
     /** Hand the bytes to Android's DownloadManager (notification + resume). */

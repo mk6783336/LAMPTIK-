@@ -147,8 +147,6 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
   const resultRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const tickerRef = useRef<number | null>(null);
-  /** Last URL that resolved successfully — used for forced re-resolves. */
-  const lastUrlRef = useRef<string>("");
   /** Always-current submit handler, so the share-sheet effect can call it
       without re-subscribing on every render. */
   const submitRef = useRef<(url: string) => Promise<void>>(async () => {});
@@ -271,7 +269,6 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
   function reset() {
     abortRef.current?.abort();
     stopTicker();
-    lastUrlRef.current = "";
     setStatus("idle");
     setVideo(null);
     setMedia(null);
@@ -377,7 +374,6 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
       setVideo(payload.video);
       setMedia(payload.media);
       setStatus("success");
-      lastUrlRef.current = url;
       notify({
         kind: "success",
         title: "Stream ready",
@@ -413,37 +409,18 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     }
   }
 
-  /**
-   * Force a cache-bypassing re-resolve so the result panel can replace an
-   * expired signed CDN URL and retry the download automatically.
-   */
-  const refreshMedia = useCallback(async (): Promise<MediaPayload | null> => {
-    const url = lastUrlRef.current;
-    if (!url) return null;
-    const { detectLink: detectRefresh } = await import("@/lib/detect");
-    const endpoint = detectRefresh(url)?.platform === "youtube" ? "/api/youtube" : "/api/fetch";
-
-    try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(endpoint === "/api/youtube" ? { url } : { url, force: true }),
-      });
-      const payload = (await response.json().catch(() => null)) as ApiResponse | null;
-      if (!response.ok || !payload || !payload.ok) return null;
-
-      setVideo(payload.video);
-      setMedia(payload.media);
-      return payload.media;
-    } catch {
-      return null;
-    }
-  }, []);
-
   const expand = { duration: reduceMotion ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] as const };
 
   return (
-    <div id="tool" data-ad-guard="tool" className="relative scroll-mt-24">
+    <div
+      id="tool"
+      data-ad-guard="tool"
+      // Result mode drives the page layout: the hero column swaps its copy for
+      // the sponsor showcase (see globals.css `.hero-stage`) so the result card
+      // is never squashed beside a giant empty void.
+      data-stage={status === "success" ? "result" : "idle"}
+      className="relative scroll-mt-24"
+    >
 
       {/* Ambient halo behind the tool — a pre-painted radial gradient, not a
           blur filter, so it costs nothing to composite. */}
@@ -563,13 +540,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
               className="mt-5"
             >
               <div className="rule mb-5" />
-              <ResultPanel
-                media={media}
-                video={video}
-                onReset={reset}
-                onNotify={notify}
-                onRefresh={refreshMedia}
-              />
+              <ResultPanel media={media} video={video} onReset={reset} onNotify={notify} />
             </motion.div>
           ) : null}
         </AnimatePresence>

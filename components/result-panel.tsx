@@ -9,7 +9,6 @@ import {
   Film,
   HardDrive,
   Heart,
-  Loader2,
   MonitorPlay,
   Music2,
   Play,
@@ -22,29 +21,11 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { formatBytes, formatCount, formatDuration, formatYear } from "@/lib/format";
 import type { ToastItem } from "@/components/toast";
-import { refreshLibraryBadge } from "@/components/library";
 import { AdSlot } from "@/components/ads/AdSlot";
-import { ThirdDownloadModal } from "@/components/ads/ThirdDownloadModal";
 import { PlatformIcon } from "@/components/platform-icons";
 import { cn } from "@/lib/cn";
-import {
-  LibraryError,
-  notifyLibraryChanged,
-  saveToLibrary,
-  shouldBuffer,
-} from "@/lib/library";
 import { PLATFORMS } from "@/lib/platforms";
-import {
-  adsterraBannerKey,
-  downloadAdBadgeLabel,
-  getDownloadCount,
-  monetagSmartlinkUrl,
-  recordDownloadCount,
-  triggerDirectLinkMonetization,
-  triggerDownloadDirectLink,
-  triggerDownloadMonetization,
-  triggerMonetagVignette,
-} from "@/lib/monetization";
+import { triggerDownloadDirectLink } from "@/lib/monetization";
 import { SocialShare } from "@/components/social-share";
 import type { MediaPayload } from "@/lib/media";
 import type { VideoInfo } from "@/lib/tiktok/types";
@@ -56,58 +37,43 @@ interface ResultPanelProps {
   video: VideoInfo;
   onReset: () => void;
   onNotify: (toast: Omit<ToastItem, "id">) => void;
-  /** Re-resolve upstream (bypassing the cache) to replace expired CDN URLs. */
-  onRefresh: () => Promise<MediaPayload | null>;
 }
 
 type DownloadKind = "hd" | "sd" | "audio";
+type Phase = "idle" | "preparing" | "sent";
+
+/** Seconds of sponsor theater before the browser takes the file. */
+const GATE_SECONDS = 10;
+
+const KIND_LABELS: Record<DownloadKind, string> = {
+  hd: "HD MP4",
+  sd: "SD MP4",
+  audio: "MP3",
+};
 
 /**
- * NOTE: the old client-side `HEAD` pre-probe is deliberately gone. Signed
- * TikTok/Facebook CDN URLs are often single-use or reject `HEAD` with 403
- * while serving `GET` fine — probing first either consumed the one-shot URL
- * or tripped the 403, and the download that followed failed with "The CDN
- * link has expired". The stream now starts directly; the download proxy
- * validates content type / size / first bytes server-side before anything
- * is saved, so the probe added nothing but failures.
- */
-
-/**
- * Programmatic same-origin download — the server supplies the filename.
+ * Hand a URL to the browser's own download manager.
  *
- * `newTab` is for direct CDN hand-offs: the browser opens the URL in its own
- * tab, so a response that is not an attachment can never navigate the tool
- * away from the user's result.
+ * This is the whole point of the flow: the anchor points at our proxy, the
+ * proxy answers with `Content-Disposition: attachment` (or a 302 to the CDN's
+ * own attachment), and Chrome/Android saves the file in its native Downloads
+ * tray. No byte ever passes through JavaScript, so a 232 MB video no longer
+ * pins the tab in a `ReadableStream` loop, and the page is free the moment the
+ * click happens.
  */
-function saveUrl(url: string, newTab = false): void {
+function saveUrl(url: string): void {
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = "";
   anchor.rel = "noopener noreferrer";
-  if (newTab) anchor.target = "_blank";
   anchor.style.display = "none";
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
 }
 
-/** Signed converter hosts that refuse datacenter-side fetches. */
-const EXTERNAL_CONVERTER_HOSTS = /(^|\.)(loader\.to|oceansaver\.in|savenow\.to)$/i;
-
-/** Upstream hostname behind a same-origin `/api/download?u=…` URL. */
-function upstreamHost(downloadUrl: string): string | null {
-  try {
-    const raw = new URL(downloadUrl, "https://lamptik.local").searchParams.get("u");
-    return raw ? new URL(raw).hostname : null;
-  } catch {
-    return null;
-  }
-}
-
 function DownloadAction({
   primary,
-  busy,
-  progress,
   disabled,
   icon,
   label,
@@ -116,9 +82,6 @@ function DownloadAction({
   onClick,
 }: {
   primary?: boolean;
-  busy: boolean;
-  /** Live byte count — turns the button into a real, measurable progress bar. */
-  progress?: { loaded: number; total: number | null } | null;
   disabled?: boolean;
   icon: ReactNode;
   label: string;
@@ -126,23 +89,11 @@ function DownloadAction({
   note?: string;
   onClick: () => void;
 }) {
-  const percent =
-    progress && progress.total && progress.total > 0
-      ? Math.min(100, Math.round((progress.loaded / progress.total) * 100))
-      : null;
-
-  const statusLabel = progress
-    ? percent === null
-      ? `Downloading… ${formatBytes(progress.loaded)}`
-      : `Downloading… ${percent}%`
-    : "Starting high-speed download…";
-
   return (
     <button
       type="button"
       onClick={onClick}
-      disabled={disabled || (busy && !progress)}
-      aria-busy={busy}
+      disabled={disabled}
       className={cn(
         "btn h-[52px] w-full justify-between gap-3 px-4 text-left",
         primary
@@ -157,21 +108,21 @@ function DownloadAction({
             primary ? "bg-white/15 ring-1 ring-white/20" : "bg-[var(--field-strong)]",
           )}
         >
-          {busy ? <Loader2 className="size-3.5 shrink-0 animate-spin" /> : icon}
+          {icon}
         </span>
         <span className="min-w-0">
-          <span className="block truncate">{busy ? statusLabel : label}</span>
+          <span className="block truncate">{label}</span>
           <span
             className={cn(
               "mt-0.5 block truncate text-xs font-normal",
               primary ? "text-white/75" : "text-[var(--text-3)]",
             )}
           >
-            {busy ? (progress ? "Tap to cancel" : "Verifying the stream…") : (note ?? "")}
+            {note ?? ""}
           </span>
         </span>
       </span>
-      {meta && !busy ? (
+      {meta ? (
         <span
           className={cn(
             "shrink-0 font-mono text-xs tabular-nums",
@@ -179,20 +130,6 @@ function DownloadAction({
           )}
         >
           {meta}
-        </span>
-      ) : null}
-
-      {/* Real measured progress, not a fake loop: width follows the bytes
-          actually read off the wire. */}
-      {progress ? (
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-[3px] bg-white/20"
-        >
-          <span
-            className="block h-full bg-white/90 transition-[width] duration-150 ease-out"
-            style={{ width: `${percent ?? 100}%` }}
-          />
         </span>
       ) : null}
     </button>
@@ -204,66 +141,28 @@ function DownloadAction({
  * skeleton underneath so the frame never jumps, platform badge pill, creator
  * handle, real specs as chips, and a clear action hierarchy: HD primary,
  * then SD / MP3, then a clean reset.
+ *
+ * Downloads are NEVER buffered in this component. A click starts a 10-second
+ * sponsor gate, then the resolved URL is handed to the browser's download
+ * manager, so the visitor can immediately fetch another video.
  */
-export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: ResultPanelProps) {
+export function ResultPanel({ media, video, onReset, onNotify }: ResultPanelProps) {
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
   const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
   const [avatarFailed, setAvatarFailed] = useState(false);
-  const [busyKind, setBusyKind] = useState<DownloadKind | null>(null);
-  const [progress, setProgress] = useState<{ loaded: number; total: number | null } | null>(null);
-  /** Real MB/s while bytes move (from progress deltas). */
-  const [speedBps, setSpeedBps] = useState<number | null>(null);
-  /** Transient auto-heal badge during download retries. */
-  const [healingNote, setHealingNote] = useState<string | null>(null);
-  /** Post-download theater: stays 8s after completion. */
-  const [completeNote, setCompleteNote] = useState<string | null>(null);
-  /** Third-download sponsor interstitial queues the selected file until release. */
-  const [interstitialOpen, setInterstitialOpen] = useState(false);
-  const [interstitialFile, setInterstitialFile] = useState<string | null>(null);
-  const [downloadCount, setDownloadCount] = useState(0);
-  const [queuedDownload, setQueuedDownload] = useState<{ kind: DownloadKind; url: string } | null>(null);
-  const interstitialRef = useRef(false);
-  const busyRef = useRef<DownloadKind | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
-  /** Fires the Direct Link exactly once per download, at stream start. */
-  const monetizedRef = useRef(false);
-  const lastTickRef = useRef<{ loaded: number; at: number } | null>(null);
-  const completeTimerRef = useRef<number | null>(null);
+  const [phase, setPhase] = useState<Phase>("idle");
+  const [countdown, setCountdown] = useState(GATE_SECONDS);
+  /** The URL actually handed to the browser (also the manual fallback link). */
+  const [delivered, setDelivered] = useState<{ kind: DownloadKind; url: string } | null>(null);
+  const timerRef = useRef<number | null>(null);
+  const pendingRef = useRef<{ kind: DownloadKind; url: string } | null>(null);
 
   useEffect(() => {
-    setDownloadCount(getDownloadCount());
-    const syncDownloadCount = () => setDownloadCount(getDownloadCount());
-    window.addEventListener("storage", syncDownloadCount);
-    window.addEventListener("lamptik:download-count", syncDownloadCount);
     return () => {
-      window.removeEventListener("storage", syncDownloadCount);
-      window.removeEventListener("lamptik:download-count", syncDownloadCount);
-      if (completeTimerRef.current !== null) window.clearTimeout(completeTimerRef.current);
+      if (timerRef.current !== null) window.clearInterval(timerRef.current);
+      timerRef.current = null;
     };
   }, []);
-
-  function flashComplete(message: string) {
-    setCompleteNote(message);
-    if (completeTimerRef.current !== null) window.clearTimeout(completeTimerRef.current);
-    completeTimerRef.current = window.setTimeout(() => setCompleteNote(null), 8_000);
-  }
-
-  function handleProgress(state: { loaded: number; total: number | null }) {
-    setProgress(state);
-    const now = performance.now();
-    const last = lastTickRef.current;
-    if (last && now > last.at) {
-      const bps = ((state.loaded - last.loaded) / (now - last.at)) * 1000;
-      if (Number.isFinite(bps) && bps > 0) setSpeedBps(bps);
-    }
-    lastTickRef.current = { loaded: state.loaded, at: now };
-    // First bytes are moving — the stream has started, so this is the
-    // safe moment for the Direct Link + Vignette (geo-capped, fire-and-forget).
-    if (!monetizedRef.current) {
-      monetizedRef.current = true;
-      triggerDirectLinkMonetization();
-    }
-  }
 
   const platform = media.platform;
   const platformConfig = PLATFORMS[platform];
@@ -339,250 +238,68 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
       </span>
     ) : null;
 
-  /** Bytes the CDN reported for this rendition — a truncation guard for saves. */
-  function expectedBytesFor(kind: DownloadKind): number | null {
-    if (kind === "hd") return media.videoHdBytes ?? video.byteSize ?? null;
-    if (kind === "sd") return media.videoSdBytes ?? null;
-    return null;
-  }
-
-  function cancelDownload() {
-    abortRef.current?.abort();
+  function urlFor(kind: DownloadKind): string | null {
+    if (kind === "hd") return hdUrl ?? null;
+    if (kind === "sd") return media.videoSd ?? null;
+    return media.audioMp3 ?? null;
   }
 
   /**
-   * Download flow: stream the bytes straight through our own proxy (no
-   * pre-probe — signed CDN URLs are single-use), where they are validated
-   * (content type, sniffing, declared length, container signature), handed
-   * back to the browser under the video's ORIGINAL title, and kept in this
-   * device's offline Library. A failure can never become a saved, corrupt file.
+   * Click → sponsor tab → 10s gate → native browser download.
+   *
+   * The sponsor fires synchronously, inside the click's user activation, so
+   * popup blockers allow it. The countdown never blocks the network: at 0s the
+   * resolved stream URL is handed to the browser, which owns the transfer from
+   * then on (Chrome's Downloads tray, Android's DownloadManager). Because no
+   * bytes are held here, the user is free to start the next download instantly.
    */
-  async function startDownload(kind: DownloadKind, skipInterstitial = false, queuedUrl?: string) {
-    if (busyRef.current || (interstitialRef.current && !skipInterstitial)) return;
+  function startDownload(kind: DownloadKind) {
+    if (phase !== "idle") return;
 
-    // Sponsor tab FIRST, while the click's user activation is still alive.
-    // Everything below this line awaits, and after the first `await` the
-    // browser no longer treats `window.open` as user-initiated, so a sponsor
-    // opened further down was silently blocked — the download still worked,
-    // but the click earned nothing. Fire-and-forget; capped to 2 minutes and
-    // never awaited, so the file is not delayed even if the tab is blocked.
-    triggerDownloadDirectLink();
-
-    const initial =
-      kind === "hd" ? hdUrl : kind === "sd" ? media.videoSd : media.audioMp3;
-    if (!initial) return;
-
-    let target = queuedUrl ?? initial;
-    if (!skipInterstitial && kind !== "audio") {
-      const nextCount = recordDownloadCount();
-      setDownloadCount(nextCount);
-      if (nextCount % 3 === 0) {
-        interstitialRef.current = true;
-        setQueuedDownload({ kind, url: target });
-        setInterstitialFile((media.title || "your video").slice(0, 48));
-        setInterstitialOpen(true);
-        return;
-      }
-    }
-
-    // Monetization is deliberately NOT started here. It runs only once the
-    // file has been handed to the browser (see `monetize()` below): some
-    // in-app browsers coerce a new-tab click into navigating the current
-    // tab, and doing that before the byte stream starts would cancel the
-    // user's download. After the hand-off, navigating away cannot hurt it.
-    const monetize = () => {
-      if (kind !== "audio") triggerDownloadMonetization();
-    };
-
-    busyRef.current = kind;
-    monetizedRef.current = false;
-    lastTickRef.current = null;
-    setBusyKind(kind);
-    setProgress(null);
-    setSpeedBps(null);
-    setHealingNote(null);
-    setCompleteNote(null);
-
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    onNotify({
-      kind: "info",
-      title: "Preparing your download…",
-      description: "Opening the stream connection now.",
-    });
-
-    try {
-      // YouTube streams live on converter CDNs (loader.to / savenow.to) that
-      // block Vercel's egress and refuse cross-origin fetch() — the bytes
-      // have to be fetched by the visitor's own browser. The server answers
-      // with a 302 to the CDN, so a plain navigation downloads the file.
-      // Everything here is synchronous on purpose: the click's user gesture
-      // must still be alive for the new tab to be allowed.
-      const sourceHost = upstreamHost(target);
-      const directHandOff =
-        media.platform === "youtube" ||
-        (sourceHost !== null && EXTERNAL_CONVERTER_HOSTS.test(sourceHost));
-
-      if (directHandOff) {
-        saveUrl(target, true);
-        flashComplete("✓ Download started — your browser is saving the file");
-        onNotify({
-          kind: "success",
-          title: "Download started",
-          description: "Your browser is fetching the file straight from the source.",
-        });
-        monetizedRef.current = true;
-        triggerDirectLinkMonetization();
-        monetize();
-        return;
-      }
-
-      const declared = expectedBytesFor(kind);
-
-      // Very large files (1 GB+ Facebook uploads) are handed straight to the
-      // browser instead of being buffered — we never hold them in memory.
-      if (!shouldBuffer(declared)) {
-        saveUrl(target);
-        flashComplete("✓ Download Complete — saved to your device");
-        onNotify({
-          kind: "success",
-          title: "Downloading straight to disk",
-          description: "This file is too large to keep offline in the Library.",
-        });
-        // Bytes are with the browser — the safe moment for the Direct Link.
-        monetizedRef.current = true;
-        triggerDirectLinkMonetization();
-        monetize();
-        return;
-      }
-
-      const saveOnce = (url: string) =>
-        saveToLibrary({
-          url,
-          id: `${video.id}${kind === "sd" ? "-sd" : kind === "audio" ? "-audio" : ""}`,
-          title: media.title || PLATFORMS[media.platform].videoNoun,
-          platform: media.platform,
-          kind,
-          expectedBytes: declared,
-          thumbnail: media.thumbnail ?? video.thumbnail ?? null,
-          author: media.author,
-          duration: media.duration,
-          canonicalUrl: media.canonicalUrl,
-          signal: controller.signal,
-          onProgress: handleProgress,
-        });
-      let result;
-      try {
-        result = await saveOnce(target);
-      } catch (saveError) {
-        // One silent background retry with a freshly re-resolved stream
-        // (attempt 2/2) for transient/expired-CDN save failures.
-        if (saveError instanceof LibraryError && saveError.code !== "UNSUPPORTED") {
-          setHealingNote("Switching to backup high-speed server… (attempt 2/2)");
-          const refreshed = await onRefresh();
-          setHealingNote(null);
-          const fresh =
-            (kind === "hd"
-              ? (refreshed?.videoHd ?? refreshed?.videoSd)
-              : kind === "sd"
-                ? refreshed?.videoSd
-                : refreshed?.audioMp3) ?? "";
-          if (fresh) target = fresh;
-          await new Promise((resolve) => setTimeout(resolve, 400));
-          result = await saveOnce(target);
-        } else {
-          throw saveError;
-        }
-      }
-
-      notifyLibraryChanged();
-      refreshLibraryBadge();
-
-      setInterstitialFile(result.filename);
-      flashComplete(`✓ Download Complete — ${result.filename} saved to your device`);
-      onNotify({
-        kind: "success",
-        title: "Download started",
-        description: result.persisted
-          ? `Saved as “${result.filename}” — a copy stays in your Library.`
-          : `Saved as “${result.filename}”.`,
-      });
-
-      // Bytes are safely with the browser now — this is the safe moment.
-      monetize();
-    } catch (requestError) {
-      if (controller.signal.aborted) {
-        onNotify({
-          kind: "info",
-          title: "Download cancelled",
-          description: "Nothing was saved to this device.",
-        });
-        return;
-      }
-
-      if (requestError instanceof LibraryError) {
-        // The proxy refused (the CDN blocked our server, or the network
-        // dropped): hand the same URL to the browser instead of dead-ending.
-        if ((requestError.code === "HTTP" || requestError.code === "NETWORK") && target) {
-          saveUrl(target, true);
-          flashComplete("✓ Download started — your browser is saving the file");
-          onNotify({
-            kind: "success",
-            title: "Download started",
-            description: "Your browser is fetching the file directly from the source.",
-          });
-          monetizedRef.current = true;
-          triggerDirectLinkMonetization();
-          monetize();
-          return;
-        }
-
-        // No streaming support here: fall back to the plain, server-named
-        // download rather than failing the user outright.
-        if (requestError.code === "UNSUPPORTED" && target) {
-          saveUrl(target);
-          onNotify({
-            kind: "success",
-            title: "Download started",
-            description: "This browser can’t stream, so the file saves directly.",
-          });
-          monetizedRef.current = true;
-          triggerDirectLinkMonetization();
-          monetize();
-          return;
-        }
-        onNotify({
-          kind: "error",
-          title: requestError.message,
-          description: requestError.hint ?? "Try again in a moment.",
-        });
-        return;
-      }
-
+    const url = urlFor(kind);
+    if (!url) {
       onNotify({
         kind: "error",
-        title: "Download couldn't start",
-        description: "Please try again in a moment.",
+        title: "That format is unavailable",
+        description: "Fetch the video again to load a fresh link.",
       });
-    } finally {
-      busyRef.current = null;
-      setBusyKind(null);
-      setProgress(null);
-      setHealingNote(null);
-      abortRef.current = null;
+      return;
     }
+
+    triggerDownloadDirectLink();
+
+    pendingRef.current = { kind, url };
+    setPhase("preparing");
+    setCountdown(GATE_SECONDS);
+    setDelivered(null);
+
+    let remaining = GATE_SECONDS;
+    if (timerRef.current !== null) window.clearInterval(timerRef.current);
+    timerRef.current = window.setInterval(() => {
+      remaining -= 1;
+      setCountdown(Math.max(0, remaining));
+      if (remaining > 0) return;
+
+      if (timerRef.current !== null) window.clearInterval(timerRef.current);
+      timerRef.current = null;
+
+      const pending = pendingRef.current;
+      if (!pending) return;
+
+      saveUrl(pending.url);
+      setDelivered(pending);
+      setPhase("sent");
+      onNotify({
+        kind: "success",
+        title: "Sent to Browser Downloads",
+        description: `${KIND_LABELS[pending.kind]} is downloading in your browser — check your Downloads tray.`,
+      });
+    }, 1_000);
   }
 
   return (
-    <>
-      <div
-        data-accent={platform}
-        data-ad-guard="result"
-        className="relative"
-        aria-hidden={interstitialOpen ? true : undefined}
-      >
-        {/* Header rail: success state, platform identity, codec truth. */}
+    <div data-accent={platform} data-ad-guard="result" className="relative">
+      {/* Header rail: success state, platform identity, codec truth. */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--ok)_32%,transparent)] bg-[var(--ok-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--ok)]">
@@ -715,187 +432,148 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
             </p>
           ) : null}
 
-          {/* Action hierarchy: HD primary, full width; SD + MP3 paired;
-              then a clean reset. Every button probes the signed URL first and
-              re-resolves once if it expired. */}
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            <p className="sm:col-span-2 text-center text-xs text-[var(--text-3)]" aria-live="polite">
-              {downloadAdBadgeLabel(downloadCount)}
-            </p>
-            <div className="sm:col-span-2">
-              <DownloadAction
-                primary
-                busy={busyKind === "hd"}
-                progress={busyKind === "hd" ? progress : null}
-                disabled={busyKind !== null && busyKind !== "hd"}
-                icon={<Zap className="size-3.5" fill="currentColor" strokeWidth={0} />}
-                label={video.quality === "hd" ? "Download HD MP4" : "Download MP4"}
-                note="No watermark · saved under its original title"
-                meta={formatBytes(media.videoHdBytes ?? media.videoSdBytes ?? video.byteSize)}
-                onClick={busyKind === "hd" && progress ? cancelDownload : () => startDownload("hd")}
-              />
-            </div>
-
-            {hasSd ? (
-              <DownloadAction
-                busy={busyKind === "sd"}
-                progress={busyKind === "sd" ? progress : null}
-                disabled={busyKind !== null && busyKind !== "sd"}
-                icon={<Film className="size-3.5" />}
-                label="Fast MP4 (SD)"
-                meta={formatBytes(media.videoSdBytes)}
-                onClick={busyKind === "sd" && progress ? cancelDownload : () => startDownload("sd")}
-              />
-            ) : null}
-
-            {hasAudio ? (
-              <div className={cn("min-w-0", !hasSd && "sm:col-span-2")}>
+          {/* Action hierarchy: HD primary, full width; SD + MP3 paired; then a
+              clean reset. A click starts the sponsor gate, never a JS buffer. */}
+          {phase === "idle" ? (
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <div className="sm:col-span-2">
                 <DownloadAction
-                  busy={busyKind === "audio"}
-                  progress={busyKind === "audio" ? progress : null}
-                  disabled={busyKind !== null && busyKind !== "audio"}
-                  icon={<Music2 className="size-3.5" />}
-                  label="Audio only (MP3)"
-                  meta={null}
-                  onClick={busyKind === "audio" && progress ? cancelDownload : () => startDownload("audio")}
+                  primary
+                  icon={<Zap className="size-3.5" fill="currentColor" strokeWidth={0} />}
+                  label={video.quality === "hd" ? "Download HD MP4" : "Download MP4"}
+                  note="No watermark · straight to your browser Downloads"
+                  meta={formatBytes(media.videoHdBytes ?? media.videoSdBytes ?? video.byteSize)}
+                  onClick={() => startDownload("hd")}
                 />
               </div>
-            ) : platform === "tiktok" ? (
-              <button
-                type="button"
-                disabled
-                className="btn btn-ghost h-[52px] px-4 text-sm"
-                title="No audio stream was exposed for this video."
-              >
-                <Music2 className="size-4" />
-                Audio unavailable
-              </button>
-            ) : null}
 
-            <div className="sm:col-span-2">
+              {hasSd ? (
+                <DownloadAction
+                  icon={<Film className="size-3.5" />}
+                  label="Fast MP4 (SD)"
+                  meta={formatBytes(media.videoSdBytes)}
+                  onClick={() => startDownload("sd")}
+                />
+              ) : null}
+
+              {hasAudio ? (
+                <div className={cn("min-w-0", !hasSd && "sm:col-span-2")}>
+                  <DownloadAction
+                    icon={<Music2 className="size-3.5" />}
+                    label="Audio only (MP3)"
+                    meta={null}
+                    onClick={() => startDownload("audio")}
+                  />
+                </div>
+              ) : platform === "tiktok" ? (
+                <button
+                  type="button"
+                  disabled
+                  className="btn btn-ghost h-[52px] px-4 text-sm"
+                  title="No audio stream was exposed for this video."
+                >
+                  <Music2 className="size-4" />
+                  Audio unavailable
+                </button>
+              ) : null}
+
+              <div className="sm:col-span-2">
+                <button
+                  type="button"
+                  onClick={onReset}
+                  className="btn btn-ghost group h-11 w-full gap-2 px-4 text-sm"
+                >
+                  <RefreshCw className="size-3.5 transition-transform duration-300 group-hover:rotate-180" />
+                  Download another video
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {/* Sponsor gate: the 10 seconds the exchange gets in exchange for a
+              free HD download. The ad is one inline slot — never a stack — and
+              hidden on lg+ because the left column already carries the
+              showcase in result mode. */}
+          {phase === "preparing" ? (
+            <div
+              role="status"
+              aria-live="polite"
+              className="mt-4 overflow-hidden rounded-2xl border border-[var(--accent)]/25 bg-[var(--bg-sunken)] p-4"
+            >
+              <div className="flex items-center gap-3">
+                <span className="relative grid size-14 shrink-0 place-items-center rounded-full border border-[var(--accent)]/35 bg-[var(--accent-soft)] font-mono text-xl font-bold tabular-nums text-[var(--accent-text)]">
+                  {countdown}
+                  <span className="absolute -bottom-1 rounded-full bg-[var(--bg)] px-1 text-[9px] font-semibold uppercase tracking-widest text-[var(--text-3)]">
+                    sec
+                  </span>
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold tracking-tight">
+                    ⏳ Preparing your direct high-speed link…
+                  </p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-[var(--text-2)]">
+                    Your download starts in {countdown}s — keep this tab open.
+                  </p>
+                </div>
+              </div>
+
+              <div aria-hidden="true" className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-[linear-gradient(90deg,#22d3ee,#6366f1)] transition-[width] duration-1000 ease-linear"
+                  style={{ width: `${((GATE_SECONDS - countdown) / GATE_SECONDS) * 100}%` }}
+                />
+              </div>
+
+              {/* One theater, two in-flow units, never a floating pile: the
+                  300×250 above the leaderboard on phones (desktop uses the
+                  hero showcase instead). */}
+              <div className="mt-4 space-y-3 lg:hidden">
+                <AdSlot format="rectangle" label="Sponsored — keeps LAMP TIK free" />
+                <AdSlot format="leaderboard" label="Sponsored — keeps LAMP TIK free" />
+              </div>
+            </div>
+          ) : null}
+
+          {/* Hand-off confirmed: the bytes are Chrome's now, so the visitor is
+              free to queue the next video immediately. */}
+          {phase === "sent" && delivered ? (
+            <div className="mt-4 overflow-hidden rounded-2xl border border-[var(--ok)]/35 bg-[var(--ok-soft)] p-4 text-center">
+              <p className="text-sm font-semibold tracking-tight text-[var(--ok)]">
+                ✅ Sent to Browser Downloads!
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-[var(--text-2)]">
+                {KIND_LABELS[delivered.kind]} is downloading in your browser — it appears in
+                your Downloads tray, not on this page.
+              </p>
+              <a
+                href={delivered.url}
+                download=""
+                className="mt-2 inline-block text-xs font-semibold text-[var(--accent-text)] underline-offset-4 hover:underline"
+              >
+                Download didn’t start? Tap here
+              </a>
               <button
                 type="button"
                 onClick={onReset}
-                className="btn btn-ghost group h-11 w-full gap-2 px-4 text-sm"
+                className="btn btn-primary tool-cta mt-3 h-12 w-full gap-2 text-sm font-bold shadow-[0_20px_46px_-14px_rgba(34,211,238,0.75)]"
               >
-                <RefreshCw className="size-3.5 transition-transform duration-300 group-hover:rotate-180" />
-                Download another video
+                🔄 Download Another Video
               </button>
-            </div>
-          </div>
-
-          {/* Active Download Sponsor Theater: real download starts instantly
-              (never delayed); this panel is purely informational. Visible
-              while streaming + 8s after completion. URL input / Fetch button
-              above are never touched. */}
-          {healingNote ? (
-            <p
-              role="status"
-              aria-live="polite"
-              className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[var(--warn)]/30 bg-[var(--warn)]/10 px-2.5 py-1 text-xs font-medium text-[var(--warn)]"
-            >
-              <Loader2 className="size-3 animate-spin" />
-              {healingNote}
-            </p>
-          ) : null}
-          {busyKind || completeNote ? (
-            <div className="mt-3 overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.015] p-3">
-              <p className="flex items-center justify-center gap-1.5 text-sm font-semibold tracking-tight">
-                {busyKind ? (
-                  <>
-                    <Loader2 className="size-3.5 animate-spin text-[var(--accent-text)]" />
-                    Streaming your file from Edge CDN
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck className="size-3.5 text-[var(--ok)]" />
-                    {completeNote}
-                  </>
-                )}
-              </p>
-              {progress ? (
-                <p className="mt-1 text-center font-mono text-xs tabular-nums text-[var(--text-2)]">
-                  {formatBytes(progress.loaded)}
-                  {progress.total ? ` / ${formatBytes(progress.total)}` : ""}
-                  {speedBps ? ` · ${(speedBps / 1_048_576).toFixed(1)} MB/s` : ""}
-                  {progress.total
-                    ? ` · ${Math.min(100, Math.round((progress.loaded / progress.total) * 100))}%`
-                    : ""}
-                </p>
-              ) : null}
-              <div className="mt-2.5 rounded-xl border border-[var(--glass-border)] p-2.5">
-                <p className="micro mb-2 text-center text-xs text-[var(--text-3)]/80">
-                  Sponsored by our partners (keeps LAMP TIK 100% free)
-                </p>
-                <AdSlot
-                  format="leaderboard"
-                  label="Sponsored by our partners (keeps LAMP TIK 100% free)"
-                  zoneId={adsterraBannerKey}
-                />
-                <div className="mt-2.5 flex justify-center">
-                  <AdSlot
-                    format="rectangle"
-                    label="Sponsored rectangle — keeps LAMP TIK 100% free"
-                  />
-                </div>
-                <a
-                  href={monetagSmartlinkUrl}
-                  target="_blank"
-                  rel="sponsored nofollow noopener"
-                  className="group mt-2.5 flex items-center gap-2.5 rounded-xl border border-[var(--glass-border)] bg-[var(--field)] px-3 py-2.5 transition-colors duration-200 hover:border-[var(--glass-border-hover)]"
-                >
-                  <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-text)] transition-transform duration-200 group-hover:scale-110">
-                    <Zap className="size-4" fill="currentColor" strokeWidth={0} />
-                  </span>
-                  <span className="min-w-0 flex-1 text-left">
-                    <span className="block truncate text-sm font-semibold tracking-tight">
-                      Support free HD downloads — visit sponsor ↗
-                    </span>
-                    <span className="block truncate text-xs text-[var(--text-3)]">
-                      Sponsored · opens after your download starts
-                    </span>
-                  </span>
-                </a>
+              <div className="mt-3">
+                <SocialShare />
               </div>
-              {completeNote && !busyKind ? (
-                <div className="mt-2.5">
-                  <SocialShare />
-                </div>
-              ) : null}
             </div>
           ) : null}
 
           <p className="mt-2.5 flex items-start gap-1.5 text-xs leading-relaxed text-[var(--text-3)]">
             <ShieldCheck className="mt-px size-3.5 shrink-0 text-[var(--ok)]" />
             <span>
-              Saved under its original title — a copy stays in your Library on this
-              device, never on a server.
+              Saves straight to your browser’s Downloads — nothing is stored on our
+              servers and nothing is kept on this device by the site.
             </span>
           </p>
         </div>
       </div>
     </div>
-    <ThirdDownloadModal
-      open={interstitialOpen}
-      filename={interstitialFile}
-      onClose={() => {
-        interstitialRef.current = false;
-        setInterstitialOpen(false);
-        setQueuedDownload(null);
-      }}
-      onRelease={() => {
-        const queued = queuedDownload;
-        interstitialRef.current = false;
-        setInterstitialOpen(false);
-        setQueuedDownload(null);
-        if (queued) void startDownload(queued.kind, true, queued.url);
-        // Real user gesture, and the sponsor theater is already closed: this
-        // is the only safe moment for the Monetag Vignette. Firing it while
-        // the dialog is open would stack a max-z-index overlay over the
-        // "Continue" button and block the download entirely.
-        triggerMonetagVignette();
-      }}
-    />
-    </>
   );
 }

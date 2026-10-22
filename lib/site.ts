@@ -28,11 +28,11 @@ export function pageAlternates(path: string) {
  * version or a file size that is not the one being served.
  */
 export const androidApp = {
-  version: "3.1",
-  versionCode: 31,
-  fileName: "lamptik-v3.1.apk",
-  downloadName: "LAMP-TIK-v3.1.apk",
-  sizeBytes: 4_432_273,
+  version: "3.2",
+  versionCode: 32,
+  fileName: "lamptik-v3.2.apk",
+  downloadName: "LAMP-TIK-v3.2.apk",
+  sizeBytes: 4_436_369,
   /** Human label shown next to every download button. */
   sizeLabel: "4.2 MB",
   minAndroid: "Android 7.0+",

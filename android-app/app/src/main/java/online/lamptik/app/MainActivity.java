@@ -18,7 +18,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 /**
- * LAMP TIK 3.1 — a real native Android application.
+ * LAMP TIK 3.2 — a real native Android application.
  *
  * Structure: native top app bar, a native content frame, and a three-tab
  * native bottom navigation (Downloader · My Downloads · Fast Stream). The
