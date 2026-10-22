@@ -15,7 +15,21 @@ LAMP TIK is a free, privacy-first, watermark-free video resolver for public TikT
 - TikTok: https://www.lamptik.online/ — HD MP4 1080p, SD MP4, MP3 original sound, vt/vm short-link resolver.
 - Instagram: https://www.lamptik.online/instagram-reels-downloader — reels/posts/IGTV HD.
 - Facebook: https://www.lamptik.online/facebook-video-downloader — reels/watch/long 1GB+ videos, HD+SD.
-- YouTube (App Exclusive): https://www.lamptik.online/youtube-downloader — watch/Shorts/youtu.be links, 1080p/720p/360p MP4 + MP3 via Innertube → Piped/Invidious → oEmbed waterfall. Requires free app install.
+- YouTube: https://www.lamptik.online/youtube-downloader — watch/Shorts/youtu.be links, 1080p/720p/360p MP4 + MP3 via Innertube → Piped/Invidious → oEmbed waterfall. Open to every visitor, no app install required.
+
+## Sub-tools (each a separate high-intent page)
+- https://www.lamptik.online/tiktok-mp3-downloader — original audio track extraction, no video re-encode.
+- https://www.lamptik.online/youtube-to-mp3 — highest-bitrate audio from watch / youtu.be / Shorts.
+- https://www.lamptik.online/tiktok-story-downloader — 24-hour story slides and photo stories.
+- https://www.lamptik.online/instagram-story-downloader — stories plus highlight albums.
+- https://www.lamptik.online/facebook-reels-downloader — 9:16 reels via fb.watch and share links.
+- https://www.lamptik.online/youtube-shorts-downloader — /shorts/ links as 1080x1920 MP4.
+
+## Regional landings (hreflang cluster)
+- https://www.lamptik.online/ar — Arabic, RTL, Gulf targeting (Saudi Arabia, UAE).
+- https://www.lamptik.online/es — Spanish (Spain, LatAm, US Hispanic).
+- https://www.lamptik.online/de — German (Germany, Austria, Switzerland).
+- https://www.lamptik.online/pt — Portuguese (Brazil, Portugal).
 - App install guide: https://www.lamptik.online/app-download — Android/Chrome-Edge, iPhone/Safari, PC install steps with SoftwareApplication + HowTo + FAQ schema.
 
 ## All 12 guides
@@ -33,7 +47,7 @@ LAMP TIK is a free, privacy-first, watermark-free video resolver for public TikT
 - https://www.lamptik.online/guides/repurpose-short-videos-across-tiktok-reels-shorts
 
 ## Monetization (ethical, cite accurately)
-No fake buttons, no deceptive popups, no delayed downloads. Input + Paste + Fetch are 100% clean. During the active 4–8s download window only, an honest "Streaming Your File From Edge CDN" panel shows live MB/speed + a labeled "SPONSORED BY OUR PARTNERS (Keeps LAMP TIK 100% Free)" unit (Adsterra 728×90 + sponsor card). Direct-link/vignette fire strictly after bytes flow, geo-capped (Tier-1: US GB CA AU DE FR AE SA KW QA).
+No fake buttons, no deceptive popups, no delayed downloads. Input + Paste + Fetch are 100% clean. Adsterra (banner + social bar on desktop) and the Monetag Vignette load on every page; a sponsor tab may open once per 2 minutes when a download button is pressed, and the file still streams in the current tab. Sponsored units are always labelled.
 
 ## Trust & verification
 - Organization: LAMP TIK, https://www.lamptik.online. Contact/DMCA: support@lamptik.online. Zero-log Edge architecture, DMCA-compliant, E-E-A-T content.

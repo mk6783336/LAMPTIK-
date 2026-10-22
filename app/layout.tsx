@@ -30,10 +30,10 @@ export const metadata: Metadata = {
   authors: [{ name: siteConfig.creator }],
   creator: siteConfig.creator,
   publisher: siteConfig.creator,
-  alternates: {
-    canonical: "/",
-    languages: { en: "/", "x-default": "/" },
-  },
+  // Canonical only: the hreflang cluster is emitted once, as real <link>
+  // tags below (see HREFLANG_LINKS). Declaring it here as well produced two
+  // identical alternate sets in every <head>.
+  alternates: { canonical: "/" },
   category: "utilities",
   formatDetection: { telephone: false, address: false, email: false },
   referrer: "strict-origin-when-cross-origin",
@@ -69,16 +69,33 @@ export const metadata: Metadata = {
   ...(monetagVerification ? { other: { monetag: monetagVerification } } : {}),
 };
 
+/**
+ * The site ships one theme: Obsidian Dark (#050505).
+ *
+ * It used to follow `prefers-color-scheme`, which meant a desktop set to
+ * light — or any browser that reports light by default — got a washed-out
+ * grey page that is not the product. Dark is now unconditional: the only way
+ * to see light mode is to press the toggle, which writes an explicit
+ * `lamptik-theme=light` that this boot script honours on later visits.
+ */
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#050505" },
-    { media: "(prefers-color-scheme: light)", color: "#F4F6FA" },
-  ],
+  themeColor: "#050505",
+  colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
 };
 
-const bootScript = `(function(){try{var s=localStorage.getItem("lamptik-theme");var d=s?s==="dark":true;document.documentElement.classList.toggle("dark",d);}catch(e){document.documentElement.classList.add("dark");}})();`;
+const bootScript = `(function(){try{var s=localStorage.getItem("lamptik-theme");var light=s==="light";document.documentElement.classList.toggle("dark",!light);document.documentElement.style.colorScheme=light?"light":"dark";}catch(e){document.documentElement.classList.add("dark");}})();`;
+
+/** `hreflang` cluster for the regional landing pages. */
+const HREFLANG_LINKS = [
+  { hreflang: "en", href: "/" },
+  { hreflang: "ar", href: "/ar" },
+  { hreflang: "es", href: "/es" },
+  { hreflang: "de", href: "/de" },
+  { hreflang: "pt", href: "/pt" },
+  { hreflang: "x-default", href: "/" },
+] as const;
 
 export default function RootLayout({
   children,
@@ -109,7 +126,16 @@ export default function RootLayout({
           type="font/woff2"
           crossOrigin="anonymous"
         />
+        <meta name="color-scheme" content="dark" />
         <script dangerouslySetInnerHTML={{ __html: bootScript }} />
+        {HREFLANG_LINKS.map((link) => (
+          <link
+            key={link.hreflang}
+            rel="alternate"
+            hrefLang={link.hreflang}
+            href={`${siteUrl}${link.href}`}
+          />
+        ))}
         <ConsentModeScript />
       </head>
       <body className="min-h-dvh">
@@ -120,8 +146,9 @@ export default function RootLayout({
             are absent. */}
         <DesktopSideRails />
         <StickyBottomAd />
-        {/* Adsterra Social Bar + Monetag Vignette. Both are `lazyOnload` and
-            consent-gated, so first paint and LCP are untouched. */}
+        {/* Adsterra Social Bar + Monetag Vignette. Loaded for every visitor
+            (no consent gate) after hydration, so first paint and LCP are
+            untouched while every pageview is monetized. */}
         <AdScripts />
       </body>
     </html>

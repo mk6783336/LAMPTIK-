@@ -9,6 +9,20 @@
 - [YouTube Downloader (1080p HD)](https://www.lamptik.online/youtube-downloader): watch/shorts/youtu.be links, 1080p/720p/360p MP4 + MP3 — free, no app required.
 - [Download the LAMP TIK App](https://www.lamptik.online/app-download): native Android app (no store) plus installable web app for iPhone/iPad & PC.
 
+## Sub-tools (high-intent pages)
+- [TikTok to MP3 Converter](https://www.lamptik.online/tiktok-mp3-downloader): extracts the original audio track from a TikTok or vt/vm link — no video re-encode.
+- [YouTube to MP3 Converter](https://www.lamptik.online/youtube-to-mp3): highest-bitrate audio from watch, youtu.be and Shorts links; never a lossy second generation.
+- [TikTok Story Downloader](https://www.lamptik.online/tiktok-story-downloader): saves 24-hour story slides and photo stories before they expire.
+- [Instagram Story & Highlights Downloader](https://www.lamptik.online/instagram-story-downloader): stories, highlight albums and photo stories in source resolution.
+- [Facebook Reels Downloader](https://www.lamptik.online/facebook-reels-downloader): 9:16 reels via fb.watch / share links, 1080p MP4 with audio.
+- [YouTube Shorts Downloader](https://www.lamptik.online/youtube-shorts-downloader): /shorts/ links saved as full 1080x1920 MP4.
+
+## Regional landing pages
+- [Arabic — تنزيل فيديو تيك توك بدون علامة مائية](https://www.lamptik.online/ar) (Saudi Arabia / UAE, RTL)
+- [Spanish — descargar videos de TikTok sin marca de agua](https://www.lamptik.online/es) (Spain / LatAm / US Hispanic)
+- [German — TikTok Video Downloader ohne Wasserzeichen](https://www.lamptik.online/de) (DE / AT / CH)
+- [Portuguese — baixar vídeo do TikTok sem marca d'água](https://www.lamptik.online/pt) (Brazil / Portugal)
+
 ## Technical guides (/guides/*)
 - [Download TikTok video without watermark](https://www.lamptik.online/guides/download-tiktok-video-without-watermark)
 - [Download TikTok without logo (iPhone/Android)](https://www.lamptik.online/guides/download-tiktok-without-logo-iphone-android)

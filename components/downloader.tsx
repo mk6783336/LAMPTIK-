@@ -443,7 +443,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
   const expand = { duration: reduceMotion ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] as const };
 
   return (
-    <div id="tool" className="relative scroll-mt-24">
+    <div id="tool" data-ad-guard="tool" className="relative scroll-mt-24">
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
 
       {/* Ambient halo behind the tool — a pre-painted radial gradient, not a

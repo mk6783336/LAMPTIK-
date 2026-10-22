@@ -12,6 +12,22 @@ const FOOTER_LINKS = {
     { href: "/facebook-video-downloader", label: "Facebook HD" },
     { href: "/youtube-downloader", label: "YouTube HD" },
   ],
+  // Programmatic sub-tools: one link per high-intent query. These are real
+  // pages with their own copy and schema, not anchors on the platform pages.
+  "Sub-tools": [
+    { href: "/tiktok-mp3-downloader", label: "TikTok to MP3" },
+    { href: "/youtube-to-mp3", label: "YouTube to MP3" },
+    { href: "/tiktok-story-downloader", label: "TikTok Story" },
+    { href: "/instagram-story-downloader", label: "Instagram Story" },
+    { href: "/facebook-reels-downloader", label: "Facebook Reels" },
+    { href: "/youtube-shorts-downloader", label: "YouTube Shorts" },
+  ],
+  Languages: [
+    { href: "/ar", label: "العربية" },
+    { href: "/es", label: "Español" },
+    { href: "/de", label: "Deutsch" },
+    { href: "/pt", label: "Português" },
+  ],
   Product: [
     { href: "/app-download", label: "📱 Android App" },
     { href: "/guides", label: "Guides" },
@@ -93,7 +109,7 @@ export function SiteFooter() {
 
           <nav
             aria-label="Footer"
-            className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-5 lg:gap-x-4"
+            className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 lg:gap-x-5"
           >
             {Object.entries(FOOTER_LINKS).map(([group, links]) => (
               <div key={group} className="flex min-w-0 flex-col gap-2.5">

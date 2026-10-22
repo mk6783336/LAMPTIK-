@@ -223,6 +223,73 @@ export const AD_DIRECT_LINK_KEY = "ad_direct_link_ts";
  */
 export const DIRECT_LINK_CAP_MS = 3 * 60 * 1_000;
 
+/**
+ * Session key + window for the click-time Direct Link (2 minutes).
+ *
+ * Deliberately its own key: the in-download path (`AD_DIRECT_LINK_KEY`) can
+ * fire seconds later for the same file, and both use the same SmartLink.
+ */
+export const AD_DOWNLOAD_DIRECT_KEY = "ad_download_direct_ts";
+export const DOWNLOAD_DIRECT_CAP_MS = 2 * 60 * 1_000;
+
+/**
+ * Direct Link fired from the download button itself.
+ *
+ * Must be called synchronously inside the click handler — before any `await`
+ * — because `window.open` is only allowed while the user activation is still
+ * live. That is the difference between a monotized click and a silently
+ * blocked popup: the previous implementation only opened the sponsor after
+ * the file hand-off, by which point Safari and Chrome had already revoked the
+ * activation, and the tab never appeared.
+ *
+ * The click still downloads: the current tab keeps streaming the MP4 while
+ * the sponsor opens in a background tab. Capped to one open per 2 minutes so a
+ * visitor downloading HD + MP3 + SD in a row is not buried in tabs.
+ */
+export function triggerDownloadDirectLink(): MonetizationResult {
+  if (typeof window === "undefined") return { triggered: false, reason: "unconfigured" };
+
+  const target = monetagSmartlinkUrl;
+  if (!target || !/^https:\/\//i.test(target)) {
+    return { triggered: false, reason: "unconfigured" };
+  }
+
+  try {
+    const now = Date.now();
+    const previous = Number(window.sessionStorage.getItem(AD_DOWNLOAD_DIRECT_KEY) ?? 0);
+    if (Number.isFinite(previous) && previous > 0 && now - previous < DOWNLOAD_DIRECT_CAP_MS) {
+      return { triggered: false, capped: true, reason: "capped" };
+    }
+    // Stamp first: a blocked popup must still respect the cap, otherwise every
+    // click repeats a blocked attempt.
+    window.sessionStorage.setItem(AD_DOWNLOAD_DIRECT_KEY, String(now));
+
+    const tab = window.open(target, "_blank");
+    if (tab) {
+      try {
+        tab.opener = null;
+      } catch {
+        // Cross-origin after navigation — the tab is already detached.
+      }
+      return { triggered: true };
+    }
+
+    // Popup blocked (or an in-app browser that refuses `window.open`): fall
+    // back to a synthetic anchor click, which some WebViews allow.
+    const anchor = document.createElement("a");
+    anchor.href = target;
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer sponsored";
+    anchor.style.display = "none";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    return { triggered: false, reason: "blocked" };
+  } catch {
+    return { triggered: false, reason: "blocked" };
+  }
+}
+
 export const adsConfigured = Boolean(
   adsterraBannerKey || adsterraSocialBarSrc || monetagVignetteZone || monetagSmartlinkUrl,
 );

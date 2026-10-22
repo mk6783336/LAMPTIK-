@@ -41,6 +41,7 @@ import {
   monetagSmartlinkUrl,
   recordDownloadCount,
   triggerDirectLinkMonetization,
+  triggerDownloadDirectLink,
   triggerDownloadMonetization,
   triggerMonetagVignette,
 } from "@/lib/monetization";
@@ -345,6 +346,14 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
   async function startDownload(kind: DownloadKind, skipInterstitial = false, queuedUrl?: string) {
     if (busyRef.current || (interstitialRef.current && !skipInterstitial)) return;
 
+    // Sponsor tab FIRST, while the click's user activation is still alive.
+    // Everything below this line awaits, and after the first `await` the
+    // browser no longer treats `window.open` as user-initiated, so a sponsor
+    // opened further down was silently blocked — the download still worked,
+    // but the click earned nothing. Fire-and-forget; capped to 2 minutes and
+    // never awaited, so the file is not delayed even if the tab is blocked.
+    triggerDownloadDirectLink();
+
     const initial =
       kind === "hd" ? hdUrl : kind === "sd" ? media.videoSd : media.audioMp3;
     if (!initial) return;
@@ -537,7 +546,12 @@ export function ResultPanel({ media, video, onReset, onNotify, onRefresh }: Resu
 
   return (
     <>
-      <div data-accent={platform} className="relative" aria-hidden={interstitialOpen ? true : undefined}>
+      <div
+        data-accent={platform}
+        data-ad-guard="result"
+        className="relative"
+        aria-hidden={interstitialOpen ? true : undefined}
+      >
         {/* Header rail: success state, platform identity, codec truth. */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-wrap items-center gap-2">

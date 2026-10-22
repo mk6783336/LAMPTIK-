@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 
 import { GUIDE_LIST } from "@/lib/content/guides";
+import { SUB_TOOLS } from "@/lib/content/sub-tools";
+import { LOCALE_CODES } from "@/lib/i18n/types";
 import { siteConfig, siteUrl } from "@/lib/site";
 
 /**
@@ -41,6 +43,39 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
   ];
+
+  /**
+   * Programmatic sub-tools. Generated from the same array the pages render,
+   * so a page can never exist without being listed (or vice versa).
+   */
+  const subTools: MetadataRoute.Sitemap = SUB_TOOLS.map((tool) => ({
+    url: `${siteUrl}/${tool.slug}`,
+    lastModified: updated,
+    changeFrequency: "weekly" as const,
+    priority: 0.9,
+  }));
+
+  /**
+   * Regional landings. Each declared with its `alternates.languages` cluster,
+   * which is the signal that ties /ar /es /de /pt to the English tool pages
+   * instead of letting them compete as unrelated duplicates.
+   */
+  const languages: MetadataRoute.Sitemap = LOCALE_CODES.map((code) => ({
+    url: `${siteUrl}/${code}`,
+    lastModified: updated,
+    changeFrequency: "weekly" as const,
+    priority: 0.8,
+    alternates: {
+      languages: {
+        en: siteUrl,
+        ar: `${siteUrl}/ar`,
+        es: `${siteUrl}/es`,
+        de: `${siteUrl}/de`,
+        pt: `${siteUrl}/pt`,
+        "x-default": siteUrl,
+      },
+    },
+  }));
 
   const guides: MetadataRoute.Sitemap = [
     {
@@ -93,5 +128,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  return [...tools, ...guides, ...company, ...legal];
+  return [...tools, ...subTools, ...languages, ...guides, ...company, ...legal];
 }
