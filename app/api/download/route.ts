@@ -39,6 +39,23 @@ const SNIFF_TIMEOUT_MS = 8_000;
 /** Anything smaller than this is an error page, not media. */
 const MIN_MEDIA_BYTES = 5 * 1024;
 
+/**
+ * Size above which the browser fetches from the CDN directly.
+ *
+ * Vercel's Edge runtime must start a response within 25s and may stream for at
+ * most 300s (vercel.com/docs/functions/runtimes/edge). A 500 MB file on a slow
+ * mobile link needs far longer than that, so proxying it would truncate the
+ * download at the platform's wall — not at ours. Above this threshold the
+ * request answers with a 302 to the CDN hop that already passed the SSRF
+ * checks, and the visitor's own connection owns the transfer for as long as it
+ * takes. Default 200 MB; `DOWNLOAD_DIRECT_HANDOFF_MB` tunes it (0 disables the
+ * proxy entirely, useful for testing).
+ */
+const DIRECT_HANDOFF_BYTES = (() => {
+  const raw = Number(process.env.DOWNLOAD_DIRECT_HANDOFF_MB ?? "200");
+  return Number.isFinite(raw) && raw >= 0 ? Math.round(raw * 1024 * 1024) : 200 * 1024 * 1024;
+})();
+
 type DownloadKind = "video" | "audio";
 
 interface PlatformProfile {
@@ -101,7 +118,7 @@ async function fetchAllowedMedia(
   startUrl: string,
   headers: Record<string, string>,
   signal: AbortSignal,
-): Promise<Response> {
+): Promise<{ response: Response; url: string }> {
   let currentUrl = startUrl;
 
   for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
@@ -131,7 +148,7 @@ async function fetchAllowedMedia(
       continue;
     }
 
-    return response;
+    return { response, url: currentUrl };
   }
 
   throw new AppError(
@@ -372,17 +389,27 @@ export async function GET(request: NextRequest) {
   const headerTimer = setTimeout(() => abort.abort(), HEADER_TIMEOUT_MS);
 
   let upstream: Response;
+  /** Final CDN hop after redirects — the target of a direct hand-off. */
+  let upstreamFinalUrl = upstreamUrl;
   try {
     const headers = upstreamHeadersFor(platform, upstreamUrl);
     if (range) headers.Range = range;
-    upstream = await fetchAllowedMedia(upstreamUrl, headers, abort.signal);
+    ({ response: upstream, url: upstreamFinalUrl } = await fetchAllowedMedia(
+      upstreamUrl,
+      headers,
+      abort.signal,
+    ));
 
     // Some signed CDN URLs reject `Range` outright (403/416) while serving a
     // plain GET fine — retry once without the Range header before giving up.
     if (range && (upstream.status === 403 || upstream.status === 416)) {
       await upstream.body?.cancel().catch(() => undefined);
       const plainHeaders = upstreamHeadersFor(platform, upstreamUrl);
-      upstream = await fetchAllowedMedia(upstreamUrl, plainHeaders, abort.signal);
+      ({ response: upstream, url: upstreamFinalUrl } = await fetchAllowedMedia(
+        upstreamUrl,
+        plainHeaders,
+        abort.signal,
+      ));
     }
   } catch (error) {
     if (error instanceof AppError && error.code === "BAD_REQUEST") return errorResponse(error);
@@ -420,6 +447,15 @@ export async function GET(request: NextRequest) {
   if (!isPartial && contentLength !== null && contentLength < MIN_MEDIA_BYTES) {
     await upstream.body.cancel().catch(() => undefined);
     return errorResponse(expiredError());
+  }
+
+  // Too big to finish inside the runtime's 300s streaming window: hand the
+  // transfer to the visitor's browser instead of truncating it. Only eligible
+  // for a full 200 (a resumed 206 is already near its end) with a known size
+  // that cleared the SSRF checks hop by hop above.
+  if (!isPartial && contentLength !== null && contentLength >= DIRECT_HANDOFF_BYTES) {
+    await upstream.body.cancel().catch(() => undefined);
+    return handOffToCdn(upstreamFinalUrl);
   }
 
   // `download.json` guard #3: sniff the first chunk (JSON/HTML start bytes).
@@ -488,7 +524,7 @@ export async function HEAD(request: NextRequest) {
     const headers = upstreamHeadersFor(platform, upstreamUrl);
     // Ask for a single byte so even a CDN that ignores HEAD sends almost nothing.
     headers.Range = "bytes=0-0";
-    const upstream = await fetchAllowedMedia(upstreamUrl, headers, abort.signal);
+    const { response: upstream } = await fetchAllowedMedia(upstreamUrl, headers, abort.signal);
     await upstream.body?.cancel().catch(() => undefined);
 
     if (upstream.status !== 200 && upstream.status !== 206) {

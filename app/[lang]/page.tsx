@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { LocalizedLanding } from "@/components/seo/localized-landing";
 import { getLanding, isLocaleCode, LOCALE_CODES } from "@/lib/i18n";
-import { siteUrl } from "@/lib/site";
+import { LANDING_LANGUAGES, siteUrl } from "@/lib/site";
 
 /**
  * Regional landing pages: /ar, /es, /de, /pt.
@@ -34,9 +34,9 @@ export async function generateMetadata({
     title: { absolute: copy.title },
     description: copy.description,
     keywords: copy.keywords,
-    // Canonical only — the full hreflang cluster lives once in the root
-    // layout's <head>, so it cannot be emitted twice for this page.
-    alternates: { canonical: path },
+    // Each landing declares the same cluster as its siblings, so Google reads
+    // them as translations of the home tool instead of duplicates.
+    alternates: { canonical: path, languages: LANDING_LANGUAGES },
     openGraph: {
       type: "website",
       url: `${siteUrl}${path}`,

@@ -67,7 +67,10 @@ sanctioned inline script is the theme boot script in `app/layout.tsx`.
 ## 5. Rate limit and fail closed
 
 - New API routes call `rateLimit(...)` from `lib/rate-limit.ts` keyed by
-  `getClientIp(request)`.
+  `getClientIp(request)`. That helper trusts the edge-written headers
+  (`x-real-ip`, `cf-connecting-ip`) before `x-forwarded-for`; do not read the
+  forwarding list directly — a client can prepend it and mint a fresh bucket
+  per request.
 - Errors return the JSON shape from `lib/errors.ts` (`AppError` /
   `errorResponse`) with a user-facing message — never a stack trace, upstream
   URL or SQL error.

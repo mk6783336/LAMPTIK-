@@ -21,7 +21,7 @@ import {
 import { ToolSeoContent } from "@/components/seo/ToolSeoContent";
 import { TOOL_SEO } from "@/lib/content/tool-seo";
 import { GUIDE_LIST } from "@/lib/content/guides";
-import { pageAlternates, siteConfig, siteUrl } from "@/lib/site";
+import { LANDING_LANGUAGES, siteConfig, siteUrl } from "@/lib/site";
 
 /** ≤60 chars, primary keyword first: Google never truncates it. */
 const TITLE = "TikTok Video Downloader Without Watermark — HD MP4 & MP3";
@@ -36,7 +36,8 @@ export const metadata: Metadata = {
   title: { absolute: TITLE },
   description: DESCRIPTION,
   keywords: [...siteConfig.keywords],
-  alternates: pageAlternates("/"),
+  // Home is the English member of the translated landing cluster.
+  alternates: { canonical: "/", languages: LANDING_LANGUAGES },
   openGraph: {
     type: "website",
     url: siteUrl,

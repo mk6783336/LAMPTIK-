@@ -91,16 +91,6 @@ export const viewport: Viewport = {
 
 const bootScript = `(function(){try{var s=localStorage.getItem("lamptik_theme_v3");var light=s==="light";var r=document.documentElement;r.classList.toggle("dark",!light);r.setAttribute("data-theme",light?"light":"dark");r.style.colorScheme=light?"light":"dark";}catch(e){var r=document.documentElement;r.classList.add("dark");r.setAttribute("data-theme","dark");}})();`;
 
-/** `hreflang` cluster for the regional landing pages. */
-const HREFLANG_LINKS = [
-  { hreflang: "en", href: "/" },
-  { hreflang: "ar", href: "/ar" },
-  { hreflang: "es", href: "/es" },
-  { hreflang: "de", href: "/de" },
-  { hreflang: "pt", href: "/pt" },
-  { hreflang: "x-default", href: "/" },
-] as const;
-
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -133,14 +123,9 @@ export default function RootLayout({
         />
         <meta name="color-scheme" content="dark" />
         <script dangerouslySetInnerHTML={{ __html: bootScript }} />
-        {HREFLANG_LINKS.map((link) => (
-          <link
-            key={link.hreflang}
-            rel="alternate"
-            hrefLang={link.hreflang}
-            href={`${siteUrl}${link.href}`}
-          />
-        ))}
+        {/* hreflang is per page (`alternates.languages` on the home tool and the
+            four translated landings), not global: emitting this cluster from the
+            root layout made every tool page claim a translation it never had. */}
         <ConsentModeScript />
       </head>
       <body className="min-h-dvh">
