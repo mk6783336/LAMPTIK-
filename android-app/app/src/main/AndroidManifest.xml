@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="online.lamptik.app"
-    android:versionCode="32"
-    android:versionName="3.2">
+    android:versionCode="33"
+    android:versionName="3.3">
 
     <uses-sdk
         android:minSdkVersion="24"
@@ -50,6 +50,13 @@
                  Instagram, Facebook or any app that sends plain text. -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <!-- Some apps share several links at once; take the first usable
+                 one instead of disappearing from their share sheet. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/plain" />
             </intent-filter>

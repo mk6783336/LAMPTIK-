@@ -16,7 +16,7 @@ app/                 routes; app/api/{fetch,youtube,download,apk,ad-frame} are t
 components/          UI; ads live in components/ads/
 lib/                 resolvers, security, monetization, platform config
 android-app/         framework-only Java app + build-native-apk.sh (aapt2 → javac → d8 → zipalign → apksigner)
-public/downloads/    signed APKs (v3.2 current, older names kept as identical aliases)
+public/downloads/    signed APKs (v3.3 current, older names kept as identical aliases)
 ```
 
 ## Commands

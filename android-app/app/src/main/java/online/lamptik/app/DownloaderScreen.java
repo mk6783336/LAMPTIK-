@@ -5,6 +5,8 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Environment;
@@ -28,11 +30,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * The main native screen: URL card → resolve → result card → DownloadManager.
+ * Screen A — Home: link card → resolve → result card → DownloadManager.
  *
- * No WebView anywhere in this screen. Every element is a real Android view,
- * and the byte transfer is handed to the system DownloadManager so it keeps
- * running with a notification when the app is backgrounded.
+ * No WebView, no countdown and no fake percentage anywhere on this screen.
+ * A download starts the moment the user taps a format; the percentage that
+ * appears afterwards is read back from Android's DownloadManager, so it only
+ * ever shows bytes that actually arrived.
  */
 final class DownloaderScreen extends ScrollView {
 
@@ -40,9 +43,32 @@ final class DownloaderScreen extends ScrollView {
         void toast(String message);
 
         void onDownloadQueued();
+
+        void openDownloads();
     }
 
     private static final Pattern URL_PATTERN = Pattern.compile("https?://[^\\s\"'<>]+");
+
+    /** Platform key per chip; index 0 ("All") accepts everything. */
+    private static final String[] CHIP_PLATFORMS = {
+            null, "tiktok", "instagram", "facebook", "youtube"
+    };
+    private static final String[] CHIP_LABELS = {
+            "All", "TikTok", "Instagram", "Facebook", "YouTube"
+    };
+    private static final String[] CHIP_HINTS = {
+            "Paste TikTok, Instagram, Facebook or YouTube link…",
+            "Paste a TikTok link…",
+            "Paste an Instagram Reels link…",
+            "Paste a Facebook video link…",
+            "Paste a YouTube or Shorts link…"
+    };
+    /** Restrained brand dots: recognisable without shipping trademarked logos. */
+    private static final int[] CHIP_DOTS = {
+            0xFF67E8F9, 0xFF25F4EE, 0xFFE1306C, 0xFF1877F2, 0xFFFF3B30
+    };
+
+    private static final long POLL_MS = 700L;
 
     private final Context context;
     private final Host host;
@@ -50,30 +76,28 @@ final class DownloaderScreen extends ScrollView {
 
     private final EditText input;
     private final TextView status;
-    private final ProgressBar progress;
+    private final ProgressBar spinner;
     private final LinearLayout resultCard;
     private final TextView fetchButton;
     private final LinearLayout chipRow;
+    private final ImageView clearButton;
 
-    private static final String[] CHIP_LABELS = {"All", "TikTok", "Reels", "Facebook", "YouTube"};
-    private static final String[] CHIP_HINTS = {
-            "Paste TikTok, Reels, FB or YouTube link…",
-            "Paste a TikTok link…",
-            "Paste an Instagram Reels link…",
-            "Paste a Facebook video link…",
-            "Paste a YouTube or Shorts link…"
-    };
     private int selectedChip = 0;
 
-    /** Result card body of the current render — the sponsor gate appends here. */
-    private LinearLayout resultBody;
-    /** True while the 10-second sponsor gate is counting down. */
-    private boolean gateRunning;
-    /** Download buttons of the current result, disabled during the gate. */
-    private final java.util.List<TextView> resultButtons = new java.util.ArrayList<>();
-
-    /** Sponsor gate length, matching the website's countdown exactly. */
-    private static final int GATE_SECONDS = 10;
+    /** Download currently being watched, or -1 when nothing is queued. */
+    private long activeId = -1L;
+    private Runnable poller;
+    private LinearLayout downloadCard;
+    private ProgressBar downloadBar;
+    private TextView downloadPercent;
+    private TextView downloadState;
+    private TextView cancelAction;
+    private String activeKind;
+    private String activeLabel;
+    private String activeUrl;
+    private MediaItem activeItem;
+    /** True once a final state (saved / failed) has been rendered for the card. */
+    private boolean terminalHandled;
 
     DownloaderScreen(Context context, Host host) {
         super(context);
@@ -101,10 +125,21 @@ final class DownloaderScreen extends ScrollView {
         chipRow.setOrientation(LinearLayout.HORIZONTAL);
         for (int i = 0; i < CHIP_LABELS.length; i++) {
             final int index = i;
-            TextView chip = Ui.text(context, CHIP_LABELS[i], 13f, Ui.TEXT_2, Ui.W_MEDIUM);
-            chip.setGravity(Gravity.CENTER);
-            chip.setPadding(Ui.dp(context, 14f), Ui.dp(context, 7f), Ui.dp(context, 14f), Ui.dp(context, 7f));
-            chip.setBackground(Ui.ripple(Ui.roundStroke(context, Ui.SURFACE_2, 999f, Ui.LINE), 0x22FFFFFF));
+            LinearLayout chip = new LinearLayout(context);
+            chip.setOrientation(LinearLayout.HORIZONTAL);
+            chip.setGravity(Gravity.CENTER_VERTICAL);
+            chip.setPadding(Ui.dp(context, 12f), Ui.dp(context, 7f), Ui.dp(context, 13f), Ui.dp(context, 7f));
+            chip.setClickable(true);
+            chip.setFocusable(true);
+            chip.setContentDescription(CHIP_LABELS[i]);
+
+            View dot = new View(context);
+            dot.setBackground(Ui.round(context, CHIP_DOTS[i], 999f));
+            LinearLayout.LayoutParams dotLp = Ui.lp(Ui.dp(context, 7f), Ui.dp(context, 7f));
+            dotLp.rightMargin = Ui.dp(context, 7f);
+            chip.addView(dot, dotLp);
+            chip.addView(Ui.text(context, CHIP_LABELS[i], 13f, Ui.TEXT_2, Ui.W_MEDIUM));
+
             LinearLayout.LayoutParams chipLp = Ui.lp(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
             chipLp.rightMargin = Ui.dp(context, 8f);
             chip.setLayoutParams(chipLp);
@@ -172,6 +207,20 @@ final class DownloaderScreen extends ScrollView {
         });
         inputRow.addView(input, Ui.lp(0, Ui.dp(context, 44f), 1f));
 
+        clearButton = Ui.icon(context, R.drawable.ic_close, Ui.TEXT_3, 16f);
+        clearButton.setContentDescription(context.getString(R.string.clear));
+        clearButton.setPadding(Ui.dp(context, 6f), Ui.dp(context, 6f), Ui.dp(context, 6f), Ui.dp(context, 6f));
+        clearButton.setClickable(true);
+        clearButton.setFocusable(true);
+        clearButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                input.setText("");
+                resetStatus();
+            }
+        });
+        inputRow.addView(clearButton);
+
         LinearLayout pasteBox = new LinearLayout(context);
         pasteBox.setOrientation(LinearLayout.HORIZONTAL);
         pasteBox.setGravity(Gravity.CENTER_VERTICAL);
@@ -208,12 +257,12 @@ final class DownloaderScreen extends ScrollView {
         statusLp.topMargin = Ui.dp(context, 10f);
         card.addView(statusRow, statusLp);
 
-        progress = new ProgressBar(context);
-        progress.setIndeterminate(true);
-        progress.setVisibility(View.GONE);
-        LinearLayout.LayoutParams progressLp = Ui.lp(Ui.dp(context, 16f), Ui.dp(context, 16f));
-        progressLp.rightMargin = Ui.dp(context, 8f);
-        statusRow.addView(progress, progressLp);
+        spinner = new ProgressBar(context);
+        spinner.setIndeterminate(true);
+        spinner.setVisibility(View.GONE);
+        LinearLayout.LayoutParams spinnerLp = Ui.lp(Ui.dp(context, 16f), Ui.dp(context, 16f));
+        spinnerLp.rightMargin = Ui.dp(context, 8f);
+        statusRow.addView(spinner, spinnerLp);
 
         status = Ui.text(context, "Server-side · nothing stored", 12f, Ui.TEXT_3, Ui.W_REGULAR);
         statusRow.addView(status, Ui.lp(0, LayoutParams.WRAP_CONTENT, 1f));
@@ -229,6 +278,9 @@ final class DownloaderScreen extends ScrollView {
 
         /* ------------------------------------------------------ how it works */
         root.addView(buildStepsCard(), Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+
+        /* ---------------------------------------------------- sponsor card */
+        root.addView(buildSponsorCard(), Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
     }
 
     private LinearLayout buildStepsCard() {
@@ -241,9 +293,9 @@ final class DownloaderScreen extends ScrollView {
         card.addView(eyebrow);
 
         String[][] steps = {
-                {"01", "Paste a link", "Copy from TikTok, Reels, Facebook or YouTube and tap Paste."},
+                {"01", "Paste a link", "Copy from TikTok, Instagram, Facebook or YouTube and tap Paste."},
                 {"02", "Fetch the stream", "We verify the real H.264 file before showing a button."},
-                {"03", "Save natively", "The system downloader writes it to your Downloads folder."}
+                {"03", "Save natively", "Android's download manager writes it to your Downloads folder."}
         };
         for (String[] step : steps) {
             LinearLayout row = new LinearLayout(context);
@@ -271,14 +323,61 @@ final class DownloaderScreen extends ScrollView {
         return card;
     }
 
+    /**
+     * The app's only ad surface: one labelled card at the very bottom of Home,
+     * below the downloader and its result. It never overlays content, never
+     * pretends to be a system message and never sits between the user and a
+     * download button.
+     */
+    private LinearLayout buildSponsorCard() {
+        LinearLayout card = new LinearLayout(context);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setBackground(Ui.roundStroke(context, 0x14000000, 16f, 0x4DFCD34D));
+        int p = Ui.dp(context, 14f);
+        card.setPadding(p, p, p, p);
+        LinearLayout.LayoutParams lp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        lp.topMargin = Ui.dp(context, 16f);
+        card.setLayoutParams(lp);
+
+        TextView pill = Ui.text(context, context.getString(R.string.sponsored), 10f, Ui.AMBER, Ui.W_SEMIBOLD);
+        pill.setBackground(Ui.roundStroke(context, 0x0DFCD34D, 999f, 0x40FCD34D));
+        pill.setPadding(Ui.dp(context, 9f), Ui.dp(context, 4f), Ui.dp(context, 9f), Ui.dp(context, 4f));
+        card.addView(pill, Ui.lp(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+
+        TextView title = Ui.text(context, context.getString(R.string.sponsor_text), 13f, Ui.TEXT_2, Ui.W_REGULAR);
+        LinearLayout.LayoutParams titleLp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        titleLp.topMargin = Ui.dp(context, 8f);
+        card.addView(title, titleLp);
+
+        TextView cta = Ui.secondaryButton(context, context.getString(R.string.sponsor_cta) + "  ↗");
+        LinearLayout.LayoutParams ctaLp = Ui.lp(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+        ctaLp.topMargin = Ui.dp(context, 10f);
+        card.addView(cta, ctaLp);
+        cta.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW,
+                            Uri.parse("https://uplcm.com/4/12078941"));
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(intent);
+                } catch (Exception error) {
+                    host.toast("No browser available to open the sponsor link.");
+                }
+            }
+        });
+        return card;
+    }
+
     /* ------------------------------------------------------------ actions */
 
     private void selectChip(int index) {
         selectedChip = index;
         for (int i = 0; i < chipRow.getChildCount(); i++) {
-            TextView chip = (TextView) chipRow.getChildAt(i);
+            LinearLayout chip = (LinearLayout) chipRow.getChildAt(i);
             boolean active = i == index;
-            chip.setTextColor(active ? Ui.ACCENT_INK : Ui.TEXT_2);
+            TextView label = (TextView) chip.getChildAt(1);
+            label.setTextColor(active ? Ui.ACCENT_INK : Ui.TEXT_2);
             chip.setBackground(Ui.ripple(
                     active
                             ? Ui.roundStroke(context, 0x2622D3EE, 999f, 0x8022D3EE)
@@ -308,12 +407,12 @@ final class DownloaderScreen extends ScrollView {
             }
             String url = extractUrl(text.toString());
             if (url == null) {
-                host.toast("No video link found on the clipboard.");
+                inlineError("No video link found on the clipboard.");
                 return;
             }
             input.setText(url);
             input.setSelection(url.length());
-            fetch(url);
+            submit(url);
         } catch (Exception error) {
             host.toast("Could not read the clipboard.");
         }
@@ -324,12 +423,18 @@ final class DownloaderScreen extends ScrollView {
         String url = extractUrl(shared);
         if (url == null) {
             input.setText(shared);
-            host.toast("Paste a video link to fetch.");
+            inlineError("That share contained no video link.");
+            host.toast("No video link in that share.");
             return;
         }
         input.setText(url);
         input.setSelection(url.length());
-        fetch(url);
+        if (!Prefs.autoFetch(context)) {
+            resetStatus();
+            status.setText("Link ready — tap Fetch & download.");
+            return;
+        }
+        submit(url);
     }
 
     void focusInput() {
@@ -339,16 +444,49 @@ final class DownloaderScreen extends ScrollView {
     private void onFetchClicked() {
         String raw = input.getText() == null ? "" : input.getText().toString().trim();
         if (raw.isEmpty()) {
-            host.toast("Paste a video link first.");
+            inlineError("Paste a video link first.");
             return;
         }
         String url = extractUrl(raw);
         if (url == null) {
-            host.toast("That doesn't look like a video link.");
+            inlineError("That doesn't look like a video link.");
             return;
         }
         input.setText(url);
+        submit(url);
+    }
+
+    /**
+     * Validates before any network call: a link from another site, or one that
+     * does not match the selected platform, is answered here instead of with a
+     * confusing server error.
+     */
+    private void submit(String url) {
+        String platform = ApiClient.platformOf(url);
+        if (platform == null) {
+            inlineError("Only TikTok, Instagram, Facebook and YouTube links are supported.");
+            return;
+        }
+        String selected = CHIP_PLATFORMS[selectedChip];
+        if (selected != null && !selected.equals(platform)) {
+            inlineError("That is a " + platformLabel(platform) + " link — choose "
+                    + platformLabel(platform) + " or All above.");
+            return;
+        }
         fetch(url);
+    }
+
+    private static String platformLabel(String platform) {
+        switch (platform) {
+            case "instagram":
+                return "Instagram";
+            case "facebook":
+                return "Facebook";
+            case "youtube":
+                return "YouTube";
+            default:
+                return "TikTok";
+        }
     }
 
     private void fetch(final String url) {
@@ -371,7 +509,7 @@ final class DownloaderScreen extends ScrollView {
                         @Override
                         public void run() {
                             setLoading(false);
-                            showError(error.getMessage() == null
+                            inlineError(error.getMessage() == null
                                     ? "Could not resolve this link."
                                     : error.getMessage());
                         }
@@ -382,7 +520,7 @@ final class DownloaderScreen extends ScrollView {
     }
 
     private void setLoading(boolean loading) {
-        progress.setVisibility(loading ? View.VISIBLE : View.GONE);
+        spinner.setVisibility(loading ? View.VISIBLE : View.GONE);
         fetchButton.setEnabled(!loading);
         fetchButton.setAlpha(loading ? 0.6f : 1f);
         fetchButton.setText(loading ? context.getString(R.string.fetching) : context.getString(R.string.fetch));
@@ -393,11 +531,17 @@ final class DownloaderScreen extends ScrollView {
         }
     }
 
-    private void showError(String message) {
+    private void inlineError(String message) {
         status.setTextColor(Ui.ERR);
         status.setText(message);
         resultCard.setVisibility(View.GONE);
-        host.toast(message);
+        spinner.setVisibility(View.GONE);
+        setLoading(false);
+    }
+
+    private void resetStatus() {
+        status.setTextColor(Ui.TEXT_3);
+        status.setText("Server-side · nothing stored");
     }
 
     /* ------------------------------------------------------------ results */
@@ -433,9 +577,6 @@ final class DownloaderScreen extends ScrollView {
         int p = Ui.dp(context, 16f);
         body.setPadding(p, p, p, p);
         resultCard.addView(body);
-        resultBody = body;
-        resultButtons.clear();
-        gateRunning = false;
 
         if (!TextUtils.isEmpty(item.thumbnail)) {
             final int target = Ui.dp(context, 420f);
@@ -482,11 +623,10 @@ final class DownloaderScreen extends ScrollView {
         LinearLayout.LayoutParams hdLp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
         hdLp.topMargin = Ui.dp(context, 14f);
         body.addView(hd, hdLp);
-        resultButtons.add(hd);
         hd.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                startGate(item, "video", item.hdUrl, "HD MP4");
+                start(item, "video", item.hdUrl, "HD MP4");
             }
         });
 
@@ -495,11 +635,10 @@ final class DownloaderScreen extends ScrollView {
             LinearLayout.LayoutParams lp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
             lp.topMargin = Ui.dp(context, 8f);
             body.addView(sd, lp);
-            resultButtons.add(sd);
             sd.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    startGate(item, "video", item.sdUrl, "SD MP4");
+                    start(item, "video", item.sdUrl, "SD MP4");
                 }
             });
         }
@@ -509,17 +648,16 @@ final class DownloaderScreen extends ScrollView {
             LinearLayout.LayoutParams lp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
             lp.topMargin = Ui.dp(context, 8f);
             body.addView(mp3, lp);
-            resultButtons.add(mp3);
             mp3.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    startGate(item, "audio", item.mp3Url, "MP3");
+                    start(item, "audio", item.mp3Url, "MP3");
                 }
             });
         }
 
         TextView hint = Ui.text(context,
-                "Downloads keep running in the background. Find them under My Downloads.",
+                "Downloads keep running in the background. Find them under Downloads.",
                 12f, Ui.TEXT_3, Ui.W_REGULAR);
         LinearLayout.LayoutParams hintLp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
         hintLp.topMargin = Ui.dp(context, 12f);
@@ -531,151 +669,31 @@ final class DownloaderScreen extends ScrollView {
         return size.isEmpty() ? base : base + " · " + size;
     }
 
-    /* ---------------------------------------------------------- sponsor gate */
+    /* ----------------------------------------------------------- download */
 
     /**
-     * 10-second sponsor gate, identical to the website's.
-     *
-     * The app never streams bytes itself: once the countdown reaches zero the
-     * resolved URL goes to Android's DownloadManager, which writes it to
-     * Downloads with a notification and keeps going in the background. That is
-     * why the card immediately offers "Download another video" — the transfer
-     * no longer owns the screen.
+     * Hands the resolved URL to Android's DownloadManager immediately — no
+     * countdown, no gate — then follows the transfer with a progress card
+     * driven by the manager's own byte counters.
      */
-    private void startGate(final MediaItem item, final String kind, final String url, final String label) {
-        if (gateRunning || resultBody == null) return;
+    private void start(final MediaItem item, final String kind, final String url, final String label) {
         if (TextUtils.isEmpty(url)) {
             host.toast("That format is unavailable for this video.");
             return;
         }
-        gateRunning = true;
-        setButtonsEnabled(false);
-
-        final LinearLayout theater = new LinearLayout(context);
-        theater.setOrientation(LinearLayout.VERTICAL);
-        theater.setBackground(Ui.roundStroke(context, 0x1422D3EE, 16f, 0x5522D3EE));
-        int pad = Ui.dp(context, 16f);
-        theater.setPadding(pad, pad, pad, pad);
-
-        LinearLayout row = new LinearLayout(context);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-        theater.addView(row);
-
-        final TextView counter = Ui.text(context, String.valueOf(GATE_SECONDS), 26f, Ui.ACCENT_INK, Ui.W_SEMIBOLD);
-        counter.setGravity(Gravity.CENTER);
-        counter.setBackground(Ui.roundStroke(context, 0x2622D3EE, 999f, 0x5522D3EE));
-        counter.setMinWidth(Ui.dp(context, 58f));
-        counter.setPadding(Ui.dp(context, 10f), Ui.dp(context, 8f), Ui.dp(context, 10f), Ui.dp(context, 8f));
-        row.addView(counter);
-
-        LinearLayout copy = new LinearLayout(context);
-        copy.setOrientation(LinearLayout.VERTICAL);
-        LinearLayout.LayoutParams copyLp = Ui.lp(0, LayoutParams.WRAP_CONTENT, 1f);
-        copyLp.leftMargin = Ui.dp(context, 12f);
-        row.addView(copy, copyLp);
-        copy.addView(Ui.text(context, "Preparing your direct high-speed link…", 14f, Ui.TEXT, Ui.W_SEMIBOLD));
-        final TextView sub = Ui.text(context,
-                "Your download starts in " + GATE_SECONDS + "s — keep the app open.",
-                12f, Ui.TEXT_2, Ui.W_REGULAR);
-        copy.addView(sub);
-
-        LinearLayout.LayoutParams theaterLp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-        theaterLp.topMargin = Ui.dp(context, 12f);
-        resultBody.addView(theater, theaterLp);
-
-        final int[] remaining = {GATE_SECONDS};
-        main.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                remaining[0] -= 1;
-                if (remaining[0] > 0) {
-                    counter.setText(String.valueOf(remaining[0]));
-                    sub.setText("Your download starts in " + remaining[0] + "s — keep the app open.");
-                    main.postDelayed(this, 1000);
-                    return;
-                }
-                gateRunning = false;
-                setButtonsEnabled(true);
-                if (resultBody != null) resultBody.removeView(theater);
-                enqueue(item, kind, url, label);
-                showSent(label);
-            }
-        }, 1_000);
+        long id = enqueue(item, kind, url, label);
+        if (id < 0) return;
+        showProgressCard(item, kind, url, label, id);
     }
 
-    private void setButtonsEnabled(boolean enabled) {
-        for (TextView button : resultButtons) {
-            button.setEnabled(enabled);
-            button.setAlpha(enabled ? 1f : 0.55f);
-        }
-    }
-
-    /** Post-download card: the file is Android's now, so offer the next video. */
-    private void showSent(String label) {
-        if (resultBody == null) return;
-
-        LinearLayout sent = new LinearLayout(context);
-        sent.setOrientation(LinearLayout.VERTICAL);
-        sent.setBackground(Ui.roundStroke(context, 0x1434D399, 16f, 0x5534D399));
-        int pad = Ui.dp(context, 16f);
-        sent.setPadding(pad, pad, pad, pad);
-        sent.setGravity(Gravity.CENTER_HORIZONTAL);
-
-        TextView title = Ui.text(context, "✅ Sent to Android Downloads!", 14f, Ui.OK, Ui.W_SEMIBOLD);
-        title.setGravity(Gravity.CENTER);
-        sent.addView(title);
-
-        TextView detail = Ui.text(context,
-                label + " is downloading in your notification tray and keeps going in the background.",
-                12f, Ui.TEXT_2, Ui.W_REGULAR);
-        detail.setGravity(Gravity.CENTER);
-        LinearLayout.LayoutParams detailLp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-        detailLp.topMargin = Ui.dp(context, 4f);
-        sent.addView(detail, detailLp);
-
-        TextView again = Ui.primaryButton(context, "🔄 Download another video");
-        LinearLayout.LayoutParams againLp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-        againLp.topMargin = Ui.dp(context, 12f);
-        sent.addView(again, againLp);
-        again.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                resetForNext();
-            }
-        });
-
-        LinearLayout.LayoutParams sentLp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
-        sentLp.topMargin = Ui.dp(context, 12f);
-        resultBody.addView(sent, sentLp);
-    }
-
-    /** Clear the card and focus the field so the next link can be pasted at once. */
-    private void resetForNext() {
-        input.setText("");
-        resultCard.removeAllViews();
-        resultCard.setVisibility(View.GONE);
-        resultBody = null;
-        resultButtons.clear();
-        gateRunning = false;
-        status.setTextColor(Ui.TEXT_3);
-        status.setText("Server-side · nothing stored");
-        input.requestFocus();
-        host.toast("Paste your next video link.");
-    }
-
-    /** Hand the bytes to Android's DownloadManager (notification + resume). */
-    private void enqueue(MediaItem item, String kind, String url, String label) {
-        if (TextUtils.isEmpty(url)) {
-            host.toast("That format is unavailable for this video.");
-            return;
-        }
+    /** @return the DownloadManager id, or -1 when the request was refused. */
+    private long enqueue(MediaItem item, String kind, String url, String label) {
         try {
             DownloadManager manager =
                     (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
             if (manager == null) {
                 if (!openInBrowser(url)) host.toast("Android download manager is unavailable.");
-                return;
+                return -1L;
             }
             DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
             request.setTitle(item.title);
@@ -689,8 +707,9 @@ final class DownloaderScreen extends ScrollView {
             request.addRequestHeader("Referer", refererFor(url));
             request.addRequestHeader("Accept", "*/*");
             request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-            request.setAllowedOverMetered(true);
-            request.setAllowedOverRoaming(true);
+            boolean wifiOnly = Prefs.wifiOnly(context);
+            request.setAllowedOverMetered(!wifiOnly);
+            request.setAllowedOverRoaming(!wifiOnly);
             try {
                 request.setDestinationInExternalPublicDir(
                         Environment.DIRECTORY_DOWNLOADS, item.safeFileName(kind));
@@ -698,15 +717,243 @@ final class DownloaderScreen extends ScrollView {
                 // No public Downloads access (rare): DownloadManager still
                 // downloads to its own cache and exposes the content URI.
             }
-            manager.enqueue(request);
-            host.toast(label + " download started — check your notifications.");
+            long id = manager.enqueue(request);
             host.onDownloadQueued();
+            return id;
         } catch (Exception error) {
             // DownloadManager refused the request (bad URI, storage scope,
             // unsupported scheme). Hand the exact URL to a browser instead of
             // dead-ending — the link itself is valid.
             if (!openInBrowser(url)) host.toast("Could not start the download.");
+            return -1L;
         }
+    }
+
+    private void showProgressCard(final MediaItem item, final String kind, final String url,
+                                  final String label, final long id) {
+        if (downloadCard != null && downloadCard.getParent() != null) {
+            resultCard.removeView(downloadCard);
+        }
+        stopPolling();
+
+        activeId = id;
+        terminalHandled = false;
+        activeItem = item;
+        activeKind = kind;
+        activeUrl = url;
+        activeLabel = label;
+
+        downloadCard = new LinearLayout(context);
+        downloadCard.setOrientation(LinearLayout.VERTICAL);
+        downloadCard.setBackground(Ui.roundStroke(context, 0x1422D3EE, 16f, 0x5522D3EE));
+        int p = Ui.dp(context, 14f);
+        downloadCard.setPadding(p, p, p, p);
+
+        LinearLayout header = new LinearLayout(context);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        downloadCard.addView(header);
+
+        TextView title = Ui.text(context, label + " download", 14f, Ui.TEXT, Ui.W_SEMIBOLD);
+        header.addView(title, Ui.lp(0, LayoutParams.WRAP_CONTENT, 1f));
+
+        downloadPercent = Ui.text(context, "…", 13f, Ui.ACCENT_INK, Ui.W_SEMIBOLD);
+        header.addView(downloadPercent);
+
+        downloadBar = new ProgressBar(context, null, android.R.attr.progressBarStyleHorizontal);
+        downloadBar.setMax(100);
+        downloadBar.setProgress(0);
+        downloadBar.setProgressTintList(ColorStateList.valueOf(Ui.ACCENT));
+        downloadBar.setProgressBackgroundTintList(ColorStateList.valueOf(Ui.SURFACE_3));
+        LinearLayout.LayoutParams barLp = Ui.lp(LayoutParams.MATCH_PARENT, Ui.dp(context, 6f));
+        barLp.topMargin = Ui.dp(context, 10f);
+        downloadCard.addView(downloadBar, barLp);
+
+        downloadState = Ui.text(context, "Queued in Android's download manager…", 12f, Ui.TEXT_2, Ui.W_REGULAR);
+        LinearLayout.LayoutParams stateLp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        stateLp.topMargin = Ui.dp(context, 8f);
+        downloadCard.addView(downloadState, stateLp);
+
+        LinearLayout actions = new LinearLayout(context);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams actionsLp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        actionsLp.topMargin = Ui.dp(context, 10f);
+        downloadCard.addView(actions, actionsLp);
+
+        cancelAction = Ui.secondaryButton(context, context.getString(R.string.cancel));
+        actions.addView(cancelAction, Ui.lp(0, LayoutParams.WRAP_CONTENT, 1f));
+        cancelAction.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cancelDownload();
+            }
+        });
+
+        resultCard.addView(downloadCard);
+        startPolling();
+    }
+
+    private void startPolling() {
+        stopPolling();
+        final Runnable tick = new Runnable() {
+            @Override
+            public void run() {
+                if (activeId < 0 || downloadState == null) return;
+                Progress state = progressOf(activeId);
+                if (state == null) {
+                    downloadState.setText("This download was removed from Android's list.");
+                    downloadPercent.setText("");
+                    finishPolling();
+                    return;
+                }
+                switch (state.status) {
+                    case DownloadManager.STATUS_SUCCESSFUL:
+                        downloadBar.setIndeterminate(false);
+                        downloadBar.setProgress(100);
+                        downloadPercent.setText("100%");
+                        downloadState.setTextColor(Ui.OK);
+                        downloadState.setText("Saved to your Downloads folder · "
+                                + Ui.formatBytes(state.total));
+                        if (!terminalHandled) {
+                            terminalHandled = true;
+                            showCompletedActions();
+                        }
+                        finishPolling();
+                        return;
+                    case DownloadManager.STATUS_FAILED:
+                        downloadBar.setIndeterminate(false);
+                        downloadPercent.setText("");
+                        downloadState.setTextColor(Ui.ERR);
+                        downloadState.setText("Download failed"
+                                + (state.reason == DownloadManager.ERROR_INSUFFICIENT_SPACE
+                                ? " — not enough free space." : " — tap Retry."));
+                        if (!terminalHandled) {
+                            terminalHandled = true;
+                            showRetryAction();
+                        }
+                        finishPolling();
+                        return;
+                    case DownloadManager.STATUS_PAUSED:
+                        downloadState.setText("Paused by Android — it resumes when the network returns.");
+                        break;
+                    default:
+                        if (state.total > 0) {
+                            int percent = (int) Math.min(100, state.bytes * 100 / state.total);
+                            downloadBar.setIndeterminate(false);
+                            downloadBar.setProgress(percent);
+                            downloadPercent.setText(percent + "%");
+                            downloadState.setTextColor(Ui.TEXT_2);
+                            downloadState.setText(Ui.formatBytes(state.bytes) + " of "
+                                    + Ui.formatBytes(state.total));
+                        } else {
+                            downloadBar.setIndeterminate(true);
+                            downloadPercent.setText("…");
+                            downloadState.setText("Starting the transfer…");
+                        }
+                        break;
+                }
+                main.postDelayed(this, POLL_MS);
+            }
+        };
+        poller = tick;
+        main.postDelayed(tick, 350L);
+    }
+
+    private void stopPolling() {
+        if (poller != null) {
+            main.removeCallbacks(poller);
+            poller = null;
+        }
+    }
+
+    private void finishPolling() {
+        stopPolling();
+        activeId = -1L;
+        if (cancelAction != null) cancelAction.setVisibility(View.GONE);
+    }
+
+    private void showCompletedActions() {
+        if (downloadCard == null) return;
+        LinearLayout actions = new LinearLayout(context);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams lp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        lp.topMargin = Ui.dp(context, 10f);
+        downloadCard.addView(actions, lp);
+
+        TextView open = Ui.primaryButton(context, "Open in Downloads");
+        actions.addView(open, Ui.lp(0, LayoutParams.WRAP_CONTENT, 1f));
+        open.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                host.openDownloads();
+            }
+        });
+    }
+
+    private void showRetryAction() {
+        if (downloadCard == null) return;
+        LinearLayout actions = new LinearLayout(context);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams lp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        lp.topMargin = Ui.dp(context, 10f);
+        downloadCard.addView(actions, lp);
+
+        TextView retry = Ui.secondaryButton(context, "Retry");
+        actions.addView(retry, Ui.lp(0, LayoutParams.WRAP_CONTENT, 1f));
+        retry.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (activeItem == null) return;
+                start(activeItem, activeKind, activeUrl, activeLabel);
+            }
+        });
+    }
+
+    private void cancelDownload() {
+        try {
+            DownloadManager manager =
+                    (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+            if (manager != null && activeId >= 0) manager.remove(activeId);
+        } catch (Exception ignored) {
+            // Android already dropped the record.
+        }
+        finishPolling();
+        terminalHandled = true;
+        if (downloadState != null) {
+            downloadState.setTextColor(Ui.TEXT_2);
+            downloadState.setText("Cancelled — nothing was saved.");
+        }
+        host.toast("Download cancelled.");
+        host.onDownloadQueued();
+    }
+
+    /** One read of the manager's counters for this download. */
+    private Progress progressOf(long id) {
+        DownloadManager manager =
+                (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+        if (manager == null) return null;
+        Cursor cursor = null;
+        try {
+            cursor = manager.query(new DownloadManager.Query().setFilterById(id));
+            if (cursor == null || !cursor.moveToFirst()) return null;
+            Progress progress = new Progress();
+            progress.status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS));
+            progress.bytes = cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR));
+            progress.total = cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES));
+            progress.reason = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_REASON));
+            return progress;
+        } catch (Exception ignored) {
+            return null;
+        } finally {
+            if (cursor != null) cursor.close();
+        }
+    }
+
+    private static final class Progress {
+        int status;
+        long bytes;
+        long total;
+        int reason;
     }
 
     /** Platform-matching Referer for the upstream CDN. */
@@ -732,6 +979,21 @@ final class DownloaderScreen extends ScrollView {
         } catch (Exception ignored) {
             return false;
         }
+    }
+
+    /* ------------------------------------------------------------ lifecycle */
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        // Returning to Home mid-download resumes the progress card.
+        if (activeId >= 0 && poller == null && downloadState != null) startPolling();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        stopPolling();
+        super.onDetachedFromWindow();
     }
 
     static String extractUrl(String raw) {

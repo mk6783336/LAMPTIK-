@@ -1,8 +1,11 @@
 package online.lamptik.app;
 
+import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.database.Cursor;
 import android.net.Uri;
 import android.text.TextUtils;
@@ -13,18 +16,22 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 /**
- * Native "My Downloads" screen.
+ * Screen B — Downloads.
  *
- * Source of truth is Android's own DownloadManager, so the list stays correct
- * across app restarts, force-stops and downloads started from the share sheet.
- * Play/Share act on the manager's content:// URI with a one-shot read grant —
- * no FileProvider, no copied files.
+ * Android's DownloadManager is the single source of truth: every row here is a
+ * transfer this app actually started, with its real status, byte count and
+ * date. Nothing is invented, and a record whose file Android can no longer
+ * hand out is labelled as such instead of pretending to be playable.
  */
 final class DownloadsScreen extends LinearLayout {
 
@@ -33,6 +40,8 @@ final class DownloadsScreen extends LinearLayout {
     private final LinearLayout empty;
     private final Adapter adapter = new Adapter();
     private final List<Entry> entries = new ArrayList<>();
+    private final SimpleDateFormat dateFormat =
+            new SimpleDateFormat("d MMM yyyy", Locale.getDefault());
 
     DownloadsScreen(Context context) {
         super(context);
@@ -48,7 +57,7 @@ final class DownloadsScreen extends LinearLayout {
 
         LinearLayout titles = new LinearLayout(context);
         titles.setOrientation(VERTICAL);
-        titles.addView(Ui.text(context, "My Downloads", 24f, Ui.TEXT, Ui.W_DISPLAY));
+        titles.addView(Ui.text(context, context.getString(R.string.tab_downloads), 24f, Ui.TEXT, Ui.W_DISPLAY));
         TextView sub = Ui.text(context, "Saved on this device by Android", 12f, Ui.TEXT_2, Ui.W_REGULAR);
         LinearLayout.LayoutParams subLp = Ui.lp(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
         subLp.topMargin = Ui.dp(context, 2f);
@@ -60,6 +69,7 @@ final class DownloadsScreen extends LinearLayout {
         refreshBox.setGravity(Gravity.CENTER_VERTICAL);
         refreshBox.setBackground(Ui.ripple(Ui.roundStroke(context, Ui.SURFACE_2, 12f, Ui.LINE), 0x22FFFFFF));
         refreshBox.setPadding(Ui.dp(context, 10f), Ui.dp(context, 9f), Ui.dp(context, 10f), Ui.dp(context, 9f));
+        refreshBox.setContentDescription(context.getString(R.string.refresh));
         refreshBox.addView(Ui.icon(context, R.drawable.ic_refresh, Ui.TEXT_2, 16f));
         refreshBox.setOnClickListener(new OnClickListener() {
             @Override
@@ -200,6 +210,11 @@ final class DownloadsScreen extends LinearLayout {
             }
             row.removeAllViews();
 
+            boolean complete = entry.status == DownloadManager.STATUS_SUCCESSFUL;
+            // A successful record whose URI is gone means the file was moved or
+            // deleted outside the app. Say so instead of offering Play.
+            Uri fileUri = complete ? uriFor(entry) : null;
+
             LinearLayout top = new LinearLayout(context);
             top.setOrientation(HORIZONTAL);
             top.setGravity(Gravity.CENTER_VERTICAL);
@@ -211,18 +226,64 @@ final class DownloadsScreen extends LinearLayout {
             name.setEllipsize(TextUtils.TruncateAt.END);
             text.addView(name);
 
-            String state = statusLabel(entry);
-            TextView meta = Ui.text(context, state, 12f, statusColor(entry.status), Ui.W_REGULAR);
+            String state = complete && fileUri == null
+                    ? "File moved or deleted outside LAMP TIK"
+                    : statusLabel(entry);
+            int stateColor = complete && fileUri == null ? Ui.WARN : statusColor(entry.status);
+            TextView meta = Ui.text(context, state, 12f, stateColor, Ui.W_REGULAR);
             LinearLayout.LayoutParams metaLp = Ui.lp(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
             metaLp.topMargin = Ui.dp(context, 3f);
             text.addView(meta, metaLp);
 
+            if (entry.timestamp > 0 && complete) {
+                TextView date = Ui.text(context, dateFormat.format(new Date(entry.timestamp)),
+                        11f, Ui.TEXT_3, Ui.W_REGULAR);
+                LinearLayout.LayoutParams dateLp = Ui.lp(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+                dateLp.topMargin = Ui.dp(context, 2f);
+                text.addView(date, dateLp);
+            }
+
             top.addView(text, Ui.lp(0, LayoutParams.WRAP_CONTENT, 1f));
             top.addView(Ui.pill(context, entry.mime.startsWith("audio") ? "MP3" : "MP4",
                     entry.mime.startsWith("audio") ? Ui.AMBER : Ui.ACCENT_INK));
+
+            ImageView delete = Ui.icon(context, R.drawable.ic_trash, Ui.TEXT_3, 18f);
+            delete.setContentDescription(context.getString(R.string.delete));
+            delete.setPadding(Ui.dp(context, 8f), Ui.dp(context, 8f), Ui.dp(context, 8f), Ui.dp(context, 8f));
+            delete.setClickable(true);
+            delete.setFocusable(true);
+            delete.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    confirmDelete(entry);
+                }
+            });
+            LinearLayout.LayoutParams deleteLp = Ui.lp(Ui.dp(context, 34f), Ui.dp(context, 34f));
+            deleteLp.leftMargin = Ui.dp(context, 6f);
+            top.addView(delete, deleteLp);
+
             row.addView(top);
 
-            if (entry.status == DownloadManager.STATUS_SUCCESSFUL) {
+            /* Live progress for a transfer Android is still running. */
+            if (entry.status == DownloadManager.STATUS_RUNNING
+                    || entry.status == DownloadManager.STATUS_PENDING
+                    || entry.status == DownloadManager.STATUS_PAUSED) {
+                ProgressBar bar = new ProgressBar(context, null, android.R.attr.progressBarStyleHorizontal);
+                bar.setMax(100);
+                bar.setProgressTintList(ColorStateList.valueOf(Ui.ACCENT));
+                bar.setProgressBackgroundTintList(ColorStateList.valueOf(Ui.SURFACE_3));
+                if (entry.total > 0) {
+                    bar.setIndeterminate(false);
+                    bar.setProgress((int) Math.min(100, entry.bytes * 100 / entry.total));
+                } else {
+                    bar.setIndeterminate(true);
+                }
+                LinearLayout.LayoutParams barLp = Ui.lp(LayoutParams.MATCH_PARENT, Ui.dp(context, 5f));
+                barLp.topMargin = Ui.dp(context, 10f);
+                row.addView(bar, barLp);
+            }
+
+            if (complete && fileUri != null) {
                 LinearLayout actions = new LinearLayout(context);
                 actions.setOrientation(HORIZONTAL);
                 LinearLayout.LayoutParams actionsLp = Ui.lp(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
@@ -269,7 +330,7 @@ final class DownloadsScreen extends LinearLayout {
                 case DownloadManager.STATUS_PAUSED:
                     return "Paused";
                 case DownloadManager.STATUS_FAILED:
-                    return "Failed — try again";
+                    return "Failed — start it again from Home";
                 default:
                     return "Queued";
             }
@@ -330,6 +391,34 @@ final class DownloadsScreen extends LinearLayout {
         } catch (Exception error) {
             notifyUser("Sharing failed on this device.");
         }
+    }
+
+    /** Deleting removes the file, so it asks first and names what it removes. */
+    private void confirmDelete(final Entry entry) {
+        new AlertDialog.Builder(context)
+                .setTitle(context.getString(R.string.delete))
+                .setMessage("Delete \"" + (entry.title == null ? "this download" : entry.title)
+                        + "\" from this device? The file is removed with its history entry.")
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.delete, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        DownloadManager manager =
+                                (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+                        if (manager == null) {
+                            notifyUser("Android's download manager is unavailable.");
+                            return;
+                        }
+                        try {
+                            manager.remove(entry.id);
+                            notifyUser("Deleted.");
+                        } catch (Exception error) {
+                            notifyUser("Android could not remove that download.");
+                        }
+                        refresh();
+                    }
+                })
+                .show();
     }
 
     private void notifyUser(String message) {

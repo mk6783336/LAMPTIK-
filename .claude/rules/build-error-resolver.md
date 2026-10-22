@@ -47,10 +47,10 @@ as a pass.
 ## Android build gate
 
 ```bash
-JAVA_HOME=… ANDROID_HOME=… WORK=… KEYSTORE=… \
-  VERSION_CODE=32 VERSION_NAME=3.2 bash android-app/build-native-apk.sh
-"$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs public/downloads/lamptik-v3.2.apk
-"$ANDROID_HOME/build-tools/35.0.0/aapt2" dump badging public/downloads/lamptik-v3.2.apk | head -1
+JAVA_HOME=… ANDROID_HOME=… \
+  VERSION_CODE=33 VERSION_NAME=3.3 bash android-app/build-native-apk.sh
+"$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs public/downloads/lamptik-v3.3.apk
+"$ANDROID_HOME/build-tools/35.0.0/aapt2" dump badging public/downloads/lamptik-v3.3.apk | head -1
 ```
 
 - Signature must verify (v1 + v2 + v3) with the existing keystore; a new key

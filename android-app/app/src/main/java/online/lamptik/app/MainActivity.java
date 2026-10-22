@@ -17,34 +17,41 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-/**
- * LAMP TIK 3.2 — a real native Android application.
- *
- * Structure: native top app bar, a native content frame, and a three-tab
- * native bottom navigation (Downloader · My Downloads · Fast Stream). The
- * downloader and the library are plain Android views talking to the resolver
- * API; only the optional "Fast Stream" helper embeds a WebView.
- *
- * Everything is framework-only (no AndroidX, no Material components), which is
- * why the release APK is a few megabytes of real assets instead of a 29 KB
- * wrapper around the website.
- */
-public class MainActivity extends Activity implements DownloaderScreen.Host {
+import java.util.ArrayList;
 
-    private static final int TAB_DOWNLOADER = 0;
+/**
+ * LAMP TIK 3.3 — a real native Android application.
+ *
+ * Three destinations, all native views: Home (link → resolve → download),
+ * Downloads (Android's own DownloadManager as the source of truth) and
+ * Settings. There is no WebView anywhere in the app: the website's job is to
+ * hand out this APK, not to be embedded inside it.
+ *
+ * Everything is framework-only (no AndroidX, no Material components), so the
+ * release APK is a few megabytes of real code and art instead of a thin
+ * wrapper around a browser.
+ */
+public class MainActivity extends Activity
+        implements DownloaderScreen.Host, SettingsScreen.Host {
+
+    private static final int TAB_HOME = 0;
     private static final int TAB_DOWNLOADS = 1;
-    private static final int TAB_STREAM = 2;
+    private static final int TAB_SETTINGS = 2;
     private static final int REQ_NOTIFICATIONS = 1001;
+
+    /** Guards against the same share or link being handled twice in one second. */
+    private static final long DEDUPE_MS = 1_500;
 
     private FrameLayout content;
     private DownloaderScreen downloader;
     private DownloadsScreen downloads;
-    private StreamScreen stream;
+    private SettingsScreen settings;
     private LinearLayout[] navSlots;
     private ImageView[] navIcons;
     private TextView[] navLabels;
-    private int activeTab = TAB_DOWNLOADER;
-    private String pendingSharedUrl;
+    private int activeTab = TAB_HOME;
+    private String lastHandledUrl;
+    private long lastHandledAt;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,7 +74,10 @@ public class MainActivity extends Activity implements DownloaderScreen.Host {
         setContentView(root);
 
         requestNotificationPermission();
-        routeIntent(getIntent());
+        // A recreated activity still holds the intent that started it; routing
+        // it again would re-resolve (and re-download) the same link.
+        if (savedInstanceState == null) routeIntent(getIntent());
+        else showTab(activeTab);
     }
 
     /* -------------------------------------------------------------- chrome */
@@ -104,26 +114,20 @@ public class MainActivity extends Activity implements DownloaderScreen.Host {
         titles.addView(Ui.text(this, "LAMP TIK", 17f, Ui.TEXT, Ui.W_BOLD));
         titles.addView(Ui.text(this, getString(R.string.app_tagline), 11f, Ui.TEXT_3, Ui.W_REGULAR));
 
-        TextView badge = Ui.pill(this, getString(R.string.version_badge), Ui.ACCENT_INK);
-        bar.addView(badge);
-
-        LinearLayout paste = new LinearLayout(this);
-        paste.setOrientation(LinearLayout.HORIZONTAL);
-        paste.setGravity(Gravity.CENTER);
-        paste.setBackground(Ui.ripple(Ui.roundStroke(this, Ui.SURFACE_2, 12f, Ui.LINE_STRONG), 0x22FFFFFF));
-        paste.setPadding(Ui.dp(this, 12f), Ui.dp(this, 10f), Ui.dp(this, 12f), Ui.dp(this, 10f));
-        paste.setContentDescription(getString(R.string.paste_clipboard));
-        paste.addView(Ui.icon(this, R.drawable.ic_paste, Ui.TEXT, 18f));
-        LinearLayout.LayoutParams pasteLp = Ui.lp(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        pasteLp.leftMargin = Ui.dp(this, 10f);
-        bar.addView(paste, pasteLp);
-        paste.setOnClickListener(new View.OnClickListener() {
+        bar.addView(Ui.pill(this, getString(R.string.version_badge), Ui.ACCENT_INK));
+        bar.addView(quickAction(R.drawable.ic_paste, R.string.paste_clipboard, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                showTab(TAB_DOWNLOADER);
+                showTab(TAB_HOME);
                 downloader.pasteFromClipboard();
             }
-        });
+        }));
+        bar.addView(quickAction(R.drawable.ic_settings, R.string.tab_settings, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showTab(TAB_SETTINGS);
+            }
+        }));
 
         View hairline = new View(this);
         hairline.setBackgroundColor(Ui.LINE);
@@ -134,6 +138,22 @@ public class MainActivity extends Activity implements DownloaderScreen.Host {
         return wrapper;
     }
 
+    /** 40dp square icon action — the smallest comfortable touch target here. */
+    private View quickAction(int iconRes, int labelRes, View.OnClickListener click) {
+        FrameLayout box = new FrameLayout(this);
+        box.setBackground(Ui.ripple(Ui.roundStroke(this, Ui.SURFACE_2, 12f, Ui.LINE_STRONG), 0x22FFFFFF));
+        box.setContentDescription(getString(labelRes));
+        box.setClickable(true);
+        box.setFocusable(true);
+        box.setOnClickListener(click);
+        ImageView icon = Ui.icon(this, iconRes, Ui.TEXT, 18f);
+        box.addView(icon, new FrameLayout.LayoutParams(Ui.dp(this, 18f), Ui.dp(this, 18f), Gravity.CENTER));
+        LinearLayout.LayoutParams lp = Ui.lp(Ui.dp(this, 40f), Ui.dp(this, 40f));
+        lp.leftMargin = Ui.dp(this, 8f);
+        box.setLayoutParams(lp);
+        return box;
+    }
+
     private View buildBottomNav() {
         LinearLayout nav = new LinearLayout(this);
         nav.setOrientation(LinearLayout.HORIZONTAL);
@@ -142,11 +162,11 @@ public class MainActivity extends Activity implements DownloaderScreen.Host {
         int pad = Ui.dp(this, 8f);
         nav.setPadding(pad, Ui.dp(this, 8f), pad, Ui.dp(this, 8f));
 
-        int[] icons = {R.drawable.ic_download, R.drawable.ic_library, R.drawable.ic_bolt};
+        int[] icons = {R.drawable.ic_download, R.drawable.ic_library, R.drawable.ic_settings};
         String[] labels = {
-                getString(R.string.tab_downloader),
+                getString(R.string.tab_home),
                 getString(R.string.tab_downloads),
-                getString(R.string.tab_stream)
+                getString(R.string.tab_settings)
         };
 
         navSlots = new LinearLayout[3];
@@ -212,7 +232,7 @@ public class MainActivity extends Activity implements DownloaderScreen.Host {
         content.removeAllViews();
 
         View screen;
-        if (index == TAB_DOWNLOADER) {
+        if (index == TAB_HOME) {
             if (downloader == null) downloader = new DownloaderScreen(this, this);
             screen = downloader;
         } else if (index == TAB_DOWNLOADS) {
@@ -220,34 +240,35 @@ public class MainActivity extends Activity implements DownloaderScreen.Host {
             downloads.refresh();
             screen = downloads;
         } else {
-            if (stream == null) stream = new StreamScreen(this);
-            screen = stream;
+            if (settings == null) settings = new SettingsScreen(this, this);
+            screen = settings;
         }
 
         content.addView(screen, new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 
-        if (index == TAB_DOWNLOADER && pendingSharedUrl != null) {
-            String url = pendingSharedUrl;
-            pendingSharedUrl = null;
-            downloader.submitShared(url);
-        }
     }
 
     /* ------------------------------------------------------------- intents */
 
     private void routeIntent(Intent intent) {
-        if (intent == null) return;
+        if (intent == null) {
+            showTab(TAB_HOME);
+            return;
+        }
 
-        if (Intent.ACTION_SEND.equals(intent.getAction())) {
-            String shared = intent.getStringExtra(Intent.EXTRA_TEXT);
-            if (shared == null) shared = intent.getStringExtra(Intent.EXTRA_SUBJECT);
-            showTab(TAB_DOWNLOADER);
-            if (shared != null && shared.trim().length() > 0) {
-                downloader.submitShared(shared.trim());
-            } else {
-                toast("Nothing to paste from that share.");
+        String action = intent.getAction();
+
+        if (Intent.ACTION_SEND.equals(action) || Intent.ACTION_SEND_MULTIPLE.equals(action)) {
+            String shared = sharedText(intent);
+            if (shared == null) {
+                showTab(TAB_HOME);
+                toast("That share contained no link.");
+                return;
             }
+            showTab(TAB_HOME);
+            if (isDuplicate(shared)) return;
+            downloader.submitShared(shared);
             return;
         }
 
@@ -257,20 +278,51 @@ public class MainActivity extends Activity implements DownloaderScreen.Host {
             if (host.equals("lamptik.online") || host.endsWith(".lamptik.online")) {
                 String shared = data.getQueryParameter("shared_url");
                 String url = data.getQueryParameter("url");
-                showTab(TAB_DOWNLOADER);
-                if (shared != null) downloader.submitShared(shared);
-                else if (url != null) downloader.submitShared(url);
+                showTab(TAB_HOME);
+                String candidate = shared != null ? shared : url;
+                if (candidate != null && !isDuplicate(candidate)) downloader.submitShared(candidate);
                 return;
             }
         }
 
-        showTab(TAB_DOWNLOADER);
+        showTab(TAB_HOME);
+    }
+
+    /** First usable text from a SEND or SEND_MULTIPLE intent. */
+    private String sharedText(Intent intent) {
+        CharSequence text = intent.getCharSequenceExtra(Intent.EXTRA_TEXT);
+        if (text != null && text.length() > 0) return text.toString().trim();
+
+        String subject = intent.getStringExtra(Intent.EXTRA_SUBJECT);
+        if (subject != null && subject.trim().length() > 0) return subject.trim();
+
+        ArrayList<CharSequence> many =
+                intent.getCharSequenceArrayListExtra(Intent.EXTRA_TEXT);
+        if (many != null) {
+            for (CharSequence candidate : many) {
+                if (candidate != null && candidate.length() > 0) return candidate.toString().trim();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * A share can reach the same activity twice (share sheet + notification
+     * tap). Same link inside the window means the first one already won.
+     */
+    private boolean isDuplicate(String url) {
+        long now = System.currentTimeMillis();
+        if (url.equals(lastHandledUrl) && now - lastHandledAt < DEDUPE_MS) return true;
+        lastHandledUrl = url;
+        lastHandledAt = now;
+        return false;
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        if (activeTab != TAB_HOME) showTab(TAB_HOME);
         routeIntent(intent);
     }
 
@@ -278,6 +330,18 @@ public class MainActivity extends Activity implements DownloaderScreen.Host {
     protected void onResume() {
         super.onResume();
         if (activeTab == TAB_DOWNLOADS && downloads != null) downloads.refresh();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("tab", activeTab);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        activeTab = savedInstanceState.getInt("tab", TAB_HOME);
     }
 
     private void requestNotificationPermission() {
@@ -296,6 +360,16 @@ public class MainActivity extends Activity implements DownloaderScreen.Host {
 
     @Override
     public void onDownloadQueued() {
+        if (downloads != null) downloads.refresh();
+    }
+
+    @Override
+    public void openDownloads() {
+        showTab(TAB_DOWNLOADS);
+    }
+
+    @Override
+    public void onHistoryCleared() {
         if (downloads != null) downloads.refresh();
     }
 }

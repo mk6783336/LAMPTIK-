@@ -25,7 +25,7 @@ final class ApiClient {
 
     static final String BASE = "https://www.lamptik.online";
     /** Lets the server recognise the native client for logs and support. */
-    static final String USER_AGENT = "LampTikAndroidApp/3.2 (Android; native)";
+    static final String USER_AGENT = "LampTikAndroidApp/3.3 (Android; native)";
 
     /**
      * Browser UA used for the media download itself.
@@ -92,6 +92,31 @@ final class ApiClient {
         if (status == 429) return "Too many requests — wait a moment and try again.";
         if (status >= 500) return "The resolver is busy. Try again in a few seconds.";
         return "Could not resolve this link.";
+    }
+
+    /**
+     * Which platform a link belongs to, or null when the app cannot resolve it.
+     *
+     * Checked before any request so a random link is answered instantly and
+     * the platform chips can validate what the user pasted.
+     */
+    static String platformOf(String url) {
+        if (url == null) return null;
+        String host;
+        try {
+            host = new URL(url).getHost();
+        } catch (Exception error) {
+            return null;
+        }
+        if (host == null) return null;
+        String lower = host.toLowerCase();
+        if (lower.equals("tiktok.com") || lower.endsWith(".tiktok.com")) return "tiktok";
+        if (lower.equals("instagram.com") || lower.endsWith(".instagram.com")) return "instagram";
+        if (lower.equals("facebook.com") || lower.endsWith(".facebook.com")
+                || lower.equals("fb.watch") || lower.endsWith(".fb.watch")) return "facebook";
+        if (lower.equals("youtube.com") || lower.endsWith(".youtube.com")
+                || lower.equals("youtu.be") || lower.endsWith(".youtu.be")) return "youtube";
+        return null;
     }
 
     private static boolean isYouTube(String url) {

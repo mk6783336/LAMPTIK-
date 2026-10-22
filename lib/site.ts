@@ -20,6 +20,22 @@ export function pageAlternates(path: string) {
 }
 
 /**
+ * The only hreflang cluster this site has: the home tool and its four
+ * translated landings. It used to be emitted from the root layout on *every*
+ * page, which told Google that `/youtube-downloader` was translated into
+ * Arabic at `/ar` — a different tool on a different page. Alternates now
+ * live only on the pages that really are translations of each other.
+ */
+export const LANDING_LANGUAGES = {
+  en: "/",
+  ar: "/ar",
+  es: "/es",
+  de: "/de",
+  pt: "/pt",
+  "x-default": "/",
+} as const;
+
+/**
  * The shipped Android build, in one place.
  *
  * The download buttons, the /app-download copy, its JSON-LD and the /api/apk
@@ -28,13 +44,13 @@ export function pageAlternates(path: string) {
  * version or a file size that is not the one being served.
  */
 export const androidApp = {
-  version: "3.2",
-  versionCode: 32,
-  fileName: "lamptik-v3.2.apk",
-  downloadName: "LAMP-TIK-v3.2.apk",
-  sizeBytes: 4_436_369,
+  version: "3.3",
+  versionCode: 33,
+  fileName: "lamptik-v3.3.apk",
+  downloadName: "LAMP-TIK-v3.3.apk",
+  sizeBytes: 3_862_993,
   /** Human label shown next to every download button. */
-  sizeLabel: "4.2 MB",
+  sizeLabel: "3.7 MB",
   minAndroid: "Android 7.0+",
 } as const;
 

@@ -3,15 +3,21 @@
 #
 # The app is deliberately framework-only (no AndroidX, no Material), so the
 # whole build is: aapt2 (resources+assets) -> javac -> d8 -> zipalign ->
-# apksigner. Requires JDK 17 and Android SDK build-tools 34 / platform 34.
+# apksigner. Requires JDK 21 and Android SDK build-tools 35+ / platform 34.
 #
 #   ANDROID_HOME=... JAVA_HOME=... ./android-app/build-native-apk.sh
+#
+# Signing: the release key lives at .scratch/signing/release.keystore, OUTSIDE
+# the per-build work directory, so a rebuild can never mint a new identity and
+# strand installed users on INSTALL_FAILED_UPDATE_INCOMPATIBLE. Back that file
+# up (see android-app/README.md); losing it means every future APK needs a
+# different applicationId to install side by side.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP="$ROOT/android-app/app/src/main"
 OUT="$ROOT/public/downloads"
-WORK="${WORK:-$ROOT/.scratch/apk-build30}"
+WORK="${WORK:-$ROOT/.scratch/apk-build33}"
 
 SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-${LOCALAPPDATA:-$HOME}/Android/Sdk}}"
 # Newest installed build-tools by default. d8 34.0.0 crashes with an internal
@@ -34,9 +40,10 @@ APKSIGNER="$(exe "$BT/apksigner")"
 ZIPALIGN="$(exe "$BT/zipalign")"
 AAPT2="$(exe "$BT/aapt2")"
 
-VERSION_CODE="${VERSION_CODE:-32}"
-VERSION_NAME="${VERSION_NAME:-3.2}"
-KEYSTORE="${KEYSTORE:-$WORK/release.keystore}"
+VERSION_CODE="${VERSION_CODE:-33}"
+VERSION_NAME="${VERSION_NAME:-3.3}"
+KEYSTORE="${KEYSTORE:-$ROOT/.scratch/signing/release.keystore}"
+mkdir -p "$(dirname "$KEYSTORE")"
 KS_PASS="${KS_PASS:-lamptik2026}"
 KS_ALIAS="${KS_ALIAS:-lamptik}"
 
@@ -129,7 +136,7 @@ rm -f "$OUT"/*.idsig
 
 # Keep every earlier filename pointing at the SAME signed binary so links that
 # were cached by users and search engines never 404.
-for legacy in "$OUT/lamptik-v3.0.apk" "$OUT/lamptik-v3.1.apk"; do
+for legacy in "$OUT/lamptik-v3.0.apk" "$OUT/lamptik-v3.1.apk" "$OUT/lamptik-v3.2.apk"; do
   if [ "$APK" != "$legacy" ]; then
     cp -f "$APK" "$legacy"
     echo "==> legacy alias $(basename "$legacy")"

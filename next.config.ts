@@ -194,8 +194,11 @@ const nextConfig: NextConfig = {
             value: "application/vnd.android.package-archive",
           },
           {
+            // No hard-coded filename: the release filename changes with every
+            // version, and a stale name here would rename the download. Plain
+            // `attachment` lets the APK's own URL name win.
             key: "Content-Disposition",
-            value: 'attachment; filename="LAMP-TIK-v3.2.apk"',
+            value: "attachment",
           },
           {
             key: "Cache-Control",
