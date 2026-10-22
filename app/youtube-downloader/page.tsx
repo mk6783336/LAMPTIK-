@@ -17,16 +17,15 @@ import {
   webApplicationNode,
   websiteNode,
 } from "@/components/seo/JsonLd";
-import { YoutubeGate } from "@/components/youtube-gate";
+import { Downloader } from "@/components/downloader";
 import { PLATFORMS } from "@/lib/platforms";
 import { pageAlternates, siteUrl } from "@/lib/site";
 
 /** ≤60 chars, keyword first. */
 const TITLE = "YouTube Video Downloader 1080p HD — Shorts & MP3";
-const SOCIAL_TITLE =
-  "YouTube Video Downloader 1080p HD — Shorts, Long Videos & MP3 (App Exclusive)";
+const SOCIAL_TITLE = "YouTube Video Downloader 1080p HD — Shorts, Long Videos & MP3";
 const DESCRIPTION =
-  "Download YouTube videos in Full HD 1080p, 720p, 360p MP4 plus MP3 audio — Shorts and long videos included. Free, unlimited, App-Exclusive: install the LAMP TIK web app once to unlock.";
+  "Download YouTube videos in Full HD 1080p, 720p, 360p MP4 plus MP3 audio — Shorts and long videos included. Free, unlimited, no app, no sign-up: paste a link and save immediately.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
@@ -59,12 +58,8 @@ export const metadata: Metadata = {
 
 const STEPS = [
   {
-    title: "Install the free LAMP TIK app (once)",
-    body: "Tap “Install & Unlock Now” above — Android uses the native install prompt, iPhone uses Safari Share → Add to Home Screen. App Mode unlocks YouTube HD permanently on that device.",
-  },
-  {
     title: "Paste any YouTube link",
-    body: "youtube.com/watch, youtu.be share links, /shorts/ clips, /embed/ and long 1-hour+ videos all resolve through the multi-engine waterfall.",
+    body: "Copy the video in the YouTube app (Share → Copy link) and paste it above. Nothing to install and no account: youtube.com/watch, youtu.be, /shorts/, /embed/ and 1-hour+ videos all resolve through the multi-engine waterfall.",
   },
   {
     title: "Pick 1080p, 720p, 360p or MP3 and save",
@@ -76,12 +71,12 @@ const FAQS = [
   {
     question: "Is the YouTube downloader really free?",
     answer:
-      "Yes — unlimited 1080p, 720p, 360p and MP3 downloads at no cost. Installing the free web app (no Play Store, no sign-up) is the only requirement.",
+      "Yes — unlimited 1080p, 720p, 360p and MP3 downloads at no cost, in any browser. No account, no app install and no sign-up are required.",
   },
   {
-    question: "Why do I need to install the app for YouTube?",
+    question: "Do I need to install the Android app to download YouTube videos?",
     answer:
-      "YouTube streams are heavier to resolve than TikTok clips. The app gate keeps bot abuse down so real users keep unlimited HD access without rate limits or accounts.",
+      "No. The browser tool on this page resolves YouTube links directly. The Android app only adds conveniences — share-sheet hand-off, background downloads to your gallery, and an offline download list.",
   },
   {
     question: "Do Shorts and long videos both work?",
@@ -114,14 +109,14 @@ export default function YouTubeDownloaderPage() {
           "YouTube Shorts downloader",
           "YouTube to MP3 — highest-bitrate audio",
           "Long videos with resumed, chunked streaming",
-          "App-exclusive, free, no sign-up",
+          "Free, unlimited, no sign-up and no app required",
         ],
       }),
       howToNode({
         id: `${pageUrl}/#howto`,
         name: "How to download a YouTube video in 1080p HD",
         description:
-          "Install the free LAMP TIK app once, paste any YouTube link, and save 1080p MP4 or MP3.",
+          "Paste any YouTube link into LAMP TIK and save 1080p MP4 or MP3 — no app and no account required.",
         steps: STEPS,
         url: pageUrl,
         anchor: "how",
@@ -149,7 +144,7 @@ export default function YouTubeDownloaderPage() {
               <div className="animate-rise min-w-0 lg:col-span-5">
                 <p className="eyebrow">
                   <Youtube className="size-3.5 text-[#ff5c7a]" />
-                  YouTube · App exclusive
+                  YouTube · Free · No app required
                 </p>
 
                 <h1 className="balance mt-4 text-4xl font-semibold leading-[1.02] tracking-headline sm:mt-5 sm:text-5xl">
@@ -177,13 +172,13 @@ export default function YouTubeDownloaderPage() {
                   href="/app-download"
                   className="group mt-7 hidden items-center gap-1.5 text-sm text-[var(--text-2)] transition-colors duration-200 hover:text-[var(--text)] sm:inline-flex"
                 >
-                  How app install works
+                  Optional: get the Android app
                   <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </Link>
               </div>
 
               <div className="animate-rise min-w-0 lg:col-span-7 [animation-delay:80ms]">
-                <YoutubeGate />
+                <Downloader platform="youtube" />
               </div>
             </div>
 

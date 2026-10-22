@@ -4,10 +4,10 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight, Check, Loader2, ShieldCheck, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { isAppMode } from "@/components/install-pwa";
+
 import { PlatformSwitcher } from "@/components/platform-switcher";
 import { ResultPanel } from "@/components/result-panel";
-import { YouTubeLock } from "@/components/youtube-lock";
+
 import { ToastStack, type ToastItem } from "@/components/toast";
 import { UrlField } from "@/components/url-field";
 import { cn } from "@/lib/cn";
@@ -139,8 +139,6 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
   const [error, setError] = useState<string | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
-  /** YouTube paste held at the App-Exclusive gate (no App Mode yet). */
-  const [ytLockedUrl, setYtLockedUrl] = useState<string | null>(null);
   const [seed, setSeed] = useState({ value: "", nonce: 0 });
   /** Shown during the single silent auto-retry (attempt 2/2). */
   const [backupNote, setBackupNote] = useState<string | null>(null);
@@ -192,8 +190,9 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
    * The native APK forwards `Share → LAMP TIK` as
    * `?app=android_apk&shared_url=<encoded text>`. Consume it exactly once:
    * extract the link, strip the parameter from the address bar, then pre-fill
-   * and resolve it automatically. YouTube links are re-routed to the
-   * dedicated app-exclusive page so the right engine and gate apply.
+   * and resolve it automatically. YouTube links opened from the TikTok shell
+   * are re-routed to the dedicated YouTube page so the right hero and copy
+   * frame the result.
    */
   const sharedHandledRef = useRef(false);
   useEffect(() => {
@@ -221,7 +220,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
         inputRef.current?.focus();
         return;
       }
-      if (detected.platform === "youtube" && !isAppMode()) {
+      if (detected.platform === "youtube" && platform !== "youtube") {
         window.location.assign(
           `/youtube-downloader?app=android_apk&shared_url=${encodeURIComponent(shared.trim())}`,
         );
@@ -230,6 +229,9 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
       setSeed((current) => ({ value: detected.url, nonce: current.nonce + 1 }));
       void submitRef.current(detected.url);
     })();
+    // Runs once per mount: the hand-off must be consumed exactly once, and
+    // `platform` is fixed for the lifetime of the page shell.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Bring the expanded result into view on small screens, after the
@@ -270,7 +272,6 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     abortRef.current?.abort();
     stopTicker();
     lastUrlRef.current = "";
-    setYtLockedUrl(null);
     setStatus("idle");
     setVideo(null);
     setMedia(null);
@@ -294,25 +295,6 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     const detectedIncoming = detectIncoming(rawUrl);
     const url = detectedIncoming ? detectedIncoming.url : rawUrl.trim();
 
-    // Strict App-Exclusive gate: YouTube links pasted anywhere (including
-    // the homepage) show ONLY the lock screen outside standalone App Mode —
-    // no input, no resolve, no browser unlock. The server never sees the URL.
-    if (detectedIncoming?.platform === "youtube" && !isAppMode()) {
-      setError(null);
-      setStatus("idle");
-      setVideo(null);
-      setMedia(null);
-      setBackupNote(null);
-      setYtLockedUrl(url);
-      notify({
-        kind: "info",
-        title: "YouTube Downloader is locked",
-        description: "Install LAMP TIK from Chrome or add it to your home screen to unlock it.",
-      });
-      return;
-    }
-    setYtLockedUrl(null);
-
     setError(null);
     setStatus("loading");
     setVideo(null);
@@ -331,9 +313,9 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     // Client-side bail-out just before the server's own maxDuration (30s), so
     // the UI never hangs on a request Vercel is about to kill.
     const timeout = window.setTimeout(() => controller.abort(), 28_000);
-    // YouTube resolves through the dedicated App-Exclusive route; every other
-    // platform uses the shared resolver. (The gate above guarantees YouTube
-    // only reaches this line inside standalone App Mode.)
+    // YouTube resolves through its own route (dedicated waterfall, 1080p
+    // selection rules); every other platform uses the shared resolver. Both
+    // are open to any browser — there is no install gate.
     const endpoint = detectedIncoming?.platform === "youtube" ? "/api/youtube" : "/api/fetch";
 
     try {
@@ -543,12 +525,6 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
             <ArrowUpRight className="size-3 transition-transform duration-200 group-hover:-translate-y-px group-hover:translate-x-px" />
           </button>
         </div>
-
-        {ytLockedUrl ? (
-          <div className="mt-5">
-            <YouTubeLock />
-          </div>
-        ) : null}
 
         <AnimatePresence mode="wait" initial={false}>
           {isLoading ? (

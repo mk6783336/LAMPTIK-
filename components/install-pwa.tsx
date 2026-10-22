@@ -85,9 +85,14 @@ function registerAppServiceWorker(): void {
 }
 
 /**
- * Automatically unlock YouTube Downloader when ANY of these are true:
+ * Detect a standalone/app-shell session. Nothing is gated on this any more —
+ * every downloader runs in a normal browser tab — but the shell still uses it
+ * to swap install prompts for "open the tool" affordances, and the APK's
+ * WebView marker keeps deep links inside the app.
+ *
+ * True when ANY of these hold:
  *   1. User-Agent contains `LampTikAndroidApp` or Android WebView (`; wv)`),
- *   2. URL has `?app=android_apk` or `?source=pwa` (which sets cookie `lamptik_app=1`
+ *   2. URL has `?app=android_apk` or `?source=pwa` (sets cookie `lamptik_app=1`
  *      and `localStorage.setItem('lamptik_app_installed', '1')`),
  *   3. Browser is in `display-mode: standalone`, or `lamptik_app=1` / `lamptik_app_installed` is set.
  */

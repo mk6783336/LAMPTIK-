@@ -26,11 +26,10 @@ import {
   websiteNode,
 } from "@/components/seo/JsonLd";
 import { adsterraRectangleKey, monetagSmartlinkUrl } from "@/lib/monetization";
-import { pageAlternates, siteConfig, siteUrl } from "@/lib/site";
+import { androidApp, pageAlternates, siteConfig, siteUrl } from "@/lib/site";
 
-const TITLE = "LAMP TIK for Android (Official APK v2.3) — Free HD Video Downloader";
-const DESCRIPTION =
-  "Download the official LAMP TIK Android APK (v2.3): built-in YouTube 1080p & MP3 downloader, watermark-free TikTok, Instagram Reels & Facebook HD downloads, and direct background saving to your phone gallery. 100% free, no Play Store needed.";
+const TITLE = `LAMP TIK for Android (Official APK v${androidApp.version}) — Free HD Video Downloader`;
+const DESCRIPTION = `Download the official LAMP TIK Android APK (v${androidApp.version}, ${androidApp.sizeLabel}): a real native app with built-in YouTube 1080p & MP3 downloader, watermark-free TikTok, Instagram Reels & Facebook HD downloads, and direct background saving to your phone gallery. 100% free, no Play Store needed.`;
 
 export const metadata: Metadata = {
   title: "LAMP TIK for Android (Official APK) — Free Download",
@@ -66,7 +65,7 @@ const APP_FEATURES = [
   {
     emoji: "🎬",
     title: "Built-in YouTube 1080p & MP3 Downloader",
-    body: "Unlocked exclusively inside the app — download Full HD 1080p/720p YouTube videos, Shorts, and high-bitrate MP3 audio with zero limits.",
+    body: "Full HD 1080p/720p YouTube videos, Shorts, and high-bitrate MP3 audio download natively inside the app — no browser switching, no limits.",
   },
   {
     emoji: "⚡",
@@ -81,22 +80,22 @@ const APP_FEATURES = [
   {
     emoji: "🔒",
     title: "No Play Store Needed",
-    body: "Direct official signed APK installation — lightweight (~50 KB), no Google account required, no bloatware, 100% free forever.",
+    body: `Direct official signed APK installation — ${androidApp.sizeLabel} of native Android code and art, no Google account required, no bloatware, 100% free forever.`,
   },
 ] as const;
 
 const INSTALL_STEPS = [
   {
     title: "Tap “Download LAMP TIK APK” above",
-    body: "Tap the primary download button at the top of this page to save the official signed LAMP-TIK-v2.3.apk file to your phone.",
+    body: `Tap the primary download button at the top of this page to save the official signed ${androidApp.downloadName} file (${androidApp.sizeLabel}) to your phone.`,
   },
   {
     title: "Open the downloaded .apk file",
-    body: "Tap the download complete notification in your Android notification bar, or open LAMP-TIK-v2.3.apk from your phone's Downloads folder.",
+    body: `Tap the download complete notification in your Android notification bar, or open ${androidApp.downloadName} from your phone's Downloads folder.`,
   },
   {
     title: "Tap “Install” and launch LAMP TIK",
-    body: "Tap Install (allow “Install unknown apps” if prompted by Android) and open LAMP TIK from your home screen with YouTube 1080p unlocked!",
+    body: "Tap Install (allow “Install unknown apps” if prompted by Android) and open LAMP TIK from your home screen — the native downloader is ready immediately.",
   },
 ] as const;
 
@@ -112,9 +111,9 @@ const FAQS = [
       "Android shows this standard prompt whenever you install an official APK directly from your browser instead of the Google Play Store. Tap Settings → Allow from this source → Install.",
   },
   {
-    question: "How do I unlock the YouTube 1080p & MP3 Downloader?",
+    question: "Does the app unlock anything the website does not?",
     answer:
-      "Simply open LAMP TIK from the installed Android app (or tap “Install Instant Web App” on iPhone). The app automatically unlocks unlimited YouTube Full HD 1080p, 720p, Shorts, and MP3 downloads.",
+      "No — YouTube, TikTok, Instagram Reels and Facebook downloads all work in any browser for free. The APK simply adds native share-sheet hand-off, background downloads straight to your gallery, and a built-in download list.",
   },
   {
     question: "Can iPhone users install LAMP TIK too?",
@@ -137,8 +136,9 @@ export default function AppDownloadPage() {
         url: pageUrl,
         applicationCategory: "MultimediaApplication",
         operatingSystem: "Android 7.0+",
-        softwareVersion: "2.3",
-        downloadUrl: `${siteUrl}/downloads/lamptik-v2.3.apk`,
+        softwareVersion: androidApp.version,
+        fileSize: androidApp.sizeLabel,
+        downloadUrl: `${siteUrl}/downloads/${androidApp.fileName}`,
         installUrl: `${siteUrl}/api/apk`,
         offers: {
           "@type": "Offer",
@@ -213,11 +213,16 @@ export default function AppDownloadPage() {
                 <Zap className="size-10" fill="currentColor" strokeWidth={0} />
               </div>
 
-              {/* Version & Security Badges */}
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                <span className="tool-badge">
-                  <ShieldCheck className="size-3.5 text-[var(--ok)]" />
-                  Version 2.3 · Official Signed Android App · Android 7.0+ · 100% Free
+              {/* Version & Security Badges. Two short chips instead of one
+                  long nowrap pill: at 320-390px the single line used to run
+                  off both edges of the viewport and paint stray borders. */}
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-2 px-1">
+                <span className="inline-flex max-w-full flex-wrap items-center justify-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--field)] px-3 py-1.5 text-center text-xs text-[var(--text-2)]">
+                  <ShieldCheck className="size-3.5 shrink-0 text-[var(--ok)]" />
+                  Version 3.0 · Official Signed App
+                </span>
+                <span className="inline-flex max-w-full flex-wrap items-center justify-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--field)] px-3 py-1.5 text-center text-xs text-[var(--text-2)]">
+                  Android 7.0+ · 100% Free
                 </span>
               </div>
 
@@ -227,7 +232,7 @@ export default function AppDownloadPage() {
 
               <p className="pretty mx-auto mt-3 max-w-xl text-base leading-relaxed text-[var(--text-2)]">
                 The all-in-one HD video &amp; MP3 downloader for Android. Save TikTok, Instagram
-                Reels, Facebook Watch, and <strong className="text-[var(--text)]">App-Exclusive YouTube 1080p &amp; MP3</strong> straight to your phone gallery.
+                Reels, Facebook Watch, and <strong className="text-[var(--text)]">YouTube 1080p &amp; MP3</strong> straight to your phone gallery.
               </p>
 
               {/* Primary + Secondary Download Buttons */}
@@ -235,7 +240,7 @@ export default function AppDownloadPage() {
                 <AppInstallHero />
               </div>
 
-              {/* App-Exclusive YouTube Perk Banner */}
+              {/* Native YouTube perk banner */}
               <div
                 id="youtube-perk"
                 className="mx-auto mt-7 flex max-w-xl scroll-mt-24 items-start gap-3 rounded-2xl border border-[#ff0033]/35 bg-[#ff0033]/[0.08] p-4 text-left"
@@ -245,11 +250,11 @@ export default function AppDownloadPage() {
                 </span>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold tracking-tight">
-                    🎬 Built-in YouTube 1080p/720p &amp; MP3 Downloader Unlocked!
+                    🎬 Built-in YouTube 1080p/720p &amp; MP3 Downloader
                   </p>
                   <p className="pretty mt-1 text-sm leading-relaxed text-[var(--text-2)]">
-                    Opening LAMP TIK from the Android APK automatically unlocks unlimited Full HD
-                    YouTube videos, Shorts, and 320kbps MP3 audio downloads.{" "}
+                    Open LAMP TIK and YouTube downloads run natively inside the app: Full HD
+                    videos, Shorts, and 320kbps MP3 audio, saved straight to your gallery.{" "}
                     <Link
                       href="/youtube-downloader?app=android_apk"
                       className="font-semibold text-[var(--accent-text)] underline-offset-4 hover:underline"
@@ -263,7 +268,7 @@ export default function AppDownloadPage() {
               {/* Quick Package Specs */}
               <dl className="mx-auto mt-6 grid max-w-xl grid-cols-2 gap-2.5 sm:grid-cols-4">
                 {[
-                  { icon: <Smartphone className="size-3.5" />, term: "Package", value: "LAMP-TIK-v2.3.apk" },
+                  { icon: <Smartphone className="size-3.5" />, term: "Package", value: `${androidApp.downloadName} · ${androidApp.sizeLabel}` },
                   { icon: <ShieldCheck className="size-3.5" />, term: "Signature", value: "v1/v2 Verified" },
                   { icon: <Rocket className="size-3.5" />, term: "Requires", value: "Android 7.0+" },
                   { icon: <Check className="size-3.5" />, term: "License", value: "100% Free" },
@@ -338,12 +343,12 @@ export default function AppDownloadPage() {
                     </h2>
                   </div>
                   <a
-                    href="/downloads/lamptik-v2.3.apk"
-                    download="LAMP-TIK-v2.3.apk"
+                    href={`/downloads/${androidApp.fileName}`}
+                    download={androidApp.downloadName}
                     className="btn btn-primary h-10 gap-2 px-4 text-sm font-semibold"
                   >
                     <Download className="size-4" />
-                    Download APK (v2.3)
+                    Download APK (v{androidApp.version} · {androidApp.sizeLabel})
                   </a>
                 </div>
 
@@ -437,12 +442,12 @@ export default function AppDownloadPage() {
 
               <div className="mt-7 flex flex-wrap items-center gap-3">
                 <a
-                  href="/downloads/lamptik-v2.3.apk"
-                  download="LAMP-TIK-v2.3.apk"
+                  href={`/downloads/${androidApp.fileName}`}
+                  download={androidApp.downloadName}
                   className="btn btn-primary tool-cta h-11 gap-2 px-5 text-sm font-semibold"
                 >
                   <Download className="size-4" />
-                  ⬇ Download LAMP TIK APK (Android)
+                  ⬇ Download LAMP TIK APK v{androidApp.version} ({androidApp.sizeLabel})
                 </a>
                 <Link
                   href="/youtube-downloader"

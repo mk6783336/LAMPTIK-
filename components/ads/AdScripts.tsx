@@ -14,36 +14,60 @@ import { adsterraSocialBarSrc } from "@/lib/monetization";
  * Global third-party ad loaders — the smallest set that is safe to load
  * before a user action.
  *
- * Two hard rules learned the hard way in production:
+ * Hard rules, each learned from a production failure:
  *
- * 1. Consent first. The Adsterra Social Bar (an in-page push / pop-under
- *    format that sets advertising cookies) is injected ONLY after the visitor
- *    presses "Accept". Until then — and for every visitor who declines — the
- *    page runs the contextual banner inventory alone, which is what the
- *    privacy policy promises.
+ * 1. Desktop only. The Adsterra Social Bar is an in-page push / pop-under
+ *    format. On phones it paints a fixed strip over the top of the viewport
+ *    (covering the logo and platform tabs), swallows taps and makes scrolling
+ *    feel stuck. Under 768px the app runs on the inline banner inventory only:
+ *    the 728x90 / 300x250 slots, the in-download sponsor theater and the
+ *    every-3rd-download video modal — all of which are part of the page flow
+ *    and can never intercept a gesture.
  *
- * 2. No page-load interstitials. The Monetag Vignette injects a fixed
- *    full-viewport iframe at `z-index: 2147483647` the moment its script
- *    runs, which sits on top of the download button and swallows the click.
- *    It is therefore fired on demand from `ThirdDownloadModal` (a real user
- *    gesture, every third download) via `triggerMonetagVignette()` — never
- *    from the document shell.
+ * 2. Consent first. Even on desktop the Social Bar is injected ONLY after the
+ *    visitor presses "Accept", because it sets advertising cookies.
  *
- * The Social Bar is `lazyOnload`: Next injects it in an idle callback once
- * the document is complete, so it costs 0 ms of FCP/LCP and never competes
- * with the download tool for bandwidth during first paint.
+ * 3. No page-load interstitials. The Monetag Vignette injects a fixed
+ *    full-viewport iframe at `z-index: 2147483647` the moment its script runs,
+ *    which sits on top of the download button and swallows the click. It is
+ *    fired on demand from the download flow (`triggerMonetagVignette()`)
+ *    instead — never from the document shell.
  */
+const MOBILE_QUERY = "(max-width: 767px)";
+
 export function AdScripts() {
   const [consent, setConsent] = useState<ConsentDecision | null>(null);
+  const [isMobile, setIsMobile] = useState(true);
 
   useEffect(() => {
+    // Server render and first paint must assume the small viewport: that is
+    // the case where an injected script hurts most, so it stays off until the
+    // media query proves otherwise.
+    const query = window.matchMedia(MOBILE_QUERY);
+    const sync = () => setIsMobile(query.matches);
+    sync();
+
     setConsent(readConsent());
+
     const onConsent = (event: Event) => {
       const detail = (event as CustomEvent<ConsentDecision>).detail;
       if (detail === "granted" || detail === "denied") setConsent(detail);
     };
     window.addEventListener(CONSENT_EVENT, onConsent);
-    return () => window.removeEventListener(CONSENT_EVENT, onConsent);
+    if (typeof query.addEventListener === "function") {
+      query.addEventListener("change", sync);
+    } else {
+      query.addListener(sync);
+    }
+
+    return () => {
+      window.removeEventListener(CONSENT_EVENT, onConsent);
+      if (typeof query.removeEventListener === "function") {
+        query.removeEventListener("change", sync);
+      } else {
+        query.removeListener(sync);
+      }
+    };
   }, []);
 
   /**
@@ -55,13 +79,15 @@ export function AdScripts() {
    */
   const registerWorker = `(function(){try{if(!("serviceWorker" in navigator))return;var go=function(){navigator.serviceWorker.register("/sw.js").catch(function(){})};if(document.readyState==="complete"){go()}else{window.addEventListener("load",go,{once:true})}}catch(e){}})();`;
 
+  const showSocialBar = !isMobile && consent === "granted" && adsterraSocialBarSrc;
+
   return (
     <>
       <Script id="monetag-sw" strategy="afterInteractive">
         {registerWorker}
       </Script>
 
-      {consent === "granted" && adsterraSocialBarSrc ? (
+      {showSocialBar ? (
         <Script
           id="adsterra-social-bar"
           strategy="lazyOnload"

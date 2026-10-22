@@ -1,4 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">LAMP TIK</string>
+    <string name="app_tagline">Native video downloader</string>
+    <string name="version_badge">v3.0 PRO</string>
+
+    <string name="tab_downloader">Downloader</string>
+    <string name="tab_downloads">My Downloads</string>
+    <string name="tab_stream">Fast Stream</string>
+
+    <string name="url_hint">Paste TikTok, Reels, FB or YouTube link…</string>
+    <string name="paste">Paste</string>
+    <string name="paste_clipboard">Paste from clipboard</string>
+    <string name="fetch">Fetch video</string>
+    <string name="fetching">Resolving stream…</string>
+    <string name="clear">Clear link</string>
+
+    <string name="download_hd">Download HD MP4</string>
+    <string name="download_sd">Download SD MP4</string>
+    <string name="download_mp3">Download MP3 audio</string>
+
+    <string name="empty_title">Nothing downloaded yet</string>
+    <string name="empty_body">Files you save from the downloader appear here, ready to play or share.</string>
+    <string name="refresh">Refresh</string>
+    <string name="play">Play</string>
+    <string name="share">Share</string>
+
+    <string name="stream_title">Fast Stream</string>
+    <string name="stream_body">A lightweight browser for previewing a link before you download it.</string>
+
+    <string name="sponsored">AD · SPONSORED PARTNER</string>
+    <string name="sponsor_cta">Visit sponsor</string>
+    <string name="sponsor_text">Advertising keeps LAMP TIK downloads free.</string>
 </resources>

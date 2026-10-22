@@ -10,10 +10,10 @@ const FOOTER_LINKS = {
     { href: "/", label: "TikTok Downloader" },
     { href: "/instagram-reels-downloader", label: "Instagram Reels" },
     { href: "/facebook-video-downloader", label: "Facebook HD" },
-    { href: "/youtube-downloader", label: "YouTube HD (App)" },
+    { href: "/youtube-downloader", label: "YouTube HD" },
   ],
   Product: [
-    { href: "/app-download", label: "📱 Get App (YouTube HD)" },
+    { href: "/app-download", label: "📱 Android App" },
     { href: "/guides", label: "Guides" },
     { href: "/#how", label: "How it works" },
     { href: "/#faq", label: "FAQ" },

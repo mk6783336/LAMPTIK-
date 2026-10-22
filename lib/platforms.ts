@@ -67,11 +67,11 @@ export const PLATFORMS: Record<Platform, PlatformConfig> = {
     path: "/youtube-downloader",
     detectedLabel: "YouTube Video Detected ⚡",
     placeholder: "Paste a YouTube link (watch, Shorts, youtu.be)…",
-    panelTag: "YouTube · 1080p + MP3 · App exclusive",
+    panelTag: "YouTube · 1080p + MP3",
     pillLabel: "YouTube",
     videoNoun: "YouTube video",
     dotHex: "#ff0033",
-    blurb: "App-exclusive 1080p/720p MP4, Shorts, and MP3 audio from any watch or youtu.be link.",
+    blurb: "1080p/720p MP4, Shorts, and MP3 audio from any watch or youtu.be link — free, no app.",
   },
   facebook: {
     id: "facebook",

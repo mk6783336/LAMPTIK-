@@ -12,9 +12,13 @@ import { cn } from "@/lib/cn";
 import type { Platform } from "@/lib/platforms";
 
 /**
- * One click to every surface: TikTok / Instagram Reels / Facebook HD /
- * Guides. The bar itself is a floating glass slab; identity lives in each
- * platform's brand tint, never in the chrome.
+ * One click to every surface: TikTok / Instagram Reels / Facebook / YouTube,
+ * plus Guides and the optional Android app. All four platforms are open to
+ * every visitor — nothing is gated behind an install.
+ *
+ * The desktop row appears at `lg` (not `md`): six destinations plus the logo,
+ * library, CTA and theme toggle need the full 1152px shell to stay on one
+ * line, and the strip below carries the same links on smaller screens.
  */
 const NAV = [
   { href: "/", label: "TikTok", short: "TikTok", platform: "tiktok" as Platform },
@@ -30,8 +34,14 @@ const NAV = [
     short: "Facebook",
     platform: "facebook" as Platform,
   },
+  {
+    href: "/youtube-downloader",
+    label: "YouTube",
+    short: "YouTube",
+    platform: "youtube" as Platform,
+  },
   { href: "/guides", label: "Guides", short: "Guides", platform: null },
-  { href: "/app-download", label: "📱 Get App (YouTube HD)", short: "App", platform: null },
+  { href: "/app-download", label: "📱 App", short: "App", platform: null },
 ] as const;
 
 function isCurrent(pathname: string, href: string): boolean {
@@ -55,7 +65,7 @@ export function SiteHeader() {
           <div className="flex h-14 items-center justify-between gap-2 pl-3 pr-2 sm:pl-4 sm:pr-2.5">
             <Logo />
 
-            <nav aria-label="Primary" className="hidden items-center gap-1 md:flex">
+            <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
               {NAV.map((item) => {
                 const active = isCurrent(pathname, item.href);
                 return (
@@ -104,7 +114,7 @@ export function SiteHeader() {
               destination stays a single tap away. */}
           <nav
             aria-label="Downloader platforms"
-            className="nav-strip border-t border-[var(--glass-border)] md:hidden"
+            className="nav-strip border-t border-[var(--glass-border)] lg:hidden"
           >
             {NAV.map((item) => {
               const active = isCurrent(pathname, item.href);
@@ -116,10 +126,13 @@ export function SiteHeader() {
                   aria-current={active ? "page" : undefined}
                   data-accent={item.platform ?? undefined}
                   className={cn(
-                    "shrink-0 whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm transition-colors duration-200",
+                    // Compact on phones so all six destinations (four platforms,
+                    // Guides, App) fit one 390px row without a hidden "scroll for
+                    // more" affordance; the row still swipes on 320px screens.
+                    "shrink-0 whitespace-nowrap rounded-full px-1.5 py-1.5 text-[12px] transition-colors duration-200 sm:px-2.5 sm:text-sm",
                     active
                       ? item.platform
-                        ? "tool-pill px-2.5 py-1.5"
+                        ? "tool-pill px-1.5 py-1.5 sm:px-2.5"
                         : "border border-[var(--glass-border)] bg-[var(--field-strong)] text-[var(--text)]"
                       : "text-[var(--text-2)]",
                   )}

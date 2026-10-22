@@ -5,37 +5,20 @@ import { resolveMedia } from "@/lib/media";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request";
 import { MAX_FETCH_BODY_BYTES, readBoundedJson } from "@/lib/security";
-import { isYouTubeAppAuthorized, parseYouTubeUrl } from "@/lib/youtube";
+import { parseYouTubeUrl } from "@/lib/youtube";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * POST /api/youtube — dedicated App-Exclusive YouTube resolver.
+ * POST /api/youtube — dedicated YouTube resolver.
  *
- * Automatically unlocks when ANY of these are true:
- *   1. User-Agent contains `LampTikAndroidApp` or Android WebView (`; wv)`),
- *   2. URL/Referer has `?app=android_apk` or `?source=pwa` or `lamptik_app=1` cookie,
- *   3. Standalone PWA session (`lamptik_app=1`).
+ * Open to every visitor: there is no install gate. The route exists (instead of
+ * folding YouTube into `/api/fetch`) because YouTube has its own multi-provider
+ * waterfall, its own 1080p selection rules and a heavier per-request budget.
  */
 export async function POST(request: NextRequest) {
-  const authorized = isYouTubeAppAuthorized({
-    userAgent: request.headers.get("user-agent"),
-    cookie: request.headers.get("cookie"),
-    referer: request.headers.get("referer"),
-    searchParams: request.nextUrl.searchParams,
-  });
-
-  if (!authorized) {
-    return errorResponse(
-      new AppError(
-        "BAD_REQUEST",
-        "Download & install the LAMP TIK Android APK (or Instant Web App) to unlock YouTube 1080p & MP3 downloads.",
-      ),
-    );
-  }
-
   const ip = getClientIp(request.headers);
   const limit = rateLimit(`youtube:${ip}`, 35, 60_000);
   if (!limit.ok) {
@@ -96,7 +79,6 @@ export async function POST(request: NextRequest) {
       {
         headers: {
           "Cache-Control": "no-store",
-          "Set-Cookie": "lamptik_app=1; Path=/; Max-Age=31536000; SameSite=Lax",
           "X-RateLimit-Limit": String(limit.limit),
           "X-RateLimit-Remaining": String(limit.remaining),
         },

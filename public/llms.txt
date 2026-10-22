@@ -1,13 +1,13 @@
 # LAMP TIK (lamptik.online)
 
-> Free, watermark-free HD video downloader for TikTok, Instagram Reels, and Facebook videos. No account, no app, zero server storage, true H.264 hardware-verified streams.
+> Free, watermark-free HD video downloader for TikTok, Instagram Reels, Facebook and YouTube. No account, no app, zero server storage, true H.264 hardware-verified streams.
 
 ## Core free tools
 - [TikTok Video Downloader (HD MP4 + MP3)](https://www.lamptik.online/): paste any tiktok.com / vt.tiktok.com / vm.tiktok.com link, get the clean hdplay/play H.264 stream, no watermark.
 - [Instagram Reels Downloader](https://www.lamptik.online/instagram-reels-downloader): public reels/posts/IGTV via embed + OG fallback, H.264 verified.
 - [Facebook Video Downloader](https://www.lamptik.online/facebook-video-downloader): reels/watch/fb.watch/share links via desktop+mobile+plugin+mbasic waterfall.
-- [YouTube Downloader (1080p HD, App Exclusive)](https://www.lamptik.online/youtube-downloader): watch/shorts/youtu.be links, 1080p/720p/360p MP4 + MP3 — unlocked by installing the free web app.
-- [Download the LAMP TIK App](https://www.lamptik.online/app-download): install on Android, iPhone/iPad & PC (no store), unlocks YouTube HD.
+- [YouTube Downloader (1080p HD)](https://www.lamptik.online/youtube-downloader): watch/shorts/youtu.be links, 1080p/720p/360p MP4 + MP3 — free, no app required.
+- [Download the LAMP TIK App](https://www.lamptik.online/app-download): native Android app (no store) plus installable web app for iPhone/iPad & PC.
 
 ## Technical guides (/guides/*)
 - [Download TikTok video without watermark](https://www.lamptik.online/guides/download-tiktok-video-without-watermark)

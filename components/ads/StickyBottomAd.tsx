@@ -1,34 +1,55 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { AdSlot } from "@/components/ads/AdSlot";
 import { adsterraBannerKey } from "@/lib/monetization";
 
 const DISMISS_KEY = "sticky_ad_dismissed";
+const DESKTOP_QUERY = "(min-width: 768px)";
 
 /**
- * Sticky bottom ad bar (Slot E) — anchored at `bottom-0`, above content
- * (`z-40`, below the toast stack), dismissible with a single tap. The
- * dismissal persists for the session so one close is respected everywhere.
+ * Sticky bottom ad bar (Slot E) — desktop only.
  *
- * The leaderboard creative CSS-scales to the viewport, so a 390px phone gets
- * a fitted strip with no horizontal overflow. Renders nothing at all when no
- * banner zone is configured.
+ * A `position: fixed` bar at the bottom of a phone is a hit-testing trap: it
+ * covers whatever sits underneath it, so the last control in the viewport
+ * (often the tool CTA) stops responding exactly where a thumb lands, and every
+ * scroll around it costs an extra layer. Under 768px the bar therefore never
+ * mounts — mobile keeps the inline 90px slot under the tool and the pre-FAQ
+ * leaderboard, both of which live in the document flow.
+ *
+ * The dismissal persists for the session so one close is respected everywhere,
+ * and the whole component renders nothing when no banner zone is configured.
  */
 export function StickyBottomAd() {
-  const [dismissed, setDismissed] = useState(() => {
-    try {
-      // Lazy initializer runs on the server too — guard the window access.
-      if (typeof window === "undefined") return false;
-      return window.sessionStorage.getItem(DISMISS_KEY) === "1";
-    } catch {
-      return false;
-    }
-  });
+  const [visible, setVisible] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
-  if (dismissed || !adsterraBannerKey) return null;
+  useEffect(() => {
+    const query = window.matchMedia(DESKTOP_QUERY);
+    const sync = () => setVisible(query.matches);
+    sync();
+    try {
+      setDismissed(window.sessionStorage.getItem(DISMISS_KEY) === "1");
+    } catch {
+      // Storage unavailable — the in-memory state still hides the bar.
+    }
+    if (typeof query.addEventListener === "function") {
+      query.addEventListener("change", sync);
+    } else {
+      query.addListener(sync);
+    }
+    return () => {
+      if (typeof query.removeEventListener === "function") {
+        query.removeEventListener("change", sync);
+      } else {
+        query.removeListener(sync);
+      }
+    };
+  }, []);
+
+  if (!visible || dismissed || !adsterraBannerKey) return null;
 
   const dismiss = () => {
     try {

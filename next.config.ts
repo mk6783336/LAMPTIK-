@@ -186,7 +186,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Content-Disposition",
-            value: 'attachment; filename="LAMP-TIK-v2.2.apk"',
+            value: 'attachment; filename="LAMP-TIK-v3.0.apk"',
           },
           {
             key: "Cache-Control",

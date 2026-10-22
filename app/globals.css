@@ -87,6 +87,10 @@
   --mesh-c: rgba(59, 130, 246, 0.15);
   --noise-opacity: 0.035;
 
+  /* Flat surface used on phones in place of glass: no blur to composite. */
+  --mobile-surface: #0c0d14;
+  --mobile-surface-2: #101219;
+
   /* Platform-reactive tool tokens. Defaults live here so `.tool-cta`,
      `.tool-badge` and `.tool-field` still paint a real gradient and glow
      outside a `data-accent` subtree (e.g. the APK install hero). */
@@ -145,6 +149,9 @@ html:not(.dark) {
   --mesh-b: rgba(167, 139, 250, 0.24);
   --mesh-c: rgba(96, 165, 250, 0.17);
   --noise-opacity: 0.02;
+
+  --mobile-surface: #f7f8fc;
+  --mobile-surface-2: #ffffff;
 }
 
 @layer base {
@@ -770,21 +777,77 @@ html:not(.dark) {
     -webkit-mask-image: linear-gradient(to bottom, black 62%, transparent);
   }
 
-  /* Adsterra Social Bar may inject a fixed top-level notice over the page.
-     Keep it below the sticky nav on phones so the logo and platform links
-     remain visible and tappable. The header itself also owns the top stack. */
+  /* ---------------------------------------------------------------------
+     MOBILE GPU BUDGET
+
+     Every `backdrop-filter` forces the compositor to re-sample and re-blur
+     the layer underneath on each scroll frame. Stacked glass panels (hero
+     card, trust tiles, bento cards, ad frames) turn a 60fps scroll into a
+     slideshow on mid-range phones. Under 768px every surface is therefore
+     flat and opaque; the floating header is the single exception, because
+     content genuinely scrolls beneath it.
+
+     `touch-action: pan-y` keeps vertical scrolling native (no scroll-jacking
+     listeners anywhere) while the platform strip opts back into pan-x.
+  --------------------------------------------------------------------- */
   @media (max-width: 767px) {
-    body > [style*="position: fixed"][style*="top: 0"],
-    body > [style*="position:fixed"][style*="top:0"],
-    body > [style*="position: fixed"][style*="top:0"],
-    body > [style*="position:fixed"][style*="top: 0"] {
-      top: 68px !important;
+    html,
+    body {
+      overflow-x: hidden;
+      touch-action: pan-y pinch-zoom;
+    }
+
+    .nav-strip {
+      touch-action: pan-x;
+    }
+
+    .panel,
+    .bento-card {
+      background-image: none;
+      background-color: var(--mobile-surface);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
+    .glass,
+    .seg-bar {
+      background-image: none;
+      background-color: var(--mobile-surface);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
+    .eyebrow {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      background-color: var(--mobile-surface);
+    }
+
+    /* Any Tailwind `backdrop-blur-*` utility below the header is neutralised:
+       chips, ad frames and cards stop paying for a blur nobody can see. */
+    main [class*="backdrop-blur"],
+    footer [class*="backdrop-blur"],
+    aside [class*="backdrop-blur"] {
+      --tw-backdrop-blur: ;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
+    .header-scrim {
+      backdrop-filter: blur(8px) saturate(120%);
+      -webkit-backdrop-filter: blur(8px) saturate(120%);
+    }
+
+    header .glass {
+      background-color: var(--mobile-surface);
+      backdrop-filter: blur(10px) saturate(120%);
+      -webkit-backdrop-filter: blur(10px) saturate(120%);
     }
   }
 
   /* Horizontal snap strip for the mobile platform switcher. */
   .nav-strip {
-    @apply flex items-center gap-1.5 overflow-x-auto px-4 py-2;
+    @apply flex items-center justify-between gap-0.5 overflow-x-auto px-2.5 py-2 sm:justify-start sm:gap-1.5 sm:px-4;
     scrollbar-width: none;
     -ms-overflow-style: none;
   }

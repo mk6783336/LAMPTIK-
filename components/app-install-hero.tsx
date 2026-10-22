@@ -6,6 +6,7 @@ import Link from "next/link";
 
 import { isAppMode, markAppInstalled, promptAppInstall } from "@/components/install-pwa";
 import { triggerDownloadMonetization } from "@/lib/monetization";
+import { androidApp } from "@/lib/site";
 
 function isIosDevice(): boolean {
   if (typeof window === "undefined" || typeof navigator === "undefined") return false;
@@ -24,8 +25,8 @@ function isIosDevice(): boolean {
 /**
  * Consumer Android APK & 1-Tap Web App installer hero for /app-download.
  *
- * Primary CTA: "⬇ Download LAMP TIK APK (Android)" — downloads the signed
- * v2.3 Android APK and sets the app session so returning users have zero
+ * Primary CTA: "⬇ Download LAMP TIK APK v3.0 (4.2 MB)" — downloads the signed
+ * native Android APK and sets the app session so returning users have zero
  * friction.
  * Secondary CTA: "Install Instant Web App (1-Tap)" — triggers the native
  * browser PWA prompt or iPhone Add-to-Home-Screen sheet.
@@ -80,13 +81,13 @@ export function AppInstallHero() {
     <div className="flex w-full flex-col items-center gap-3.5">
       <div className="flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
         <a
-          href="/downloads/lamptik-v2.3.apk"
-          download="LAMP-TIK-v2.3.apk"
+          href={`/downloads/${androidApp.fileName}`}
+          download={androidApp.downloadName}
           onClick={onDownloadApk}
           className="btn btn-primary tool-cta group h-[62px] w-full gap-2.5 px-7 text-base font-bold shadow-[0_20px_50px_-14px_rgba(34,211,238,0.65)] sm:w-auto sm:min-w-[330px]"
         >
           <Download className="size-5 transition-transform duration-200 group-hover:translate-y-0.5" />
-          ⬇ Download LAMP TIK APK (Android)
+          ⬇ Download LAMP TIK APK v{androidApp.version} ({androidApp.sizeLabel})
         </a>
 
         <button
@@ -105,7 +106,7 @@ export function AppInstallHero() {
       </div>
 
       <p className="text-sm text-[var(--text-3)]">
-        Official v2.3 Signed APK · Android 7.0+ · Virus-Free · Unlocks YouTube 1080p &amp; MP3
+        Official v{androidApp.version} Signed APK · {androidApp.sizeLabel} · {androidApp.minAndroid} · Native app, not a website wrapper
       </p>
 
       {unlocked ? (
@@ -114,7 +115,7 @@ export function AppInstallHero() {
           className="group inline-flex items-center gap-2 rounded-full border border-[#ff0033]/40 bg-[#ff0033]/10 px-4 py-2 text-sm font-semibold text-[var(--text)] transition-colors duration-200 hover:border-[#ff0033]/70"
         >
           <Youtube className="size-4 text-[#ff0033]" />
-          App Ready — Open YouTube 1080p &amp; MP3 Downloader →
+          App installed — open YouTube 1080p &amp; MP3 downloads →
         </Link>
       ) : null}
 
@@ -159,7 +160,7 @@ export function AppInstallHero() {
                 },
                 {
                   title: "Tap Add & Launch",
-                  body: "Open LAMP TIK from your home screen with YouTube 1080p unlocked!",
+                  body: "Open LAMP TIK from your home screen — every downloader is ready.",
                 },
               ].map((step, i) => (
                 <li key={step.title} className="flex gap-3">
