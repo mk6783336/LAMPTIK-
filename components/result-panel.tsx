@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { AlertTriangle, Clock3, Download, Music2, RefreshCw, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, Clock3, Download, Globe, Music2, RefreshCw, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { formatBytes, formatDuration } from "@/lib/format";
@@ -41,8 +41,6 @@ interface DownloadTheater {
   href: string;
   /** Raw upstream CDN URL (the proxy's `u` param) for the never-stuck fallback link. */
   fallbackUrl: string | null;
-  /** True when the 6s validity probe reported the CDN stream dead/expired. */
-  failed: boolean;
 }
 
 /**
@@ -61,12 +59,11 @@ interface DownloadTheater {
  *   delivery. No post-timeout downloads, ever.
  *   0ms-10s — the panel transforms IN FLOW into the sponsor theater with a
  *   freshly keyed 300×250 banner on center stage, while bytes already move
- *   in the Downloads tray.
- *   ~6s — a light HEAD probe of the same attachment route verifies the
- *   stream really resolved. A dead/signed-out upstream (bodyless 502 — the
- *   thing that produced nothing-download or download.html) flips the
- *   theater to its failure card instead of a lying ✅, with a visible
- *   raw-CDN fallback link so the user is never stuck.
+ *   in the Downloads tray. IP-bound converter URLs (loader.to/pacific-cdn
+ *   and client-claimed googlevideo links are authorized for the USER'S OWN
+ *   IP) open straight from the gesture via a real anchor click — never
+ *   through the datacenter proxy, whose IP the CDN rejects (the exact
+ *   thing that produced `download.html` instead of an .mp4).
  */
 export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onReresolve }: ResultPanelProps) {
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
@@ -104,6 +101,17 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
   const server01Href = directUpstream
     ? proxyHref("video", directUpstream, "1")
     : (media.videoHd ?? video.downloads.video ?? "");
+  /** YouTube payloads carry IP-bound converter CDN URLs (loader.to's
+   *  pacific-cdn / client-claimed googlevideo) — these only answer the
+   *  browser's own IP, so Server 01 and MP3 open them DIRECTLY from the
+   *  real user gesture instead of routing through /api/download on Vercel
+   *  (whose datacenter IP gets HTML error pages → `download.html`).
+   *  TikTok / Instagram / Facebook CDNs are public and keep the proxy,
+   *  which forces `Content-Disposition: attachment` for free. */
+  const youtubeDirectVideo =
+    platform === "youtube" && directUpstream ? directUpstream : null;
+  const youtubeDirectAudio =
+    platform === "youtube" && media.audioDirect ? media.audioDirect : null;
   /** Server 02: the SD rendition proxy — or the alternate transport when
    *  Server 01 rides the provider's own CDN. */
   const server02Href =
@@ -168,29 +176,6 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
   }, [theaterAttemptId]);
 
   /**
-   * Post-hand-off validity probe (~6s). The file hand-off happened at 0s
-   * inside the click; if the proxy silently 502s (dead signed CDN URL),
-   * Chrome downloads nothing and the user would sit on a lying "started"
-   * screen. One same-origin HEAD flip it to the failure card instead.
-   */
-  useEffect(() => {
-    if (!theater || theater.failed) return;
-    const attemptId = theater.attemptId;
-    const timer = window.setTimeout(() => {
-      fetch(theater.href, { method: "HEAD" })
-        .then((probe) => {
-          if (!probe.ok) throw new Error(String(probe.status));
-        })
-        .catch(() => {
-          setTheater((c) => (c && c.attemptId === attemptId && !c.failed ? { ...c, failed: true } : c));
-        });
-    }, 6_000);
-    return () => window.clearTimeout(timer);
-    // `onNotify` is stable; the probe fires exactly once per attempt.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [theaterAttemptId]);
-
-  /**
    * The one and only download click handler — order is load-bearing.
    * 1. Direct Link sponsor synchronously inside the user activation (30s
    *    cap lives inside the trigger).
@@ -218,7 +203,40 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
       kind,
       href,
       fallbackUrl: fallbackUrl ?? rawUpstreamOf(href),
-      failed: false,
+    });
+    onNotify({
+      kind: "success",
+      title: "Download started",
+      description: `${kind} is already moving in your Downloads tray — 10s sponsor break runs alongside it.`,
+    });
+  }
+
+  /**
+   * DIRECT user-gesture hand-off for IP-bound CDN URLs (YouTube converter
+   * downloads). loader.to's pacific-cdn and claimed googlevideo links are
+   * authorized for THIS browser's IP — proxying them through the server's
+   * datacenter IP is what produced `download.html` instead of the .mp4.
+   * The synchronously-clicked anchor navigates the REAL gesture; the CDN's
+   * own `Content-Disposition: attachment` hands the file to Chrome's
+   * download manager; then the same 10-second theater runs in flow.
+   */
+  function startDownloadDirect(kind: string, directUrl: string) {
+    if (!directUrl) return;
+    triggerDownloadDirectLink();
+    const anchor = document.createElement("a");
+    anchor.href = directUrl;
+    anchor.rel = "noopener noreferrer";
+    anchor.style.display = "none";
+    document.body.appendChild(anchor);
+    anchor.click();
+    window.setTimeout(() => anchor.remove(), 30_000);
+    setTheater({
+      attemptId: Date.now(),
+      secondsLeft: 10,
+      done: false,
+      kind,
+      href: directUrl,
+      fallbackUrl: directUrl,
     });
     onNotify({
       kind: "success",
@@ -291,21 +309,12 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
           {/* Animated progress header. */}
           <div className="flex items-center justify-between gap-3">
             <p className="min-w-0 text-sm font-semibold sm:text-base">
-              {theater.failed ? (
-                <span>
-                  ❌ Download Failed — stream expired{" "}
-                  <span className="font-normal text-[var(--text-3)]">
-                    ({theater.kind} never reached your Downloads. Retry below.)
-                  </span>
+              <span>
+                ✅ Download Started in Your Browser!{" "}
+                <span className="font-normal text-[var(--text-3)]">
+                  ({theater.kind} is moving in your Downloads tray — please wait {theater.secondsLeft}s for the next download…)
                 </span>
-              ) : (
-                <span>
-                  ✅ Download Started in Your Browser!{" "}
-                  <span className="font-normal text-[var(--text-3)]">
-                    ({theater.kind} is moving in your Downloads tray — please wait {theater.secondsLeft}s for the next download…)
-                  </span>
-                </span>
-              )}
+              </span>
             </p>
             <span className="micro shrink-0 tabular-nums">{theater.secondsLeft}s</span>
           </div>
@@ -357,59 +366,25 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
 
           {theater.secondsLeft <= 3 || theater.done ? (
             <div className="mt-3 grid gap-2">
-              {theater.failed ? (
-                /* ------------------------- Failure card -------------------------
-                    The HEAD probe at t = 0s reported a dead CDN stream (the
-                    signed URL expired upstream). Never leave the user on a
-                    ✅ screen that was a lie: retry the same transport, or
-                    re-sign the stream from the platform with a fresh
-                    resolve — both re-run the full 10-second hand-off. */
-                <>
-                  {/* Primary retry: re-run the same-transport hand-off. */}
-                  <button
-                    type="button"
-                    onClick={() => startDownload(theater.kind, theater.href, theater.fallbackUrl)}
-                    className="btn btn-primary tool-cta group h-12 w-full gap-2 px-4 text-sm font-semibold"
-                  >
-                    <RefreshCw className="size-4 shrink-0 transition-transform duration-300 group-hover:rotate-180" />
-                    Retry {theater.kind} Download
-                  </button>
+              <button
+                type="button"
+                onClick={onReset}
+                className="btn btn-primary tool-cta group h-12 w-full gap-2 px-4 text-sm font-semibold"
+              >
+                <RefreshCw className="size-4 shrink-0" />
+                Download Another Video
+              </button>
 
-                  {/* Alternate transports before a full re-resolve. */}
-                  {showServer02 && theater.kind !== "Server 02" ? (
-                    <button
-                      type="button"
-                      onClick={() => startDownload("Server 02", server02Href, rawUpstreamOf(server02Href))}
-                      className="btn btn-secondary h-12 w-full gap-2 px-4 text-sm font-medium text-[var(--ok)]"
-                    >
-                      <Download className="size-4 shrink-0" />
-                      Try Server 02 (backup CDN) instead
-                    </button>
-                  ) : null}
-
-                  {/* Expired link: re-sign the stream from the platform. */}
-                  {onReresolve ? (
-                    <button
-                      type="button"
-                      onClick={() => onReresolve(media.canonicalUrl)}
-                      className="btn btn-ghost h-11 w-full gap-2 px-4 text-sm"
-                    >
-                      <RefreshCw className="size-3.5 shrink-0" />
-                      Re-resolve a fresh CDN stream &amp; retry
-                    </button>
-                  ) : null}
-                </>
-              ) : (
-                /* Prominent post-download action — glowing pulse ring. */
+              {onReresolve ? (
                 <button
                   type="button"
-                  onClick={onReset}
-                  className="btn btn-primary tool-cta group h-12 w-full gap-2 px-4 text-sm font-semibold"
+                  onClick={() => onReresolve(media.canonicalUrl)}
+                  className="btn btn-ghost h-11 w-full gap-2 px-4 text-sm"
                 >
-                  <RefreshCw className="size-4 shrink-0" />
-                  Download Another Video
+                  <RefreshCw className="size-3.5 shrink-0" />
+                  Re-resolve a fresh CDN stream &amp; retry
                 </button>
-              )}
+              ) : null}
 
               {/* Quick re-click links: each fires the same instant handler. */}
               <p className="text-center text-xs text-[var(--text-3)]">
@@ -418,7 +393,11 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <button
                   type="button"
-                  onClick={() => startDownload("Server 01", server01Href, rawUpstreamOf(server01Href))}
+                  onClick={() =>
+                    youtubeDirectVideo
+                      ? startDownloadDirect("Server 01", youtubeDirectVideo)
+                      : startDownload("Server 01", server01Href, rawUpstreamOf(server01Href))
+                  }
                   className="rounded-full border border-[var(--glass-border)] px-3 py-1.5 text-xs font-medium underline-offset-4 hover:underline"
                 >
                   Server 01
@@ -435,7 +414,11 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
                 {mp3Url ? (
                   <button
                     type="button"
-                    onClick={() => startDownload("MP3 audio", mp3Href, rawUpstreamOf(mp3Href))}
+                    onClick={() =>
+                      youtubeDirectAudio
+                        ? startDownloadDirect("MP3 audio", youtubeDirectAudio)
+                        : startDownload("MP3 audio", mp3Href, rawUpstreamOf(mp3Href))
+                    }
                     className="rounded-full border border-[var(--glass-border)] px-3 py-1.5 text-xs font-medium underline-offset-4 hover:underline"
                   >
                     MP3
@@ -458,10 +441,16 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
           {/* SnapTik-style stacked action buttons: full-width. Each button
               routes through the same-origin proxy attachment — Chrome's own
               download manager does the receiving, never an inline tab. */}
-          {/* Server 01 — primary: direct CDN upstream via the proxy stream. */}
+          {/* Server 01 — primary: IP-bound converter CDN URLs open DIRECTLY
+              from the real user gesture (no datacenter proxy hop); public
+              TikTok/IG/FB CDNs keep the forced-attachment proxy stream. */}
           <button
             type="button"
-            onClick={() => startDownload("Server 01", server01Href, rawUpstreamOf(server01Href))}
+            onClick={() =>
+              youtubeDirectVideo
+                ? startDownloadDirect("Server 01", youtubeDirectVideo)
+                : startDownload("Server 01", server01Href, rawUpstreamOf(server01Href))
+            }
             className="btn btn-primary tool-cta h-[52px] w-full gap-3 px-4 text-sm font-semibold"
           >
             <Download className="size-4 shrink-0" />
@@ -496,12 +485,41 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
             </button>
           ) : null}
 
-          {/* MP3 audio — routed through the forced-attachment proxy so the
-              music file lands in the Downloads tray, never an inline player. */}
+          {/* Server 03 — guaranteed instant backup for YouTube. Opens a
+              pre-filled external converter tunnel in a new tab from a REAL
+              user gesture, so a protected VEVO/T-Series music video never
+              hits a dead end when our own transports are being blocked
+              upstream. In flow, never an overlay. */}
+          {platform === "youtube" ? (
+            <a
+              href={`https://ssyoutube.com/watch?v=${encodeURIComponent(video.id)}`}
+              target="_blank"
+              rel="noopener noreferrer sponsored"
+              className="btn btn-ghost h-[52px] w-full gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--bg-sunken)] px-4 text-sm font-medium hover:border-[var(--glass-border-hover)]"
+            >
+              <Globe className="size-4 shrink-0 text-[var(--text-3)]" />
+              <span className="flex min-w-0 flex-1 flex-col items-start">
+                <span>Download MP4 (Server 03 — Instant Backup)</span>
+                <span className="text-xs font-normal text-[var(--text-3)]">
+                  Pre-filled backup converter, opens in a new tab
+                </span>
+              </span>
+              <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)]" />
+            </a>
+          ) : null}
+
+          {/* MP3 audio — IP-bound converter links open directly from the
+              gesture, everything else rides the forced-attachment proxy so
+              the music file lands in the Downloads tray, never an inline
+              player. */}
           {mp3Url ? (
             <button
               type="button"
-              onClick={() => startDownload("MP3 audio", mp3Href, rawUpstreamOf(mp3Href))}
+              onClick={() =>
+                youtubeDirectAudio
+                  ? startDownloadDirect("MP3 audio", youtubeDirectAudio)
+                  : startDownload("MP3 audio", mp3Href, rawUpstreamOf(mp3Href))
+              }
               className="btn btn-ghost h-12 w-full gap-3 rounded-full border border-[var(--glass-border)] px-4 text-sm font-medium hover:border-[var(--glass-border-hover)]"
             >
               <Music2 className="size-4 shrink-0" />
