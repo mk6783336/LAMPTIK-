@@ -25,6 +25,10 @@ interface ResultPanelProps {
   /** Bumped by the downloader on every resolve/reset; re-keys the banner
       slots for fresh impressions (throttled globally inside AdSlot). */
   refreshKey?: number;
+  /** Fire the cache-busting re-resolve (POST /api/fetch {force:true}) for a
+      canonical URL — shown on the theater's failure card so an expired
+      signed CDN link re-signs itself without re-pasting. */
+  onReresolve?: (url: string) => void;
 }
 
 /** One click's worth of sponsor theater. */
@@ -35,6 +39,10 @@ interface DownloadTheater {
   kind: string;
   /** Same-origin `/api/download` attachment URL handed to Chrome at 0s. */
   href: string;
+  /** True once the HEAD probe passed and the hidden iframe is streaming. */
+  handed: boolean;
+  /** True when the HEAD probe reported the CDN stream dead/expired. */
+  failed: boolean;
 }
 
 /**
@@ -61,7 +69,7 @@ interface DownloadTheater {
  * side streams the bytes (with platform-correct referers) and, when a CDNP
  * refuses server IPs or the file is huge, hands off via a verified 302.
  */
-export function ResultPanel({ media, video, onReset, onNotify, refreshKey }: ResultPanelProps) {
+export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onReresolve }: ResultPanelProps) {
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
   const [theater, setTheater] = useState<DownloadTheater | null>(null);
   /** Guard: the 0s hand-off fires exactly once per attempt. */
@@ -143,7 +151,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey }: Res
     const interval = window.setInterval(() => {
       setTheater((current) => {
         if (!current || current.done) return current;
-        if (current.secondsLeft <= 1) return { ...current, secondsLeft: 0, done: true };
+        if (current.secondsLeft <= 1) return { ...current, secondsLeft: 0, done: true, handed: false };
         return { ...current, secondsLeft: current.secondsLeft - 1 };
       });
     }, 1_000);
@@ -161,21 +169,74 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey }: Res
    * navigation away from the page, and no cross-origin `download` attribute
    * being ignored.
    */
+  /**
+   * Stage B — the actual file hand-off at t = 0s.
+   * Before the hidden iframe navigates, a synchronous-cheap HEAD probe asks
+   * the same-origin route whether the signed upstream still resolves to
+   * media. A 502 means the stream expired: the theater flips to its
+   * failure card (Retry / fresh-stream re-resolve) instead of firing an
+   * iframe that would silently never download.
+   * A display:none iframe is the one mechanism that reaches Chrome's native
+   * download manager 100% of the time for a same-origin attachment stream:
+   * no user-activation conflict with the sponsor tab, no popup blocker, no
+   * navigation away from the page, and no cross-origin `download` attribute
+   * being ignored.
+   */
   useEffect(() => {
-    if (!theater || theater.secondsLeft !== 0) return;
+    if (!theater || theater.secondsLeft !== 0 || theater.handed || theater.failed) return;
     if (firedAttemptRef.current === theater.attemptId) return;
     firedAttemptRef.current = theater.attemptId;
 
-    const frame = document.createElement("iframe");
-    frame.style.display = "none";
-    frame.setAttribute("aria-hidden", "true");
-    frame.setAttribute("title", "Starting download");
-    frame.src = theater.href;
-    document.body.appendChild(frame);
-    // Live until the proxied stream has had its full 300s window — removing
-    // the frame earlier aborts a still-streaming download.
-    window.setTimeout(() => frame.remove(), 300_000);
-  }, [theater]);
+    let cancelled = false;
+    const attemptId = theater.attemptId;
+    (async () => {
+      try {
+        const probe = await fetch(theater.href, { method: "HEAD" });
+        if (cancelled) return;
+        if (!probe.ok) {
+          setTheater((c) =>
+            c && c.attemptId === attemptId ? { ...c, failed: true } : c,
+          );
+          onNotify({
+            kind: "error",
+            title: "Download failed",
+            description: `The CDN stream for ${theater.kind} expired — tap Retry below to re-run the hand-off.`,
+          });
+          return;
+        }
+      } catch {
+        // HEAD never even reached the server; the GET would fare no better.
+        if (!cancelled) {
+          setTheater((c) => (c && c.attemptId === attemptId ? { ...c, failed: true } : c));
+          onNotify({
+            kind: "error",
+            title: "Download failed",
+            description: `The CDN stream for ${theater.kind} is unreachable — tap Retry below.`,
+          });
+        }
+        return;
+      }
+
+      const frame = document.createElement("iframe");
+      frame.style.display = "none";
+      frame.setAttribute("aria-hidden", "true");
+      frame.setAttribute("title", "Starting download");
+      frame.src = theater.href;
+      document.body.appendChild(frame);
+      // Live until the proxied stream has had its full 300s window — removing
+      // the frame earlier aborts a still-streaming download.
+      window.setTimeout(() => frame.remove(), 300_000);
+      setTheater((c) =>
+        c && c.attemptId === attemptId ? { ...c, handed: true } : c,
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // `onNotify` is a stable useCallback from the shell — kept in deps for
+    // the hook rule; it never re-triggers on its own.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theater, onNotify]);
 
   /**
    * The one and only download click handler — order is load-bearing.
@@ -187,7 +248,15 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey }: Res
   function startDownload(kind: string, href: string) {
     if (!href) return;
     triggerDownloadDirectLink();
-    setTheater({ attemptId: Date.now(), secondsLeft: 10, done: false, kind, href });
+    setTheater({
+      attemptId: Date.now(),
+      secondsLeft: 10,
+      done: false,
+      kind,
+      href,
+      handed: false,
+      failed: false,
+    });
     onNotify({
       kind: "success",
       title: "Download starting",
@@ -258,7 +327,22 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey }: Res
         >
           {/* Animated progress header. */}
           <div className="flex items-center justify-between gap-3">
-            <p className="min-w-0 text-sm font-semibold sm:text-base">                {theater.done ? (
+            <p className="min-w-0 text-sm font-semibold sm:text-base">
+              {theater.failed ? (
+                <span>
+                  ❌ Download Failed — stream expired{" "}
+                  <span className="font-normal text-[var(--text-3)]">
+                    ({theater.kind} never reached your Downloads. Retry below.)
+                  </span>
+                </span>
+              ) : theater.done && !theater.handed ? (
+                <span>
+                  🔄 Connecting Chrome to the CDN…{" "}
+                  <span className="font-normal text-[var(--text-3)]">
+                    Verifying the stream before the hand-off
+                  </span>
+                </span>
+              ) : theater.done ? (
                 <span>
                   ✅ Download Started in Your Browser!{" "}
                   <span className="font-normal text-[var(--text-3)]">
@@ -307,17 +391,61 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey }: Res
             🔥 Sponsored High-Speed Partner — Check Out Today&apos;s Offer ↗
           </a>
 
-          {theater.done ? (
+          {theater.done && (theater.handed || theater.failed) ? (
             <div className="mt-3 grid gap-2">
-              {/* Prominent post-download action — glowing pulse ring. */}
-              <button
-                type="button"
-                onClick={onReset}
-                className="btn btn-primary tool-cta group h-12 w-full gap-2 px-4 text-sm font-semibold"
-              >
-                <RefreshCw className="size-4 shrink-0" />
-                Download Another Video
-              </button>
+              {theater.failed ? (
+                /* ------------------------- Failure card -------------------------
+                    The HEAD probe at t = 0s reported a dead CDN stream (the
+                    signed URL expired upstream). Never leave the user on a
+                    ✅ screen that was a lie: retry the same transport, or
+                    re-sign the stream from the platform with a fresh
+                    resolve — both re-run the full 10-second hand-off. */
+                <>
+                  {/* Primary retry: re-run the same-transport hand-off. */}
+                  <button
+                    type="button"
+                    onClick={() => startDownload(theater.kind, theater.href)}
+                    className="btn btn-primary tool-cta group h-12 w-full gap-2 px-4 text-sm font-semibold"
+                  >
+                    <RefreshCw className="size-4 shrink-0 transition-transform duration-300 group-hover:rotate-180" />
+                    Retry {theater.kind} Download
+                  </button>
+
+                  {/* Alternate transports before a full re-resolve. */}
+                  {showServer02 && theater.kind !== "Server 02" ? (
+                    <button
+                      type="button"
+                      onClick={() => startDownload("Server 02", server02Href)}
+                      className="btn btn-secondary h-12 w-full gap-2 px-4 text-sm font-medium text-[var(--ok)]"
+                    >
+                      <Download className="size-4 shrink-0" />
+                      Try Server 02 (backup CDN) instead
+                    </button>
+                  ) : null}
+
+                  {/* Expired link: re-sign the stream from the platform. */}
+                  {onReresolve ? (
+                    <button
+                      type="button"
+                      onClick={() => onReresolve(media.canonicalUrl)}
+                      className="btn btn-ghost h-11 w-full gap-2 px-4 text-sm"
+                    >
+                      <RefreshCw className="size-3.5 shrink-0" />
+                      Re-resolve a fresh CDN stream &amp; retry
+                    </button>
+                  ) : null}
+                </>
+              ) : (
+                /* Prominent post-download action — glowing pulse ring. */
+                <button
+                  type="button"
+                  onClick={onReset}
+                  className="btn btn-primary tool-cta group h-12 w-full gap-2 px-4 text-sm font-semibold"
+                >
+                  <RefreshCw className="size-4 shrink-0" />
+                  Download Another Video
+                </button>
+              )}
 
               {/* Quick re-click links: each fires the same instant handler. */}
               <p className="text-center text-xs text-[var(--text-3)]">

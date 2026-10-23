@@ -159,9 +159,11 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
   const resultRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const tickerRef = useRef<number | null>(null);
-  /** Always-current submit handler, so the share-sheet effect can call it
-      without re-subscribing on every render. */
-  const submitRef = useRef<(url: string) => Promise<void>>(async () => {});
+  /** Always-current submit handler, so the share-sheet effect and the result
+      panel's failure-retry can call it without re-subscribing on every render. */
+  const submitRef = useRef<
+    (url: string, options?: { force?: boolean }) => Promise<void>
+  >(async () => {});
   const reduceMotion = useReducedMotion();
 
   const isLoading = status === "loading";
@@ -294,7 +296,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     inputRef.current?.focus();
   }
 
-  async function handleSubmitUrl(rawUrl: string) {
+  async function handleSubmitUrl(rawUrl: string, options: { force?: boolean } = {}) {
     if (isLoading) return;
     // Sanitize messy mobile share-sheet text: extract the first valid video
     // URL from surrounding words instead of rejecting the paste.
@@ -339,7 +341,9 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
           const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ url }),
+            // `force` bypasses the server's 3-minute resolve cache — the
+            // download-retry path (an expired signed CDN URL must re-sign).
+            body: JSON.stringify({ url, force: options.force === true }),
             signal: controller.signal,
           });
           const body = (await response.json().catch(() => null)) as ApiResponse | null;
@@ -574,6 +578,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
                 onReset={reset}
                 onNotify={notify}
                 refreshKey={adRefreshKey}
+                onReresolve={(url) => void submitRef.current(url, { force: true })}
               />
             </motion.div>
           ) : null}
