@@ -3,6 +3,7 @@ import ytdl from "@distube/ytdl-core";
 import { AppError } from "@/lib/errors";
 import { asRecord, asString, cleanCaption, DESKTOP_UA, toDuration } from "@/lib/http";
 import { runWaterfall, WATERFALL_TIMEOUT_MS } from "@/lib/load-balancer";
+import { ytdlpExtract } from "@/lib/youtube-ytdlp";
 
 /**
  * Bulletproof multi-provider YouTube resolution engine.
@@ -554,6 +555,26 @@ const PIPED_APIS = ["https://pipedapi.adminforge.de"];
 
 const INVIDIOUS_APIS = ["https://inv.nadeko.net", "https://invidious.nerdvpn.de"];
 
+/**
+ * yt-dlp with the forced Android player client (`player_client=android`).
+ * The strongest direct extractor available: the Android client signature
+ * survives the web bot walls, and the `-j` payload carries a REAL duration
+ * and title, so a ytdlp winner can never land as a `0:00` card. Runs where
+ * the binary or a configured bridge exists; anywhere else it fails fast to
+ * a clean AppError and the rest of the waterfall keeps racing.
+ */
+async function ytdlpAndroidResolve(videoId: string, canonicalUrl: string): Promise<TierHit> {
+  const hit = await ytdlpExtract(canonicalUrl);
+  return {
+    id: videoId,
+    title: hit.title || `YouTube video ${videoId}`,
+    author: hit.author || "YouTube",
+    duration: hit.duration,
+    thumbnail: hit.thumbnail ?? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+    streams: { video: hit.video, videoSd: null, audio: null },
+  };
+}
+
 interface PipedStream {
   url?: unknown;
   quality?: unknown;
@@ -1000,6 +1021,11 @@ export async function startYouTubeResolution(rawUrl: string): Promise<YouTubeRes
         fn: () => pipedStreams(id, api),
       })),
       { name: "youtube:ytdl-core", timeoutMs: WATERFALL_TIMEOUT_MS, fn: () => ytdlCoreResolve(id, canonicalUrl) },
+      {
+        name: "youtube:ytdlp-android",
+        timeoutMs: 8_000,
+        fn: () => ytdlpAndroidResolve(id, canonicalUrl),
+      },
       ...INNERTUBE_CLIENTS.map((client) => ({
         name: client.name,
         timeoutMs: WATERFALL_TIMEOUT_MS,
@@ -1163,6 +1189,11 @@ export async function extractYouTube(rawUrl: string): Promise<ResolvedYouTube> {
         name: "youtube:ytdl-core",
         timeoutMs: WATERFALL_TIMEOUT_MS,
         fn: () => ytdlCoreResolve(id, canonicalUrl),
+      },
+      {
+        name: "youtube:ytdlp-android",
+        timeoutMs: 8_000,
+        fn: () => ytdlpAndroidResolve(id, canonicalUrl),
       },
       ...INNERTUBE_CLIENTS.map((client) => ({
         name: client.name,
