@@ -24,15 +24,25 @@ import java.util.zip.ZipOutputStream;
  * `app/src/main/assets` with a canonical forward-slash name, plus
  * `classes.dex`.
  *
- * Fonts and bitmap art are STORED (uncompressed) so AssetManager can mmap
- * them directly instead of inflating a multi-hundred-KB TTF on the UI
- * thread; `zipalign -p 4` then page-aligns them in the build script.
+ * CRITICAL — Android 11–15 package-parser hard requirements:
+ *   • `resources.arsc` MUST be STORED (0% compression). A deflated arsc makes
+ *     the package installer reject the APK outright with "App not installed."
+ *     This packer therefore PRESERVES each source entry's compression method
+ *     instead of re-creating every entry with the ZipOutputStream DEFLATED
+ *     default, which silently recompressed `resources.arsc` in v3.1–v3.4 and
+ *     broke installs on Android 11+.
+ *   • fonts/bitmaps stay STORED so AssetManager can mmap them directly.
+ * `zipalign -p -f 4` in the build script then 4-byte/page-aligns the stored
+ * entries — and it MUST run BEFORE `apksigner sign`, never after.
  *
  * Usage: java PackAssets <base.apk> <out.apk> <assetsDir> <classes.dex>
  */
 public final class PackAssets {
 
     private static final String[] STORED_SUFFIXES = {".ttf", ".otf", ".png", ".webp", ".mp3"};
+
+    /** The one entry Android's parser refuses to accept compressed. */
+    private static final String ARSC = "resources.arsc";
 
     public static void main(String[] args) throws IOException {
         if (args.length < 4) {
@@ -60,6 +70,7 @@ public final class PackAssets {
         }
         additions.put("classes.dex", dex);
 
+        int storedPreserved = 0;
         try (ZipFile in = new ZipFile(base.toFile());
              ZipOutputStream zip = new ZipOutputStream(Files.newOutputStream(out))) {
             zip.setLevel(9);
@@ -69,12 +80,33 @@ public final class PackAssets {
                 if (!entry.isDirectory() && additions.containsKey(entry.getName())) {
                     continue; // re-added below with the canonical name
                 }
-                zip.putNextEntry(new ZipEntry(entry.getName()));
-                if (!entry.isDirectory()) {
-                    try (InputStream stream = in.getInputStream(entry)) {
-                        copy(stream, zip);
-                    }
+                if (entry.isDirectory()) {
+                    zip.putNextEntry(new ZipEntry(entry.getName()));
+                    zip.closeEntry();
+                    continue;
                 }
+
+                boolean keepStored = entry.getMethod() == ZipEntry.STORED
+                        // Belt and braces: if any toolchain ever emits the arsc
+                        // deflated, force it back to STORED anyway.
+                        || ARSC.equals(entry.getName());
+                byte[] content = readAll(in, entry);
+
+                ZipEntry outEntry = new ZipEntry(entry.getName());
+                outEntry.setTime(entry.getTime());
+                if (keepStored) {
+                    // For a STORED entry getInputStream() yields the raw
+                    // uncompressed content, so sizes and CRC stay valid.
+                    CRC32 crc = new CRC32();
+                    crc.update(content);
+                    outEntry.setMethod(ZipEntry.STORED);
+                    outEntry.setSize(content.length);
+                    outEntry.setCompressedSize(content.length);
+                    outEntry.setCrc(crc.getValue());
+                    storedPreserved += 1;
+                }
+                zip.putNextEntry(outEntry);
+                zip.write(content);
                 zip.closeEntry();
             }
 
@@ -98,8 +130,21 @@ public final class PackAssets {
             }
         }
 
-        System.out.println("packed " + additions.size() + " entries -> " + out
-                + " (" + Files.size(out) + " bytes)");
+        System.out.println("packed " + additions.size() + " entries (" + storedPreserved
+                + " stored preserved) -> " + out + " (" + Files.size(out) + " bytes)");
+    }
+
+    /**
+     * Fully materialize one source entry. STORED entries may report size 0 in
+     * rare toolchains, so never trust `entry.getSize()` for a copy — buffer
+     * the content and measure it.
+     */
+    private static byte[] readAll(ZipFile file, ZipEntry entry) throws IOException {
+        try (InputStream stream = file.getInputStream(entry)) {
+            var buffer = new java.io.ByteArrayOutputStream(Math.max(64, (int) Math.min(entry.getSize(), Integer.MAX_VALUE)));
+            copy(stream, buffer);
+            return buffer.toByteArray();
+        }
     }
 
     private static boolean stored(String name) {

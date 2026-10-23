@@ -6,10 +6,10 @@ every transfer to Android's own `DownloadManager`.
 
 | | |
 | --- | --- |
-| Application ID | `online.lamptik.app` |
-| Version | 3.4 (versionCode 34) |
-| Min / target SDK | 24 (Android 7.0) / 34 |
-| Artifact | `public/downloads/lamptik-v3.4.apk` |
+| Application ID | `online.lamptik.pro` |
+| Version | 3.5 (versionCode 35) |
+| Min / target SDK | 24 (Android 7.0) / 33 |
+| Artifact | `public/downloads/lamptik-v3.5.apk` |
 | Endpoint | `/api/apk` (serves the same bytes) |
 
 ## Screens
@@ -54,8 +54,10 @@ the release build or by CI.
 
 ## Signing
 
-The release key lives at **`.scratch/signing/release.keystore`** (gitignored,
-never committed). `apksigner` signs with v1 + v2 + v3.
+The release key lives at **`android-app/release-key.jks`** and is COMMITTED to
+the repository, so every build — local, CI or rebuild — signs with the exact
+same certificate. The gitignored single-copy layout caused the v3.4 release
+pain; it may never come back. `apksigner` signs with v1 + v2 + v3.
 
 Certificate fingerprint of the shipping key:
 
@@ -93,24 +95,27 @@ The workflow also compares the built certificate against
 
 ```bash
 BT="$ANDROID_HOME/build-tools/35.0.0"
-"$BT/apksigner" verify --print-certs public/downloads/lamptik-v3.4.apk
-"$BT/aapt2" dump badging public/downloads/lamptik-v3.4.apk | head -3
-unzip -l public/downloads/lamptik-v3.4.apk | tail -3
+"$BT/apksigner" verify --print-certs public/downloads/lamptik-v3.5.apk
+"$BT/aapt2" dump badging public/downloads/lamptik-v3.5.apk | head -3
+unzip -l public/downloads/lamptik-v3.5.apk | tail -3
 ```
 
-Expected: `package: name='online.lamptik.app' versionCode='34' versionName='3.4'`,
-launchable activity `online.lamptik.app.MainActivity`, the certificate above,
+Expected: `package: name='online.lamptik.pro' versionCode='35' versionName='3.5'`,
+launchable activity `online.lamptik.pro.MainActivity`, the certificate above,
 and `classes.dex` + the Inter fonts inside the archive.
 
 ## Install
 
 ```bash
-adb install -r public/downloads/lamptik-v3.4.apk
+adb install -r public/downloads/lamptik-v3.5.apk
 ```
 
 On a phone: open `https://www.lamptik.online/app-download`, download the APK,
-allow "Install unknown apps" for the browser, install and launch. Upgrading
-over 3.0–3.2 keeps the app's data because the signing key is identical.
+allow "Install unknown apps" for the browser, install and launch. Over 3.0–3.4
+the app's data is kept because the signing key is identical; the package id
+changed to `online.lamptik.pro` in v3.5 so it also installs cleanly
+SIDE BY SIDE next to any old differently-signed build instead of refusing with
+INSTALL_FAILED_UPDATE_INCOMPATIBLE.
 
 ## Releasing a new version
 

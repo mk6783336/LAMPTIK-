@@ -7,11 +7,11 @@
 #
 #   ANDROID_HOME=... JAVA_HOME=... ./android-app/build-native-apk.sh
 #
-# Signing: the release key lives at .scratch/signing/release.keystore, OUTSIDE
-# the per-build work directory, so a rebuild can never mint a new identity and
-# strand installed users on INSTALL_FAILED_UPDATE_INCOMPATIBLE. Back that file
-# up (see android-app/README.md); losing it means every future APK needs a
-# different applicationId to install side by side.
+# Signing: the release key lives at android-app/release-key.jks — COMMITTED
+# to the repository so every local build, CI run and rebuild signs with the
+# EXACT SAME certificate. Regenerating a key on any build would strand
+# installed users on INSTALL_FAILED_UPDATE_INCOMPATIBLE, which is exactly the
+# "App not installed." failure this layout exists to prevent.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -40,9 +40,9 @@ APKSIGNER="$(exe "$BT/apksigner")"
 ZIPALIGN="$(exe "$BT/zipalign")"
 AAPT2="$(exe "$BT/aapt2")"
 
-VERSION_CODE="${VERSION_CODE:-34}"
-VERSION_NAME="${VERSION_NAME:-3.4}"
-KEYSTORE="${KEYSTORE:-$ROOT/.scratch/signing/release.keystore}"
+VERSION_CODE="${VERSION_CODE:-35}"
+VERSION_NAME="${VERSION_NAME:-3.5}"
+KEYSTORE="${KEYSTORE:-$ROOT/android-app/release-key.jks}"
 mkdir -p "$(dirname "$KEYSTORE")"
 KS_PASS="${KS_PASS:-lamptik2026}"
 KS_ALIAS="${KS_ALIAS:-lamptik}"
@@ -64,7 +64,7 @@ echo "==> aapt2 link (resources + assets)"
   --manifest "$APP/AndroidManifest.xml" \
   --java "$WORK/gen" \
   --min-sdk-version 24 \
-  --target-sdk-version 34 \
+  --target-sdk-version 33 \
   --version-code "$VERSION_CODE" \
   --version-name "$VERSION_NAME" \
   "$WORK/compiled/res.zip"
@@ -104,7 +104,7 @@ echo "==> zipalign"
 "$ZIPALIGN" -f -p 4 "$WORK/unsigned-unaligned.apk" "$WORK/unsigned.apk"
 
 if [ ! -f "$KEYSTORE" ]; then
-  echo "==> generate release keystore"
+  echo "==> generate release keystore (FIRST RUN ONLY — back it up; it must never change)"
   keytool -genkeypair -v \
     -keystore "$KEYSTORE" \
     -storetype PKCS12 \
@@ -134,9 +134,16 @@ echo "==> apksigner"
 rm -f "$OUT"/*.idsig
 "$APKSIGNER" verify --min-sdk-version 21 --verbose "$APK"
 
+# Android 11–15 hard requirement, verified on the SIGNED artifact:
+# resources.arsc must be uncompressed (STORED) and 4-byte aligned, and
+# zipalign -p must have run BEFORE apksigner. -c checks in place without
+# touching the file; a failure here is a release blocker, never a warning.
+echo "==> zipalign verify (resources.arsc uncompressed + aligned)"
+"$ZIPALIGN" -c -p 4 "$APK"
+
 # Keep every earlier filename pointing at the SAME signed binary so links that
 # were cached by users and search engines never 404.
-for legacy in "$OUT/lamptik-v3.0.apk" "$OUT/lamptik-v3.1.apk" "$OUT/lamptik-v3.2.apk" "$OUT/lamptik-v3.3.apk"; do
+for legacy in "$OUT/lamptik-v3.0.apk" "$OUT/lamptik-v3.1.apk" "$OUT/lamptik-v3.2.apk" "$OUT/lamptik-v3.3.apk" "$OUT/lamptik-v3.4.apk"; do
   if [ "$APK" != "$legacy" ]; then
     cp -f "$APK" "$legacy"
     echo "==> legacy alias $(basename "$legacy")"

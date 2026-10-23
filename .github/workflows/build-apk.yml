@@ -36,20 +36,22 @@ jobs:
       - name: Install Android SDK Platform 34 & Build-Tools 35
         run: sdkmanager "platforms;android-34" "build-tools;35.0.0"
 
-      # The release key is deliberately not in the repository. Without it CI
-      # must fail: signing with a freshly generated key would produce an APK
-      # that cannot install over an existing one.
-      - name: Restore the release signing key
+      # The release key lives at android-app/release-key.jks, COMMITTED, so the
+      # same identity is used on every build. An ANDROID_KEYSTORE_BASE64 secret
+      # (rotation path) overrides it when present; with neither, the job fails
+      # rather than minting a key that can never update an installed app.
+      - name: Resolve the release signing key
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
           set -euo pipefail
-          if [ -z "${KEYSTORE_B64:-}" ]; then
-            echo "::error::ANDROID_KEYSTORE_BASE64 is not configured — refusing to mint a new signing key."
+          if [ -n "${KEYSTORE_B64:-}" ]; then
+            mkdir -p android-app
+            printf '%s' "$KEYSTORE_B64" | base64 -d > android-app/release-key.jks
+          elif [ ! -f android-app/release-key.jks ]; then
+            echo "::error::No release key: android-app/release-key.jks is missing and ANDROID_KEYSTORE_BASE64 is not configured."
             exit 1
           fi
-          mkdir -p .scratch/signing
-          printf '%s' "$KEYSTORE_B64" | base64 -d > .scratch/signing/release.keystore
 
       # The app is framework-only (no Gradle, no AndroidX): aapt2 -> javac ->
       # d8 -> PackAssets -> zipalign -> apksigner, all driven by one script so
@@ -63,7 +65,7 @@ jobs:
         run: |
           set -euo pipefail
           BT="$ANDROID_HOME/build-tools/35.0.0"
-          APK="public/downloads/lamptik-v3.4.apk"
+          APK="public/downloads/lamptik-v3.5.apk"
           "$BT/apksigner" verify --min-sdk-version 21 --verbose "$APK"
           "$BT/aapt2" dump badging "$APK" | grep -E "package:|launchable-activity:"
           cert=$("$BT/apksigner" verify --print-certs "$APK" \
@@ -81,12 +83,13 @@ jobs:
           set -euo pipefail
           git config user.name "mk6783336"
           git config user.email "mk6783336@users.noreply.github.com"
-          git add public/downloads/lamptik-v3.4.apk \
+          git add public/downloads/lamptik-v3.5.apk \
+                  public/downloads/lamptik-v3.4.apk \
                   public/downloads/lamptik-v3.3.apk \
                   public/downloads/lamptik-v3.2.apk \
                   public/downloads/lamptik-v3.1.apk \
                   public/downloads/lamptik-v3.0.apk
           if ! git diff --staged --quiet; then
-            git commit -m "chore(android): rebuild signed native lamptik-v3.4.apk [skip ci]"
+            git commit -m "chore(android): rebuild signed native lamptik-v3.5.apk [skip ci]"
             git push origin HEAD:main
           fi

@@ -114,8 +114,10 @@ export function parseYouTubeUrl(raw: string): { id: string; canonicalUrl: string
  */
 const LOADER_DOWNLOAD_API = "https://loader.to/ajax/download.php";
 const LOADER_FALLBACK_PROGRESS = "https://loader.to/ajax/progress.php";
-const LOADER_POLL_MS = 1_000;
-const LOADER_MAX_POLLS = 22;
+/** Every video rendition starts as its own conversion job; first done wins. */
+const LOADER_VIDEO_FORMATS = ["1080", "720", "360"] as const;
+const LOADER_POLL_MS = 1_200;
+const LOADER_MAX_POLLS = 21;
 /** Budget for the conversion path (job start + polling). Measured: real
  *  conversions land between ~2s (Shorts) and ~30s (long 1080p uploads).
  *  It runs in parallel with the direct providers, so a slow conversion never
@@ -274,29 +276,81 @@ async function loaderAwaitJob(job: LoaderJob): Promise<string> {
   throw new AppError("PROVIDER_UNAVAILABLE", "The converter mirror is still processing this video.");
 }
 
+/**
+ * POST /youtubei/v1/player purely for METADATA: the real duration in seconds.
+ * The converted-file path gives us a stream but never a duration, and the
+ * result card must never show "Duration 0:00" — that metered metadata probe
+ * usually answers even when YouTube bot-checks every stream provider.
+ */
+async function innertubeDuration(videoId: string): Promise<number> {
+  const response = await fetch(INNERTUBE_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Origin: "https://www.youtube.com",
+      Referer: "https://www.youtube.com/",
+      "User-Agent": DESKTOP_UA,
+    },
+    signal: AbortSignal.timeout(7_000),
+    body: JSON.stringify({
+      videoId,
+      // The WEB client answers videoDetails (title + lengthSeconds) even when
+      // it refuses to hand out streams — exactly what a metadata probe needs.
+      // The ANDROID client returns an empty player response instead.
+      context: { client: { clientName: "WEB", clientVersion: "2.20240304.00.00", hl: "en", gl: "US" } },
+      contentCheckOk: true,
+      racyCheckOk: true,
+    }),
+    cache: "no-store",
+  });
+  if (!response.ok) return 0;
+  const root = asRecord(await response.json().catch(() => null));
+  return toDuration(asRecord(root?.videoDetails)?.lengthSeconds);
+}
+
 /** Primary: Loader.to/OceanSaver — works from datacenter IPs. */
 async function loaderResolve(videoId: string, canonicalUrl: string): Promise<TierHit> {
-  // The author name comes from YouTube's public oEmbed (the converter only
-  // exposes title/thumbnail), fetched concurrently with the conversion jobs.
+  // oEmbed gives title/author; Innertube gives the real duration. Both run
+  // concurrently with the conversions instead of after them.
   const metaPromise = oembedMeta(videoId, canonicalUrl).catch(() => null);
+  const durationPromise = innertubeDuration(videoId).catch(() => 0);
 
-  const [videoJob, audioJob] = await Promise.all([
-    loaderStartJob("1080", canonicalUrl),
-    loaderStartJob("mp3", canonicalUrl).catch(() => null),
-  ]);
+  // Conversion jobs for EVERY rendition start together; whichever conversion
+  // finishes first wins the primary slot. Long videos fail on a single 1080p
+  // job all the time (cache pressure, warm 360p pool) while a lower rendition
+  // lands in seconds — never leave the user waiting on one queue.
+  const races = LOADER_VIDEO_FORMATS.map(async (format) => {
+    const job = await loaderStartJob(format, canonicalUrl);
+    return loaderAwaitJob(job);
+  });
+  const audioRace = (async () => {
+    try {
+      const mp3 = await loaderStartJob("mp3", canonicalUrl);
+      return await loaderAwaitJob(mp3);
+    } catch {
+      return null;
+    }
+  })();
 
-  const [videoUrl, audioUrl, meta] = await Promise.all([
-    loaderAwaitJob(videoJob),
-    audioJob ? loaderAwaitJob(audioJob).catch(() => null) : Promise.resolve(null),
+  // Promise.any: first fulfilled conversion wins; only when every video
+  // rendition rejects does the path fail (aggregate error carries the last
+  // AppError back to the waterfall).
+  const [winner, audioUrl, meta, duration] = await Promise.all([
+    Promise.any(races),
+    audioRace,
     metaPromise,
+    durationPromise,
   ]);
+  const videoUrl = winner;
 
   return {
     id: videoId,
-    title: videoJob.title ?? meta?.title ?? `YouTube video ${videoId}`,
+    title: meta?.title ?? `YouTube video ${videoId}`,
     author: meta?.author ?? "YouTube",
-    duration: meta?.duration ?? 0,
-    thumbnail: videoJob.thumbnail ?? meta?.thumbnail ?? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+    // Real seconds: Innertube metadata probe first — a card that says
+    // "Duration 0:00" is a bug, not a degraded state.
+    duration,
+    thumbnail: meta?.thumbnail ?? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
     streams: { video: videoUrl, videoSd: null, audio: audioUrl },
   };
 }
@@ -567,6 +621,50 @@ async function invidiousStreams(videoId: string, api: string): Promise<TierHit> 
   };
 }
 
+/**
+ * Cobalt tier — POST the canonical URL to open community cobalt instances and
+ * take the returned stream/tunnel URL. Cobalt handles YouTube's PO-token
+ * enforcement internally, so instances keep resolving from datacenter IPs
+ * where direct extraction is bot-checked. Instances come from
+ * `COBALT_API_URL` (env override) plus two community endpoints; every
+ * instance is best-effort (authed or dead ones are skipped) and the tier
+ * simply no-ops when none accept the request.
+ */
+const COBALT_INSTANCES = [
+  ...(process.env.COBALT_API_URL ? [process.env.COBALT_API_URL] : []),
+  "https://cobalt-api.kwiatekmiki.com",
+  "https://cobalt-api.twem.dev",
+];
+
+async function cobaltResolve(videoId: string, canonicalUrl: string): Promise<TierHit> {
+  for (const base of COBALT_INSTANCES) {
+    try {
+      const response = await fetch(base, {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json", "User-Agent": DESKTOP_UA },
+        body: JSON.stringify({ url: canonicalUrl, videoQuality: "1080", filenameStyle: "basic" }),
+        cache: "no-store",
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (!response.ok) continue;
+      const data = asRecord(await response.json().catch(() => null));
+      const stream = httpsUrl(data?.url) ?? httpsUrl(data?.tunnel);
+      if (!stream) continue;
+      return {
+        id: videoId,
+        title: `YouTube video ${videoId}`,
+        author: "YouTube",
+        duration: 0,
+        thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+        streams: { video: stream, videoSd: null, audio: null },
+      };
+    } catch {
+      continue;
+    }
+  }
+  throw new AppError("PROVIDER_UNAVAILABLE", "Resolving high-speed stream — cobalt mirrors declined.");
+}
+
 /* ------------------------------------------------------------------ Tier 4 */
 
 async function noembedMeta(videoId: string, canonicalUrl: string): Promise<TierHit> {
@@ -636,9 +734,9 @@ function isDefinitiveVideoError(error: unknown): boolean {
  * rate-limiting this network"). When both sides fail, a definitive video
  * error (private / deleted / livestream) is preferred over provider noise.
  */
-function firstDefinitiveHit(direct: Promise<TierHit>, conversion: Promise<TierHit>): Promise<TierHit> {
+function firstDefinitiveHit(...chains: Array<Promise<TierHit>>): Promise<TierHit> {
   return new Promise<TierHit>((resolve, reject) => {
-    let pending = 2;
+    let pending = chains.length;
     let definitive: unknown = null;
     let lastError: unknown = null;
     const fail = (error: unknown) => {
@@ -653,8 +751,7 @@ function firstDefinitiveHit(direct: Promise<TierHit>, conversion: Promise<TierHi
         );
       }
     };
-    direct.then(resolve, fail);
-    conversion.then(resolve, fail);
+    for (const chain of chains) chain.then(resolve, fail);
   });
 }
 
@@ -689,6 +786,13 @@ export async function extractYouTube(rawUrl: string): Promise<ResolvedYouTube> {
       LOADER_TIMEOUT_MS,
       "youtube:loader",
     );
+    // Cobalt mirror: raced alongside the converter, same deadline, first
+    // stream wins — a dead instance costs nothing.
+    const cobaltChain = withDeadline(
+      cobaltResolve(id, canonicalUrl),
+      LOADER_TIMEOUT_MS,
+      "youtube:cobalt",
+    );
     const directChain = runWaterfall<TierHit>([
       // Tier 2: active Invidious / Piped mirrors.
       ...INVIDIOUS_APIS.map((api) => ({
@@ -714,7 +818,7 @@ export async function extractYouTube(rawUrl: string): Promise<ResolvedYouTube> {
       })),
     ]);
 
-    const hit = await firstDefinitiveHit(directChain, conversionChain);
+    const hit = await firstDefinitiveHit(directChain, conversionChain, cobaltChain);
     if (!hit.streams || (!hit.streams.video && !hit.streams.audio)) {
       throw new AppError(
         "PROVIDER_UNAVAILABLE",
@@ -722,11 +826,14 @@ export async function extractYouTube(rawUrl: string): Promise<ResolvedYouTube> {
         "Mirrors are rotating; your download buttons appear as soon as a stream lands.",
       );
     }
+    // Any provider that resolves a stream but not a length (Cobalt) gets one
+    // metadata probe so the result card shows real duration — never 0:00.
+    const duration = hit.duration > 0 ? hit.duration : await innertubeDuration(id).catch(() => 0);
     return {
       id: hit.id,
       title: hit.title,
       author: hit.author,
-      duration: hit.duration,
+      duration,
       thumbnail: hit.thumbnail,
       streams: hit.streams,
     };

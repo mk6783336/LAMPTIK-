@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { AppError, errorResponse } from "@/lib/errors";
+import { AppError } from "@/lib/errors";
 import { DESKTOP_UA } from "@/lib/http";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request";
@@ -26,8 +26,10 @@ import {
  * Safety: every hop must stay a public https host (private/loopback targets
  * are rejected — SSRF), the upstream payload is validated (content type,
  * size, first bytes) BEFORE `Content-Disposition: attachment` is attached,
- * and any failure returns a JSON error *without* an attachment header so a
- * browser can never save `download.json` to the user's gallery.
+ * and any failure redirects — a rate limit, a bad URL, an upstream 4xx/5xx,
+ * or a sniffed error document — NEVER answers a browser navigation with a
+ * JSON body: mobile Chrome saves any `application/json` response to a
+ * navigation download as `download.json`.
  */
 
 export const runtime = "edge";
@@ -186,12 +188,24 @@ function isBlockedUpstream(status: number): boolean {
   return status === 401 || status === 403 || status === 416 || status === 429 || status >= 500;
 }
 
-function expiredError(): AppError {
-  return new AppError(
-    "UPSTREAM_ERROR",
-    "The CDN link expired or was blocked.",
-    "We'll re-resolve a fresh stream — try the download again.",
-  );
+/**
+ * Last-resort hand-off #2: bounce the FAILED navigation back to our own tool
+ * page. The URL is missing, invalid, not media, or expired — nothing the
+ * visitor's browser can salvage. A 302 (never an attachment) means Chrome on
+ * Android can never save the failure — no `download.json`, no `errors.json`.
+ * Matches the historic redirect surface: same name, one line of state.
+ */
+function redirectToPage(request: NextRequest, code: string): Response {
+  const target = new URL("/", request.nextUrl.origin);
+  target.searchParams.set("dl", code);
+  return new NextResponse(null, {
+    status: 302,
+    headers: {
+      Location: target.toString(),
+      "Cache-Control": "no-store, max-age=0",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
 }
 
 function toByteCount(value: string | null): number | null {
@@ -331,7 +345,10 @@ interface ParsedRequest {
 function parseRequest(request: NextRequest): ParsedRequest | AppError {
   const params = request.nextUrl.searchParams;
   const kind = params.get("kind");
-  const upstreamUrl = params.get("u") ?? "";
+  // Every builder in this repo sends `u`, but `url` is accepted seamlessly —
+  // an inconsistent query name must never turn a valid download link into a
+  // JSON error that mobile Chrome saves as download.json.
+  const upstreamUrl = params.get("u") ?? params.get("url") ?? "";
 
   if (kind !== "video" && kind !== "audio") {
     return new AppError("BAD_REQUEST", "Choose either a video or audio download.");
@@ -365,18 +382,13 @@ export async function GET(request: NextRequest) {
   const limit = rateLimit(`download:${ip}`, 60, 60_000);
 
   if (!limit.ok) {
-    return errorResponse(
-      new AppError(
-        "RATE_LIMITED",
-        "Too many downloads in a short time.",
-        `Please wait ${limit.retryAfter}s and try again.`,
-      ),
-      { "Retry-After": String(limit.retryAfter) },
-    );
+    // A navigation download must never receive a JSON rate-limit body (mobile
+    // Chrome saves it as dy_download.json). Bounce to the tool page instead.
+    return redirectToPage(request, "limited");
   }
 
   const parsed = parseRequest(request);
-  if (parsed instanceof AppError) return errorResponse(parsed);
+  if (parsed instanceof AppError) return redirectToPage(request, "invalid");
 
   const { kind, upstreamUrl, platform, range } = parsed;
 
@@ -411,8 +423,7 @@ export async function GET(request: NextRequest) {
         abort.signal,
       ));
     }
-  } catch (error) {
-    if (error instanceof AppError && error.code === "BAD_REQUEST") return errorResponse(error);
+  } catch {
     // Network refusal / timeout: do not fail the user. Their browser reaches
     // the CDN on a different network path; redirect it there.
     return handOffToCdn(upstreamUrl);
@@ -425,11 +436,11 @@ export async function GET(request: NextRequest) {
     if (isBlockedUpstream(upstream.status)) {
       return handOffToCdn(upstreamUrl);
     }
-    return errorResponse(expiredError());
+    return redirectToPage(request, "expired");
   }
 
   if (!upstream.body) {
-    return errorResponse(new AppError("UPSTREAM_ERROR", "The video stream was empty."));
+    return redirectToPage(request, "expired");
   }
 
   const upstreamType = upstream.headers.get("content-type") ?? "";
@@ -437,16 +448,18 @@ export async function GET(request: NextRequest) {
   const isPartial = upstream.status === 206;
 
   // `download.json` guard #1: an error document or HLS playlist is never
-  // attached as a file, no matter what the URL extension says.
+  // attached as a file, no matter what the URL extension says — and a redirect
+  // to the CDN would save the SAME error document, so the visitor goes back
+  // to the tool page to re-resolve instead.
   if (!isAcceptableType(upstreamType, kind)) {
     await upstream.body.cancel().catch(() => undefined);
-    return errorResponse(expiredError());
+    return redirectToPage(request, "expired");
   }
 
   // `download.json` guard #2: a full response under 5 KB is an error payload.
   if (!isPartial && contentLength !== null && contentLength < MIN_MEDIA_BYTES) {
     await upstream.body.cancel().catch(() => undefined);
-    return errorResponse(expiredError());
+    return redirectToPage(request, "expired");
   }
 
   // Too big to finish inside the runtime's 300s streaming window: hand the
@@ -463,11 +476,13 @@ export async function GET(request: NextRequest) {
   try {
     const validated = await validateAndReplay(upstream.body, isPartial);
     if (!validated.valid) {
-      return errorResponse(expiredError());
+      return redirectToPage(request, "expired");
     }
     stream = validated.stream;
-  } catch (error) {
-    return errorResponse(error);
+  } catch {
+    // Stalled upstream before any data: headers have not been sent yet, so a
+    // redirect — not an attachment — is still on the table.
+    return redirectToPage(request, "expired");
   }
 
   const mediaType = baseMediaType(upstreamType, kind);

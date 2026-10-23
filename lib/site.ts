@@ -44,11 +44,11 @@ export const LANDING_LANGUAGES = {
  * version or a file size that is not the one being served.
  */
 export const androidApp = {
-  version: "3.4",
-  versionCode: 34,
-  fileName: "lamptik-v3.4.apk",
-  downloadName: "LAMP-TIK-v3.4.apk",
-  sizeBytes: 3_862_993,
+  version: "3.5",
+  versionCode: 35,
+  fileName: "lamptik-v3.5.apk",
+  downloadName: "LAMP-TIK-v3.5.apk",
+  sizeBytes: 3_875_281,
   /** Human label shown next to every download button. */
   sizeLabel: "3.7 MB",
   minAndroid: "Android 7.0+",

@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">LAMP TIK</string>
     <string name="app_tagline">Native video downloader</string>
-    <string name="version_badge">v3.4 PRO</string>
+    <string name="version_badge">v3.5 PRO</string>
 
     <string name="tab_home">Home</string>
     <string name="tab_downloads">Downloads</string>

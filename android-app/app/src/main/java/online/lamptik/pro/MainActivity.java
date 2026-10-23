@@ -1,4 +1,4 @@
-package online.lamptik.app;
+package online.lamptik.pro;
 
 import android.Manifest;
 import android.app.Activity;
@@ -20,7 +20,7 @@ import android.widget.Toast;
 import java.util.ArrayList;
 
 /**
- * LAMP TIK 3.4 — a real native Android application.
+ * LAMP TIK 3.5 — a real native Android application.
  *
  * Launch contract: the icon opens straight into the native Home downloader
  * (paste → resolve → download). Nothing web ever renders here — no WebView, no

@@ -1,4 +1,4 @@
-package online.lamptik.app;
+package online.lamptik.pro;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -32,7 +32,7 @@ final class ApiClient {
      */
     static final String SITE_ROOT = BASE + "/?app=android_apk";
     /** Lets the server recognise the native client for logs and support. */
-    static final String USER_AGENT = "LampTikAndroidApp/3.4 (Android; native)";
+    static final String USER_AGENT = "LampTikAndroidApp/3.5 (Android; native)";
 
     /**
      * Browser UA used for the media download itself.

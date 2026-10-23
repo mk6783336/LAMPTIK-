@@ -1,4 +1,4 @@
-package online.lamptik.app;
+package online.lamptik.pro;
 
 import android.app.AlertDialog;
 import android.app.DownloadManager;
