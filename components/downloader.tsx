@@ -648,8 +648,30 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     restoredRef.current = true;
     if (typeof window === "undefined") return;
     if (new URLSearchParams(window.location.search).has("shared_url")) return;
+    void restoreLastResult();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /**
+   * Restore-and-validate the cached card. Because any platform's link can
+   * be resolved on any page (the submit flow doesn't route), a dedicated
+   * tool page must NEVER resurrect a card its platform can't serve Back
+   * from navigation: ``/youtube-downloader`` holding a TikTok entry is
+   * stale cross-platform state, so the entry is cleared on the spot. The
+   * home shell (``/``) stays the universal tool — whatever it resolved
+   * legitimately restores there.
+   */
+  async function restoreLastResult(): Promise<void> {
     const last = readLastResult();
     if (!last) return;
+    if (window.location.pathname !== "/") {
+      const { detectLink } = await import("@/lib/detect");
+      const detected = detectLink(last.url);
+      if (detected && detected.platform !== platform) {
+        clearLastResult();
+        return;
+      }
+    }
     // Silent restore: the input keeps whatever state it had (no value
     // injection, no focus — UrlField ignores same-nonce seeds anyway) and
     // the auto-scroll effect below is suppressed for this first success.
@@ -657,7 +679,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     setVideo(last.video);
     setMedia(last.media);
     setStatus("success");
-  }, []);
+  }
 
   useEffect(() => {
     if (sharedHandledRef.current) return;
