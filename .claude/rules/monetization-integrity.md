@@ -22,9 +22,13 @@ a download that died or a page that froze on a phone.
   swallows every tap and scroll on mobile (the "site frozen" production
   failure). Do not re-add them to `AdScripts.tsx` or `lib/monetization.ts`, and
   do not add any other script that paints a viewport-covering layer.
-- The only sanctioned monetization surfaces are: in-flow `AdSlot` banners, the
-  click-triggered Direct Link (`triggerDownloadDirectLink`), and the inline
-  10-second countdown in `result-panel.tsx`.
+- The only sanctioned monetization surfaces are: in-flow `AdSlot` banners (the
+  SnapTik ad-sandwich: one slot between the URL input and the result zone, one
+  dedicated 300×250 under the download buttons, and the parallel theater's
+  center-stage unit), the click-triggered Direct Link
+  (`triggerDownloadDirectLink`), and the inline parallel 10-second download
+  theater in `result-panel.tsx` (UI only — the file download itself fires at
+  t = 0 s and is never gated, awaited or delayed by any of it).
 - `data-ad-guard="tool"` / `data-ad-guard="result"` mark the protected regions;
   keep them on the downloader and result panel.
 
@@ -48,12 +52,15 @@ a download that died or a page that froze on a phone.
   top of the download click handler, **before any `await`** — popup blockers
   only honour `window.open` while the user activation is alive
   (`components/result-panel.tsx`, `startDownload`).
-- It is fire-and-forget and session-capped (`lamptik_dl_direct_ts`, 60 s).
+- It is fire-and-forget and session-capped (`lamptik_dl_direct_ts`, 30 s).
   Never `await` it, never delay the file for it, never gate the download behind
   a sponsor click or a countdown completion.
-- The 10-second gate is a **theater**: the countdown is UI. At `0` the resolved
-  URL goes to the browser's download manager (hidden `<a download>`), and the
-  card immediately offers "Download Another Video". Do not reintroduce
+- The parallel 10-second theater is **UI only and never a gate**: at click
+  time the resolved URL already went to the browser's download manager (the
+  `<a download>` default navigation) and the Direct Link already fired. The
+  theater merely fills the panel while the bytes move; at `0` it flips to
+  "✅ Download Started in Your Browser!" and offers "Download Another Video"
+  plus Server 01 / Server 02 / MP3 re-click links. Do not reintroduce
   `fetch()`/Blob/IndexedDB buffering of media bytes in the page.
 - A real user gesture must exist for the initial click; do not auto-start
   downloads on mount.
@@ -81,6 +88,10 @@ a download that died or a page that froze on a phone.
 - Zone ids/scripts come from `lib/monetization.ts` env values; no new hardcoded
   vendor ids in components.
 - `data-cfasync="false"` on network scripts stays.
-- Don't change cap windows (`DOWNLOAD_DIRECT_CAP_MS`, `DIRECT_LINK_CAP_MS`) or
-  the ad script load strategy without a measurement showing the trade — the
-  current numbers exist to stop tab spam and to keep LCP clean.
+- `refreshKey`-driven banner refreshes are throttled to one reload per slot
+  per 20 s AND one reload page-wide per 20 s (`AdSlot`) — rapid same-size
+  re-requests would count as invalid traffic. Do not lower those windows.
+- Don't change cap windows (`DIRECT_LINK_CAP_MS` 30 s, refresh 20 s) or the
+  ad script load strategy without a measurement showing the trade — the
+  current numbers exist to stop tab spam and invalid traffic while keeping
+  repeat downloads monetizable and LCP clean.

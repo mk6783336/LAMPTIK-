@@ -8,8 +8,9 @@
  *      the only surfaces are in-flow banner slots and the Direct Link tab
  *      opened by a real click. The Monetag `vignette.min.js` and the Adsterra
  *      Social Bar are banned — both previously froze mobile touch input.
- *   3. Capped. One Direct Link tab per 60 seconds, so repeat downloads don't
- *      stack sponsor tabs.
+ *   3. Capped. One Direct Link tab per 30 seconds, so repeat downloads don't
+ *      stack sponsor tabs while a fast user re-downloading a new format
+ *      every half-minute still converts — SnapTik's cadence.
  *
  * Every env read below is a static `process.env.NEXT_PUBLIC_*` member
  * expression — Next.js inlines those at build time.
@@ -63,8 +64,8 @@ export const AD_RESERVED: Record<AdFormat, { width: number; height: number; minP
 
 /** Session-storage key for the Direct Link cap. */
 const DIRECT_LINK_KEY = "lamptik_dl_direct_ts";
-/** One Direct Link tab per 60 seconds. */
-const DIRECT_LINK_CAP_MS = 60 * 1_000;
+/** One Direct Link tab per 30 seconds (repeat downloads stay monetizable). */
+const DIRECT_LINK_CAP_MS = 30 * 1_000;
 
 export interface DirectLinkResult {
   triggered: boolean;

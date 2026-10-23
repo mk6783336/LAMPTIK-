@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { PlatformSwitcher } from "@/components/platform-switcher";
 import { ResultPanel } from "@/components/result-panel";
+import { AdSlot } from "@/components/ads/AdSlot";
 
 import { ToastStack, type ToastItem } from "@/components/toast";
 import { UrlField } from "@/components/url-field";
@@ -140,6 +141,9 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
   const [elapsedMs, setElapsedMs] = useState(0);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [seed, setSeed] = useState({ value: "", nonce: 0 });
+  /** Incremented on every resolve / reset so the ad slots re-auction for a
+      fresh impression (see AdSlot's throttled `refreshKey`). */
+  const [adRefreshKey, setAdRefreshKey] = useState(0);
   /** Shown during the single silent auto-retry (attempt 2/2). */
   const [backupNote, setBackupNote] = useState<string | null>(null);
 
@@ -272,6 +276,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     setVideo(null);
     setMedia(null);
     setError(null);
+    setAdRefreshKey((key) => key + 1);
     setSeed((current) => ({ value: "", nonce: current.nonce + 1 }));
     window.setTimeout(() => inputRef.current?.focus(), 50);
   }
@@ -373,6 +378,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
       setVideo(payload.video);
       setMedia(payload.media);
       setStatus("success");
+      setAdRefreshKey((key) => key + 1);
       notify({
         kind: "success",
         title: "Stream ready",
@@ -501,6 +507,21 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
           </button>
         </div>
 
+        {/* SnapTik "ad sandwich" — top slice. A high-visibility banner sits
+            between the URL input card and the result/features zone, where
+            eyes already are at the moment a resolve happens. In document
+            flow, CLS-safe, and refreshed (throttled inside AdSlot) on every
+            new video so the banner re-auctions instead of going stale. */}
+        <div className="mt-4 flex justify-center">
+          <AdSlot
+            format="leaderboard"
+            eager
+            refreshKey={adRefreshKey}
+            className="max-w-[340px] sm:max-w-none"
+            label="Sponsored — keeps LAMP TIK free"
+          />
+        </div>
+
         <AnimatePresence mode="wait" initial={false}>
           {isLoading ? (
             <motion.div
@@ -539,7 +560,13 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
               className="mt-5"
             >
               <div className="rule mb-5" />
-              <ResultPanel media={media} video={video} onReset={reset} onNotify={notify} />
+              <ResultPanel
+                media={media}
+                video={video}
+                onReset={reset}
+                onNotify={notify}
+                refreshKey={adRefreshKey}
+              />
             </motion.div>
           ) : null}
         </AnimatePresence>

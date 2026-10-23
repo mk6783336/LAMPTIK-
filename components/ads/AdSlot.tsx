@@ -10,18 +10,32 @@ import {
   monetagSmartlinkUrl,
   type AdFormat,
 } from "@/lib/monetization";
-
 interface AdSlotProps {
   /** Adsterra zone key. Falls back to NEXT_PUBLIC_ADSTERRA_BANNER_KEY / RECT_KEY. */
   zoneId?: string | null;
-  /** leaderboard = 728×90, rectangle = 300×250. */
+  /** leaderboard = 728×90 (300×250 on mobile), rectangle = 300×250. */
   format?: AdFormat;
   className?: string;
   /** Accessible label shown when a creative or house banner is visible. */
   label?: string;
   /** Load immediately with zero IntersectionObserver delay (above-the-fold). */
   eager?: boolean;
+  /**
+   * Bump to reload the iframe for a fresh paid impression (new video
+   * resolved, "Download Another Video" clicked, new download attempt).
+   * Throttled to at most one reload per 20 seconds GLOBALLY across every
+   * slot on the page — ad networks count rapid same-size re-requests as
+   * invalid traffic, so the user's 5th download inside a minute still
+   * refreshes the banners, just on the network's clock.
+   */
+  refreshKey?: number;
 }
+
+/** Timestamp of the last global ad refresh across all slots on the page. */
+const REFRESH_THROTTLE_MS = 20_000;
+let lastGlobalAdRefreshAt = 0;
+/** First mobile viewport band: 300×250 wins where a 728×90 cannot even fit. */
+const MOBILE_RECT_QUERY = "(max-width: 639px)";
 
 /**
  * CLS-safe, zero-white-flash Adsterra slot with an explicit sponsorship
@@ -34,19 +48,73 @@ interface AdSlotProps {
  *   no white flash while the RTB creative loads.
  * - Slots pre-warm 600px before entering the viewport; the first
  *   above-the-fold slot takes `eager` and loads with zero delay.
+ * - Mobile revenue swap: under 640px a `leaderboard` slot requests the
+ *   high-fill 300×250 rectangle zone at native 1:1 scale instead of
+ *   downscaling a 728×90 creative that mobile demand barely fills. The swap
+ *   happens at hydration (SSR still reserves the desktop shape; neither
+ *   shape paints anything until the creative fills, so the swap costs no
+ *   layout shift).
  */
-export function AdSlot({ zoneId, format = "leaderboard", className, label, eager }: AdSlotProps) {
+export function AdSlot({
+  zoneId,
+  format = "leaderboard",
+  className,
+  label,
+  eager,
+  refreshKey,
+}: AdSlotProps) {
   const defaultKey = format === "rectangle" ? adsterraRectangleKey : adsterraBannerKey;
-  const key = (zoneId === undefined ? defaultKey ?? "" : zoneId ?? "").trim();
-  const { width, height } = AD_RESERVED[format];
-  const slotIdentity = `${key}:${format}`;
+
+  const [visible, setVisible] = useState<boolean>(() => Boolean(eager));
+  const [scale, setScale] = useState(1);
+  const [reloadToken, setReloadToken] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const [creative, setCreative] = useState<{ identity: string; state: "filled" | "fallback" } | null>(
+    null,
+  );
 
   const hostRef = useRef<HTMLDivElement | null>(null);
   const frameRef = useRef<HTMLIFrameElement | null>(null);
-  const [visible, setVisible] = useState<boolean>(() => Boolean(eager));
-  const [scale, setScale] = useState(1);
-  const [creative, setCreative] = useState<{ identity: string; state: "filled" | "fallback" } | null>(null);
+
+  // Mobile rectangle swap — matchMedia only, so SSR and the first paint keep
+  // the desktop shape and hydration fixes it with zero flash of content.
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
+    const mq = window.matchMedia(MOBILE_RECT_QUERY);
+    const apply = () => setIsMobile(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  const mobileSwap = isMobile && format === "leaderboard";
+  const effectiveFormat: AdFormat = mobileSwap ? "rectangle" : format;
+  const { width, height } = AD_RESERVED[effectiveFormat];
+  const key = (mobileSwap ? adsterraRectangleKey : (zoneId === undefined ? defaultKey ?? "" : zoneId ?? "")).trim();
+  const slotIdentity = `${key}:${effectiveFormat}`;
   const creativeState = creative?.identity === slotIdentity ? creative.state : "pending";
+
+  const prevRefreshRef = useRef<number | undefined>(undefined);
+
+  // Throttled global impression refresh: one reload per slot per 20s, and at
+  // most one reload for the WHOLE page per 20s.
+  useEffect(() => {
+    if (prevRefreshRef.current === refreshKey) return;
+    prevRefreshRef.current = refreshKey;
+
+    const schedule = () => {
+      const elapsed = Date.now() - lastGlobalAdRefreshAt;
+      if (elapsed < REFRESH_THROTTLE_MS) {
+        window.setTimeout(schedule, REFRESH_THROTTLE_MS - elapsed);
+        return;
+      }
+      lastGlobalAdRefreshAt = Date.now();
+      setCreative(null);
+      setReloadToken((token) => token + 1);
+    };
+    schedule();
+    // refreshKey is the only trigger; the ref above dedupes re-renders.
+  }, [refreshKey]);
 
   // Eager slots load now; everything else pre-warms within 600px of the fold.
   useEffect(() => {
@@ -103,7 +171,9 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label, eager
     if (!key || !visible || creativeState === "fallback") return "";
     const params = new URLSearchParams({ key, w: String(width), h: String(height) });
     return `/api/ad-frame?${params.toString()}`;
-  }, [key, visible, creativeState, width, height]);
+    // reloadToken re-keys the iframe for a fresh impression cycle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, visible, creativeState, width, height, reloadToken]);
 
   useEffect(() => {
     if (!key || !visible || creativeState !== "pending") return;
@@ -128,18 +198,16 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label, eager
     };
   }, [key, slotIdentity, visible, creativeState]);
 
-  // Unconfigured == no ad, no disclosure, no reserved space, no request.
   if (!key) return null;
 
-  const isLeaderboard = format === "leaderboard";
+  const isLeaderboard = format === "leaderboard" && !mobileSwap;
   const scaled = { width: width * scale, height: height * scale };
-
   return (
     <aside
       role="complementary"
       aria-label="Sponsored Advertisement"
       className={cn("w-full", className)}
-      data-ad-slot={format}
+      data-ad-slot={effectiveFormat}
       data-ad-state={creativeState}
     >
       {/* ONE subtle disclosure. A filled creative gets a tiny caption above
@@ -172,10 +240,14 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label, eager
       >
         {frameSrc ? (
           <div
-            className={cn("shrink-0", creativeState === "pending" ? "absolute left-1/2 top-0 -translate-x-1/2" : "relative")}
+            className={cn(
+              "shrink-0",
+              creativeState === "pending" ? "absolute left-1/2 top-0 -translate-x-1/2" : "relative",
+            )}
             style={{ width: scaled.width, height: scaled.height, backgroundColor: "#07080d" }}
           >
             <iframe
+              key={reloadToken}
               ref={frameRef}
               title={label ?? "Sponsored advertisement"}
               src={frameSrc}
@@ -213,8 +285,7 @@ export function AdSlot({ zoneId, format = "leaderboard", className, label, eager
             className="absolute inset-x-0 top-0 box-border flex h-14 max-h-[72px] w-full max-w-full items-center justify-between gap-3 overflow-hidden rounded-xl border border-amber-500/20 bg-[#0b0c12] px-3 text-white transition-colors hover:border-amber-400/40"
           >
             <span className="min-w-0 truncate text-xs font-medium text-slate-300">
-              <span className="text-amber-300/90">Sponsored</span> · Recommended tools &amp;
-              offers
+              <span className="text-amber-300/90">Sponsored</span> · Recommended tools &amp; offers
             </span>
             <span className="shrink-0 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-200">
               Open ↗
