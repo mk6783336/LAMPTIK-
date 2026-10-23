@@ -29,7 +29,6 @@ const FOOTER_LINKS = {
     { href: "/pt", label: "Português" },
   ],
   Product: [
-    { href: "/app-download", label: "📱 Android App" },
     { href: "/guides", label: "Guides" },
     { href: "/#how", label: "How it works" },
     { href: "/#faq", label: "FAQ" },

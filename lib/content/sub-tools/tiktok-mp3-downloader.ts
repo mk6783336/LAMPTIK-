@@ -64,9 +64,9 @@ export const entry: SubTool = {
         "Yes. Choose Download MP3 audio and only the audio is transferred - the video is never written to your device, which also makes it much faster on mobile data.",
     },
     {
-      question: "Do I need to install the Android app for MP3 downloads?",
+      question: "Do I need to install anything for MP3 downloads?",
       answer:
-        "No. Audio extraction runs in the browser on this page. The Android app only adds conveniences such as share-sheet hand-off and a download list; it is not required for any format here.",
+        "No. Audio extraction runs entirely in the browser on this page — no app, no extension, no sign-up is required for any format here.",
     },
     {
       question: "Whose audio am I downloading, and can I repost it?",

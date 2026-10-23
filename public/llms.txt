@@ -7,7 +7,6 @@
 - [Instagram Reels Downloader](https://www.lamptik.online/instagram-reels-downloader): public reels/posts/IGTV via embed + OG fallback, H.264 verified.
 - [Facebook Video Downloader](https://www.lamptik.online/facebook-video-downloader): reels/watch/fb.watch/share links via desktop+mobile+plugin+mbasic waterfall.
 - [YouTube Downloader (1080p HD)](https://www.lamptik.online/youtube-downloader): watch/shorts/youtu.be links, 1080p/720p/360p MP4 + MP3 — free, no app required.
-- [Download the LAMP TIK App](https://www.lamptik.online/app-download): native Android app (no store) plus installable web app for iPhone/iPad & PC.
 
 ## Sub-tools (high-intent pages)
 - [TikTok to MP3 Converter](https://www.lamptik.online/tiktok-mp3-downloader): extracts the original audio track from a TikTok or vt/vm link — no video re-encode.

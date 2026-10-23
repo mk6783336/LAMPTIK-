@@ -3,7 +3,6 @@ import type { Metadata, Viewport } from "next";
 import { AdScripts } from "@/components/ads/AdScripts";
 import { DesktopSideRails } from "@/components/ads/DesktopSideRails";
 import { ConsentModeScript } from "@/components/consent-mode";
-import { InstallPwa } from "@/components/install-pwa";
 import { googleSiteVerification } from "@/lib/ads";
 import { monetagVerification } from "@/lib/monetization";
 import { siteConfig, siteUrl } from "@/lib/site";
@@ -129,7 +128,6 @@ export default function RootLayout({
         <ConsentModeScript />
       </head>
       <body className="min-h-dvh">
-        <InstallPwa />
         {children}
         {/* Desktop side rails (xl+ margins) only. The fixed sticky bottom bar
             was removed: on phones it parked a blurred bar over the last

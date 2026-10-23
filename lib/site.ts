@@ -35,25 +35,6 @@ export const LANDING_LANGUAGES = {
   "x-default": "/",
 } as const;
 
-/**
- * The shipped Android build, in one place.
- *
- * The download buttons, the /app-download copy, its JSON-LD and the /api/apk
- * route all read these values, so a new APK only has to be dropped into
- * public/downloads and described here once — the page can never advertise a
- * version or a file size that is not the one being served.
- */
-export const androidApp = {
-  version: "3.5",
-  versionCode: 35,
-  fileName: "lamptik-v3.5.apk",
-  downloadName: "LAMP-TIK-v3.5.apk",
-  sizeBytes: 3_875_281,
-  /** Human label shown next to every download button. */
-  sizeLabel: "3.7 MB",
-  minAndroid: "Android 7.0+",
-} as const;
-
 export const siteConfig = {
   name: "LAMP TIK",
   title: "LAMP TIK — TikTok Video Downloader Without Watermark (HD MP4)",

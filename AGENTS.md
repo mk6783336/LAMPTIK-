@@ -7,16 +7,13 @@ enforceable part of this document.
 ## What this repo is
 
 A production Next.js 15.5 (App Router, React 19, TypeScript strict, Tailwind
-3.4) media downloader for TikTok, Instagram Reels, Facebook and YouTube, plus a
-native Android app that is built **without Gradle** and ships as a signed APK
-from `public/downloads/`.
+3.4) web downloader for TikTok, Instagram Reels, Facebook and YouTube. It is a
+**pure web tool** — there is no native app, no APK and no install flow.
 
 ```
-app/                 routes; app/api/{fetch,youtube,download,apk,ad-frame} are the edge/node endpoints
+app/                 routes; app/api/{fetch,youtube,download,ad-frame} are the edge/node endpoints
 components/          UI; ads live in components/ads/
 lib/                 resolvers, security, monetization, platform config
-android-app/         framework-only Java app + build-native-apk.sh (aapt2 → javac → d8 → zipalign → apksigner)
-public/downloads/    signed APKs (v3.3 current, older names kept as identical aliases)
 ```
 
 ## Commands
@@ -27,13 +24,7 @@ npm run typecheck      # tsc --noEmit
 npm run lint           # next lint (separate gate; ignoreDuringBuilds is intentional)
 npm run build          # next build — the exact thing Vercel runs
 npm run verify         # typecheck + lint + build: run this before every commit
-
-# Native APK (needs JDK 21 + Android SDK build-tools ≥35, platform 34)
-JAVA_HOME=… ANDROID_HOME=… bash android-app/build-native-apk.sh
 ```
-
-`build-tools` 34 ships a d8 that crashes on JDK 18+ class files; the script
-picks the newest installed build-tools for that reason. Never pin 34.
 
 ## The four gates
 
@@ -47,8 +38,8 @@ picks the newest installed build-tools for that reason. Never pin 34.
    7-step type scale (12px floor), 4 radii, 3 button variants, zero horizontal
    overflow at 390px.
 4. [**monetization-integrity**](.claude/rules/monetization-integrity.md) — ads
-   never cover the Download CTA, the click handler stays synchronous, the
-   server keeps its CDN referrers.
+   never cover the Download CTA and never paint a full-viewport overlay, the
+   click handler stays synchronous, the server keeps its CDN referrers.
 
 ## Working agreements
 
@@ -60,7 +51,8 @@ picks the newest installed build-tools for that reason. Never pin 34.
   already exist — extend them.
 - Downloads are handed to the browser's own download manager. Do not
   reintroduce in-page `fetch()`/Blob/IndexedDB buffering of media bytes.
-- Android and web ship together: a version bump touches `android-app/app/src/main/AndroidManifest.xml`,
-  `android-app/app/build.gradle`, `android-app/app/src/main/res/values/strings.xml`,
-  `lib/site.ts`, `next.config.ts` and the rebuild in `public/downloads/`.
-- Never commit `.env*`, `public/downloads/*.idsig`, `.next/` or `.scratch/`.
+- Monetization is overlay-free. The Monetag Vignette script and the Adsterra
+  Social Bar are banned: both paint invisible `position: fixed; inset: 0`
+  layers that freeze taps/scrolls on mobile when their creative hangs. Only
+  in-flow banners and the click-triggered Direct Link are allowed.
+- Never commit `.env*`, `.next/` or `.scratch/`.

@@ -41,7 +41,7 @@ value; nested cards may go one step smaller, never larger than the parent.
 
 `.btn` sets size/shape; exactly three skins exist and every action must use one:
 
-1. `.btn-primary` — the one gradient CTA per view (Download, Install App).
+1. `.btn-primary` — the one gradient CTA per view (Download).
 2. `.btn-secondary` — glass surface action (SD/MP3 inside a result card).
 3. `.btn-ghost` — text/icon/tab actions (reset, New video, theme toggle).
 

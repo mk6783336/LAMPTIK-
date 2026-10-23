@@ -167,8 +167,28 @@ html:not(.dark) {
   body {
     @apply bg-[var(--bg)] font-sans text-[var(--text)] antialiased;
     text-rendering: optimizeLegibility;
+    /* Native vertical scrolling, momentum on iOS; nothing may lock
+       scroll or pointer-events globally. Horizontal overflow is clipped, so
+       one wide element can never freeze the whole page. */
+    overflow-y: auto;
     overflow-x: clip;
+    -webkit-overflow-scrolling: touch;
     font-feature-settings: "cv11" 0, "ss01" 0;
+  }
+
+  /* Every interactive control keeps its own touch pipeline: `manipulation`
+     removes the 300 ms double-tap-zoom delay so the first tap fires
+     immediately (<16 ms), and a raised stacking context guarantees no later
+     sibling (ad frame, badge) can paint above and swallow the tap. */
+  button,
+  [role="button"],
+  a,
+  input[type="submit"],
+  summary {
+    touch-action: manipulation;
+    cursor: pointer;
+    position: relative;
+    z-index: 20;
   }
 
   ::selection {

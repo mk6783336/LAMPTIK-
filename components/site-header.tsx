@@ -11,20 +11,13 @@ import type { Platform } from "@/lib/platforms";
 
 /**
  * One click to every surface: TikTok / Instagram Reels / Facebook / YouTube,
- * plus Guides and the optional Android app. All four platforms are open to
- * every visitor — nothing is gated behind an install.
+ * plus Guides. All four platforms are open to every visitor — nothing is
+ * gated behind an install. LAMP TIK is a pure web tool: there is no APK and
+ * no install CTA anywhere in the navigation.
  *
- * No "Install App" button lives here anymore: a visitor who already has the
- * APK (or the installed web app) does not need a persistent CTA telling them
- * to install it, and on a 390px phone it pushed the downloader itself below
- * the fold. The quiet "App" link below — and the footer — keep /app-download
- * one tap away for people who actually want it.
- *
- * The desktop row appears at `lg` (not `md`): six destinations plus the logo
+ * The desktop row appears at `lg` (not `md`): five destinations plus the logo
  * and the theme toggle need the full 1152px shell to stay on one line, and the
- * strip below carries the same links on smaller screens. The old Library button
- * is gone with the IndexedDB store: downloads are handed to the browser's own
- * download manager, so there is nothing to browse here.
+ * strip below carries the same links on smaller screens.
  */
 const NAV = [
   { href: "/", label: "TikTok", short: "TikTok", platform: "tiktok" as Platform },
@@ -47,7 +40,6 @@ const NAV = [
     platform: "youtube" as Platform,
   },
   { href: "/guides", label: "Guides", short: "Guides", platform: null },
-  { href: "/app-download", label: "📱 App", short: "App", platform: null },
 ] as const;
 
 function isCurrent(pathname: string, href: string): boolean {
@@ -124,8 +116,8 @@ export function SiteHeader() {
                   aria-current={active ? "page" : undefined}
                   data-accent={item.platform ?? undefined}
                   className={cn(
-                    // Compact on phones so all six destinations (four platforms,
-                    // Guides, App) fit one 390px row without a hidden "scroll for
+                    // Compact on phones so all five destinations (four platforms,
+                    // Guides) fit one 390px row without a hidden "scroll for
                     // more" affordance; the row still swipes on 320px screens.
                     "shrink-0 whitespace-nowrap rounded-full px-1.5 py-1.5 text-[12px] transition-colors duration-200 sm:px-2.5 sm:text-sm",
                     active

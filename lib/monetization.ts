@@ -44,22 +44,8 @@ export const DEFAULT_ADSTERRA_BANNER_KEY = "a907b6525c54481ebdaccb4ed1cac87e";
 export const adsterraBannerKey =
   process.env.NEXT_PUBLIC_ADSTERRA_BANNER_KEY?.trim() || DEFAULT_ADSTERRA_BANNER_KEY;
 
-/**
- * Live Adsterra Social Bar tag for this account. It is a *public* client-side
- * identifier (it ships in the bundle either way), so the production URL is
- * the built-in default: ads work on a fresh clone and on a host where the
- * env var was never configured. `NEXT_PUBLIC_ADSTERRA_SOCIAL_BAR_SRC` still
- * wins when present, so a second property can point elsewhere.
- */
-export const DEFAULT_ADSTERRA_SOCIAL_BAR_SRC =
-  "https://bellnewyork.org/14/aa5970551494e27bff8ab691d97650ea";
-
 export const adsterraAccountId =
   process.env.NEXT_PUBLIC_ADSTERRA_ACCOUNT_ID?.trim() || "6135903";
-
-/** Adsterra Social Bar script URL (full URL, account-generated). */
-export const adsterraSocialBarSrc =
-  process.env.NEXT_PUBLIC_ADSTERRA_SOCIAL_BAR_SRC?.trim() || DEFAULT_ADSTERRA_SOCIAL_BAR_SRC;
 
 /**
  * Rectangle (300x250) zone key (live production default).
@@ -83,21 +69,6 @@ export const DEFAULT_ADSTERRA_REFERRAL_URL = "https://beta.publishers.adsterra.c
 
 export const adsterraReferralUrl =
   process.env.NEXT_PUBLIC_ADSTERRA_REFERRAL_URL?.trim() || DEFAULT_ADSTERRA_REFERRAL_URL;
-
-/**
- * Monetag Vignette zone id (live production default).
- * `NEXT_PUBLIC_MONETAG_VIGNETTE_ZONE` wins when present.
- */
-export const DEFAULT_MONETAG_VIGNETTE_ZONE = "12078929";
-
-export const monetagVignetteZone =
-  process.env.NEXT_PUBLIC_MONETAG_VIGNETTE_ZONE?.trim() || DEFAULT_MONETAG_VIGNETTE_ZONE;
-
-/** Monetag Vignette script host — account-specific, so it is configurable. */
-export const monetagVignetteSrc = (
-  process.env.NEXT_PUBLIC_MONETAG_VIGNETTE_SRC?.trim() ||
-  "https://n6wxm.com/vignette.min.js"
-).trim();
 
 /**
  * Monetag domain-verification token. When set, the root layout emits
@@ -166,16 +137,6 @@ export function downloadAdBadgeLabel(count: number): string {
   return remainder === 2
     ? "Next download includes a 10s sponsor video"
     : `Ad-free downloads remaining: ${remainder === 0 ? 2 : 2 - remainder}/2`;
-}
-
-/** Fire Monetag's configured Vignette zone on demand when the ad theater opens. */
-export function triggerMonetagVignette(): void {
-  if (typeof document === "undefined" || !monetagVignetteZone || !monetagVignetteSrc) return;
-  const script = document.createElement("script");
-  script.dataset.zone = monetagVignetteZone;
-  script.src = monetagVignetteSrc;
-  script.async = true;
-  document.body.appendChild(script);
 }
 
 /** Session-storage key for the download-click frequency cap. */
@@ -290,9 +251,7 @@ export function triggerDownloadDirectLink(): MonetizationResult {
   }
 }
 
-export const adsConfigured = Boolean(
-  adsterraBannerKey || adsterraSocialBarSrc || monetagVignetteZone || monetagSmartlinkUrl,
-);
+export const adsConfigured = Boolean(adsterraBannerKey || monetagSmartlinkUrl);
 
 export type AdFormat = "leaderboard" | "rectangle";
 
@@ -330,12 +289,8 @@ export interface MonetizationResult {
  * and the caller ignores the result: the MP4 stream starts regardless.
  */
 export function triggerDownloadMonetization(): MonetizationResult {
-  if (typeof window === "undefined") return { triggered: false, reason: "unconfigured" };
-
-  const target = monetagSmartlinkUrl;
+  if (typeof window === "undefined") return { triggered: false, reason: "unconfigured" };  const target = monetagSmartlinkUrl;
   if (!target || !/^https:\/\//i.test(target)) {
-    // No SmartLink configured: nothing to open. A Vignette (when enabled)
-    // is armed by AdScripts on its own schedule and needs no call here.
     return { triggered: false, reason: "unconfigured" };
   }
 

@@ -30,7 +30,6 @@ LAMP TIK is a free, privacy-first, watermark-free video resolver for public TikT
 - https://www.lamptik.online/es — Spanish (Spain, LatAm, US Hispanic).
 - https://www.lamptik.online/de — German (Germany, Austria, Switzerland).
 - https://www.lamptik.online/pt — Portuguese (Brazil, Portugal).
-- App install guide: https://www.lamptik.online/app-download — Android/Chrome-Edge, iPhone/Safari, PC install steps with SoftwareApplication + HowTo + FAQ schema.
 
 ## All 12 guides
 - https://www.lamptik.online/guides/download-tiktok-video-without-watermark

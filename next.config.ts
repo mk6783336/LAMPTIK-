@@ -184,33 +184,6 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Official signed Android APK binary: serve with Android package-archive
-        // MIME type and attachment filename so Chrome on Android launches the
-        // native package installer immediately.
-        source: "/downloads/:file*.apk",
-        headers: [
-          {
-            key: "Content-Type",
-            value: "application/vnd.android.package-archive",
-          },
-          {
-            // No hard-coded filename: the release filename changes with every
-            // version, and a stale name here would rename the download. Plain
-            // `attachment` lets the APK's own URL name win.
-            key: "Content-Disposition",
-            value: "attachment",
-          },
-          {
-            key: "Cache-Control",
-            value: "public, max-age=3600, stale-while-revalidate=86400",
-          },
-          {
-            key: "X-Content-Type-Options",
-            value: "nosniff",
-          },
-        ],
-      },
-      {
         // Raster/vector brand assets.
         source: "/:file(icon.svg|favicon.ico|icon.png|apple-icon.png)",
         headers: [

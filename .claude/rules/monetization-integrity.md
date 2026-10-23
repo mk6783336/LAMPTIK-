@@ -8,20 +8,23 @@ alwaysApply: true
 # monetization-integrity
 
 Adapted from ECC's monetization rules. This site pays for itself with Adsterra
-banners, the Monetag Vignette and the Monetag SmartLink. Every one of these
-invariants was learned from a production failure — a blocked button, a lost
-impression or a download that died.
+banners and the Monetag SmartLink (Direct Link). Every one of these invariants
+was learned from a production failure — a blocked button, a lost impression,
+a download that died or a page that froze on a phone.
 
 ## 1. The ad never blocks the tool
 
 - The Download CTA is always reachable with a plain tap. No full-screen layer,
   no `backdrop-blur` bar, no fixed footer, no modal may sit over the tool.
-- Full-screen vendor overlays are already handled by `VignetteGuard`
-  (`components/ads/VignetteGuard.tsx`): it collapses fixed, near-max-z-index,
-  viewport-covering layers **after a 6s impression window**. Do not add a
-  competing watchdog, and do not remove this one to "clean up" the page.
-- Our own UI layers carry `data-lamptik-ui` so the guard skips them. New
-  overlays (dialogs, modals) must set it.
+- **The Monetag Vignette script and the Adsterra Social Bar are banned.** Both
+  inject invisible `position: fixed; inset: 0; z-index: 2147483647` layers whose
+  tap-through depends on a remote creative rendering; when it hangs, the layer
+  swallows every tap and scroll on mobile (the "site frozen" production
+  failure). Do not re-add them to `AdScripts.tsx` or `lib/monetization.ts`, and
+  do not add any other script that paints a viewport-covering layer.
+- The only sanctioned monetization surfaces are: in-flow `AdSlot` banners, the
+  click-triggered Direct Link (`triggerDownloadDirectLink`), and the inline
+  10-second countdown in `result-panel.tsx`.
 - `data-ad-guard="tool"` / `data-ad-guard="result"` mark the protected regions;
   keep them on the downloader and result panel.
 
@@ -68,8 +71,10 @@ impression or a download that died.
   `NextResponse.redirect(target, 302)` so the visitor's own IP fetches the file.
   Do not turn a CDN block into a JSON error.
 - `Content-Disposition: attachment` only after validation; `nosniff` always.
-- The Android app mirrors this: `ApiClient.BROWSER_UA` + `refererFor(url)` in
-  `DownloaderScreen.enqueue`. Keep them in sync with the server.
+- Any failure answering a browser navigation (`401/403/429`/5xx, snuffed error
+  payload, missing URL) must end in a **302 redirect** (`handOffToCdn` or
+  `redirectToPage`), never a JSON body — mobile Chrome saves an error response
+  to a navigation download as `download.json`.
 
 ## 5. Keys, caps, and measurement
 

@@ -78,7 +78,7 @@ export const es: LandingCopy = {
     {
       question: "¿Tengo que instalar una app o registrarme?",
       answer:
-        "No. Todo ocurre en el navegador y no hay registro, límite de descargas ni versión de pago. La app de Android es opcional y solo añade descargas en segundo plano y un botón en el menú Compartir.",
+        "No. Todo ocurre en el navegador y no hay registro, límite de descargas, versión de pago ni app que instalar.",
     },
   ],
   cta: {

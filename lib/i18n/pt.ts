@@ -77,7 +77,7 @@ export const pt: LandingCopy = {
     {
       question: "Preciso instalar um app ou fazer cadastro?",
       answer:
-        "Não. Tudo acontece no navegador, sem cadastro, sem limite de downloads e sem versão paga. O app para Android é opcional e só acrescenta downloads em segundo plano e um atalho no menu Compartilhar.",
+        "Não. Tudo acontece no navegador, sem cadastro, sem limite de downloads, sem versão paga e sem app para instalar.",
     },
   ],
   cta: {

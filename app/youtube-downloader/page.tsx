@@ -74,9 +74,9 @@ const FAQS = [
       "Yes — unlimited 1080p, 720p, 360p and MP3 downloads at no cost, in any browser. No account, no app install and no sign-up are required.",
   },
   {
-    question: "Do I need to install the Android app to download YouTube videos?",
+    question: "Do I need to install anything to download YouTube videos?",
     answer:
-      "No. The browser tool on this page resolves YouTube links directly. The Android app only adds conveniences — share-sheet hand-off, background downloads to your gallery, and an offline download list.",
+      "No. The browser tool on this page resolves YouTube links directly — there is no app to install, and downloads save straight to your device.",
   },
   {
     question: "Do Shorts and long videos both work?",
@@ -167,14 +167,6 @@ export default function YouTubeDownloaderPage() {
                     </span>
                   ))}
                 </div>
-
-                <Link
-                  href="/app-download"
-                  className="group mt-7 hidden items-center gap-1.5 text-sm text-[var(--text-2)] transition-colors duration-200 hover:text-[var(--text)] sm:inline-flex"
-                >
-                  Optional: get the Android app
-                  <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                </Link>
 
                 {/* Result mode only (lg+): fills the column beside the result
                     card with the sponsor showcase instead of empty space. */}

@@ -50,9 +50,9 @@ export const entry: SubTool = {
         "That happens when a downloader grabs a landscape rendition of a vertical upload and pads or crops it to fit. Shorts are stored as 1080x1920 vertical video, and this page keeps that frame, so a face centred in the Short stays centred in the saved MP4.",
     },
     {
-      question: "Do I need the Android app for YouTube Shorts?",
+      question: "Do I need an app for YouTube Shorts?",
       answer:
-        "No. Paste the link in this page and download immediately in any browser on Android, iPhone, Windows or Mac. The optional Android app only adds a share-sheet shortcut and background saving to your gallery.",
+        "No. Paste the link in this page and download immediately in any browser on Android, iPhone, Windows or Mac — there is nothing to install.",
     },
     {
       question: "Can I download someone else's Short?",

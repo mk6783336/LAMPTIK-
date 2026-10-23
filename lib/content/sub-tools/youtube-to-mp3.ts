@@ -68,7 +68,7 @@ export const entry: SubTool = {
     {
       question: "Do I need to install anything?",
       answer:
-        "No app, account or extension. The conversion runs in the browser on Android, iPhone, Windows, Mac and Linux, and the free Android app is optional if you would rather use a share-sheet shortcut.",
+        "No app, account or extension. The conversion runs in the browser on Android, iPhone, Windows, Mac and Linux.",
     },
   ],
   appName: "LAMP TIK YouTube to MP3 Converter",

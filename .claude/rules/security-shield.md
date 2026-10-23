@@ -42,8 +42,8 @@ is a bug even if it "works".
   stay unprefixed and are read inside route handlers.
 - Never log a token, cookie, `Authorization` header or full environment object.
   Log ids and status codes only.
-- `.env`, `.env.local`, `*.idsig`, keystores and `.scratch/` stay out of git
-  (`.gitignore`); never `git add -f` them.
+- `.env`, `.env.local` and `.scratch/` stay out of git (`.gitignore`); never
+  `git add -f` them.
 - Ad zone ids and the Monetag smartlink live in `lib/monetization.ts`, sourced
   from env with public defaults. Do not add a hardcoded new vendor id inline in
   a component.

@@ -183,14 +183,13 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
   });
 
   /**
-   * Android share-sheet hand-off.
+   * Shared-link hand-off.
    *
-   * The native APK forwards `Share → LAMP TIK` as
-   * `?app=android_apk&shared_url=<encoded text>`. Consume it exactly once:
-   * extract the link, strip the parameter from the address bar, then pre-fill
-   * and resolve it automatically. YouTube links opened from the TikTok shell
-   * are re-routed to the dedicated YouTube page so the right hero and copy
-   * frame the result.
+   * A `?shared_url=` query parameter (Web Share Target or a manual link)
+   * pre-fills and resolves the link automatically. Consumed exactly once:
+   * extract the link, strip the parameter from the address bar, then resolve.
+   * YouTube links opened from another platform's shell are re-routed to the
+   * dedicated YouTube page so the right hero and copy frame the result.
    */
   const sharedHandledRef = useRef(false);
   useEffect(() => {
@@ -220,7 +219,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
       }
       if (detected.platform === "youtube" && platform !== "youtube") {
         window.location.assign(
-          `/youtube-downloader?app=android_apk&shared_url=${encodeURIComponent(shared.trim())}`,
+          `/youtube-downloader?shared_url=${encodeURIComponent(shared.trim())}`,
         );
         return;
       }
