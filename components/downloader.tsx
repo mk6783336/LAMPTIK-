@@ -14,7 +14,15 @@ import { UrlField } from "@/components/url-field";
 import { cn } from "@/lib/cn";
 import { PLATFORMS, type Platform } from "@/lib/platforms";
 import type { MediaPayload } from "@/lib/media";
-import type { ApiResponse, VideoInfo } from "@/lib/tiktok/types";
+import type {
+  ApiFailure,
+  ApiSuccess,
+  ApiResponse,
+  VideoInfo,
+  YouTubeJobRef,
+  YouTubePollResponse,
+  YouTubeResolveResponse,
+} from "@/lib/tiktok/types";
 
 const SAMPLE_URL = "https://www.tiktok.com/@scout2015/video/6718335390845095173";
 
@@ -25,6 +33,173 @@ function createToastId(): string {
     return crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+/* --------------------------------------------------------------------------
+ *  Client-assisted YouTube completion.
+ *
+ *  A 30-minute upload takes loader.to 30–120s to convert — longer than a
+ *  serverless function may live. The server resolve therefore answers after
+ *  ~6s with the STARTED job ids (`{ ok, pending }`), and this BROWSER loop
+ *  keeps polling `/api/youtube/poll` until a `download_url` exists, then
+ *  exchanges it for the full payload via `/api/youtube/claim`. The conversion
+ *  runs on the converter's own infrastructure — no Vercel timeout involved.
+ * ------------------------------------------------------------------------ */
+
+const JOB_POLL_MS = 2_000;
+/** Wall clock for the whole browser-assisted wait (mp3-only fallback incl.). */
+const JOB_WAIT_BUDGET_MS = 240_000;
+
+function jobBeat(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+interface YouTubeJobMeta {
+  videoId: string;
+  title: string;
+  author: string;
+  duration: number;
+  thumbnail: string | null;
+}
+
+/** Exchange one polled `download_url` for the standard `{ media, video }` payload. */
+async function claimYouTubeJob(
+  job: { format: string; downloadUrl: string },
+  meta: YouTubeJobMeta,
+  signal: AbortSignal,
+): Promise<ApiSuccess> {
+  const response = await fetch("/api/youtube/claim", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      videoId: meta.videoId,
+      downloadUrl: job.downloadUrl,
+      format: job.format,
+      title: meta.title,
+      author: meta.author,
+      duration: meta.duration,
+      thumbnail: meta.thumbnail,
+    }),
+    signal,
+  });
+  const body = (await response.json().catch(() => null)) as ApiResponse | null;
+  if (!response.ok || !body || !body.ok) {
+    const failure = body as ApiFailure | null;
+    throw new Error(
+      failure && !failure.ok ? failure.error.message : "The converter result couldn't be claimed.",
+    );
+  }
+  return body;
+}
+
+interface YouTubeWaitResult {
+  /** Claimed payload (video preferred; mp3-only as last resort on budget). */
+  payload: ApiSuccess | null;
+  /** mp3 `download_url` that landed while waiting for the video payload. */
+  heldAudioUrl: string | null;
+}
+
+async function watchYouTubeJobs(args: {
+  jobs: YouTubeJobRef[];
+  meta: YouTubeJobMeta;
+  signal: AbortSignal;
+  /** true = wait for the first VIDEO job and claim it (resolve path);
+   *  false = only care about the mp3 job (background merge after fast path). */
+  wantVideo: boolean;
+  onNote?: (note: string) => void;
+  onMergeMp3?: (payload: ApiSuccess) => void;
+  /** For DETACHED watchers: deliver the claimed video payload via this
+   *  callback (merge into the live panel) instead of the resolve return. */
+  onClaimVideo?: (payload: ApiSuccess) => void;
+}): Promise<YouTubeWaitResult> {
+  const { jobs, meta, signal, wantVideo, onNote, onMergeMp3, onClaimVideo } = args;
+  const startedAt = Date.now();
+  let remaining = jobs.slice();
+  let heldAudioUrl: string | null = null;
+  const deadline = startedAt + JOB_WAIT_BUDGET_MS;
+
+  while (remaining.length > 0 && Date.now() < deadline) {
+    if (signal.aborted) throw new DOMException("Aborted", "AbortError");
+    await jobBeat(JOB_POLL_MS);
+
+    const query = new URLSearchParams();
+    for (const job of remaining) {
+      query.append("id", job.id);
+      query.append("format", job.format);
+    }
+    try {
+      const response = await fetch(`/api/youtube/poll?${query.toString()}`, { signal });
+      if (!response.ok) continue;
+      const body = (await response.json().catch(() => null)) as YouTubePollResponse | null;
+      if (!body || !body.ok) continue;
+
+      remaining = remaining.filter((job) => !body.failed.some((dead) => dead.id === job.id));
+
+      // `ready` arrives ranked 1080 → 720 → 360 → mp3, so the first video
+      // entry gets claimed (HD preferred); the mp3 waits as a merge.
+      for (const readyJob of body.ready) {
+        if (readyJob.format !== "mp3") {
+          if (!wantVideo) continue;
+          const payload = await claimYouTubeJob(readyJob, meta, signal);
+          // Detached video-watcher mode: the mp3 claim already produced the
+          // card, so deliver the late video payload via the callback.
+          if (onClaimVideo) {
+            onClaimVideo(payload);
+            return { payload, heldAudioUrl: null };
+          }
+          // The audio job may still be converting — keep a DETACHED watcher
+          // going so the MP3 button lights up while the video panel shows.
+          const audioStill = remaining.filter((job) => job.format === "mp3");
+          if (audioStill.length > 0 && onMergeMp3) {
+            const mergeContext = onMergeMp3;
+            void watchYouTubeJobs({
+              jobs: audioStill,
+              meta,
+              signal,
+              wantVideo: false,
+              onMergeMp3: mergeContext,
+            }).catch(() => undefined);
+          } else if (heldAudioUrl && onMergeMp3) {
+            const audioClaimContext = onMergeMp3;
+            void claimYouTubeJob({ format: "mp3", downloadUrl: heldAudioUrl }, meta, signal)
+              .then((audioClaim) => audioClaimContext(audioClaim))
+              .catch(() => undefined);
+          }
+          return { payload, heldAudioUrl: null };
+        }
+        if (!heldAudioUrl) heldAudioUrl = readyJob.downloadUrl;
+        remaining = remaining.filter((job) => job.format !== "mp3");
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") throw error;
+      continue; // transient network beat — poll again
+    }
+
+    if (onNote && remaining.length > 0) {
+      const seconds = Math.round((Date.now() - startedAt) / 1_000);
+      onNote(`High-speed server converting this long video… ${seconds}s (keeps running server-side)`);
+    }
+  }
+
+  // Nothing else landed but the audio did: claim the mp3 as the payload —
+  // a working MP3 card beats a dead screen.
+  if (heldAudioUrl) {
+    const payload = await claimYouTubeJob({ format: "mp3", downloadUrl: heldAudioUrl }, meta, signal);
+    // Video conversions may still be running — spawn a DETACHED watcher so
+    // Server 01 / Server 02 light up the moment the MP4 lands.
+    const videoStill = remaining.filter((job) => job.format !== "mp3");
+    if (videoStill.length > 0 && onClaimVideo) {
+      void watchYouTubeJobs({
+        jobs: videoStill,
+        meta,
+        signal: new AbortController().signal,
+        wantVideo: true,
+        onClaimVideo,
+      }).catch(() => undefined);
+    }
+    return { payload, heldAudioUrl: null };
+  }
+  return { payload: null, heldAudioUrl: null };
 }
 
 const STEPS = [
@@ -296,6 +471,73 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     inputRef.current?.focus();
   }
 
+  /** Attach a late-finishing YouTube mp3 claim to the panel — the audio
+   *  stream already shows video buttons; this only lights the MP3 button. */
+  function mergeAudioClaim(claim: ApiSuccess) {
+    setMedia((current) =>
+      current
+        ? {
+            ...current,
+            audioDirect: claim.media.audioDirect ?? current.audioDirect,
+            audioMp3: claim.media.audioMp3 ?? current.audioMp3,
+          }
+        : current,
+    );
+    setVideo((current) =>
+      current
+        ? {
+            ...current,
+            downloads: {
+              ...current.downloads,
+              audioDirect: claim.video.downloads.audioDirect,
+              audio: claim.video.downloads.audio,
+            },
+          }
+        : current,
+    );
+    notify({
+      kind: "success",
+      title: "MP3 ready",
+      description: "The audio track finished converting — Download Audio is live.",
+    });
+  }
+
+  /** Attach a late-finishing YouTube video claim when only the mp3 landed
+   *  first (the panel was audio-only until now). */
+  function mergeVideoClaim(claim: ApiSuccess) {
+    setMedia((current) =>
+      current
+        ? {
+            ...current,
+            videoDirect: claim.media.videoDirect ?? current.videoDirect,
+            videoHd: claim.media.videoHd ?? current.videoHd,
+            videoSd: claim.media.videoSd ?? current.videoSd,
+            videoHdBytes: claim.media.videoHdBytes ?? current.videoHdBytes,
+            videoSdBytes: claim.media.videoSdBytes ?? current.videoSdBytes,
+          }
+        : current,
+    );
+    setVideo((current) =>
+      current
+        ? {
+            ...current,
+            quality: claim.video.quality === "hd" ? "hd" : current.quality,
+            downloads: {
+              ...current.downloads,
+              videoDirect: claim.video.downloads.videoDirect,
+              video: claim.video.downloads.video,
+              videoSd: claim.video.downloads.videoSd,
+            },
+          }
+        : current,
+    );
+    notify({
+      kind: "success",
+      title: "Video stream ready",
+      description: "The converted MP4 landed — Server 01 and Server 02 are live.",
+    });
+  }
+
   async function handleSubmitUrl(rawUrl: string, options: { force?: boolean } = {}) {
     if (isLoading) return;
     // Sanitize messy mobile share-sheet text: extract the first valid video
@@ -322,15 +564,20 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     const controller = new AbortController();
     abortRef.current = controller;
     // Client-side bail-out just before the server's own maxDuration (30s), so
-    // the UI never hangs on a request Vercel is about to kill.
-    const timeout = window.setTimeout(() => controller.abort(), 28_000);
+    // the UI never hangs on a request Vercel is about to kill. The YouTube
+    // route is EXEMPT: its long-video path hands the wait to THIS component
+    // (watchYouTubeJobs enforces its own 4-minute budget instead).
+    const isYouTube = detectedIncoming?.platform === "youtube";
+    const timeout = isYouTube ? null : window.setTimeout(() => controller.abort(), 28_000);
     // YouTube resolves through its own route (dedicated waterfall, 1080p
     // selection rules); every other platform uses the shared resolver. Both
     // are open to any browser — there is no install gate.
-    const endpoint = detectedIncoming?.platform === "youtube" ? "/api/youtube" : "/api/fetch";
+    const endpoint = isYouTube ? "/api/youtube" : "/api/fetch";
 
     try {
-      let payload: ApiResponse | null = null;
+      let payload: ApiSuccess | null = null;
+      /** Fast-path still-running mp3 job (merge the MP3 button when done). */
+      let trailingMp3Job: YouTubeJobRef | null = null;
       let lastApiError: { message?: string; hint?: string; code?: string } | null = null;
       let succeeded = false;
       // Smart client-side auto-healing: one silent background retry
@@ -346,9 +593,44 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
             body: JSON.stringify({ url, force: options.force === true }),
             signal: controller.signal,
           });
-          const body = (await response.json().catch(() => null)) as ApiResponse | null;
-          if (response.ok && body && body.ok) {
+          const body = (await response.json().catch(() => null)) as ApiResponse | YouTubeResolveResponse | null;
+          if (response.ok && body && body.ok && "pending" in body) {
+            // LONG VIDEO — the conversion takes longer than the resolving
+            // function may live, so this browser owns the wait now: poll the
+            // started jobs until a download_url exists, then claim the full
+            // payload. (The sponsor loading console above stays on screen.)
+            setBackupNote("High-speed server converting this long video — usually seconds, long uploads a couple of minutes…");
+            const watched = await watchYouTubeJobs({
+              jobs: body.pending.jobs,
+              meta: {
+                videoId: body.pending.videoId,
+                title: body.pending.title,
+                author: body.pending.author,
+                duration: body.pending.duration,
+                thumbnail: body.pending.thumbnail,
+              },
+              signal: controller.signal,
+              wantVideo: true,
+              onNote: (note) => setBackupNote(note),
+              onMergeMp3: mergeAudioClaim,
+              onClaimVideo: mergeVideoClaim,
+            });
+            if (!watched.payload) {
+              throw new Error(
+                "This long video still isn't ready — the converter needs a few more minutes. Try again shortly.",
+              );
+            }
+            payload = watched.payload;
+            succeeded = true;
+            break;
+          }
+          if (response.ok && body && body.ok && !("pending" in body)) {
             payload = body;
+            // Fast path needs no polling, but its mp3 job may still be
+            // converting — spawn the detached watcher so the MP3 button
+            // lights up right when the audio is done.
+            const jobs = "jobs" in body ? body.jobs : undefined;
+            trailingMp3Job = jobs?.find((job) => job.format === "mp3") ?? null;
             succeeded = true;
             break;
           }
@@ -399,6 +681,26 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
             ? `HD ${PLATFORMS[payload.media.platform].videoNoun} source, no watermark.`
             : "Clean source stream resolved.",
       });
+
+      // Fast path: the mp3 job may still be converting — spawn a DETACHED
+      // watcher so Download Audio lights up the moment the converter
+      // finishes. It outlives this request (own signal, no UI block); the
+      // merge only ever adds fields the card is missing.
+      if (trailingMp3Job && isYouTube) {
+        void watchYouTubeJobs({
+          jobs: [trailingMp3Job],
+          meta: {
+            videoId: payload.media.id,
+            title: payload.media.title,
+            author: payload.media.author,
+            duration: payload.media.duration,
+            thumbnail: payload.media.thumbnail,
+          },
+          signal: new AbortController().signal,
+          wantVideo: false,
+          onMergeMp3: mergeAudioClaim,
+        }).catch(() => undefined);
+      }
     } catch (requestError) {
       const timedOut =
         requestError instanceof DOMException && requestError.name === "AbortError";
@@ -421,7 +723,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
       }
     } finally {
       stopTicker();
-      window.clearTimeout(timeout);
+      if (timeout !== null) window.clearTimeout(timeout);
       abortRef.current = null;
     }
   }

@@ -106,3 +106,46 @@ export type ErrorCode =
   | "BAD_REQUEST";
 
 export type ApiResponse = ApiSuccess | ApiFailure;
+
+/* -------------------------------------------------------------------------- */
+/*  Client-assisted YouTube completion (long uploads)                            */
+/* -------------------------------------------------------------------------- */
+
+/** One started loader.to conversion job. */
+export interface YouTubeJobRef {
+  /** "1080" | "720" | "360" | "mp3". */
+  format: string;
+  /** Opaque converter job id — queried by /api/youtube/poll. */
+  id: string;
+}
+
+/** POST /api/youtube answer when a rendition needs more than 6s: the browser takes over polling. */
+export interface YouTubePendingResponse {
+  ok: true;
+  pending: {
+    videoId: string;
+    title: string;
+    author: string;
+    duration: number;
+    thumbnail: string | null;
+    jobs: YouTubeJobRef[];
+  };
+}
+
+/** POST /api/youtube fast path — full payload plus all still-running jobs. */
+export interface YouTubeResolvedResponse extends ApiSuccess {
+  jobs: YouTubeJobRef[];
+}
+
+export type YouTubeResolveResponse = YouTubePendingResponse | YouTubeResolvedResponse;
+
+/** GET /api/youtube/poll — one waiter's beat against every started job. */
+export interface YouTubePollResponse {
+  ok: true;
+  ready: Array<YouTubeJobRef & { downloadUrl: string }>;
+  processing: Array<YouTubeJobRef & { progress: number | null }>;
+  failed: YouTubeJobRef[];
+}
+
+/** POST /api/youtube/claim — a polled `download_url` → the standard payload. */
+export type YouTubeClaimResponse = ApiResponse;

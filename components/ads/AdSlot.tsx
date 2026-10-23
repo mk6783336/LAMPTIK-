@@ -257,7 +257,14 @@ export function AdSlot({
           <div
             className={cn(
               "shrink-0",
-              creativeState === "pending" ? "absolute left-1/2 top-0 -translate-x-1/2" : "relative",
+              // Center on both axes: absolute at left-1/2 while pending (the
+              // host may be wider than the scaled creative mid-load), and
+              // mx-auto once filled — a <1 scale (narrow measured column)
+              // must never paint the creative hard-left against a wider
+              // reserved dark box (the "lopsided black gap" bug).
+              creativeState === "pending"
+                ? "absolute left-1/2 top-0 -translate-x-1/2"
+                : "relative mx-auto",
             )}
             style={{ width: scaled.width, height: scaled.height, backgroundColor: "#07080d" }}
           >

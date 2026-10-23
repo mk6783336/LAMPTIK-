@@ -1,22 +1,26 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { AppError, errorResponse } from "@/lib/errors";
-import { resolveMedia } from "@/lib/media";
+import { assembleYouTubeMedia } from "@/lib/media";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request";
 import { MAX_FETCH_BODY_BYTES, readBoundedJson } from "@/lib/security";
-import { parseYouTubeUrl } from "@/lib/youtube";
+import { startYouTubeResolution } from "@/lib/youtube";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
 /**
- * POST /api/youtube — dedicated YouTube resolver.
+ * POST /api/youtube — dedicated YouTube resolver (pending-capable).
  *
- * Open to every visitor: there is no install gate. The route exists (instead of
- * folding YouTube into `/api/fetch`) because YouTube has its own multi-provider
- * waterfall, its own 1080p selection rules and a heavier per-request budget.
+ * Phase A gives the resolver 6 seconds: the direct mirrors and warm converter
+ * pools usually answer inside that. When a rendition is still converting
+ * (long uploads take loader.to 30–120s), the route returns `{ ok, pending }`
+ * with the STARTED conversion job ids — the BROWSER then drives completion
+ * through `/api/youtube/poll` + `/api/youtube/claim` so the wait never dies
+ * inside a serverless function ceiling. Fast path answers still carry
+ * `jobs` so the mp3/1080 merge can land after the card appears.
  */
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers);
@@ -58,24 +62,35 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const parsed = parseYouTubeUrl(url);
-  if (!parsed) {
-    return errorResponse(
-      new AppError(
-        "UNSUPPORTED_URL",
-        "That doesn't look like a YouTube video link.",
-        "Try a youtube.com/watch, youtu.be share link, or /shorts/ link.",
-      ),
-    );
-  }
-
   try {
-    const { media, video, cached } = await resolveMedia(parsed.canonicalUrl, request.signal);
+    const resolution = await startYouTubeResolution(url);
+
+    if (resolution.state === "pending") {
+      return NextResponse.json(
+        {
+          ok: true,
+          pending: {
+            videoId: resolution.videoId,
+            title: resolution.title,
+            author: resolution.author,
+            duration: resolution.duration,
+            thumbnail: resolution.thumbnail,
+            jobs: resolution.jobs,
+          },
+        },
+        { headers: { "Cache-Control": "no-store", "X-RateLimit-Limit": String(limit.limit) } },
+      );
+    }
+
+    // Phase A fast path — a complete stream landed inside the 6s budget.
+    const { media, video } = assembleYouTubeMedia(resolution.meta, resolution.streams);
     if (media.platform !== "youtube") {
-      return errorResponse(new AppError("UNSUPPORTED_URL", "That link resolved to another platform, not YouTube."));
+      return errorResponse(
+        new AppError("UNSUPPORTED_URL", "That link resolved to another platform, not YouTube."),
+      );
     }
     return NextResponse.json(
-      { ok: true, media, video, cached },
+      { ok: true, media, video, cached: false, jobs: resolution.jobs },
       {
         headers: {
           "Cache-Control": "no-store",

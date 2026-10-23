@@ -56,23 +56,33 @@ a download that died or a page that froze on a phone.
   (`components/result-panel.tsx`, `startDownload`).
 - It is fire-and-forget and session-capped (`lamptik_dl_direct_ts`, 30 s).
   Never `await` it.
-- **The unified 2-stage flow (all 4 platforms, identical):**
-  1. *Stage A — click:* `triggerDownloadDirectLink()` fires synchronously, the
-     panel becomes the 10-second countdown theater over a freshly keyed
-     `alwaysReserve` 300×250 banner.
-  2. *Stage B — t = 0s:* a hidden **same-origin `<iframe src="/api/download?…">`**
-     fires the attachment stream. This is the only sanctioned file hand-off.
+- **The unified click flow (all 4 platforms, identical) — download FIRST,
+  theater SECOND:**
+  1. *t = 0ms:* `triggerDownloadDirectLink()` fires synchronously, and IN THE
+     SAME GESTURE a hidden **same-origin `<iframe src="/api/download?…">`**
+     starts the attachment stream — Chrome's native download manager begins at
+     ~0s. This is the only sanctioned file hand-off. The hand-off happens at
+     0ms, never behind a countdown: a post-10s hand-off died to Chrome twice
+     (transient user activation expiry + cross-origin CDN iframe refusal).
      Chromium ignores the `download` attribute on cross-origin anchors, a
      `target="_blank"` CDN URL inline-plays Instagram/Meta CDN video instead of
      downloading, and a `window.open` sponsor tab in the same tick cancels an
      anchor navigation — the hidden same-origin iframe avoids all three, keeps
-     the page put, and starts Chrome's native download manager 100% of the time.
-     Do NOT reintroduce cross-origin `<a download>`, `window.location`/`_self`
-     navigation, or in-page `fetch()`/Blob/IndexedDB buffering. The iframe must
-     stay mounted ≥300 s (removing it aborts a still-streaming transfer).
-  3. At `0s` the theater flips to "✅ Download Started in Your Browser!" and
-     shows "Download Another Video" plus Server 01 / Server 02 / MP3 re-click
-     links (each re-runs the same 2-stage flow).
+     the page put, and starts Chrome's native download manager 100% of the time
+     when fired inside the gesture. Do NOT reintroduce cross-origin
+     `<a download>`, `window.location`/`_self` navigation, delayed
+     `setTimeout` hand-offs, or in-page `fetch()`/Blob/IndexedDB buffering.
+     The iframe must stay mounted ≥300 s (removing it aborts a still-streaming
+     transfer).
+  2. *t = 0ms → 10s:* the panel becomes the 10-second POST-download sponsor
+     theater over a freshly keyed `alwaysReserve` 300×250 banner — ads run
+     while bytes already move in the tray. A ~6s same-origin HEAD probe flips
+     dead/expired streams to the failure card (Retry / Try Server 02 /
+     re-resolve) with the raw-CDN fallback link (`theater.fallbackUrl`), so a
+     silent bodyless 502 never impersonates a successful download.
+  3. The theater headline reads "✅ Download Started in Your Browser!" from
+     the first second, with "Download Another Video" and Server 01 / Server 02 /
+     MP3 re-click links appearing near/after 0s (each re-runs the same flow).
 - A real user gesture must exist for the initial click; do not auto-start
   downloads on mount.
 

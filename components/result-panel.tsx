@@ -2,7 +2,7 @@
 "use client";
 
 import { AlertTriangle, Clock3, Download, Music2, RefreshCw, ShieldCheck } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { formatBytes, formatDuration } from "@/lib/format";
 import type { ToastItem } from "@/components/toast";
@@ -37,43 +37,40 @@ interface DownloadTheater {
   secondsLeft: number;
   done: boolean;
   kind: string;
-  /** Same-origin `/api/download` attachment URL handed to Chrome at 0s. */
+  /** Same-origin `/api/download` attachment URL handed to Chrome AT 0s. */
   href: string;
-  /** True once the HEAD probe passed and the hidden iframe is streaming. */
-  handed: boolean;
-  /** True when the HEAD probe reported the CDN stream dead/expired. */
+  /** Raw upstream CDN URL (the proxy's `u` param) for the never-stuck fallback link. */
+  fallbackUrl: string | null;
+  /** True when the 6s validity probe reported the CDN stream dead/expired. */
   failed: boolean;
 }
 
 /**
  * SnapTik-style result card — instant resolution, three servers, and a
- * 10-second sponsor theater that ends by handing the file to Chrome.
+ * 10-second sponsor theater that runs AFTER the file has been handed to
+ * Chrome.
  *
- * The 2-stage flow (identical on TikTok / Instagram / Facebook / YouTube:
- * every platform page renders this exact component):
- *   Stage A — click: the Monetag Direct Link sponsor opens synchronously
- *   inside the user activation (popup blockers only honour `window.open`
- *   there), and the panel transforms IN FLOW into the 10-second countdown
- *   theater with a freshly keyed 300×250 banner on center stage.
- *   Stage B — t = 0s: a hidden same-origin iframe navigates to this site's
- *   `/api/download` attachment stream (`Content-Disposition: attachment`,
- *   forced server-side), which starts Chrome's NATIVE download manager on
- *   every attempt — no cross-origin `<a download>` (ignored by Chrome's
- *   policy), no `target="_blank"` CDN URL that inline-plays video in a new
- *   tab instead of downloading, and no popup-blocker cancellation of the
- *   file navigation. The page never navigates away; the user stays free to
- *   click "Download Another Video" while bytes move in the tray.
- *
- * Every click routes to the same-origin proxy (`/api/download?u=…`), even
- * for providers that expose their own public CDN attachment: the server
- * side streams the bytes (with platform-correct referers) and, when a CDNP
- * refuses server IPs or the file is huge, hands off via a verified 302.
+ * The flow (identical on TikTok / Instagram / Facebook / YouTube — every
+ * platform page renders this exact component):
+ *   0ms — click: the Monetag Direct Link sponsor opens synchronously inside
+ *   the user activation, AND IN THE SAME GESTURE a hidden same-origin
+ *   iframe navigates to `/api/download` (`Content-Disposition: attachment`,
+ *   forced server-side). Chrome's NATIVE download manager starts at ~0s —
+ *   the old 10-second delayed hand-off died to Chrome twice over: the user
+ *   activation had expired and the cross-origin CDN refused iframe
+ *   delivery. No post-timeout downloads, ever.
+ *   0ms-10s — the panel transforms IN FLOW into the sponsor theater with a
+ *   freshly keyed 300×250 banner on center stage, while bytes already move
+ *   in the Downloads tray.
+ *   ~6s — a light HEAD probe of the same attachment route verifies the
+ *   stream really resolved. A dead/signed-out upstream (bodyless 502 — the
+ *   thing that produced nothing-download or download.html) flips the
+ *   theater to its failure card instead of a lying ✅, with a visible
+ *   raw-CDN fallback link so the user is never stuck.
  */
 export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onReresolve }: ResultPanelProps) {
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
   const [theater, setTheater] = useState<DownloadTheater | null>(null);
-  /** Guard: the 0s hand-off fires exactly once per attempt. */
-  const firedAttemptRef = useRef<number>(0);
 
   const platform = media.platform;
   const platformConfig = PLATFORMS[platform];
@@ -92,6 +89,15 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
       platform,
       server,
     }).toString()}`;
+
+  /** Raw upstream CDN URL embedded in a same-origin proxy href (`u` param)
+   *  so the theater always has a never-stuck fallback link of last resort. */
+  const rawUpstreamOf = (href: string): string | null => {
+    if (!href) return null;
+    if (!href.startsWith("/api/download")) return href; // already a raw CDN link
+    const params = new URLSearchParams(href.split("?")[1] ?? "");
+    return params.get("u") ?? params.get("url") ?? href;
+  };
 
   /** Server 01: always the proxy attachment (direct CDN upstream when known). */
   const directUpstream = media.videoDirect ?? null;
@@ -136,14 +142,14 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
     ) : null;
 
   /* ------------------------------------------------------------------
-   * 10-second sponsor theater that ENDS in a real download.
+   * 10-second sponsor theater that runs AFTER the real download.
    *
-   * t = click → the Direct Link opens (inside the user activation) and the
-   *   countdown starts over a freshly keyed 300×250 banner.
-   * t = 10s → 0s → the hidden same-origin iframe navigates to the
-   *   `/api/download` attachment stream: Chrome's native download bar
-   *   starts, the page stays put, and "Download Another Video" appears so
-   *   the next paste can happen while bytes are still moving.
+   * t = 0ms → the Direct Link sponsor opens inside the user activation AND
+   *   the hidden same-origin iframe hands the file to Chrome's download
+   *   manager in the SAME gesture — downloads never wait for the timer.
+   * t = 0ms → 10s → sponsor theater in flow (fresh 300×250 banner),
+   *   while bytes move in the tray. A ~6s validity probe flips dead
+   *   streams to the retry/failure card with a raw-CDN fallback link.
    * ---------------------------------------------------------------- */
   const theaterAttemptId = theater?.attemptId;
   useEffect(() => {
@@ -151,7 +157,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
     const interval = window.setInterval(() => {
       setTheater((current) => {
         if (!current || current.done) return current;
-        if (current.secondsLeft <= 1) return { ...current, secondsLeft: 0, done: true, handed: false };
+        if (current.secondsLeft <= 1) return { ...current, secondsLeft: 0, done: true };
         return { ...current, secondsLeft: current.secondsLeft - 1 };
       });
     }, 1_000);
@@ -162,105 +168,62 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
   }, [theaterAttemptId]);
 
   /**
-   * Stage B — the actual file hand-off at t = 0s.
-   * A display:none iframe is the one mechanism that reaches Chrome's native
-   * download manager 100% of the time for a same-origin attachment stream:
-   * no user-activation conflict with the sponsor tab, no popup blocker, no
-   * navigation away from the page, and no cross-origin `download` attribute
-   * being ignored.
-   */
-  /**
-   * Stage B — the actual file hand-off at t = 0s.
-   * Before the hidden iframe navigates, a synchronous-cheap HEAD probe asks
-   * the same-origin route whether the signed upstream still resolves to
-   * media. A 502 means the stream expired: the theater flips to its
-   * failure card (Retry / fresh-stream re-resolve) instead of firing an
-   * iframe that would silently never download.
-   * A display:none iframe is the one mechanism that reaches Chrome's native
-   * download manager 100% of the time for a same-origin attachment stream:
-   * no user-activation conflict with the sponsor tab, no popup blocker, no
-   * navigation away from the page, and no cross-origin `download` attribute
-   * being ignored.
+   * Post-hand-off validity probe (~6s). The file hand-off happened at 0s
+   * inside the click; if the proxy silently 502s (dead signed CDN URL),
+   * Chrome downloads nothing and the user would sit on a lying "started"
+   * screen. One same-origin HEAD flip it to the failure card instead.
    */
   useEffect(() => {
-    if (!theater || theater.secondsLeft !== 0 || theater.handed || theater.failed) return;
-    if (firedAttemptRef.current === theater.attemptId) return;
-    firedAttemptRef.current = theater.attemptId;
-
-    let cancelled = false;
+    if (!theater || theater.failed) return;
     const attemptId = theater.attemptId;
-    (async () => {
-      try {
-        const probe = await fetch(theater.href, { method: "HEAD" });
-        if (cancelled) return;
-        if (!probe.ok) {
-          setTheater((c) =>
-            c && c.attemptId === attemptId ? { ...c, failed: true } : c,
-          );
-          onNotify({
-            kind: "error",
-            title: "Download failed",
-            description: `The CDN stream for ${theater.kind} expired — tap Retry below to re-run the hand-off.`,
-          });
-          return;
-        }
-      } catch {
-        // HEAD never even reached the server; the GET would fare no better.
-        if (!cancelled) {
-          setTheater((c) => (c && c.attemptId === attemptId ? { ...c, failed: true } : c));
-          onNotify({
-            kind: "error",
-            title: "Download failed",
-            description: `The CDN stream for ${theater.kind} is unreachable — tap Retry below.`,
-          });
-        }
-        return;
-      }
-
-      const frame = document.createElement("iframe");
-      frame.style.display = "none";
-      frame.setAttribute("aria-hidden", "true");
-      frame.setAttribute("title", "Starting download");
-      frame.src = theater.href;
-      document.body.appendChild(frame);
-      // Live until the proxied stream has had its full 300s window — removing
-      // the frame earlier aborts a still-streaming download.
-      window.setTimeout(() => frame.remove(), 300_000);
-      setTheater((c) =>
-        c && c.attemptId === attemptId ? { ...c, handed: true } : c,
-      );
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // `onNotify` is a stable useCallback from the shell — kept in deps for
-    // the hook rule; it never re-triggers on its own.
+    const timer = window.setTimeout(() => {
+      fetch(theater.href, { method: "HEAD" })
+        .then((probe) => {
+          if (!probe.ok) throw new Error(String(probe.status));
+        })
+        .catch(() => {
+          setTheater((c) => (c && c.attemptId === attemptId && !c.failed ? { ...c, failed: true } : c));
+        });
+    }, 6_000);
+    return () => window.clearTimeout(timer);
+    // `onNotify` is stable; the probe fires exactly once per attempt.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [theater, onNotify]);
+  }, [theaterAttemptId]);
 
   /**
    * The one and only download click handler — order is load-bearing.
-   * 1. Direct Link sponsor synchronously inside the user activation (30 s
+   * 1. Direct Link sponsor synchronously inside the user activation (30s
    *    cap lives inside the trigger).
-   * 2. The panel becomes the 10-second theater; the CDN link is handed to
-   *    Chrome's download manager the moment the countdown reaches 0s.
+   * 2. The file hand-off fires in THE SAME GESTURE (hidden iframe to the
+   *    same-origin attachment stream) — Chrome's native download manager
+   *    starts at ~0s. Downloads never wait for a timer again.
+   * 3. The panel becomes the 10-second post-download sponsor theater.
    */
-  function startDownload(kind: string, href: string) {
+  function startDownload(kind: string, href: string, fallbackUrl: string | null = null) {
     if (!href) return;
     triggerDownloadDirectLink();
+    const frame = document.createElement("iframe");
+    frame.style.display = "none";
+    frame.setAttribute("aria-hidden", "true");
+    frame.setAttribute("title", "Starting download");
+    frame.src = href;
+    document.body.appendChild(frame);
+    // Live until the proxied stream has had its full 300s window — removing
+    // the frame earlier aborts a still-streaming download.
+    window.setTimeout(() => frame.remove(), 300_000);
     setTheater({
       attemptId: Date.now(),
       secondsLeft: 10,
       done: false,
       kind,
       href,
-      handed: false,
+      fallbackUrl: fallbackUrl ?? rawUpstreamOf(href),
       failed: false,
     });
     onNotify({
       kind: "success",
-      title: "Download starting",
-      description: `${kind} will land in your Downloads tray in 10 seconds — keep this tab open.`,
+      title: "Download started",
+      description: `${kind} is already moving in your Downloads tray — 10s sponsor break runs alongside it.`,
     });
   }
 
@@ -335,26 +298,11 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
                     ({theater.kind} never reached your Downloads. Retry below.)
                   </span>
                 </span>
-              ) : theater.done && !theater.handed ? (
-                <span>
-                  🔄 Connecting Chrome to the CDN…{" "}
-                  <span className="font-normal text-[var(--text-3)]">
-                    Verifying the stream before the hand-off
-                  </span>
-                </span>
-              ) : theater.done ? (
+              ) : (
                 <span>
                   ✅ Download Started in Your Browser!{" "}
                   <span className="font-normal text-[var(--text-3)]">
-                    ({theater.kind} is in your Downloads tray.)
-                  </span>
-                </span>
-              ) : (
-                <span>
-                  ⚡ Preparing your {theater.kind}…
-                  <span className="font-normal text-[var(--text-3)]">
-                    {" "}
-                    Securing CDN stream ({theater.secondsLeft}s)
+                    ({theater.kind} is moving in your Downloads tray — please wait {theater.secondsLeft}s for the next download…)
                   </span>
                 </span>
               )}
@@ -391,7 +339,23 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
             🔥 Sponsored High-Speed Partner — Check Out Today&apos;s Offer ↗
           </a>
 
-          {theater.done && (theater.handed || theater.failed) ? (
+          {/* Never-stuck fallback: if Chrome's tray shows nothing, one click
+              on the RAW CDN attachment URL still starts the file — handed
+              from a real user gesture, so no activation can block it. */}
+          {theater.fallbackUrl ? (
+            <p className="mt-2 text-center text-xs">
+              <a
+                href={theater.fallbackUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[var(--accent-text)] underline underline-offset-4 hover:underline"
+              >
+                Didn&apos;t start automatically? Click here for Direct Stream ↗
+              </a>
+            </p>
+          ) : null}
+
+          {theater.secondsLeft <= 3 || theater.done ? (
             <div className="mt-3 grid gap-2">
               {theater.failed ? (
                 /* ------------------------- Failure card -------------------------
@@ -404,7 +368,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
                   {/* Primary retry: re-run the same-transport hand-off. */}
                   <button
                     type="button"
-                    onClick={() => startDownload(theater.kind, theater.href)}
+                    onClick={() => startDownload(theater.kind, theater.href, theater.fallbackUrl)}
                     className="btn btn-primary tool-cta group h-12 w-full gap-2 px-4 text-sm font-semibold"
                   >
                     <RefreshCw className="size-4 shrink-0 transition-transform duration-300 group-hover:rotate-180" />
@@ -415,7 +379,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
                   {showServer02 && theater.kind !== "Server 02" ? (
                     <button
                       type="button"
-                      onClick={() => startDownload("Server 02", server02Href)}
+                      onClick={() => startDownload("Server 02", server02Href, rawUpstreamOf(server02Href))}
                       className="btn btn-secondary h-12 w-full gap-2 px-4 text-sm font-medium text-[var(--ok)]"
                     >
                       <Download className="size-4 shrink-0" />
@@ -454,7 +418,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <button
                   type="button"
-                  onClick={() => startDownload("Server 01", server01Href)}
+                  onClick={() => startDownload("Server 01", server01Href, rawUpstreamOf(server01Href))}
                   className="rounded-full border border-[var(--glass-border)] px-3 py-1.5 text-xs font-medium underline-offset-4 hover:underline"
                 >
                   Server 01
@@ -462,7 +426,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
                 {showServer02 ? (
                   <button
                     type="button"
-                    onClick={() => startDownload("Server 02", server02Href)}
+                    onClick={() => startDownload("Server 02", server02Href, rawUpstreamOf(server02Href))}
                     className="rounded-full border border-[var(--glass-border)] px-3 py-1.5 text-xs font-medium underline-offset-4 hover:underline"
                   >
                     Server 02
@@ -471,7 +435,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
                 {mp3Url ? (
                   <button
                     type="button"
-                    onClick={() => startDownload("MP3 audio", mp3Href)}
+                    onClick={() => startDownload("MP3 audio", mp3Href, rawUpstreamOf(mp3Href))}
                     className="rounded-full border border-[var(--glass-border)] px-3 py-1.5 text-xs font-medium underline-offset-4 hover:underline"
                   >
                     MP3
@@ -497,7 +461,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
           {/* Server 01 — primary: direct CDN upstream via the proxy stream. */}
           <button
             type="button"
-            onClick={() => startDownload("Server 01", server01Href)}
+            onClick={() => startDownload("Server 01", server01Href, rawUpstreamOf(server01Href))}
             className="btn btn-primary tool-cta h-[52px] w-full gap-3 px-4 text-sm font-semibold"
           >
             <Download className="size-4 shrink-0" />
@@ -514,7 +478,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
           {showServer02 ? (
             <button
               type="button"
-              onClick={() => startDownload("Server 02", server02Href)}
+              onClick={() => startDownload("Server 02", server02Href, rawUpstreamOf(server02Href))}
               className="btn btn-secondary h-[52px] w-full gap-3 border-[color-mix(in_srgb,var(--ok)_35%,transparent)] bg-[color-mix(in_srgb,var(--ok)_12%,var(--field))] px-4 text-sm font-medium text-[var(--ok)] hover:border-[color-mix(in_srgb,var(--ok)_50%,transparent)]"
             >
               <Download className="size-4 shrink-0" />
@@ -537,7 +501,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
           {mp3Url ? (
             <button
               type="button"
-              onClick={() => startDownload("MP3 audio", mp3Href)}
+              onClick={() => startDownload("MP3 audio", mp3Href, rawUpstreamOf(mp3Href))}
               className="btn btn-ghost h-12 w-full gap-3 rounded-full border border-[var(--glass-border)] px-4 text-sm font-medium hover:border-[var(--glass-border-hover)]"
             >
               <Music2 className="size-4 shrink-0" />

@@ -158,10 +158,16 @@ async function resolveInstagramPlatform(url: string): Promise<{ media: MediaPayl
   return { media: mediaFromVideo(video, source.canonicalUrl), video };
 }
 
-/** YouTube adapter: multi-tier resolver → same-origin downloads. */
-async function resolveYouTubePlatform(url: string): Promise<{ media: MediaPayload; video: VideoInfo }> {
-  const source = await extractYouTube(url);
-  const primary = source.streams.video ?? source.streams.audio;
+/**
+ * YouTube payload builder shared by the resolve route (extract → payload)
+ * and the claim route (a client-polled `download_url` → the exact same
+ * payload shape). Same-origin download links attach here.
+ */
+export function assembleYouTubeMedia(
+  meta: { id: string; title: string; author: string; duration: number; thumbnail: string | null },
+  streams: { video: string | null; videoSd?: string | null; audio: string | null },
+): { media: MediaPayload; video: VideoInfo } {
+  const primary = streams.video ?? streams.audio;
 
   if (!primary) {
     throw new AppError(
@@ -173,32 +179,30 @@ async function resolveYouTubePlatform(url: string): Promise<{ media: MediaPayloa
 
   const downloads = buildDownloadLinks(
     {
-      video: source.streams.video ?? primary,
+      video: streams.video ?? primary,
       // The converter/mirror URL already serves `Content-Disposition: attachment`
       // from its own CDN — open it directly (Server 01); the proxy stays Server 02.
-      videoDirect: source.streams.video ?? null,
+      videoDirect: streams.video,
       videoSd:
-        source.streams.videoSd && source.streams.videoSd !== (source.streams.video ?? primary)
-          ? source.streams.videoSd
-          : null,
-      audio: source.streams.audio,
-      audioDirect: source.streams.audio,
+        streams.videoSd && streams.videoSd !== (streams.video ?? primary) ? streams.videoSd : null,
+      audio: streams.audio,
+      audioDirect: streams.audio,
     },
-    { id: source.id, username: source.author, platform: "youtube" },
+    { id: meta.id, username: meta.author, platform: "youtube" },
   );
 
   const video: VideoInfo = {
-    id: source.id,
-    title: source.title,
-    duration: source.duration,
-    thumbnail: source.thumbnail ?? "",
+    id: meta.id,
+    title: meta.title,
+    duration: meta.duration,
+    thumbnail: meta.thumbnail ?? "",
     author: {
-      username: source.author,
-      nickname: source.author,
+      username: meta.author,
+      nickname: meta.author,
       avatar: null,
     },
     stats: { plays: 0, likes: 0, comments: 0, shares: 0 },
-    quality: source.streams.video ? "hd" : "sd",
+    quality: streams.video ? "hd" : "sd",
     noWatermark: true,
     source: "youtube",
     createdAt: null,
@@ -209,7 +213,22 @@ async function resolveYouTubePlatform(url: string): Promise<{ media: MediaPayloa
     downloads,
   };
 
-  return { media: mediaFromVideo(video, `https://www.youtube.com/watch?v=${source.id}`), video };
+  return { media: mediaFromVideo(video, `https://www.youtube.com/watch?v=${meta.id}`), video };
+}
+
+/** YouTube adapter: multi-tier resolver → same-origin downloads. */
+async function resolveYouTubePlatform(url: string): Promise<{ media: MediaPayload; video: VideoInfo }> {
+  const source = await extractYouTube(url);
+  return assembleYouTubeMedia(
+    {
+      id: source.id,
+      title: source.title,
+      author: source.author,
+      duration: source.duration,
+      thumbnail: source.thumbnail,
+    },
+    source.streams,
+  );
 }
 
 /** Facebook adapter: extractor → same-origin downloads → synthetic VideoInfo. */

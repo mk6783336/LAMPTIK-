@@ -208,6 +208,10 @@ async function ytdlCoreResolve(videoId: string, canonicalUrl: string): Promise<T
 }
 
 interface LoaderJob {
+  /** Converter job id — the client-side poller needs it after the resolving
+   *  function has returned, so long videos never die inside the function's
+   *  own execution ceiling. */
+  id: string | null;
   progressUrl: string;
   downloadUrl: string | null;
   title: string | null;
@@ -243,6 +247,7 @@ async function loaderStartJob(format: string, canonicalUrl: string): Promise<Loa
   }
   const info = asRecord(data.info);
   return {
+    id,
     progressUrl,
     downloadUrl: direct,
     title: asString(info?.title) ?? asString(data.title) ?? null,
@@ -250,30 +255,78 @@ async function loaderStartJob(format: string, canonicalUrl: string): Promise<Loa
   };
 }
 
+/** `loader.to` job ids are opaque slugs; the poll route revalidates them. */
+const LOADER_JOB_ID = /^[A-Za-z0-9_-]{4,96}$/;
+
+/** Canonical progress endpoint for a started job. */
+export function loaderProgressUrl(jobId: string): string {
+  return `${LOADER_FALLBACK_PROGRESS}?id=${encodeURIComponent(jobId)}`;
+}
+
+export type LoaderJobPoll =
+  | { status: "ready"; downloadUrl: string }
+  | { status: "processing"; /** Converter's own 0–100 % when reported. */
+      progress: number | null }
+  | { status: "error" };
+
+/**
+ * ONE poll beat against a started conversion job. Shared by the server-side
+ awaiter (loaderAwaitJob) and GET /api/youtube/poll (the client-assisted
+ completion loop that survives serverless execution ceilings). A transient
+ network hiccup answers "processing" — the caller simply retries.
+ */
+export async function pollLoaderJob(jobId: string): Promise<LoaderJobPoll> {
+  if (!LOADER_JOB_ID.test(jobId)) return { status: "error" };
+  const finish = (status: "processing", progress: number | null): LoaderJobPoll => ({ status, progress });
+  const data = await fetch(loaderProgressUrl(jobId), {
+    headers: {
+      Accept: "application/json",
+      Referer: "https://loader.to/",
+      "User-Agent": DESKTOP_UA,
+    },
+    cache: "no-store",
+    signal: AbortSignal.timeout(8_000),
+  })
+    .then(async (response) => (response.ok ? asRecord(await response.json().catch(() => null)) : null))
+    .catch(() => null);
+  if (!data) return finish("processing", null);
+  const done =
+    httpsUrl(data.download_url) ?? httpsUrl(data.downloadUrl) ?? httpsUrl(data.file_url);
+  if (done) return { status: "ready", downloadUrl: done };
+  // loader.to answers `success: 0` while converting and `-1` when a job
+  // died (cancelled upstream, dead cache pool, region-blocked worker).
+  if (Number(data.success) === -1 || Number(data.progress) === -1) return { status: "error" };
+  const reported = typeof data.progress === "number" && Number.isFinite(data.progress) ? data.progress : null;
+  return finish("processing", reported !== null && reported >= 0 && reported < 100 ? reported : null);
+}
+
 /** Poll a conversion job until `success` yields a `download_url`. */
 async function loaderAwaitJob(job: LoaderJob): Promise<string> {
   if (job.downloadUrl) return job.downloadUrl;
+  if (!job.progressUrl) {
+    throw new AppError("PROVIDER_UNAVAILABLE", "The converter mirror didn't accept this video.");
+  }
   for (let poll = 0; poll < LOADER_MAX_POLLS; poll += 1) {
     if (poll > 0) await new Promise((resolve) => setTimeout(resolve, LOADER_POLL_MS));
-    // A transient network hiccup mid-poll must not kill the whole conversion
-    // path — skip the beat and keep polling until the budget is spent.
-    const data = await fetch(job.progressUrl, {
-      headers: {
-        Accept: "application/json",
-        Referer: "https://loader.to/",
-        "User-Agent": DESKTOP_UA,
-      },
-      cache: "no-store",
-    })
-      .then(async (response) => (response.ok ? asRecord(await response.json().catch(() => null)) : null))
-      .catch(() => null);
-    if (!data) continue;
-    // `success == 1` marks completion; the `download_url` is what we need.
-    const done =
-      httpsUrl(data.download_url) ?? httpsUrl(data.downloadUrl) ?? httpsUrl(data.file_url);
-    if (done) return done;
+    // A transient network hiccup mid-poll answers "processing" — keep
+    // polling until the budget is spent.
+    const beat = await pollLoaderJob(job.progressUrl ? jobIdFromProgressUrl(job.progressUrl) : "");
+    if (beat.status === "ready") return beat.downloadUrl;
+    if (beat.status === "error") {
+      throw new AppError("PROVIDER_UNAVAILABLE", "The converter job failed upstream — retry shortly.");
+    }
   }
   throw new AppError("PROVIDER_UNAVAILABLE", "The converter mirror is still processing this video.");
+}
+
+/** Recover the job id out of an original progress_url (fallback form). */
+function jobIdFromProgressUrl(progressUrl: string): string {
+  try {
+    const id = new URL(progressUrl).searchParams.get("id");
+    return id && LOADER_JOB_ID.test(id) ? id : "__invalid__";
+  } catch {
+    return "__invalid__";
+  }
 }
 
 /**
@@ -621,49 +674,9 @@ async function invidiousStreams(videoId: string, api: string): Promise<TierHit> 
   };
 }
 
-/**
- * Cobalt tier — POST the canonical URL to open community cobalt instances and
- * take the returned stream/tunnel URL. Cobalt handles YouTube's PO-token
- * enforcement internally, so instances keep resolving from datacenter IPs
- * where direct extraction is bot-checked. Instances come from
- * `COBALT_API_URL` (env override) plus two community endpoints; every
- * instance is best-effort (authed or dead ones are skipped) and the tier
- * simply no-ops when none accept the request.
- */
-const COBALT_INSTANCES = [
-  ...(process.env.COBALT_API_URL ? [process.env.COBALT_API_URL] : []),
-  "https://cobalt-api.kwiatekmiki.com",
-  "https://cobalt-api.twem.dev",
-];
-
-async function cobaltResolve(videoId: string, canonicalUrl: string): Promise<TierHit> {
-  for (const base of COBALT_INSTANCES) {
-    try {
-      const response = await fetch(base, {
-        method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json", "User-Agent": DESKTOP_UA },
-        body: JSON.stringify({ url: canonicalUrl, videoQuality: "1080", filenameStyle: "basic" }),
-        cache: "no-store",
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (!response.ok) continue;
-      const data = asRecord(await response.json().catch(() => null));
-      const stream = httpsUrl(data?.url) ?? httpsUrl(data?.tunnel);
-      if (!stream) continue;
-      return {
-        id: videoId,
-        title: `YouTube video ${videoId}`,
-        author: "YouTube",
-        duration: 0,
-        thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
-        streams: { video: stream, videoSd: null, audio: null },
-      };
-    } catch {
-      continue;
-    }
-  }
-  throw new AppError("PROVIDER_UNAVAILABLE", "Resolving high-speed stream — cobalt mirrors declined.");
-}
+/** Cobalt-era tunnel URLs expired within ~2 minutes and produced the
+ *  `download.html` / dead-button reports — the tier was removed, not kept
+ *  as a silent fallback. */
 
 /* ------------------------------------------------------------------ Tier 4 */
 
@@ -758,9 +771,244 @@ function firstDefinitiveHit(...chains: Array<Promise<TierHit>>): Promise<TierHit
 /* --------------------------------------------------------------- resolution */
 
 /**
- * Resolve a YouTube URL. Phase A returns the first provider with a real
- * downloadable stream; Phase B (metadata-only) answers with a clean,
- * friendly retry message — never a raw 500, never a debug dump.
+ * CLIENT-ASSISTED COMPLETION — the long-video engine.
+ *
+ * A `_minute-long_` YouTube upload can take 30–120s for loader.to to
+ * convert. The old engine bounded conversion inside the resolving function,
+ * so Vercel's function ceiling killed the job mid-convert and production
+ * showed a dead `0:00` card with buttons that could never download. This
+ * engine splits the work:
+ *
+ *   Phase A (0–6s, server): start a conversion job for EVERY rendition
+ *     (1080/720/360 + mp3) and race the direct mirrors; the first real
+ *     stream wins and resolves instantly. Jobs register their `{id}`
+ *     before anything can time out.
+ *   Phase B (pending): when nothing landed inside the budget, return the
+ *     job ids + best-effort metadata. The BROWSER keeps polling
+ *     `/api/youtube/poll?id=…` — and the conversions keep running on
+ *     loader.to's own infrastructure, completely outside any serverless
+ *     window. One job lands → `/api/youtube/claim` claims its JSON media
+ *     payload → the download buttons render.
+ */
+export interface PendingLoaderJob {
+  /** The converter format this job renders. */
+  format: string;
+  /** The converter job id — what the poll route queries. */
+  id: string;
+}
+
+/** Resolution output that says "conversion is still running — keep polling". */
+export interface PendingYouTube {
+  state: "pending";
+  videoId: string;
+  title: string;
+  author: string;
+  duration: number;
+  thumbnail: string;
+  jobs: PendingLoaderJob[];
+}
+
+/** Resolution output that returned a complete stream inside Phase A. */
+export interface ResolvedYouTubeStart {
+  state: "resolved";
+  meta: { id: string; title: string; author: string; duration: number; thumbnail: string };
+  streams: YouTubeStreams;
+  /** All still-running jobs (mp3 / slower renditions) for background merge. */
+  jobs: PendingLoaderJob[];
+}
+
+export type YouTubeResolutionStart = ResolvedYouTubeStart | PendingYouTube;
+
+/** Phase-A wall clock: direct mirrors usually answer inside 1–3s; the
+ *  converter lands Shorts in ~2–5s. Anything slower is a long video —
+ *  hand the completion to the browser. */
+const PHASE_A_BUDGET_MS = 6_000;
+
+export async function startYouTubeResolution(rawUrl: string): Promise<YouTubeResolutionStart> {
+  const parsed = parseYouTubeUrl(rawUrl);
+  if (!parsed) {
+    throw new AppError(
+      "UNSUPPORTED_URL",
+      "That doesn't look like a YouTube video link.",
+      "Try a youtube.com/watch, youtu.be share link, or /shorts/ link.",
+    );
+  }
+  const { id, canonicalUrl } = parsed;
+
+  try {
+    // Metadata runs CONCURRENTLY with the conversions — it answers even when
+    // YouTube bot-checks every stream provider.
+    const metaPromise: Promise<TierHit | null> = oembedMeta(id, canonicalUrl).catch(() => null);
+    const durationPromise = innertubeDuration(id).catch(() => 0);
+
+    // Every rendition starts as its own registered job, immediately.
+    const registered: PendingLoaderJob[] = [];
+    const record = (format: string, job: LoaderJob): void => {
+      if (job.id && !registered.some((entry) => entry.id === job.id)) {
+        registered.push({ format, id: job.id });
+      }
+    };
+    const videoAwaits = LOADER_VIDEO_FORMATS.map((format) =>
+      (async () => {
+        const job = await loaderStartJob(format, canonicalUrl);
+        record(format, job);
+        return { format, url: await loaderAwaitJob(job) };
+      })(),
+    );
+    const audioRace = (async (): Promise<string | null> => {
+      try {
+        const job = await loaderStartJob("mp3", canonicalUrl);
+        record("mp3", job);
+        return await loaderAwaitJob(job);
+      } catch {
+        return null;
+      }
+    })();
+
+    // NOTE: an unreachable converter (no registered jobs) is NOT a reason to
+    // hard-fail: the direct-mirror waterfall below is still raced, and the
+    // phase-A gate decides the outcome. Only if nothing answers at all does
+    // the pending branch convert into a friendly retry error (there is no
+    // job for the browser to poll, so faking a pending state would strand
+    // the visitor on a conversion that no one can finish).
+
+    const converterChain = (async (): Promise<TierHit> => {
+      const winner = await Promise.any(videoAwaits);
+      return {
+        id,
+        title: `YouTube video ${id}`,
+        author: "YouTube",
+        duration: 0,
+        thumbnail: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+        streams: { video: winner.url, videoSd: null, audio: null },
+      };
+    })();
+
+    const directChain = runWaterfall<TierHit>([
+      ...INVIDIOUS_APIS.map((api) => ({
+        name: `youtube:invidious:${new URL(api).hostname}`,
+        timeoutMs: WATERFALL_TIMEOUT_MS,
+        fn: () => invidiousStreams(id, api),
+      })),
+      ...PIPED_APIS.map((api) => ({
+        name: `youtube:piped:${new URL(api).hostname}`,
+        timeoutMs: WATERFALL_TIMEOUT_MS,
+        fn: () => pipedStreams(id, api),
+      })),
+      { name: "youtube:ytdl-core", timeoutMs: WATERFALL_TIMEOUT_MS, fn: () => ytdlCoreResolve(id, canonicalUrl) },
+      ...INNERTUBE_CLIENTS.map((client) => ({
+        name: client.name,
+        timeoutMs: WATERFALL_TIMEOUT_MS,
+        fn: () => innertubePlayer(id, client),
+      })),
+    ]);
+
+    // Tagged budget error: when nothing answered inside Phase A the tagged
+    // error is what builds the pending hand-off — NOT a resolve failure.
+    let phaseElapsed = false;
+    const phaseBudget = new Promise<never>((_resolve, reject) => {
+      setTimeout(() => {
+        phaseElapsed = true;
+        reject(new AppError("PROVIDER_UNAVAILABLE", "youtube:phase-a-budget"));
+      }, PHASE_A_BUDGET_MS);
+    });
+
+    try {
+      const hit = await Promise.race([firstDefinitiveHit(directChain, converterChain), phaseBudget]);
+      if (!hit.streams || (!hit.streams.video && !hit.streams.audio)) {
+        throw new AppError("PROVIDER_UNAVAILABLE", "Resolving high-speed stream — retry in a moment.");
+      }
+
+      // The mp3 job may have finished inside Phase A — attach it for free
+      // (never await the full conversion here; a 0-timer race only wins when
+      // audioRace already settled).
+      const racedAudio = (await Promise.race([
+        audioRace,
+        new Promise<string | null>((resolve) => setTimeout(() => resolve(null), 0)),
+      ]).catch(() => null)) as string | null;
+
+      // Winner metadata: oembed usually answered while the conversion ran.
+      const meta = await metaPromise;
+      const duration = (hit.duration > 0 ? hit.duration : await durationPromise) || 0;
+      return {
+        state: "resolved",
+        meta: {
+          id: hit.id || id,
+          // A converter winner carries the placeholder title; swap in the
+          // real one and only the real one when it exists (never a 0:00 card).
+          title: meta?.title ?? (hit.title !== `YouTube video ${id}` ? hit.title : `YouTube video ${id}`),
+          author: hit.author !== "YouTube" ? hit.author : (meta?.author ?? "YouTube"),
+          duration: duration > 0 ? duration : 0,
+          thumbnail: hit.thumbnail.includes(`vi/${id}/hqdefault.jpg`)
+            ? meta?.thumbnail ?? `https://i.ytimg.com/vi/${id}/hqdefault.jpg`
+            : hit.thumbnail,
+        },
+        streams: racedAudio ? { ...hit.streams, audio: racedAudio } : hit.streams,
+        jobs: registered.slice(),
+      };
+    } catch (error) {
+      // Vinyl: definitive VIDEO errors (private / deleted / livestream) are
+      // real answers, never downgrade to pending.
+      if (error instanceof AppError && error.code === "VIDEO_PRIVATE") throw error;
+      if (error instanceof AppError && (error.code === "VIDEO_NOT_FOUND" || error.code === "UNSUPPORTED_URL")) {
+        throw error;
+      }
+      if (!phaseElapsed) throw error; // a real provider failure, not the budget
+
+      // Phase B (pending): video metadata for the card + the registered
+      // job ids. The browser takes over polling from here.
+      let meta = await metaPromise;
+      meta ??= await runWaterfall<TierHit>([
+        {
+          name: "youtube:noembed",
+          timeoutMs: WATERFALL_TIMEOUT_MS,
+          fn: () => noembedMeta(id, canonicalUrl),
+        },
+        {
+          name: "youtube:oembed",
+          timeoutMs: WATERFALL_TIMEOUT_MS,
+          fn: () => oembedMeta(id, canonicalUrl),
+        },
+      ]).catch(() => null);
+      if (registered.length === 0) {
+        // No active conversion job exists — browser-assisted polling can
+        // never finish this, so answer a clean retry error instead of a
+        // pending hand-off to nowhere.
+        throw new AppError(
+          "PROVIDER_UNAVAILABLE",
+          "Resolving high-speed stream — retry in a moment.",
+          "YouTube is rate-limiting this network; try again shortly.",
+        );
+      }
+      const duration = Math.max(0, await durationPromise);
+      return {
+        state: "pending",
+        videoId: id,
+        title: meta?.title ?? `YouTube video ${id}`,
+        author: meta?.author ?? "YouTube",
+        duration,
+        thumbnail: meta?.thumbnail ?? `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+        jobs: registered.slice(),
+      };
+    }
+  } catch (outer) {
+    // Definitive VIDEO errors (private / deleted / livestream) are real
+    // answers and survive unchanged; anything unexpected normalizes to the
+    // friendly retry error.
+    if (outer instanceof AppError) throw outer;
+    throw new AppError(
+      "PROVIDER_UNAVAILABLE",
+      "Resolving high-speed stream — retry in a moment.",
+      "The converter and mirrors are answering slowly; try again shortly.",
+    );
+  }
+}
+
+/**
+ * Resolve a YouTube URL (single-request legacy engine, used by /api/fetch).
+ * Phase A returns the first provider with a real downloadable stream;
+ * Phase B (metadata-only) answers with a clean, friendly retry message —
+ * never a raw 500, never a debug dump.
  */
 export async function extractYouTube(rawUrl: string): Promise<ResolvedYouTube> {
   const parsed = parseYouTubeUrl(rawUrl);
@@ -785,13 +1033,6 @@ export async function extractYouTube(rawUrl: string): Promise<ResolvedYouTube> {
       loaderResolve(id, canonicalUrl),
       LOADER_TIMEOUT_MS,
       "youtube:loader",
-    );
-    // Cobalt mirror: raced alongside the converter, same deadline, first
-    // stream wins — a dead instance costs nothing.
-    const cobaltChain = withDeadline(
-      cobaltResolve(id, canonicalUrl),
-      LOADER_TIMEOUT_MS,
-      "youtube:cobalt",
     );
     const directChain = runWaterfall<TierHit>([
       // Tier 2: active Invidious / Piped mirrors.
@@ -818,7 +1059,7 @@ export async function extractYouTube(rawUrl: string): Promise<ResolvedYouTube> {
       })),
     ]);
 
-    const hit = await firstDefinitiveHit(directChain, conversionChain, cobaltChain);
+    const hit = await firstDefinitiveHit(directChain, conversionChain);
     if (!hit.streams || (!hit.streams.video && !hit.streams.audio)) {
       throw new AppError(
         "PROVIDER_UNAVAILABLE",
