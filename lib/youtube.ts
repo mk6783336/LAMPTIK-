@@ -824,6 +824,92 @@ export type YouTubeResolutionStart = ResolvedYouTubeStart | PendingYouTube;
  *  hand the completion to the browser. */
 const PHASE_A_BUDGET_MS = 6_000;
 
+/* --------------------------------------------------------------------------
+ *  Resolved-link cache — a second resolve of the same video must never
+ *  re-wait for a fresh conversion.
+ *
+ *  Converter CDN files (loader.to's pacific-cdn / savenow.to links) are
+ *  shared artifacts that answer any IP, so they cache cleanly. googlevideo
+ *  mirror URLs are IP-locked to whoever resolved them and are NEVER cached
+ *  — serving one to a different visitor would dead-end their download.
+ *  Per-isolate memory: a cold function simply re-resolves (never worse
+ *  than before), and a warm one answers in single-digit milliseconds.
+ * ------------------------------------------------------------------------ */
+
+const YT_CACHE_TTL_MS = 30 * 60_000;
+const YT_CACHE_MAX_ENTRIES = 250;
+
+interface CachedYouTubeHit {
+  expiresAt: number;
+  meta: { id: string; title: string; author: string; duration: number; thumbnail: string | null };
+  streams: { video: string | null; videoSd: string | null; audio: string | null };
+}
+
+const resolvedYouTubeCache = new Map<string, CachedYouTubeHit>();
+
+function cacheableStreamUrl(url: string | null | undefined): string | null {
+  if (!url || !url.startsWith("https://")) return null;
+  try {
+    return new URL(url).hostname.includes("googlevideo.com") ? null : url;
+  } catch {
+    return null; // malformed — never cache
+  }
+}
+
+/** A fresh cached hit for `videoId`, or null (expired / never cached). */
+export function getCachedYouTubeHit(videoId: string): CachedYouTubeHit | null {
+  const hit = resolvedYouTubeCache.get(videoId);
+  if (!hit) return null;
+  if (hit.expiresAt <= Date.now()) {
+    resolvedYouTubeCache.delete(videoId);
+    return null;
+  }
+  return hit;
+}
+
+/**
+ * Remember a successfully resolved video. Merge-friendly: the 1080 claim and
+ * the mp3 claim arrive as two separate calls, so one entry grows as
+ * transports finish. Entries without a real downloadable stream aren't kept.
+ */
+export function rememberYouTubeStreams(
+  videoId: string,
+  meta: { id: string; title: string; author: string; duration: number; thumbnail: string | null },
+  streams: { video: string | null; videoSd?: string | null; audio: string | null },
+): void {
+  const video = cacheableStreamUrl(streams.video);
+  const videoSd = cacheableStreamUrl(streams.videoSd);
+  const audio = cacheableStreamUrl(streams.audio);
+  if (!video && !audio) return; // googlevideo-only resolve — nothing shareable
+
+  const previous = getCachedYouTubeHit(videoId);
+  const cachedMeta = previous
+    ? {
+        id: videoId,
+        title: meta.title || previous.meta.title,
+        author: meta.author || previous.meta.author,
+        duration: meta.duration > 0 ? meta.duration : previous.meta.duration,
+        thumbnail: meta.thumbnail ?? previous.meta.thumbnail,
+      }
+    : { id: videoId, title: meta.title, author: meta.author, duration: meta.duration, thumbnail: meta.thumbnail };
+
+  resolvedYouTubeCache.delete(videoId); // Map insertion order = LRU order
+  resolvedYouTubeCache.set(videoId, {
+    expiresAt: Date.now() + YT_CACHE_TTL_MS,
+    meta: cachedMeta,
+    streams: {
+      video: video ?? previous?.streams.video ?? null,
+      videoSd: videoSd ?? previous?.streams.videoSd ?? null,
+      audio: audio ?? previous?.streams.audio ?? null,
+    },
+  });
+  while (resolvedYouTubeCache.size > YT_CACHE_MAX_ENTRIES) {
+    const oldest = resolvedYouTubeCache.keys().next().value;
+    if (oldest === undefined) break;
+    resolvedYouTubeCache.delete(oldest);
+  }
+}
+
 export async function startYouTubeResolution(rawUrl: string): Promise<YouTubeResolutionStart> {
   const parsed = parseYouTubeUrl(rawUrl);
   if (!parsed) {
@@ -834,6 +920,24 @@ export async function startYouTubeResolution(rawUrl: string): Promise<YouTubeRes
     );
   }
   const { id, canonicalUrl } = parsed;
+
+  // Cache hit: this video resolved moments ago — hand back the same
+  // converter CDN streams instantly instead of re-waiting for conversion.
+  const cached = getCachedYouTubeHit(id);
+  if (cached?.streams.video) {
+    return {
+      state: "resolved",
+      meta: {
+        id,
+        title: cached.meta.title || `YouTube video ${id}`,
+        author: cached.meta.author || "YouTube",
+        duration: cached.meta.duration,
+        thumbnail: cached.meta.thumbnail ?? `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
+      },
+      streams: { video: cached.streams.video, videoSd: cached.streams.videoSd, audio: cached.streams.audio },
+      jobs: [],
+    };
+  }
 
   try {
     // Metadata runs CONCURRENTLY with the conversions — it answers even when
@@ -930,19 +1034,27 @@ export async function startYouTubeResolution(rawUrl: string): Promise<YouTubeRes
       // Winner metadata: oembed usually answered while the conversion ran.
       const meta = await metaPromise;
       const duration = (hit.duration > 0 ? hit.duration : await durationPromise) || 0;
+      const resolvedMeta = {
+        id: hit.id || id,
+        // A converter winner carries the placeholder title; swap in the
+        // real one and only the real one when it exists (never a 0:00 card).
+        title: meta?.title ?? (hit.title !== `YouTube video ${id}` ? hit.title : `YouTube video ${id}`),
+        author: hit.author !== "YouTube" ? hit.author : (meta?.author ?? "YouTube"),
+        duration: duration > 0 ? duration : 0,
+        thumbnail: hit.thumbnail.includes(`vi/${id}/hqdefault.jpg`)
+          ? meta?.thumbnail ?? `https://i.ytimg.com/vi/${id}/hqdefault.jpg`
+          : hit.thumbnail,
+      };
+      // Any(Path) googlevideo (mirror) URLs are IP-locked to Vercel and are
+      // refused by the cache itself — only converter CDN links get stored.
+      rememberYouTubeStreams(
+        id,
+        resolvedMeta,
+        racedAudio ? { ...hit.streams, audio: racedAudio } : hit.streams,
+      );
       return {
         state: "resolved",
-        meta: {
-          id: hit.id || id,
-          // A converter winner carries the placeholder title; swap in the
-          // real one and only the real one when it exists (never a 0:00 card).
-          title: meta?.title ?? (hit.title !== `YouTube video ${id}` ? hit.title : `YouTube video ${id}`),
-          author: hit.author !== "YouTube" ? hit.author : (meta?.author ?? "YouTube"),
-          duration: duration > 0 ? duration : 0,
-          thumbnail: hit.thumbnail.includes(`vi/${id}/hqdefault.jpg`)
-            ? meta?.thumbnail ?? `https://i.ytimg.com/vi/${id}/hqdefault.jpg`
-            : hit.thumbnail,
-        },
+        meta: resolvedMeta,
         streams: racedAudio ? { ...hit.streams, audio: racedAudio } : hit.streams,
         jobs: registered.slice(),
       };

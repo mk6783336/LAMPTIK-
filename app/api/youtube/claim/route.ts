@@ -4,6 +4,7 @@ import { assembleYouTubeMedia } from "@/lib/media";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request";
 import { isPublicMediaUrl } from "@/lib/security";
+import { rememberYouTubeStreams } from "@/lib/youtube";
 
 export const runtime = "nodejs";
 
@@ -118,7 +119,22 @@ export async function POST(request: NextRequest) {
     streams,
   );
 
-  // No resolve cache here: conversions finish at loader.to's pace and the
-  // payload is pinned to this one `download_url`, not the canonical page.
+  // Remember the finished conversion so a second resolve of the same video
+  // gets these streams instantly instead of waiting for a new job.
+  // Converter CDN links (loader.to family) answer any visitor IP. Claims
+  // carrying googlevideo URLs (IP-locked to the claimant) are refused by
+  // the cache itself — only shareable artifacts get stored.
+  rememberYouTubeStreams(
+    claim.videoId,
+    {
+      id: claim.videoId,
+      title: title || `YouTube video ${claim.videoId}`,
+      author: author || "YouTube",
+      duration,
+      thumbnail,
+    },
+    streams,
+  );
+
   return claimSuccess({ ok: true, media, video, cached: false });
 }
