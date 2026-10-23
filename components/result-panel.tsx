@@ -52,8 +52,9 @@ interface DownloadTheater {
  * platform page renders this exact component):
  *   0ms — click: the Monetag Direct Link sponsor opens synchronously inside
  *   the user activation, AND IN THE SAME GESTURE a hidden same-origin
- *   iframe navigates to `/api/download` (`Content-Disposition: attachment`,
- *   forced server-side). Chrome's NATIVE download manager starts at ~0s —
+ *   sandboxed iframe navigates to `/api/download` — attachment downloads
+ *   only, no script execution, no top-frame movement. Chrome's NATIVE
+ *   download manager starts at ~0s —
  *   the old 10-second delayed hand-off died to Chrome twice over: the user
  *   activation had expired and the cross-origin CDN refused iframe
  *   delivery. No post-timeout downloads, ever.
@@ -191,6 +192,15 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
     frame.style.display = "none";
     frame.setAttribute("aria-hidden", "true");
     frame.setAttribute("title", "Starting download");
+    frame.setAttribute(
+      "sandbox",
+      // Downloads (attachment navigations) only — NO allow-scripts and NO
+      // allow-top-navigation: even a 302 to an external CDN cannot execute a
+      // script in our frame or move the top-level tab. The CDN's own
+      // `Content-Disposition: attachment` is what reaches Chrome's download
+      // manager; an HTML ad response is dead on arrival here.
+      "allow-downloads allow-same-origin",
+    );
     frame.src = href;
     document.body.appendChild(frame);
     // Live until the proxied stream has had its full 300s window — removing
@@ -216,15 +226,20 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
    * downloads). loader.to's pacific-cdn and claimed googlevideo links are
    * authorized for THIS browser's IP — proxying them through the server's
    * datacenter IP is what produced `download.html` instead of the .mp4.
-   * The synchronously-clicked anchor navigates the REAL gesture; the CDN's
-   * own `Content-Disposition: attachment` hands the file to Chrome's
-   * download manager; then the same 10-second theater runs in flow.
+   * The synchronously-clicked anchor rides the REAL gesture into _blank:
+   * the current lamptik.online tab NEVER navigates away, the CDN's own
+   * `Content-Disposition: attachment` hands the file to Chrome's download
+   * manager, then the same 10-second theater runs in flow.
    */
   function startDownloadDirect(kind: string, directUrl: string) {
     if (!directUrl) return;
     triggerDownloadDirectLink();
     const anchor = document.createElement("a");
     anchor.href = directUrl;
+    // _blank is load-bearing: an attachment response downloads without
+    // leaving the page, and anything else (a converter HTML page) opens in
+    // its own disposable tab instead of replacing ours.
+    anchor.target = "_blank";
     anchor.rel = "noopener noreferrer";
     anchor.style.display = "none";
     document.body.appendChild(anchor);

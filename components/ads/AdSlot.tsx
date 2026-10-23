@@ -277,6 +277,12 @@ export function AdSlot({
               height={height}
               loading="eager"
               scrolling="no"
+              /* Hard anti-hijack lock. Deliberately WITHOUT allow-top-navigation
+                 and allow-top-navigation-by-user-activation: no Adsterra
+                 creative running in /api/ad-frame may ever move our top frame
+                 (window.top.location = … dies at the sandbox boundary).
+                 Popups (Direct Link offers) and form posts stay legal. */
+              sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms"
               onLoad={() => {
                 const creativeFrame = frameRef.current?.contentDocument?.querySelector("iframe");
                 if (

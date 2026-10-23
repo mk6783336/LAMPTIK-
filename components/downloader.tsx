@@ -36,6 +36,67 @@ const SAMPLE_URL = "https://www.tiktok.com/@scout2015/video/6718335390845095173"
 
 type Status = "idle" | "loading" | "success";
 
+/* --------------------------------------------------------------------------
+ *  Back/refresh survival — the resolved result is persisted per-pathname in
+ *  sessionStorage. A Back/Forward press or an accidental mobile reload used
+ *  to wipe the resolved video and drop the user back on an idle input;
+ *  now their card and download buttons come straight back (<10 min old).
+ * ------------------------------------------------------------------------ */
+
+const RESULT_CACHE_TTL_MS = 10 * 60_000;
+
+function resultCacheKey(): string {
+  return `lamptik_last_result_${window.location.pathname}`;
+}
+
+function saveLastResult(url: string, video: VideoInfo, media: MediaPayload): void {
+  try {
+    window.sessionStorage.setItem(
+      resultCacheKey(),
+      JSON.stringify({ savedAt: Date.now(), url, video, media }),
+    );
+  } catch {
+    // Safari private mode / quota errors — persistence is best-effort.
+  }
+}
+
+function clearLastResult(): void {
+  try {
+    window.sessionStorage.removeItem(resultCacheKey());
+  } catch {
+    // Nothing to clear.
+  }
+}
+
+interface LastResolvedResult {
+  url: string;
+  video: VideoInfo;
+  media: MediaPayload;
+}
+
+function readLastResult(): LastResolvedResult | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(resultCacheKey());
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as {
+      savedAt?: unknown;
+      url?: unknown;
+      video?: VideoInfo;
+      media?: MediaPayload;
+    };
+    // Stale entries self-delete; the visitor re-resolves with one tap.
+    if (typeof parsed.savedAt !== "number" || Date.now() - parsed.savedAt > RESULT_CACHE_TTL_MS) {
+      window.sessionStorage.removeItem(resultCacheKey());
+      return null;
+    }
+    if (typeof parsed.url !== "string" || !parsed.url || !parsed.video || !parsed.media) return null;
+    return { url: parsed.url, video: parsed.video, media: parsed.media };
+  } catch {
+    return null; // corrupted blob / non-JSON — treat as empty
+  }
+}
+
 function createToastId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
@@ -574,6 +635,25 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
    * dedicated YouTube page so the right hero and copy frame the result.
    */
   const sharedHandledRef = useRef(false);
+
+  // Restore the last resolved video for this page on mount (Back press,
+  // mobile reload). A `?shared_url=` hand-off skips the restore so the
+  // fresh resolve wins; a manual “Download Another Video” reset already
+  // cleared the cache above.
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).has("shared_url")) return;
+    const last = readLastResult();
+    if (!last) return;
+    setSeed((current) => ({ value: last.url, nonce: current.nonce }));
+    setVideo(last.video);
+    setMedia(last.media);
+    setStatus("success");
+  }, []);
+
   useEffect(() => {
     if (sharedHandledRef.current) return;
     if (typeof window === "undefined") return;
@@ -654,6 +734,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     setVideo(null);
     setMedia(null);
     setError(null);
+    clearLastResult();
     setAdRefreshKey((key) => key + 1);
     setSeed((current) => ({ value: "", nonce: current.nonce + 1 }));
     window.setTimeout(() => inputRef.current?.focus(), 50);
@@ -899,6 +980,8 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
       setVideo(payload.video);
       setMedia(payload.media);
       setStatus("success");
+      // Persist for Back/Forward/refresh survival (see restore effect below).
+      saveLastResult(url, payload.video, payload.media);
       setAdRefreshKey((key) => key + 1);
       notify({
         kind: "success",
