@@ -2,7 +2,7 @@
 "use client";
 
 import { AlertTriangle, Clock3, Download, Music2, RefreshCw, ShieldCheck } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { formatBytes, formatDuration } from "@/lib/format";
 import type { ToastItem } from "@/components/toast";
@@ -33,46 +33,77 @@ interface DownloadTheater {
   secondsLeft: number;
   done: boolean;
   kind: string;
+  /** Same-origin `/api/download` attachment URL handed to Chrome at 0s. */
+  href: string;
 }
 
 /**
- * SnapTik-style result card — instant, three servers, and a parallel
- * 10-second sponsor theater that never delays the file.
+ * SnapTik-style result card — instant resolution, three servers, and a
+ * 10-second sponsor theater that ends by handing the file to Chrome.
  *
- * Every download button is a real `<a>`: the browser's own navigation does
- * the work, and the file starts moving on the click itself (0 seconds of
- * waiting). In the SAME event, synchronously, the Monetag Direct Link opens
- * (popup blockers only honour `window.open` while the user activation is
- * alive) — and only after that does the panel transform, IN FLOW, into a
- * 10-second progress + center-stage banner theater that monetizes the wait
- * Chrome is already spending moving bytes in the background.
+ * The 2-stage flow (identical on TikTok / Instagram / Facebook / YouTube:
+ * every platform page renders this exact component):
+ *   Stage A — click: the Monetag Direct Link sponsor opens synchronously
+ *   inside the user activation (popup blockers only honour `window.open`
+ *   there), and the panel transforms IN FLOW into the 10-second countdown
+ *   theater with a freshly keyed 300×250 banner on center stage.
+ *   Stage B — t = 0s: a hidden same-origin iframe navigates to this site's
+ *   `/api/download` attachment stream (`Content-Disposition: attachment`,
+ *   forced server-side), which starts Chrome's NATIVE download manager on
+ *   every attempt — no cross-origin `<a download>` (ignored by Chrome's
+ *   policy), no `target="_blank"` CDN URL that inline-plays video in a new
+ *   tab instead of downloading, and no popup-blocker cancellation of the
+ *   file navigation. The page never navigates away; the user stays free to
+ *   click "Download Another Video" while bytes move in the tray.
  *
- * By the time the response lands, every CDN URL the resolver returned has
- * been sorted into two transports:
- *   - Server 01 — the provider's own public CDN attachment (tikwm `play`/
- *     `hdplay`, loader.to `download_url`, instagram/facebook media CDN). It
- *     already sends `Content-Disposition: attachment`, so the visitor's own
- *     residential IP does the transfer from a `<a href={direct}>`.
- *   - Server 02 — this site's same-origin `/api/download?…` proxy stream,
- *     forced attachment, SSRF-checked, referer-corrected server-side.
- * If one transport ever refuses, the other button sits right below it.
+ * Every click routes to the same-origin proxy (`/api/download?u=…`), even
+ * for providers that expose their own public CDN attachment: the server
+ * side streams the bytes (with platform-correct referers) and, when a CDNP
+ * refuses server IPs or the file is huge, hands off via a verified 302.
  */
 export function ResultPanel({ media, video, onReset, onNotify, refreshKey }: ResultPanelProps) {
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
   const [theater, setTheater] = useState<DownloadTheater | null>(null);
+  /** Guard: the 0s hand-off fires exactly once per attempt. */
+  const firedAttemptRef = useRef<number>(0);
 
   const platform = media.platform;
   const platformConfig = PLATFORMS[platform];
 
-  /** Server 01: provider's own public CDN (falls back to the proxy). */
-  const server01 = media.videoDirect ?? media.videoHd ?? video.downloads.video;
-  const server01IsDirect = media.videoDirect !== null && media.videoDirect !== undefined;
-  /** Server 02: the same-origin proxy — or a distinct SD rendition proxy. */
-  const proxyVideo = media.videoHd ?? video.downloads.video;
-  const server02 = server01IsDirect ? (media.videoSd ?? proxyVideo) : media.videoSd ?? null;
-  const showServer02 = Boolean(server02 && server02 !== server01);
-  /** MP3: direct music CDN when available, else the proxy. */
-  const mp3Url = media.audioDirect ?? media.audioMp3 ?? null;
+  /** Same-origin attachment URL for any https upstream (SSRF-checked server-side). */
+  const proxyHref = (
+    kind: "video" | "audio",
+    upstream: string,
+    server: "1" | "2" = "2",
+  ) =>
+    `/api/download?${new URLSearchParams({
+      kind,
+      u: upstream,
+      id: media.id,
+      author: media.author,
+      platform,
+      server,
+    }).toString()}`;
+
+  /** Server 01: always the proxy attachment (direct CDN upstream when known). */
+  const directUpstream = media.videoDirect ?? null;
+  const server01Href = directUpstream
+    ? proxyHref("video", directUpstream, "1")
+    : (media.videoHd ?? video.downloads.video ?? "");
+  /** Server 02: the SD rendition proxy — or the alternate transport when
+   *  Server 01 rides the provider's own CDN. */
+  const server02Href =
+    media.videoSd && media.videoSd !== server01Href
+      ? media.videoSd
+      : directUpstream
+        ? (media.videoHd ?? video.downloads.video ?? "")
+        : "";
+  const showServer02 = Boolean(server02Href && server02Href !== server01Href);
+  /** MP3: proxy attachment covers both direct and proxied upstreams. */
+  const mp3Href = media.audioDirect
+    ? proxyHref("audio", media.audioDirect, "2")
+    : (media.audioMp3 ?? "");
+  const mp3Url = mp3Href || null;
 
   const size = formatBytes(media.videoHdBytes ?? media.videoSdBytes ?? video.byteSize);
   const isAudioUnavailable = !mp3Url && platform === "tiktok";
@@ -97,13 +128,16 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey }: Res
     ) : null;
 
   /* ------------------------------------------------------------------
-   * Parallel 10-second sponsor theater — UI only, never a gate.
+   * 10-second sponsor theater that ENDS in a real download.
    *
-   * The click handler below does the download work FIRST (anchor default
-   * navigation + synchronous Direct Link), then merely displays this panel
-   * while Chrome moves the file. If a new download is clicked from the
-   * quick links, a new attempt re-keys the countdown and the banner.
+   * t = click → the Direct Link opens (inside the user activation) and the
+   *   countdown starts over a freshly keyed 300×250 banner.
+   * t = 10s → 0s → the hidden same-origin iframe navigates to the
+   *   `/api/download` attachment stream: Chrome's native download bar
+   *   starts, the page stays put, and "Download Another Video" appears so
+   *   the next paste can happen while bytes are still moving.
    * ---------------------------------------------------------------- */
+  const theaterAttemptId = theater?.attemptId;
   useEffect(() => {
     if (!theater || theater.done) return;
     const interval = window.setInterval(() => {
@@ -114,28 +148,51 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey }: Res
       });
     }, 1_000);
     return () => window.clearInterval(interval);
-    // The countdown restarts per attempt; theater.* inside is intentionally
-    // read through the ref-free updater.
+    // The countdown restarts per attempt; theater state itself is read via
+    // the ref-free updater.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [theater?.attemptId]);
+  }, [theaterAttemptId]);
+
+  /**
+   * Stage B — the actual file hand-off at t = 0s.
+   * A display:none iframe is the one mechanism that reaches Chrome's native
+   * download manager 100% of the time for a same-origin attachment stream:
+   * no user-activation conflict with the sponsor tab, no popup blocker, no
+   * navigation away from the page, and no cross-origin `download` attribute
+   * being ignored.
+   */
+  useEffect(() => {
+    if (!theater || theater.secondsLeft !== 0) return;
+    if (firedAttemptRef.current === theater.attemptId) return;
+    firedAttemptRef.current = theater.attemptId;
+
+    const frame = document.createElement("iframe");
+    frame.style.display = "none";
+    frame.setAttribute("aria-hidden", "true");
+    frame.setAttribute("title", "Starting download");
+    frame.src = theater.href;
+    document.body.appendChild(frame);
+    // Live until the proxied stream has had its full 300s window — removing
+    // the frame earlier aborts a still-streaming download.
+    window.setTimeout(() => frame.remove(), 300_000);
+  }, [theater]);
 
   /**
    * The one and only download click handler — order is load-bearing.
    * 1. Direct Link sponsor synchronously inside the user activation (30 s
    *    cap lives inside the trigger).
-   * 2. The `<a>` default navigation hands the file to the browser's own
-   *    download manager at t = 0 s — nothing here may preventDefault, block
-   *    or await anything.
-   * 3. THEN the theater opens; the file is already moving.
+   * 2. The panel becomes the 10-second theater; the CDN link is handed to
+   *    Chrome's download manager the moment the countdown reaches 0s.
    */
-  function startDownload(kind: string) {
+  function startDownload(kind: string, href: string) {
+    if (!href) return;
     triggerDownloadDirectLink();
+    setTheater({ attemptId: Date.now(), secondsLeft: 10, done: false, kind, href });
     onNotify({
       kind: "success",
-      title: "Download started",
-      description: `${kind} is downloading straight from the server — check your Downloads tray.`,
+      title: "Download starting",
+      description: `${kind} will land in your Downloads tray in 10 seconds — keep this tab open.`,
     });
-    setTheater({ attemptId: Date.now(), secondsLeft: 10, done: false, kind });
   }
 
   const theaterProgress = theater ? ((10 - theater.secondsLeft) / 10) * 100 : 0;
@@ -201,8 +258,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey }: Res
         >
           {/* Animated progress header. */}
           <div className="flex items-center justify-between gap-3">
-            <p className="min-w-0 text-sm font-semibold sm:text-base">
-              {theater.done ? (
+            <p className="min-w-0 text-sm font-semibold sm:text-base">                {theater.done ? (
                 <span>
                   ✅ Download Started in Your Browser!{" "}
                   <span className="font-normal text-[var(--text-3)]">
@@ -211,10 +267,10 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey }: Res
                 </span>
               ) : (
                 <span>
-                  ⚡ Downloading your {theater.kind}…
+                  ⚡ Preparing your {theater.kind}…
                   <span className="font-normal text-[var(--text-3)]">
                     {" "}
-                    Finishing stream handoff ({theater.secondsLeft}s)
+                    Securing CDN stream ({theater.secondsLeft}s)
                   </span>
                 </span>
               )}
@@ -238,6 +294,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey }: Res
               key={theater.attemptId}
               format="rectangle"
               eager
+              alwaysReserve
               label="Sponsored — keeps LAMP TIK free"
             />
           </div>
@@ -269,15 +326,15 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey }: Res
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <button
                   type="button"
-                  onClick={() => startDownload("Server 01")}
+                  onClick={() => startDownload("Server 01", server01Href)}
                   className="rounded-full border border-[var(--glass-border)] px-3 py-1.5 text-xs font-medium underline-offset-4 hover:underline"
                 >
                   Server 01
                 </button>
-                {showServer02 && server02 ? (
+                {showServer02 ? (
                   <button
                     type="button"
-                    onClick={() => startDownload("Server 02")}
+                    onClick={() => startDownload("Server 02", server02Href)}
                     className="rounded-full border border-[var(--glass-border)] px-3 py-1.5 text-xs font-medium underline-offset-4 hover:underline"
                   >
                     Server 02
@@ -286,7 +343,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey }: Res
                 {mp3Url ? (
                   <button
                     type="button"
-                    onClick={() => startDownload("MP3 audio")}
+                    onClick={() => startDownload("MP3 audio", mp3Href)}
                     className="rounded-full border border-[var(--glass-border)] px-3 py-1.5 text-xs font-medium underline-offset-4 hover:underline"
                   >
                     MP3
@@ -306,37 +363,36 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey }: Res
         </div>
       ) : (
         <div className="mt-4 grid gap-2">
-          {/* SnapTik-style stacked action buttons: full-width, instant click */}
-          {/* Server 01 — direct provider CDN (or the proxy when none exists). */}
-          <a
-            href={server01}
-            {...(server01IsDirect ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-            download=""
-            onClick={() => startDownload("Server 01")}
+          {/* SnapTik-style stacked action buttons: full-width. Each button
+              routes through the same-origin proxy attachment — Chrome's own
+              download manager does the receiving, never an inline tab. */}
+          {/* Server 01 — primary: direct CDN upstream via the proxy stream. */}
+          <button
+            type="button"
+            onClick={() => startDownload("Server 01", server01Href)}
             className="btn btn-primary tool-cta h-[52px] w-full gap-3 px-4 text-sm font-semibold"
           >
             <Download className="size-4 shrink-0" />
             <span className="flex min-w-0 flex-1 flex-col items-start">
               <span>{video.quality === "hd" ? "Download HD Video" : "Download Video"}</span>
               <span className="text-xs font-normal text-white/75">
-                Server 01 — Fast{server01IsDirect ? " direct CDN" : ""}
+                Server 01 — Fast{directUpstream ? " direct CDN" : ""}
               </span>
             </span>
             {size ? <span className="shrink-0 font-mono text-xs tabular-nums text-white/85">{size}</span> : null}
-          </a>
+          </button>
 
-          {/* Server 02 — backup transport (proxy or SD rendition). */}
-          {showServer02 && server02 ? (
-            <a
-              href={server02}
-              download=""
-              onClick={() => startDownload("Server 02")}
+          {/* Server 02 — backup transport (other upstream or SD rendition). */}
+          {showServer02 ? (
+            <button
+              type="button"
+              onClick={() => startDownload("Server 02", server02Href)}
               className="btn btn-secondary h-[52px] w-full gap-3 border-[color-mix(in_srgb,var(--ok)_35%,transparent)] bg-[color-mix(in_srgb,var(--ok)_12%,var(--field))] px-4 text-sm font-medium text-[var(--ok)] hover:border-[color-mix(in_srgb,var(--ok)_50%,transparent)]"
             >
               <Download className="size-4 shrink-0" />
               <span className="flex min-w-0 flex-1 flex-col items-start">
                 <span>
-                  {server01IsDirect ? "Download Video (Server 02 — Backup CDN)" : "Download Fast MP4 (SD)"}
+                  {directUpstream ? "Download Video (Server 02 — Backup CDN)" : "Download Fast MP4 (SD)"}
                 </span>
                 <span className="text-xs font-normal text-[var(--text-3)]">Same-origin proxy stream</span>
               </span>
@@ -345,16 +401,15 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey }: Res
                   {formatBytes(media.videoSdBytes)}
                 </span>
               ) : null}
-            </a>
+            </button>
           ) : null}
 
-          {/* MP3 audio — direct music CDN when the provider serves one. */}
+          {/* MP3 audio — routed through the forced-attachment proxy so the
+              music file lands in the Downloads tray, never an inline player. */}
           {mp3Url ? (
-            <a
-              href={mp3Url}
-              {...(media.audioDirect ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-              download=""
-              onClick={() => startDownload("MP3 audio")}
+            <button
+              type="button"
+              onClick={() => startDownload("MP3 audio", mp3Href)}
               className="btn btn-ghost h-12 w-full gap-3 rounded-full border border-[var(--glass-border)] px-4 text-sm font-medium hover:border-[var(--glass-border-hover)]"
             >
               <Music2 className="size-4 shrink-0" />
@@ -362,7 +417,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey }: Res
                 <span>Download Audio (MP3)</span>
                 <span className="text-xs font-normal text-[var(--text-3)]">Original sound track</span>
               </span>
-            </a>
+            </button>
           ) : isAudioUnavailable ? (
             <button
               type="button"

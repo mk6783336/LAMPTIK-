@@ -24,11 +24,13 @@ a download that died or a page that froze on a phone.
   do not add any other script that paints a viewport-covering layer.
 - The only sanctioned monetization surfaces are: in-flow `AdSlot` banners (the
   SnapTik ad-sandwich: one slot between the URL input and the result zone, one
-  dedicated 300×250 under the download buttons, and the parallel theater's
-  center-stage unit), the click-triggered Direct Link
-  (`triggerDownloadDirectLink`), and the inline parallel 10-second download
-  theater in `result-panel.tsx` (UI only — the file download itself fires at
-  t = 0 s and is never gated, awaited or delayed by any of it).
+  dedicated 300×250 under the download buttons, the Stage-A unit inside the
+  resolve/loading console, and the countdown theater's center-stage unit), the
+  click-triggered Direct Link (`triggerDownloadDirectLink`), and the inline
+  10-second download theater in `result-panel.tsx`.
+- Ads are visible DURING the two natural waits — CDN resolving (`LoadingConsole`,
+  `downloader.tsx`) and the 10-second countdown (`result-panel.tsx`) — but the
+  file hand-off is never gated, awaited or delayed by any of them.
 - `data-ad-guard="tool"` / `data-ad-guard="result"` mark the protected regions;
   keep them on the downloader and result panel.
 
@@ -53,15 +55,24 @@ a download that died or a page that froze on a phone.
   only honour `window.open` while the user activation is alive
   (`components/result-panel.tsx`, `startDownload`).
 - It is fire-and-forget and session-capped (`lamptik_dl_direct_ts`, 30 s).
-  Never `await` it, never delay the file for it, never gate the download behind
-  a sponsor click or a countdown completion.
-- The parallel 10-second theater is **UI only and never a gate**: at click
-  time the resolved URL already went to the browser's download manager (the
-  `<a download>` default navigation) and the Direct Link already fired. The
-  theater merely fills the panel while the bytes move; at `0` it flips to
-  "✅ Download Started in Your Browser!" and offers "Download Another Video"
-  plus Server 01 / Server 02 / MP3 re-click links. Do not reintroduce
-  `fetch()`/Blob/IndexedDB buffering of media bytes in the page.
+  Never `await` it.
+- **The unified 2-stage flow (all 4 platforms, identical):**
+  1. *Stage A — click:* `triggerDownloadDirectLink()` fires synchronously, the
+     panel becomes the 10-second countdown theater over a freshly keyed
+     `alwaysReserve` 300×250 banner.
+  2. *Stage B — t = 0s:* a hidden **same-origin `<iframe src="/api/download?…">`**
+     fires the attachment stream. This is the only sanctioned file hand-off.
+     Chromium ignores the `download` attribute on cross-origin anchors, a
+     `target="_blank"` CDN URL inline-plays Instagram/Meta CDN video instead of
+     downloading, and a `window.open` sponsor tab in the same tick cancels an
+     anchor navigation — the hidden same-origin iframe avoids all three, keeps
+     the page put, and starts Chrome's native download manager 100% of the time.
+     Do NOT reintroduce cross-origin `<a download>`, `window.location`/`_self`
+     navigation, or in-page `fetch()`/Blob/IndexedDB buffering. The iframe must
+     stay mounted ≥300 s (removing it aborts a still-streaming transfer).
+  3. At `0s` the theater flips to "✅ Download Started in Your Browser!" and
+     shows "Download Another Video" plus Server 01 / Server 02 / MP3 re-click
+     links (each re-runs the same 2-stage flow).
 - A real user gesture must exist for the initial click; do not auto-start
   downloads on mount.
 
@@ -74,14 +85,27 @@ a download that died or a page that froze on a phone.
   hosts and to `https://www.tikwm.com/` for TikWM. Never drop these.
 - Keep `Accept: */*`, `Accept-Encoding: identity` and the desktop User-Agent —
   several CDNs return gzip error pages without them.
-- On `401/403/404/429` or a network failure, hand off with
-  `NextResponse.redirect(target, 302)` so the visitor's own IP fetches the file.
-  Do not turn a CDN block into a JSON error.
+- **Failure contract — never a savable junk file.** A download navigation must
+  NEVER receive HTML or JSON, and never a 302 to an HTML page — Chrome saves
+  any 2xx navigation body as the file, and the old 302-to-`/?dl=…` fallback got
+  saved as `download.html`. Every failure is therefore:
+  1. TikTok (video or audio): one self-heal INSIDE the route — re-resolve a
+     fresh stream via TikWM using the id already tagged on the link, retry once
+     (`freshTikTokStreams` + `recoverFromFailure`).
+  2. Anything else: `verifiedBinaryHandoff` — probe the CDN hop with a ranged
+     fetch and 302 the visitor's browser to it ONLY if the final hop serves a
+     real media content type (a dead Loader.to job answers `text/html` to every
+     IP — redirecting there used to save that page as `download.html`).
+  3. Otherwise a **bodyless 502** (`failDownload`): a failed download, nothing
+     saved. Accept BOTH `u` and `url` query params (`parseRequest`) so a param
+     mismatch can never invalidate a real download link.
+- Direct hand-off above `DOWNLOAD_DIRECT_HANDOFF_MB` (default 200) also passes
+  through `verifiedBinaryHandoff` — never a blind 302.
+- The result panel's Server 01 / Server 02 / MP3 links are all same-origin
+  `/api/download` URLs (direct CDN upstreams ride along via the `u` param), so
+  the proxy referers/validation always apply and the click handler has exactly
+  one attachment transport.
 - `Content-Disposition: attachment` only after validation; `nosniff` always.
-- Any failure answering a browser navigation (`401/403/429`/5xx, snuffed error
-  payload, missing URL) must end in a **302 redirect** (`handOffToCdn` or
-  `redirectToPage`), never a JSON body — mobile Chrome saves an error response
-  to a navigation download as `download.json`.
 
 ## 5. Keys, caps, and measurement
 

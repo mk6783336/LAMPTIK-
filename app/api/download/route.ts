@@ -25,11 +25,20 @@ import {
  *
  * Safety: every hop must stay a public https host (private/loopback targets
  * are rejected — SSRF), the upstream payload is validated (content type,
- * size, first bytes) BEFORE `Content-Disposition: attachment` is attached,
- * and any failure redirects — a rate limit, a bad URL, an upstream 4xx/5xx,
- * or a sniffed error document — NEVER answers a browser navigation with a
- * JSON body: mobile Chrome saves any `application/json` response to a
- * navigation download as `download.json`.
+ * size, first bytes) BEFORE `Content-Disposition: attachment` is attached.
+ *
+ * Failure contract — never a savable junk file:
+ * - An invalid input, rate limit, upstream 4xx/5xx, or a sniffed HTML/JSON
+ *   error document NEVER answers the download navigation with HTML or JSON:
+ *   Chrome saves any 2xx response of a download navigation as a file — a 302
+ *   to our own `/?dl=…` page was literally saved as `download.html`. Every
+ *   failure is therefore a bodyless 502 (Chrome reports a failed download,
+ *   nothing is saved).
+ * - A 302 hand-off to the CDN happens ONLY after the target hop is probed
+ *   and verified to serve a real media content type — never to an HTML page.
+ * - For TikTok a dead/expired signed URL self-heals INSIDE this route: the
+ *   video id is re-resolved through TikWM (`/api/?url=…`) and the request is
+ *   retried once with a fresh stream instead of failing the visitor.
  */
 
 export const runtime = "edge";
@@ -182,30 +191,112 @@ function handOffToCdn(upstreamUrl: string): Response {
   });
 }
 
-function isBlockedUpstream(status: number): boolean {
-  // 401/403/416/429: the CDN refused this *server*. 5xx: their edge failed.
-  // All of them are routinely served fine to a normal browser IP.
-  return status === 401 || status === 403 || status === 416 || status === 429 || status >= 500;
-}
-
 /**
- * Last-resort hand-off #2: bounce the FAILED navigation back to our own tool
- * page. The URL is missing, invalid, not media, or expired — nothing the
- * visitor's browser can salvage. A 302 (never an attachment) means Chrome on
- * Android can never save the failure — no `download.json`, no `errors.json`.
- * Matches the historic redirect surface: same name, one line of state.
+ * Unattachable failure. Chrome never saves a non-2xx download navigation —
+ * no `download.html`, no `download.json`, just the regular failed-download
+ * state. This replaces the old 302-to-`/?dl=…` hand-off, which caused Chrome
+ * to save OUR OWN HOMEPAGE as `download.html`.
  */
-function redirectToPage(request: NextRequest, code: string): Response {
-  const target = new URL("/", request.nextUrl.origin);
-  target.searchParams.set("dl", code);
+function failDownload(): Response {
   return new NextResponse(null, {
-    status: 302,
+    status: 502,
     headers: {
-      Location: target.toString(),
       "Cache-Control": "no-store, max-age=0",
       "X-Content-Type-Options": "nosniff",
     },
   });
+}
+
+/**
+ * TikTok self-heal inside the proxy: re-resolve a FRESH stream from TikWM
+ * using the video id (and author handle when present) that the result-panel
+ * already tags onto every proxy link. Returns absolute https media URLs only.
+ */
+const TIKWM_MEDIA_BASE = "https://www.tikwm.com";
+
+async function freshTikTokStreams(request: NextRequest): Promise<{ video: string | null; audio: string | null }> {
+  const params = request.nextUrl.searchParams;
+  const id = (params.get("id") ?? "").trim();
+  const author = (params.get("author") ?? "").trim();
+  if (!/^\d{6,25}$/.test(id)) return { video: null, audio: null };
+
+  const canonical = /^[\w.-]{1,32}$/.test(author)
+    ? `https://www.tiktok.com/@${author}/video/${id}`
+    : `https://m.tiktok.com/v/${id}.html`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8_000);
+  try {
+    const response = await fetch(`${TIKWM_MEDIA_BASE}/api/?url=${encodeURIComponent(canonical)}`, {
+      headers: {
+        Accept: "application/json",
+        Referer: "https://www.tikwm.com/",
+        "User-Agent": DESKTOP_UA,
+      },
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    if (!response.ok) return { video: null, audio: null };
+    const body = (await response.json().catch(() => null)) as {
+      code?: number;
+      data?: { play?: unknown; hdplay?: unknown; music?: unknown } | null;
+    } | null;
+    const data = body && body.code === 0 && body.data ? body.data : null;
+    if (!data) return { video: null, audio: null };
+
+    const absolute = (value: unknown): string | null => {
+      if (typeof value !== "string" || !value.trim()) return null;
+      const raw = value.trim();
+      try {
+        const url = raw.startsWith("http") ? new URL(raw) : new URL(raw, `${TIKWM_MEDIA_BASE}/`);
+        if (url.protocol !== "https:" || !isPublicMediaUrl(url.toString())) return null;
+        return url.toString();
+      } catch {
+        return null;
+      }
+    };
+    return {
+      video: absolute(data.hdplay) ?? absolute(data.play),
+      audio: absolute(data.music),
+    };
+  } catch {
+    return { video: null, audio: null };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Hand-off guard: a 302 to the CDN is only allowed to a target whose FINAL
+ * hop actually serves a real media content type. Loader.to's dead jobs and
+ * some platform walls answer text/html to any IP, and a blind redirect would
+ * have Chrome save that page (the `download.html` bug). Probing costs one
+ * ranged fetch and kills the whole class.
+ */
+async function verifiedBinaryHandoff(
+  upstreamUrl: string,
+  platform: DownloadPlatform,
+  kind: DownloadKind,
+): Promise<Response> {
+  try {
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), HEADER_TIMEOUT_MS);
+    try {
+      const headers = upstreamHeadersFor(platform, upstreamUrl);
+      headers.Range = "bytes=0-1";
+      const { response } = await fetchAllowedMedia(upstreamUrl, headers, abort.signal);
+      await response.body?.cancel().catch(() => undefined);
+      const acceptable =
+        (response.status === 200 || response.status === 206) &&
+        isAcceptableType(response.headers.get("content-type") ?? "", kind);
+      if (acceptable) return handOffToCdn(upstreamUrl);
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch {
+    // Probe failed — fall through to the unattachable failure below.
+  }
+  return failDownload();
 }
 
 function toByteCount(value: string | null): number | null {
@@ -382,20 +473,23 @@ function filenameFor(request: NextRequest, kind: DownloadKind, mediaType: string
   return `lamptik-${platform}-${id}${serverTag}.${extensionFor(mediaType, kind)}`;
 }
 
-export async function GET(request: NextRequest) {
-  const ip = getClientIp(request.headers);
-  const limit = rateLimit(`download:${ip}`, 60, 60_000);
+interface AttemptArgs {
+  kind: DownloadKind;
+  upstreamUrl: string;
+  platform: DownloadPlatform;
+  range: string | null;
+}
 
-  if (!limit.ok) {
-    // A navigation download must never receive a JSON rate-limit body (mobile
-    // Chrome saves it as dy_download.json). Bounce to the tool page instead.
-    return redirectToPage(request, "limited");
-  }
-
-  const parsed = parseRequest(request);
-  if (parsed instanceof AppError) return redirectToPage(request, "invalid");
-
-  const { kind, upstreamUrl, platform, range } = parsed;
+/**
+ * One streaming attempt — fetch the upstream hop chain, validate it, and
+ * pipe verified media bytes. Failures NEVER answer the download navigation
+ * with an HTML or JSON body (Chrome saves 2xx navigation bodies):
+ * - TikTok first self-heals once via TikWM (fresh signed stream).
+ * - Otherwise a 302 goes out ONLY to a CDN hop verified to serve real media
+ *   (ranged probe); anything else is a bodyless 502.
+ */
+async function attemptMedia(request: NextRequest, args: AttemptArgs, allowHeal: boolean): Promise<Response> {
+  const { kind, upstreamUrl, platform, range } = args;
 
   // Header phase only: connect + redirects are bounded, then the timer is
   // cleared so a 500 MB body can stream for as long as the client reads it.
@@ -429,65 +523,61 @@ export async function GET(request: NextRequest) {
       ));
     }
   } catch {
-    // Network refusal / timeout: do not fail the user. Their browser reaches
-    // the CDN on a different network path; redirect it there.
-    return handOffToCdn(upstreamUrl);
+    // Network refusal / timeout toward THIS hop: keep the visitor moving.
+    return recoverFromFailure(request, args, allowHeal);
   } finally {
     clearTimeout(headerTimer);
   }
 
   if (upstream.status !== 200 && upstream.status !== 206) {
     await upstream.body?.cancel().catch(() => undefined);
-    if (isBlockedUpstream(upstream.status)) {
-      return handOffToCdn(upstreamUrl);
-    }
-    return redirectToPage(request, "expired");
+    return recoverFromFailure(request, args, allowHeal);
   }
 
   if (!upstream.body) {
-    return redirectToPage(request, "expired");
+    return recoverFromFailure(request, args, allowHeal);
   }
 
   const upstreamType = upstream.headers.get("content-type") ?? "";
   const contentLength = toByteCount(upstream.headers.get("content-length"));
   const isPartial = upstream.status === 206;
 
-  // `download.json` guard #1: an error document or HLS playlist is never
-  // attached as a file, no matter what the URL extension says — and a redirect
-  // to the CDN would save the SAME error document, so the visitor goes back
-  // to the tool page to re-resolve instead.
+  // Guard #1: an error document or HLS playlist is never attached as a file,
+  // no matter what the URL extension says — and handing the visitor's browser
+  // to the SAME URL would save the SAME error document as `download.html`.
   if (!isAcceptableType(upstreamType, kind)) {
     await upstream.body.cancel().catch(() => undefined);
-    return redirectToPage(request, "expired");
+    return recoverFromFailure(request, args, allowHeal);
   }
 
-  // `download.json` guard #2: a full response under 5 KB is an error payload.
+  // Guard #2: a full response under 5 KB is an error payload.
   if (!isPartial && contentLength !== null && contentLength < MIN_MEDIA_BYTES) {
     await upstream.body.cancel().catch(() => undefined);
-    return redirectToPage(request, "expired");
+    return recoverFromFailure(request, args, allowHeal);
   }
 
   // Too big to finish inside the runtime's 300s streaming window: hand the
-  // transfer to the visitor's browser instead of truncating it. Only eligible
-  // for a full 200 (a resumed 206 is already near its end) with a known size
-  // that cleared the SSRF checks hop by hop above.
+  // transfer to the visitor's browser instead of truncating it. Only after a
+  // ranged probe proves the final hop serves real media (Loader.to's dead
+  // conversion jobs answer text/html to any IP — a blind redirect used to
+  // save that page as `download.html`).
   if (!isPartial && contentLength !== null && contentLength >= DIRECT_HANDOFF_BYTES) {
     await upstream.body.cancel().catch(() => undefined);
-    return handOffToCdn(upstreamFinalUrl);
+    return verifiedBinaryHandoff(upstreamFinalUrl, platform, kind);
   }
 
-  // `download.json` guard #3: sniff the first chunk (JSON/HTML start bytes).
+  // Guard #3: sniff the first chunk (JSON/HTML start bytes).
   let stream: ReadableStream<Uint8Array>;
   try {
     const validated = await validateAndReplay(upstream.body, isPartial);
     if (!validated.valid) {
-      return redirectToPage(request, "expired");
+      return recoverFromFailure(request, args, allowHeal);
     }
     stream = validated.stream;
   } catch {
-    // Stalled upstream before any data: headers have not been sent yet, so a
-    // redirect — not an attachment — is still on the table.
-    return redirectToPage(request, "expired");
+    // Stalled upstream before any data: nothing was streamed yet, so the
+    // failure path (never an attachable body) still applies.
+    return recoverFromFailure(request, args, allowHeal);
   }
 
   const mediaType = baseMediaType(upstreamType, kind);
@@ -514,6 +604,45 @@ export async function GET(request: NextRequest) {
     status: upstream.status,
     headers,
   });
+}
+
+/**
+ * Failure recovery ladder — exactly one self-heal attempt, then the least
+ * harmful end state for a download navigation:
+ *
+ * 1. TikTok (video AND audio): re-resolve a fresh stream through TikWM with
+ *    the id already tagged on the link and retry once.
+ * 2. Anything else: probe the CDN hop; only if the FINAL hop serves a real
+ *    media content type does the visitor's browser take over the transfer
+ *    (their own IP / connection). A dead Loader.to job answers text/html to
+ *    every IP — that spells `download.html` — so it ends as a bodyless 502.
+ */
+async function recoverFromFailure(request: NextRequest, args: AttemptArgs, allowHeal: boolean): Promise<Response> {
+  if (allowHeal && args.platform === "tiktok") {
+    const healed = await freshTikTokStreams(request);
+    const freshUrl = args.kind === "video" ? healed.video : healed.audio;
+    if (freshUrl && freshUrl !== args.upstreamUrl) {
+      return attemptMedia(request, { ...args, upstreamUrl: freshUrl }, false);
+    }
+  }
+  return verifiedBinaryHandoff(args.upstreamUrl, args.platform, args.kind);
+}
+
+export async function GET(request: NextRequest) {
+  const ip = getClientIp(request.headers);
+  const limit = rateLimit(`download:${ip}`, 60, 60_000);
+
+  if (!limit.ok) {
+    // A navigation download must never receive a JSON rate-limit body (mobile
+    // Chrome saves it as download.json) nor redirect to an HTML page (saved
+    // as download.html). Bodyless 502: a failed download, nothing saved.
+    return failDownload();
+  }
+
+  const parsed = parseRequest(request);
+  if (parsed instanceof AppError) return failDownload();
+
+  return attemptMedia(request, parsed, true);
 }
 
 /**

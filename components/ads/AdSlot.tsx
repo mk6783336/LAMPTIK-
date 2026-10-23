@@ -29,6 +29,13 @@ interface AdSlotProps {
    * refreshes the banners, just on the network's clock.
    */
   refreshKey?: number;
+  /**
+   * Reserve the full creative box from mount (theater / loading console):
+   * the slot is visibly on stage at t = 0 while the RTB creative loads
+   * behind it, instead of painting 0 pixels until the fill message lands.
+   * A dead auction still collapses to the compact sponsor-card fallback.
+   */
+  alwaysReserve?: boolean;
 }
 
 /** Timestamp of the last global ad refresh across all slots on the page. */
@@ -62,6 +69,7 @@ export function AdSlot({
   label,
   eager,
   refreshKey,
+  alwaysReserve,
 }: AdSlotProps) {
   const defaultKey = format === "rectangle" ? adsterraRectangleKey : adsterraBannerKey;
 
@@ -202,6 +210,10 @@ export function AdSlot({
 
   const isLeaderboard = format === "leaderboard" && !mobileSwap;
   const scaled = { width: width * scale, height: height * scale };
+  // alwaysReserve: pending/filled both hold the full creative box so the
+  // slot is on stage immediately; fallback collapses to the compact card.
+  const reserved = creativeState === "filled" || (alwaysReserve && creativeState === "pending");
+  const showSponsoredCaption = creativeState === "filled" || reserved;
   return (
     <aside
       role="complementary"
@@ -210,10 +222,11 @@ export function AdSlot({
       data-ad-slot={effectiveFormat}
       data-ad-state={creativeState}
     >
-      {/* ONE subtle disclosure. A filled creative gets a tiny caption above
-          its frame; the compact fallback bar carries its own inline label —
-          so there is never a duplicate "Sponsored" pill stacked on top. */}
-      {creativeState === "filled" ? (
+      {/* ONE subtle disclosure. A reserved/filled creative gets a tiny
+          caption above its frame; the compact fallback bar carries its own
+          inline label — so there is never a duplicate "Sponsored" pill
+          stacked on top. */}
+      {showSponsoredCaption ? (
         <p className="mb-1 text-center text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-3)]">
           Sponsored
         </p>
@@ -223,17 +236,19 @@ export function AdSlot({
         ref={hostRef}
         className={cn(
           "relative mx-auto box-border w-full max-w-full overflow-hidden",
-          // Border only around a live creative; the fallback card carries its
-          // own border so there is never a clipped or doubled outline.
-          creativeState === "filled" && "rounded-2xl border border-amber-500/15 bg-[#07080d]",
+          // Border around a live-or-reserved creative; the fallback card
+          // carries its own border so there is never a clipped or doubled
+          // outline.
+          reserved && "rounded-2xl border border-amber-500/15 bg-[#07080d]",
           !isLeaderboard && "max-w-[300px]",
           isLeaderboard && "max-w-[728px]",
         )}
         style={{
-          // Filled: the scaled creative's exact height. Fallback: one compact
-          // 56px line (never a giant reserved black box). Pending: zero.
+          // Reserved (theater/console/loaded): the scaled creative's exact
+          // height. Fallback: one compact 56px line (never a giant reserved
+          // black box). Pending without reservation: zero.
           height:
-            creativeState === "filled" ? scaled.height : creativeState === "fallback" ? 56 : 0,
+            reserved ? scaled.height : creativeState === "fallback" ? 56 : 0,
           backgroundColor: "#07080d",
           colorScheme: "dark",
         }}

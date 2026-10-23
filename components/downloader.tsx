@@ -124,6 +124,14 @@ function LoadingConsole({ elapsedMs, platform }: { elapsedMs: number; platform: 
         <div className="skeleton h-2.5 w-[74%]" />
         <div className="skeleton h-2.5 w-[46%]" />
       </div>
+
+      {/* Stage A monetization — the sponsored 300×250 lives IN FLOW inside
+          the resolve console: the visitor watches an ad exactly while the
+          CDN link is being prepared. Clickable, never an overlay, and it
+          unmounts with the console the moment the resolve finishes. */}
+      <div className="mt-4">
+        <AdSlot format="rectangle" eager alwaysReserve label="Sponsored — keeps LAMP TIK free" />
+      </div>
     </div>
   );
 }

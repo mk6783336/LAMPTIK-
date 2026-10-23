@@ -23,7 +23,9 @@ const ALLOWED_HOST_SUFFIXES = [
   // Instagram
   "cdninstagram.com",
   "instagram.com",
-  // Facebook
+  // Facebook — including its rotating regional video edges
+  // (e.g. video.fisb9-1.fna.fbcdn.net).
+  "fna.fbcdn.net",
   "fbcdn.net",
   "fbsbx.com",
   "facebook.com",
