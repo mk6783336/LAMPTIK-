@@ -122,7 +122,11 @@ const AVAILABILITY_TTL_MS = 10 * 60_000;
 
 let binaryProbe: { available: boolean; expiresAt: number } | null = null;
 
-async function binaryAvailable(): Promise<boolean> {
+/**
+ * Shared with lib/universal-ytdlp.ts so every platform tier probes the
+ * local binary through the SAME 10-minute cache (one probe per isolate).
+ */
+export async function binaryAvailable(): Promise<boolean> {
   const now = Date.now();
   if (binaryProbe && binaryProbe.expiresAt > now) return binaryProbe.available;
   let available = false;

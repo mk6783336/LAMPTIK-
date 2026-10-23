@@ -1,0 +1,32 @@
+# The bridge Vercel talks to via YTDLP_BRIDGE_URL. A single always-on
+# container — the app holds no other state.
+#
+#   export BRIDGE_SECRET="$(head -c 24 /dev/urandom | base64)"
+#   echo "BRIDGE_SECRET=$BRIDGE_SECRET" > .env
+#   docker compose up -d --build
+#   curl -s http://127.0.0.1:8000/ping   # → {"status":"ok"}
+#
+# Then in Vercel env:
+#   YTDLP_BRIDGE_URL = https://<bridge-host>/   (trailing slash or not — both fine)
+#   BRIDGE_SECRET    = same value as above      (Vercel sends it as x-bridge-secret)
+
+services:
+  bridge:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"   # loopback-only — put TLS (Caddy/nginx) or a
+                                # private tunnel (cloudflared/Tailscale) in
+                                # front; do NOT expose 8000 raw to the internet
+    environment:
+      # An EMPTY BRIDGE_SECRET is allowed ONLY because the port is
+      # loopback-bound above; UNSET still fails the stack so a typo can't
+      # silently boot an unauthenticated reachable bridge. With empty, the
+      # only network control is the loopback bind + your tunnel — same model
+      # as bridge/app.py `_authorized`, which lets every request through
+      # when BRIDGE_SECRET is "".
+      BRIDGE_SECRET: "${BRIDGE_SECRET:-}"
+
+    # yt-dlp must stay current for YouTube: run this from a weekly cron.
+    #   docker compose build --pull && docker compose up -d
+    # No volumes — the bridge is stateless by design.

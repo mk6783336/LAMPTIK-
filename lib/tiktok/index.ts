@@ -7,6 +7,7 @@ import { fetchFromEmbed } from "@/lib/tiktok/providers/embed";
 import { fetchFromTikTokPage } from "@/lib/tiktok/providers/page";
 import { probeOEmbed } from "@/lib/tiktok/providers/oembed";
 import { fetchFromTikwm } from "@/lib/tiktok/providers/tikwm";
+import { fetchFromYtdlp } from "@/lib/tiktok/providers/ytdlp";
 import { resolveShortLink } from "@/lib/tiktok/resolve";
 import type { ExtractedVideo, VideoInfo } from "@/lib/tiktok/types";
 
@@ -89,6 +90,17 @@ async function extractVideo(parsed: ParsedTikTokUrl): Promise<VideoInfo> {
   // 60s after 3 straight failures.
   try {
     const extracted = await runWaterfall([
+      {
+        // Universal tier FIRST (lt-dlp bridge → local binary): the Android/API
+        // player signatures survive the datacenter-IP bot walls that knock out
+        // the web extractors. On any failure it falls through to TikWM, so
+        // add nothing here — the waterfall keeps deprioritizing dead tiers.
+        name: "tiktok:ytdlp",
+        // The bridge resolves in ~1-3s; the 4.5s waterfall budget is too
+        // tight for a cold yt-dlp run, so this tier owns a dedicated one.
+        timeoutMs: 9_000,
+        fn: () => fetchFromYtdlp(parsed.url, parsed.videoId),
+      },
       {
         name: "tiktok:tikwm",
         timeoutMs: WATERFALL_TIMEOUT_MS,

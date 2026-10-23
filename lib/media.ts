@@ -1,8 +1,9 @@
 import { cacheDelete, cacheGet, cacheSet, runOnce } from "@/lib/cache";
 import { AppError } from "@/lib/errors";
-import { extractFacebook } from "@/lib/facebook";
-import { extractInstagram } from "@/lib/instagram";
+import { extractFacebook, type FacebookSource } from "@/lib/facebook";
+import { extractInstagram, type InstagramSource } from "@/lib/instagram";
 import { extractYouTube } from "@/lib/youtube";
+import { universalYtdlpHit } from "@/lib/universal-ytdlp";
 import { resolveVideo } from "@/lib/tiktok";
 import { buildDownloadLinks } from "@/lib/tiktok/links";
 import type { VideoCodec, VideoInfo } from "@/lib/tiktok/types";
@@ -110,9 +111,63 @@ async function resolveTikTokPlatform(
   return { media: mediaFromVideo(video, url), video };
 }
 
-/** Instagram adapter: extractor → same-origin downloads → synthetic VideoInfo. */
+/**
+ * Universal yt-dlp tier (bridge → binary) for Instagram. Same InstagramSource
+ * shape the scraper tiers produce, so the adapter below cannot tell which
+ * engine answered. `videoDirect` stays null: yt-dlp-signed CDN URLs are
+ * locked to the resolving machine's IP, so Server 01 rides the proxy that
+ * verifies every hop instead of betting the visitor's browser on a copy.
+ */
+async function universalInstagramSource(url: string): Promise<InstagramSource> {
+  const hit = await universalYtdlpHit(url, "instagram");
+  if (!hit.video) {
+    throw new AppError("PROVIDER_UNAVAILABLE", "yt-dlp exposed no Instagram stream.");
+  }
+  return {
+    id: hit.id || "instagram",
+    canonicalUrl: url,
+    title: hit.title || "Instagram video",
+    author: hit.author || "instagram-user",
+    thumbnail: hit.thumbnail,
+    duration: hit.duration,
+    videoUrl: hit.video,
+    byteSize: null,
+    codec: "h264",
+    isPhotoOnly: false,
+  };
+}
+
+/** Universal yt-dlp tier for Facebook — same contract shape as above. */
+async function universalFacebookSource(url: string): Promise<FacebookSource> {
+  const hit = await universalYtdlpHit(url, "facebook");
+  if (!hit.video) {
+    throw new AppError("PROVIDER_UNAVAILABLE", "yt-dlp exposed no Facebook stream.");
+  }
+  return {
+    id: hit.id || "facebook",
+    canonicalUrl: url,
+    title: hit.title || "Facebook video",
+    author: hit.author || "Facebook",
+    thumbnail: hit.thumbnail,
+    duration: hit.duration,
+    videoHd: hit.video,
+    videoSd: hit.videoSd,
+    videoHdBytes: null,
+    videoSdBytes: null,
+    codec: "h264",
+  };
+}
+
+/** Instagram adapter: universal tier → scraper waterfall → synthetic VideoInfo. */
 async function resolveInstagramPlatform(url: string): Promise<{ media: MediaPayload; video: VideoInfo }> {
-  const source = await extractInstagram(url);
+  let source: InstagramSource;
+  try {
+    source = await universalInstagramSource(url);
+  } catch {
+    // Universal engine unavailable/down — the proven scraper waterfall is
+    // still exactly as fast and complete as before. Zero regression.
+    source = await extractInstagram(url);
+  }
 
   if (source.isPhotoOnly || !source.videoUrl) {
     throw new AppError(
@@ -231,9 +286,14 @@ async function resolveYouTubePlatform(url: string): Promise<{ media: MediaPayloa
   );
 }
 
-/** Facebook adapter: extractor → same-origin downloads → synthetic VideoInfo. */
+/** Facebook adapter: universal tier → extractor → same-origin downloads → synthetic VideoInfo. */
 async function resolveFacebookPlatform(url: string): Promise<{ media: MediaPayload; video: VideoInfo }> {
-  const source = await extractFacebook(url);
+  let source: FacebookSource;
+  try {
+    source = await universalFacebookSource(url);
+  } catch {
+    source = await extractFacebook(url);
+  }
   const primary = source.videoHd ?? source.videoSd;
 
   if (!primary) {
