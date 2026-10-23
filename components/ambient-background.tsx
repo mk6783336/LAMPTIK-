@@ -56,9 +56,12 @@ export function AmbientBackground() {
       {/* Structure: hairline grid confined to the hero zone. */}
       <div className="hairline-grid absolute inset-x-0 top-0 h-[780px] [mask-image:radial-gradient(ellipse_74%_64%_at_50%_0%,black_8%,transparent_78%)]" />
 
-      {/* Static film grain. A 160px tile, painted once. */}
+      {/* Static film grain. A 160px tile, painted once — and skipped on
+          phones entirely (`globals.css` hides `.noise-layer` under 768px):
+          `mix-blend-overlay` costs an extra full-pixel compositing pass on
+          every scroll frame for decoration nobody needs. */}
       <div
-        className="absolute inset-0 mix-blend-overlay"
+        className="noise-layer absolute inset-0 mix-blend-overlay"
         style={{
           opacity: "var(--noise-opacity)",
           backgroundImage:

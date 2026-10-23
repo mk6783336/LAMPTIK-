@@ -218,10 +218,16 @@ export async function fetchFromTikwm(url: string): Promise<ExtractedVideo> {
     codec,
     streams: {
       video: videoStream,
+      // tikwm's own CDN serves these attachment URLs directly to any browser
+      // without expiring cookies — the SnapTik `Server 01` contract. When the
+      // verified-HD path wins, the direct HD URL is Server 01; otherwise the
+      // plain `play` URL is. `/api/download` remains Server 02 either way.
+      videoDirect: videoStream,
       // `play` is the standard-bitrate clean MP4; exposed separately from a
       // verified HD stream so slow connections can pick the faster file.
       videoSd,
       audio: audioStream,
+      audioDirect: audioStream,
     },
   };
 }

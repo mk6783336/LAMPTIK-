@@ -25,10 +25,17 @@ export interface VideoStats {
 }
 
 export interface DownloadLinks {
-  /** Same-origin streaming proxy that forces an attachment download. */
+  /** Direct public-CDN attachment URL (Server 01) — the provider's own fast
+   *  stream (tikwm `play`/`hdplay`, loader.to `download_url`), served with
+   *  `Content-Disposition: attachment` by that CDN itself. Null when the
+   *  provider only exposes signed/expiring platform URLs. */
+  videoDirect: string | null;
+  /** Same-origin streaming proxy that forces an attachment download (Server 02). */
   video: string;
   /** Standard-definition (fast) MP4 proxy, when a distinct SD stream exists. */
   videoSd: string | null;
+  /** Direct public audio CDN URL, when available (e.g. tikwm `music`). */
+  audioDirect: string | null;
   /** MP3 audio proxy, when the source exposes a music stream. */
   audio: string | null;
 }
@@ -56,12 +63,16 @@ export interface VideoInfo {
 
 /** Provider output before same-origin download links are attached. */
 export type ExtractedVideo = Omit<VideoInfo, "downloads"> & {
-  /** Raw CDN streams used to build the download proxy links. */
+  /** Raw CDN streams used to build the download links. */
   streams: {
     video: string;
+    /** Direct public-CDN attachment URL (Server 01), when this provider serves one. */
+    videoDirect?: string | null;
     /** Lower-bitrate clean MP4 (tikwm `play` next to `hdplay`), when available. */
     videoSd: string | null;
     audio: string | null;
+    /** Direct public audio CDN URL, when this provider serves one. */
+    audioDirect?: string | null;
   };
 };
 

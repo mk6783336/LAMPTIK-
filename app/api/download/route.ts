@@ -374,7 +374,12 @@ function filenameFor(request: NextRequest, kind: DownloadKind, mediaType: string
   const params = request.nextUrl.searchParams;
   const id = safeFilenamePart(params.get("id"), "video");
   const platform = safePlatform(params.get("platform"));
-  return `lamptik-${platform}-${id}.${extensionFor(mediaType, kind)}`;
+  // Multi-server hand-off: when the links builder tags a hop (`server=2`,
+  // SnapTik's `Server NN` convention), the suffix keeps two downloads of the
+  // same video from colliding in the browser's Downloads tray.
+  const server = params.get("server");
+  const serverTag = server === "1" || server === "2" ? `-s${server}` : "";
+  return `lamptik-${platform}-${id}${serverTag}.${extensionFor(mediaType, kind)}`;
 }
 
 export async function GET(request: NextRequest) {

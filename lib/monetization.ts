@@ -1,359 +1,106 @@
 /**
- * Monetization engine — Adsterra + Monetag, live-by-default.
+ * Monetization engine — Adsterra banners + Monetag Direct Link, live-by-default.
  *
  * Design rules (non-negotiable):
- *   1. The media download is NEVER delayed by an ad. Every ad path here is
- *      fire-and-forget: no awaits, no promises, no callbacks in the critical
- *      path of `/api/download`.
- *   2. Live by default. Every network has a hardcoded production fallback
- *      below, so the site monetizes on any host even when no env var was
- *      ever configured (Vercel included). `NEXT_PUBLIC_*` still wins when
- *      present, so a second property or a rotated zone needs no code change.
- *   3. Capped. A visitor is monetized at most once per cap window, so
- *      repeat downloads stay fast and the tool stays likeable.
+ *   1. The download is NEVER delayed by an ad. Every ad path here is
+ *      fire-and-forget and runs *alongside* the click, never before it.
+ *   2. Nothing paints over the page. No vignette, no social bar, no overlay:
+ *      the only surfaces are in-flow banner slots and the Direct Link tab
+ *      opened by a real click. The Monetag `vignette.min.js` and the Adsterra
+ *      Social Bar are banned — both previously froze mobile touch input.
+ *   3. Capped. One Direct Link tab per 60 seconds, so repeat downloads don't
+ *      stack sponsor tabs.
  *
- * Every read below is a static `process.env.NEXT_PUBLIC_*` member expression:
- * Next.js inlines those at build time, and aliasing `process.env` into a
- * variable would break the client bundle.
+ * Every env read below is a static `process.env.NEXT_PUBLIC_*` member
+ * expression — Next.js inlines those at build time.
  */
 
 /**
  * Live Adsterra banner tag for this account: `…/22/<key>`.
- *
  * `NEXT_PUBLIC_ADSTERRA_BANNER_TAG_SRC` may override it; include the literal
- * `{key}` token where the zone key belongs (e.g.
- * `https://host/<zone>/{key}/invoke.js`). Without a token the URL is used
- * verbatim, which is what the network's own dashboard tags do.
+ * `{key}` token where the zone key belongs.
  */
-export const adsterraBannerTagTemplate =
+const ADSTERRA_BANNER_TAG_TEMPLATE =
   process.env.NEXT_PUBLIC_ADSTERRA_BANNER_TAG_SRC?.trim() || "https://bellnewyork.org/22/{key}";
 
 /** Resolve the banner frame URL for a zone key. */
 export function adsterraBannerUrl(key: string): string {
-  return adsterraBannerTagTemplate.includes("{key}")
-    ? adsterraBannerTagTemplate.replace(/\{key\}/g, encodeURIComponent(key))
-    : adsterraBannerTagTemplate;
+  return ADSTERRA_BANNER_TAG_TEMPLATE.includes("{key}")
+    ? ADSTERRA_BANNER_TAG_TEMPLATE.replace(/\{key\}/g, encodeURIComponent(key))
+    : ADSTERRA_BANNER_TAG_TEMPLATE;
 }
 
-/**
- * Adsterra 728×90 leaderboard zone key (live production default).
- * `NEXT_PUBLIC_ADSTERRA_BANNER_KEY` wins when present.
- */
-export const DEFAULT_ADSTERRA_BANNER_KEY = "a907b6525c54481ebdaccb4ed1cac87e";
-
+/** Adsterra 728×90 leaderboard zone key. `NEXT_PUBLIC_ADSTERRA_BANNER_KEY` wins. */
 export const adsterraBannerKey =
-  process.env.NEXT_PUBLIC_ADSTERRA_BANNER_KEY?.trim() || DEFAULT_ADSTERRA_BANNER_KEY;
-
-export const adsterraAccountId =
-  process.env.NEXT_PUBLIC_ADSTERRA_ACCOUNT_ID?.trim() || "6135903";
+  process.env.NEXT_PUBLIC_ADSTERRA_BANNER_KEY?.trim() || "a907b6525c54481ebdaccb4ed1cac87e";
 
 /**
- * Rectangle (300x250) zone key (live production default).
- * `NEXT_PUBLIC_ADSTERRA_RECT_KEY` wins when present.
- *
- * Bound to the 300x250 creative size — never reuse the leaderboard key here:
- * Adsterra binds a key to one size, and a mismatched request risks invalid
- * impressions. With the live default below, every `format="rectangle"` slot
- * renders immediately with zero env configuration.
+ * Rectangle (300×250) zone key. Never reuse the leaderboard key: Adsterra
+ * binds a key to one size.
  */
-export const DEFAULT_ADSTERRA_RECT_KEY = "f0075be743457b9b238d0d701fbd9d8b";
-
 export const adsterraRectangleKey =
-  process.env.NEXT_PUBLIC_ADSTERRA_RECT_KEY?.trim() || DEFAULT_ADSTERRA_RECT_KEY;
+  process.env.NEXT_PUBLIC_ADSTERRA_RECT_KEY?.trim() || "f0075be743457b9b238d0d701fbd9d8b";
 
-/**
- * Adsterra publisher referral link (live production default).
- * `NEXT_PUBLIC_ADSTERRA_REFERRAL_URL` wins when present.
- */
-export const DEFAULT_ADSTERRA_REFERRAL_URL = "https://beta.publishers.adsterra.com/referral/1qm6LQfsaC";
+/** Monetag domain-verification token, emitted as `<meta name="monetag">`. */
+export const monetagVerification = process.env.NEXT_PUBLIC_MONETAG_META?.trim() || null;
 
-export const adsterraReferralUrl =
-  process.env.NEXT_PUBLIC_ADSTERRA_REFERRAL_URL?.trim() || DEFAULT_ADSTERRA_REFERRAL_URL;
-
-/**
- * Monetag domain-verification token. When set, the root layout emits
- * `<meta name="monetag" content="…">` in <head> — the second half of their
- * verification (the first being `/sw.js` at the domain root).
- */
-export const monetagVerification =
-  process.env.NEXT_PUBLIC_MONETAG_META?.trim() || null;
-
-/**
- * Monetag Direct SmartLink (live production default) — a plain https URL,
- * no script required. `NEXT_PUBLIC_MONETAG_SMARTLINK_URL` wins when present.
- */
-export const DEFAULT_MONETAG_SMARTLINK_URL = "https://uplcm.com/4/12078941";
-
+/** Monetag Direct Link (a plain https URL, no script). */
 export const monetagSmartlinkUrl =
-  process.env.NEXT_PUBLIC_MONETAG_SMARTLINK_URL?.trim() || DEFAULT_MONETAG_SMARTLINK_URL;
-
-/** Optional HTML5 MP4 creative for the every-third-download theater. */
-const configuredVideoAdMp4Url = process.env.NEXT_PUBLIC_VIDEO_AD_MP4_URL?.trim() || "";
-export const videoAdMp4Url = /^https:\/\//i.test(configuredVideoAdMp4Url)
-  ? configuredVideoAdMp4Url
-  : "";
-
-/** Persistent per-browser download count; memory remains available if storage is blocked. */
-export const DOWNLOAD_COUNT_KEY = "lamptik_dl_count";
-let inMemoryDownloadCount: number | null = null;
-
-function readStoredDownloadCount(): number | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(DOWNLOAD_COUNT_KEY);
-    const parsed = raw === null ? 0 : Number(raw);
-    return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : 0;
-  } catch {
-    return null;
-  }
-}
-
-export function getDownloadCount(): number {
-  const stored = readStoredDownloadCount();
-  if (stored !== null) {
-    inMemoryDownloadCount = stored;
-    return stored;
-  }
-  return inMemoryDownloadCount ?? 0;
-}
-
-/** Increment on a valid download click and return the new ordinal. */
-export function recordDownloadCount(): number {
-  const count = getDownloadCount() + 1;
-  inMemoryDownloadCount = count;
-  if (typeof window !== "undefined") {
-    try {
-      window.localStorage.setItem(DOWNLOAD_COUNT_KEY, String(count));
-    } catch {
-      // Private browsing / storage policy: preserve the count for this page life.
-    }
-    window.dispatchEvent(new Event("lamptik:download-count"));
-  }
-  return count;
-}
-
-export function downloadAdBadgeLabel(count: number): string {
-  const remainder = count % 3;
-  return remainder === 2
-    ? "Next download includes a 10s sponsor video"
-    : `Ad-free downloads remaining: ${remainder === 0 ? 2 : 2 - remainder}/2`;
-}
-
-/** Session-storage key for the download-click frequency cap. */
-export const AD_TRIGGER_KEY = "ad_triggered_ts";
-
-/** 10 minutes between legacy download-click monetizations. */
-export const DOWNLOAD_CAP_MS = 10 * 60 * 1_000;
-
-/** Tier-1 / high-RPM geos: shorter caps are tolerated, others stay quiet. */
-export const TIER1_GEO = new Set([
-  "US", "GB", "CA", "AU", "DE", "FR", "AE", "SA", "KW", "QA",
-]);
-
-/** Best-effort client geo: timezone region -> rough Tier-1 heuristic. */
-function isTier1Client(): boolean {
-  try {
-    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone ?? "";
-    const prefix = zone.split("/")[0] ?? "";
-    // America/* + Europe/* + Australia/* + Gulf hubs cover the Tier-1 list
-    // closely enough for a frequency-cap hint (never for pricing). Zones
-    // like Asia/Dubai, Asia/Riyadh, Asia/Qatar, Asia/Kuwait hit via the
-    // explicit city check below.
-    if (/^(America|Europe|Australia)$/.test(prefix)) return true;
-    if (/Dubai|Riyadh|Qatar|Kuwait|London|Toronto|Sydney|Berlin|Paris|New_York|Los_Angeles|Chicago/i.test(zone)) {
-      return true;
-    }
-    return false;
-  } catch {
-    return false;
-  }
-}
-
-/** Effective Direct-Link cap: Tier-1 keeps 3 min, elsewhere 10 min. */
-export function directLinkCapMs(): number {
-  return isTier1Client() ? DIRECT_LINK_CAP_MS : DOWNLOAD_CAP_MS;
-}
-
-/** Session-storage key for the in-download Direct Link cap. */
-export const AD_DIRECT_LINK_KEY = "ad_direct_link_ts";
-
-/**
- * 3 minutes between in-download Direct Link opens. The progress-panel unit
- * fires while the byte stream is already moving, so the cap is shorter than
- * the legacy post-download one — one tab per download burst, never a stack.
- */
-export const DIRECT_LINK_CAP_MS = 3 * 60 * 1_000;
-
-/**
- * Session key + window for the click-time Direct Link (2 minutes).
- *
- * Deliberately its own key: the in-download path (`AD_DIRECT_LINK_KEY`) can
- * fire seconds later for the same file, and both use the same SmartLink.
- */
-export const AD_DOWNLOAD_DIRECT_KEY = "ad_download_direct_ts";
-export const DOWNLOAD_DIRECT_CAP_MS = 2 * 60 * 1_000;
-
-/**
- * Direct Link fired from the download button itself.
- *
- * Must be called synchronously inside the click handler — before any `await`
- * — because `window.open` is only allowed while the user activation is still
- * live. That is the difference between a monotized click and a silently
- * blocked popup: the previous implementation only opened the sponsor after
- * the file hand-off, by which point Safari and Chrome had already revoked the
- * activation, and the tab never appeared.
- *
- * The click still downloads: the current tab keeps streaming the MP4 while
- * the sponsor opens in a background tab. Capped to one open per 2 minutes so a
- * visitor downloading HD + MP3 + SD in a row is not buried in tabs.
- */
-export function triggerDownloadDirectLink(): MonetizationResult {
-  if (typeof window === "undefined") return { triggered: false, reason: "unconfigured" };
-
-  const target = monetagSmartlinkUrl;
-  if (!target || !/^https:\/\//i.test(target)) {
-    return { triggered: false, reason: "unconfigured" };
-  }
-
-  try {
-    const now = Date.now();
-    const previous = Number(window.sessionStorage.getItem(AD_DOWNLOAD_DIRECT_KEY) ?? 0);
-    if (Number.isFinite(previous) && previous > 0 && now - previous < DOWNLOAD_DIRECT_CAP_MS) {
-      return { triggered: false, capped: true, reason: "capped" };
-    }
-    // Stamp first: a blocked popup must still respect the cap, otherwise every
-    // click repeats a blocked attempt.
-    window.sessionStorage.setItem(AD_DOWNLOAD_DIRECT_KEY, String(now));
-
-    const tab = window.open(target, "_blank");
-    if (tab) {
-      try {
-        tab.opener = null;
-      } catch {
-        // Cross-origin after navigation — the tab is already detached.
-      }
-      return { triggered: true };
-    }
-
-    // Popup blocked (or an in-app browser that refuses `window.open`): fall
-    // back to a synthetic anchor click, which some WebViews allow.
-    const anchor = document.createElement("a");
-    anchor.href = target;
-    anchor.target = "_blank";
-    anchor.rel = "noopener noreferrer sponsored";
-    anchor.style.display = "none";
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    return { triggered: false, reason: "blocked" };
-  } catch {
-    return { triggered: false, reason: "blocked" };
-  }
-}
+  process.env.NEXT_PUBLIC_MONETAG_SMARTLINK_URL?.trim() || "https://uplcm.com/4/12078941";
 
 export const adsConfigured = Boolean(adsterraBannerKey || monetagSmartlinkUrl);
 
 export type AdFormat = "leaderboard" | "rectangle";
 
 /**
- * Reserved pixel heights per format. These are the *only* reason the ad
- * containers exist before an ad is served: they reserve space up-front so a
- * late-loading creative can never push the page down (CLS must stay 0).
+ * Reserved pixel heights per format: they reserve space up-front so a
+ * late-loading creative can never push the page down (CLS stays 0).
  */
 export const AD_RESERVED: Record<AdFormat, { width: number; height: number; minPx: number }> = {
   leaderboard: { width: 728, height: 90, minPx: 90 },
   rectangle: { width: 300, height: 250, minPx: 250 },
 };
 
-/**
- * Screen width under which a 728×90 creative must be scaled down instead of
- * overflowing the viewport. The zone itself only serves 728×90, so requesting
- * a 320×50 unit would return nothing — we scale the real one instead.
- */
-export const AD_BREAKPOINT_PX = 740;
+/** Session-storage key for the Direct Link cap. */
+const DIRECT_LINK_KEY = "lamptik_dl_direct_ts";
+/** One Direct Link tab per 60 seconds. */
+const DIRECT_LINK_CAP_MS = 60 * 1_000;
 
-export interface MonetizationResult {
-  /** True only when a tab was actually opened (or a vignette armed). */
+export interface DirectLinkResult {
   triggered: boolean;
-  /** True when the 10-minute cap swallowed this click. */
   capped?: boolean;
-  reason?: "unconfigured" | "blocked" | "capped";
+  blocked?: boolean;
 }
 
 /**
- * The download-click revenue trigger.
+ * Direct Link fired from a download-button click.
  *
- * Called synchronously at the very top of the download click handler — before
- * any `await` — so the browser still treats it as user activation (popup
- * blockers reject `window.open` after an async gap). It returns immediately
- * and the caller ignores the result: the MP4 stream starts regardless.
+ * MUST be called synchronously inside the click handler — before any `await` —
+ * because `window.open` only works while the user activation is still live.
+ * The download itself happens on the same click via the anchor's default
+ * navigation: the file starts moving while the sponsor tab opens.
  */
-export function triggerDownloadMonetization(): MonetizationResult {
-  if (typeof window === "undefined") return { triggered: false, reason: "unconfigured" };  const target = monetagSmartlinkUrl;
-  if (!target || !/^https:\/\//i.test(target)) {
-    return { triggered: false, reason: "unconfigured" };
-  }
-
-  try {
-    const previous = Number(window.sessionStorage.getItem(AD_TRIGGER_KEY) ?? 0);
-    const now = Date.now();
-    if (Number.isFinite(previous) && previous > 0 && now - previous < DOWNLOAD_CAP_MS) {
-      return { triggered: false, capped: true, reason: "capped" };
-    }
-
-    // Stamp before opening: if the tab is blocked we still respect the cap
-    // for this session instead of hammering the network on every click.
-    window.sessionStorage.setItem(AD_TRIGGER_KEY, String(now));
-
-    // An anchor with target=_blank is the documented SmartLink integration
-    // and the safest primitive here: if the browser blocks it, nothing
-    // happens to the current page. `window.open` is deliberately avoided —
-    // some in-app browsers coerce a blocked popup into navigating the very
-    // tab the user is downloading from.
-    const anchor = document.createElement("a");
-    anchor.href = target;
-    anchor.target = "_blank";
-    anchor.rel = "noopener noreferrer sponsored";
-    anchor.style.display = "none";
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    return { triggered: true };
-  } catch {
-    // Private mode / storage disabled / popup blocked — the download is
-    // unaffected, which is the whole point.
-    return { triggered: false, reason: "blocked" };
-  }
-}
-
-/**
- * In-download Direct Link trigger (Monetag SmartLink, 3-minute cap).
- *
- * Call this the moment the MP4 byte stream starts moving — NOT before the
- * download is initiated and NOT after an `await` gap (popup blockers only
- * honor calls inside the user-activation window). The result panel calls it
- * on the first progress tick, when save-to-disk is already underway, so a
- * blocked popup can never cancel the user's file. Returns immediately; the
- * caller ignores the result.
- */
-export function triggerDirectLinkMonetization(): MonetizationResult {
-  if (typeof window === "undefined") return { triggered: false, reason: "unconfigured" };
+export function triggerDownloadDirectLink(): DirectLinkResult {
+  if (typeof window === "undefined") return { triggered: false };
 
   const target = monetagSmartlinkUrl;
-  if (!target || !/^https:\/\//i.test(target)) {
-    return { triggered: false, reason: "unconfigured" };
-  }
+  if (!/^https:\/\//i.test(target)) return { triggered: false };
 
   try {
-    const previous = Number(window.sessionStorage.getItem(AD_DIRECT_LINK_KEY) ?? 0);
     const now = Date.now();
-    const cap = directLinkCapMs();
-    if (Number.isFinite(previous) && previous > 0 && now - previous < cap) {
-      return { triggered: false, capped: true, reason: "capped" };
+    const previous = Number(window.sessionStorage.getItem(DIRECT_LINK_KEY) ?? 0);
+    if (Number.isFinite(previous) && previous > 0 && now - previous < DIRECT_LINK_CAP_MS) {
+      return { triggered: false, capped: true };
     }
+    // Stamp first: a blocked popup must still respect the cap, otherwise
+    // every click repeats a blocked attempt.
+    window.sessionStorage.setItem(DIRECT_LINK_KEY, String(now));
 
-    window.sessionStorage.setItem(AD_DIRECT_LINK_KEY, String(now));
+    const tab = window.open(target, "_blank", "noopener");
+    if (tab) return { triggered: true };
 
+    // Popup blocked (or an in-app browser that refuses `window.open`): fall
+    // back to a synthetic sponsored anchor click, which some WebViews allow.
     const anchor = document.createElement("a");
     anchor.href = target;
     anchor.target = "_blank";
@@ -362,8 +109,8 @@ export function triggerDirectLinkMonetization(): MonetizationResult {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    return { triggered: true };
+    return { triggered: false, blocked: true };
   } catch {
-    return { triggered: false, reason: "blocked" };
+    return { triggered: false, blocked: true };
   }
 }

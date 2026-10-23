@@ -8,11 +8,22 @@ interface LinkContext {
   platform?: PlatformType;
 }
 
+/**
+ * A "direct" URL is the one the visitor's browser opens straight from its own
+ * residential IP (SnapTik's `Server 01` contract). It must be a plain https
+ * attachment served by the provider's public CDN; anything else (signed loads,
+ * non-https, session-bound) is dropped to `null` so the proxy button covers it.
+ */
+function directUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  return /^https:\/\//i.test(value) ? value : null;
+}
+
 export function buildDownloadLinks(
   streams: ExtractedVideo["streams"],
   context: LinkContext,
 ): DownloadLinks {
-  const build = (kind: "video" | "audio", upstream: string) => {
+  const build = (kind: "video" | "audio", upstream: string, server: number | null = null) => {
     const params = new URLSearchParams({
       kind,
       u: upstream,
@@ -20,6 +31,10 @@ export function buildDownloadLinks(
       author: context.username,
       platform: context.platform ?? "tiktok",
     });
+    // SnapTik numbers its alternate CDN hops; the proxy labels the response
+    // path (`lamptik-…-s02.mp4`) so the visitor's Downloads tray never shows
+    // two confusingly identical filenames for different servers.
+    if (server !== null) params.set("server", String(server));
     return `/api/download?${params.toString()}`;
   };
 
@@ -27,13 +42,15 @@ export function buildDownloadLinks(
   // (lower-bitrate) stream than the primary video link.
   const videoSd =
     streams.videoSd && streams.videoSd !== streams.video
-      ? build("video", streams.videoSd)
+      ? build("video", streams.videoSd, 2)
       : null;
 
   return {
-    video: build("video", streams.video),
+    videoDirect: directUrl(streams.videoDirect),
+    video: build("video", streams.video, 2),
     videoSd,
-    audio: streams.audio ? build("audio", streams.audio) : null,
+    audioDirect: directUrl(streams.audioDirect),
+    audio: streams.audio ? build("audio", streams.audio, 2) : null,
   };
 }
 

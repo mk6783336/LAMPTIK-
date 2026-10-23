@@ -12,9 +12,11 @@ export type { PlatformType };
 
 /**
  * Unified payload shape returned by /api/fetch for every platform.
+ * `videoDirect` / `audioDirect` are the provider's own public-CDN attachment
+ * URLs (SnapTik `Server 01`) that the browser opens straight from its own IP;
  * `videoHd` / `videoSd` / `audioMp3` are same-origin attachment proxy URLs
- * (`/api/download?…`) — ready to use, expire-proof for the client, and
- * server-validated against the CDN allowlist before any bytes move.
+ * (`/api/download?…`, Server 02) — ready to use, expire-proof for the client,
+ * and server-validated against the CDN allowlist before any bytes move.
  */
 export interface MediaPayload {
   id: string;
@@ -24,8 +26,10 @@ export interface MediaPayload {
   authorUrl: string | null;
   thumbnail: string | null;
   duration: number;
+  videoDirect: string | null;
   videoHd: string | null;
   videoSd: string | null;
+  audioDirect: string | null;
   audioMp3: string | null;
   /** Real byte sizes from the CDN/probe, for honest button labels. */
   videoHdBytes: number | null;
@@ -80,8 +84,10 @@ function mediaFromVideo(video: VideoInfo, canonicalUrl: string): MediaPayload {
     authorUrl,
     thumbnail: video.thumbnail || null,
     duration: video.duration,
+    videoDirect: video.downloads.videoDirect,
     videoHd: isHd ? video.downloads.video : null,
     videoSd: isHd ? video.downloads.videoSd : video.downloads.video,
+    audioDirect: video.downloads.audioDirect,
     audioMp3: video.downloads.audio,
     videoHdBytes: isHd ? video.byteSize ?? null : null,
     videoSdBytes: isHd ? video.byteSizeSd ?? null : video.byteSize ?? null,
@@ -117,7 +123,13 @@ async function resolveInstagramPlatform(url: string): Promise<{ media: MediaPayl
   }
 
   const downloads = buildDownloadLinks(
-    { video: source.videoUrl, videoSd: null, audio: null },
+    {
+      video: source.videoUrl,
+      // Instagram's own CDN serves the MP4 inline to the visitor's browser.
+      videoDirect: source.videoUrl,
+      videoSd: null,
+      audio: null,
+    },
     { id: source.id, username: source.author, platform: "instagram" },
   );
 
@@ -162,11 +174,15 @@ async function resolveYouTubePlatform(url: string): Promise<{ media: MediaPayloa
   const downloads = buildDownloadLinks(
     {
       video: source.streams.video ?? primary,
+      // The converter/mirror URL already serves `Content-Disposition: attachment`
+      // from its own CDN — open it directly (Server 01); the proxy stays Server 02.
+      videoDirect: source.streams.video ?? null,
       videoSd:
         source.streams.videoSd && source.streams.videoSd !== (source.streams.video ?? primary)
           ? source.streams.videoSd
           : null,
       audio: source.streams.audio,
+      audioDirect: source.streams.audio,
     },
     { id: source.id, username: source.author, platform: "youtube" },
   );
@@ -212,6 +228,7 @@ async function resolveFacebookPlatform(url: string): Promise<{ media: MediaPaylo
   const downloads = buildDownloadLinks(
     {
       video: primary,
+      videoDirect: primary,
       videoSd: source.videoSd && source.videoSd !== primary ? source.videoSd : null,
       audio: null,
     },

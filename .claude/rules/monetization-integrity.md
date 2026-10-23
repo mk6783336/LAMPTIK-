@@ -48,7 +48,7 @@ a download that died or a page that froze on a phone.
   top of the download click handler, **before any `await`** — popup blockers
   only honour `window.open` while the user activation is alive
   (`components/result-panel.tsx`, `startDownload`).
-- It is fire-and-forget and session-capped (`ad_download_direct_ts`, 2 min).
+- It is fire-and-forget and session-capped (`lamptik_dl_direct_ts`, 60 s).
   Never `await` it, never delay the file for it, never gate the download behind
   a sponsor click or a countdown completion.
 - The 10-second gate is a **theater**: the countdown is UI. At `0` the resolved
