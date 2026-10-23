@@ -586,6 +586,8 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
 
   const inputRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+  /** One-shot: the Back/refresh restore must not scroll the result into view. */
+  const skipNextResultScrollRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
   const tickerRef = useRef<number | null>(null);
   /** Always-current submit handler, so the share-sheet effect and the result
@@ -648,7 +650,10 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     if (new URLSearchParams(window.location.search).has("shared_url")) return;
     const last = readLastResult();
     if (!last) return;
-    setSeed((current) => ({ value: last.url, nonce: current.nonce }));
+    // Silent restore: the input keeps whatever state it had (no value
+    // injection, no focus — UrlField ignores same-nonce seeds anyway) and
+    // the auto-scroll effect below is suppressed for this first success.
+    skipNextResultScrollRef.current = true;
     setVideo(last.video);
     setMedia(last.media);
     setStatus("success");
@@ -694,9 +699,15 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
   }, []);
 
   // Bring the expanded result into view on small screens, after the
-  // expand animation settles.
+  // expand animation settles. Suppressed on the cached Back/refresh
+  // restore: the browser is already showing the exact spot the visitor
+  // left — yanking the page down to the card would read as a hijack.
   useEffect(() => {
     if (status !== "success" || !video) return;
+    if (skipNextResultScrollRef.current) {
+      skipNextResultScrollRef.current = false;
+      return;
+    }
     const timer = window.setTimeout(
       () => {
         const node = resultRef.current;
