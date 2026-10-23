@@ -192,3 +192,64 @@ export async function ytdlpExtract(canonicalUrl: string): Promise<YtdlpHit> {
     "Set YTDLP_BRIDGE_URL or install the yt-dlp binary for the Android-client extractor to join the waterfall.",
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* Engine health (surfaced on /api/health)                             */
+/* ------------------------------------------------------------------ */
+
+export interface YtdlpEngineHealth {
+  bridge: {
+    /** YTDLP_BRIDGE_URL is configured for this deployment. */
+    configured: boolean;
+    /** Last ping answered (any status, even 4xx = something is listening).
+     *  null = no configured bridge, ping skipped. */
+    reachable: boolean | null;
+  };
+  /** Native `yt-dlp` on PATH. null = probe never ran on this isolate. */
+  binaryAvailable: boolean | null;
+}
+
+/** Bridge ping cached 60s so monitoring polling /api/health stays cheap. */
+let bridgePing: { reachable: boolean; expiresAt: number } | null = null;
+
+const BRIDGE_PING_TTL_MS = 60_000;
+const BRIDGE_PING_TIMEOUT_MS = 3_000;
+
+/**
+ * One health snapshot — no streaming, no extraction, bounded well under a
+ * second in the common case (bridge ping ≤3s worst case, cached 60s).
+ * Frontline for production debugging of YouTube resolution: answers in a
+ * single GET whether the strongest extractor is wired up or gracefully out.
+ */
+export async function ytdlpEngineHealth(): Promise<YtdlpEngineHealth> {
+  const bridgeUrl = ytdlpBridgeUrl();
+  if (!bridgeUrl) {
+    return { bridge: { configured: false, reachable: null }, binaryAvailable: null };
+  }
+
+  const now = Date.now();
+  if (!bridgePing || bridgePing.expiresAt <= now) {
+    // ANY authoritative HTTP answer counts as reachable — even a 4xx means
+    // something is listening at that host (our probe just isn't valid JSON
+    // for it). Only network-level failure (DNS, refused, TLS, timeout) says
+    // the bridge is down.
+    let reachable = false;
+    try {
+      await fetch(bridgeUrl.replace(/\/+$/, ""), {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+        signal: AbortSignal.timeout(BRIDGE_PING_TIMEOUT_MS),
+      });
+      reachable = true;
+    } catch {
+      reachable = false; // DNS / connect / timeout — bridge is down
+    }
+    bridgePing = { reachable, expiresAt: now + BRIDGE_PING_TTL_MS };
+  }
+
+  return {
+    bridge: { configured: true, reachable: bridgePing.reachable },
+    binaryAvailable: binaryProbe ? binaryProbe.available : null,
+  };
+}
