@@ -63,7 +63,7 @@ jobs:
         run: |
           set -euo pipefail
           BT="$ANDROID_HOME/build-tools/35.0.0"
-          APK="public/downloads/lamptik-v3.3.apk"
+          APK="public/downloads/lamptik-v3.4.apk"
           "$BT/apksigner" verify --min-sdk-version 21 --verbose "$APK"
           "$BT/aapt2" dump badging "$APK" | grep -E "package:|launchable-activity:"
           cert=$("$BT/apksigner" verify --print-certs "$APK" \
@@ -81,11 +81,12 @@ jobs:
           set -euo pipefail
           git config user.name "mk6783336"
           git config user.email "mk6783336@users.noreply.github.com"
-          git add public/downloads/lamptik-v3.3.apk \
+          git add public/downloads/lamptik-v3.4.apk \
+                  public/downloads/lamptik-v3.3.apk \
                   public/downloads/lamptik-v3.2.apk \
                   public/downloads/lamptik-v3.1.apk \
                   public/downloads/lamptik-v3.0.apk
           if ! git diff --staged --quiet; then
-            git commit -m "chore(android): rebuild signed native lamptik-v3.3.apk [skip ci]"
+            git commit -m "chore(android): rebuild signed native lamptik-v3.4.apk [skip ci]"
             git push origin HEAD:main
           fi

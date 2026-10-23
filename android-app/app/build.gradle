@@ -11,8 +11,8 @@ android {
         minSdk 24
         targetSdk 34
         // Keep in sync with android-app/build-native-apk.sh (the CI build).
-        versionCode 33
-        versionName "3.3"
+        versionCode 34
+        versionName "3.4"
     }
 
     buildTypes {

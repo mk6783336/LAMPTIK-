@@ -24,8 +24,15 @@ import java.nio.charset.StandardCharsets;
 final class ApiClient {
 
     static final String BASE = "https://www.lamptik.online";
+    /**
+     * Clean downloader root with the native-client marker — the only web URL
+     * this app ever points a user at (Settings → "Open lamptik.online").
+     * `app=android_apk` tells the server to skip every "install the app"
+     * prompt: the visitor already has it.
+     */
+    static final String SITE_ROOT = BASE + "/?app=android_apk";
     /** Lets the server recognise the native client for logs and support. */
-    static final String USER_AGENT = "LampTikAndroidApp/3.3 (Android; native)";
+    static final String USER_AGENT = "LampTikAndroidApp/3.4 (Android; native)";
 
     /**
      * Browser UA used for the media download itself.
@@ -60,6 +67,9 @@ final class ApiClient {
 
             JSONObject body = new JSONObject();
             body.put("url", rawUrl);
+            // Native-client marker: the same `app=android_apk` the site uses,
+            // so server-side logs and install prompts know this is the app.
+            body.put("app", "android_apk");
 
             try (OutputStream out = connection.getOutputStream()) {
                 out.write(body.toString().getBytes(StandardCharsets.UTF_8));

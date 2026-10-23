@@ -17,7 +17,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP="$ROOT/android-app/app/src/main"
 OUT="$ROOT/public/downloads"
-WORK="${WORK:-$ROOT/.scratch/apk-build33}"
+WORK="${WORK:-$ROOT/.scratch/apk-build34}"
 
 SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-${LOCALAPPDATA:-$HOME}/Android/Sdk}}"
 # Newest installed build-tools by default. d8 34.0.0 crashes with an internal
@@ -40,8 +40,8 @@ APKSIGNER="$(exe "$BT/apksigner")"
 ZIPALIGN="$(exe "$BT/zipalign")"
 AAPT2="$(exe "$BT/aapt2")"
 
-VERSION_CODE="${VERSION_CODE:-33}"
-VERSION_NAME="${VERSION_NAME:-3.3}"
+VERSION_CODE="${VERSION_CODE:-34}"
+VERSION_NAME="${VERSION_NAME:-3.4}"
 KEYSTORE="${KEYSTORE:-$ROOT/.scratch/signing/release.keystore}"
 mkdir -p "$(dirname "$KEYSTORE")"
 KS_PASS="${KS_PASS:-lamptik2026}"
@@ -136,7 +136,7 @@ rm -f "$OUT"/*.idsig
 
 # Keep every earlier filename pointing at the SAME signed binary so links that
 # were cached by users and search engines never 404.
-for legacy in "$OUT/lamptik-v3.0.apk" "$OUT/lamptik-v3.1.apk" "$OUT/lamptik-v3.2.apk"; do
+for legacy in "$OUT/lamptik-v3.0.apk" "$OUT/lamptik-v3.1.apk" "$OUT/lamptik-v3.2.apk" "$OUT/lamptik-v3.3.apk"; do
   if [ "$APK" != "$legacy" ]; then
     cp -f "$APK" "$legacy"
     echo "==> legacy alias $(basename "$legacy")"

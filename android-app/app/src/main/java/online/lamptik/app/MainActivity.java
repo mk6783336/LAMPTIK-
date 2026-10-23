@@ -20,7 +20,13 @@ import android.widget.Toast;
 import java.util.ArrayList;
 
 /**
- * LAMP TIK 3.3 — a real native Android application.
+ * LAMP TIK 3.4 — a real native Android application.
+ *
+ * Launch contract: the icon opens straight into the native Home downloader
+ * (paste → resolve → download). Nothing web ever renders here — no WebView, no
+ * /app-download, no install instructions. The only web address this app is
+ * allowed to open is the clean downloader root, and only from an explicit tap
+ * in Settings.
  *
  * Three destinations, all native views: Home (link → resolve → download),
  * Downloads (Android's own DownloadManager as the source of truth) and
@@ -272,8 +278,17 @@ public class MainActivity extends Activity
             return;
         }
 
+        // A VIEW intent can only arrive from an explicit caller (the manifest
+        // claims no web links at all). Even then the app must never navigate
+        // into install pages: an /app-download target is ignored outright, and
+        // anything without a real shared video link simply lands on Home.
         Uri data = intent.getData();
         if (data != null) {
+            String path = data.getPath() == null ? "" : data.getPath();
+            if (path.startsWith("/app-download")) {
+                showTab(TAB_HOME);
+                return;
+            }
             String host = data.getHost() == null ? "" : data.getHost().toLowerCase();
             if (host.equals("lamptik.online") || host.endsWith(".lamptik.online")) {
                 String shared = data.getQueryParameter("shared_url");

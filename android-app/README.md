@@ -7,9 +7,9 @@ every transfer to Android's own `DownloadManager`.
 | | |
 | --- | --- |
 | Application ID | `online.lamptik.app` |
-| Version | 3.3 (versionCode 33) |
+| Version | 3.4 (versionCode 34) |
 | Min / target SDK | 24 (Android 7.0) / 34 |
-| Artifact | `public/downloads/lamptik-v3.3.apk` |
+| Artifact | `public/downloads/lamptik-v3.4.apk` |
 | Endpoint | `/api/apk` (serves the same bytes) |
 
 ## Screens
@@ -93,19 +93,19 @@ The workflow also compares the built certificate against
 
 ```bash
 BT="$ANDROID_HOME/build-tools/35.0.0"
-"$BT/apksigner" verify --print-certs public/downloads/lamptik-v3.3.apk
-"$BT/aapt2" dump badging public/downloads/lamptik-v3.3.apk | head -3
-unzip -l public/downloads/lamptik-v3.3.apk | tail -3
+"$BT/apksigner" verify --print-certs public/downloads/lamptik-v3.4.apk
+"$BT/aapt2" dump badging public/downloads/lamptik-v3.4.apk | head -3
+unzip -l public/downloads/lamptik-v3.4.apk | tail -3
 ```
 
-Expected: `package: name='online.lamptik.app' versionCode='33' versionName='3.3'`,
+Expected: `package: name='online.lamptik.app' versionCode='34' versionName='3.4'`,
 launchable activity `online.lamptik.app.MainActivity`, the certificate above,
 and `classes.dex` + the Inter fonts inside the archive.
 
 ## Install
 
 ```bash
-adb install -r public/downloads/lamptik-v3.3.apk
+adb install -r public/downloads/lamptik-v3.4.apk
 ```
 
 On a phone: open `https://www.lamptik.online/app-download`, download the APK,

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { InstallAppButton } from "@/components/install-app-button";
 import { Logo } from "@/components/logo";
 import { PlatformIcon } from "@/components/platform-icons";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -15,11 +14,17 @@ import type { Platform } from "@/lib/platforms";
  * plus Guides and the optional Android app. All four platforms are open to
  * every visitor — nothing is gated behind an install.
  *
- * The desktop row appears at `lg` (not `md`): six destinations plus the logo,
- * the Install App CTA and the theme toggle need the full 1152px shell to stay
- * on one line, and the strip below carries the same links on smaller screens.
- * The old Library button is gone with the IndexedDB store: downloads are handed
- * to the browser's own download manager, so there is nothing to browse here.
+ * No "Install App" button lives here anymore: a visitor who already has the
+ * APK (or the installed web app) does not need a persistent CTA telling them
+ * to install it, and on a 390px phone it pushed the downloader itself below
+ * the fold. The quiet "App" link below — and the footer — keep /app-download
+ * one tap away for people who actually want it.
+ *
+ * The desktop row appears at `lg` (not `md`): six destinations plus the logo
+ * and the theme toggle need the full 1152px shell to stay on one line, and the
+ * strip below carries the same links on smaller screens. The old Library button
+ * is gone with the IndexedDB store: downloads are handed to the browser's own
+ * download manager, so there is nothing to browse here.
  */
 const NAV = [
   { href: "/", label: "TikTok", short: "TikTok", platform: "tiktok" as Platform },
@@ -99,7 +104,6 @@ export function SiteHeader() {
             </nav>
 
             <div className="flex shrink-0 items-center gap-2">
-              <InstallAppButton />
               <ThemeToggle />
             </div>
           </div>

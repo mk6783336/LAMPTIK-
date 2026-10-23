@@ -114,7 +114,9 @@ final class SettingsScreen extends ScrollView {
         legal.addView(Ui.divider(context));
         legal.addView(link(R.string.settings_contact, ApiClient.BASE + "/contact"));
         legal.addView(Ui.divider(context));
-        legal.addView(link(R.string.settings_website, ApiClient.BASE));
+        // Clean downloader root only — never /app-download: the visitor is
+        // already inside the app, so install instructions would be nonsense.
+        legal.addView(link(R.string.settings_website, ApiClient.SITE_ROOT));
 
         /* ---------------------------------------------------------- storage */
         root.addView(section(context.getString(R.string.settings_storage)));

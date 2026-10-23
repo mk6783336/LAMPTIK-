@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="online.lamptik.app"
-    android:versionCode="33"
-    android:versionName="3.3">
+    android:versionCode="34"
+    android:versionName="3.4">
 
     <uses-sdk
         android:minSdkVersion="24"
@@ -35,17 +35,12 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:host="www.lamptik.online"
-                    android:scheme="https" />
-                <data
-                    android:host="lamptik.online"
-                    android:scheme="https" />
-            </intent-filter>
+            <!-- Deliberately NO VIEW/BROWSABLE intent-filter for lamptik.online.
+                 An earlier build claimed the whole domain, so tapping the site's
+                 own Download APK button (or any lamptik.online link) opened the
+                 app instead of the browser and stranded users on install
+                 instructions they had already followed. The app is launched by
+                 its icon and by the share sheet below — never by a web link. -->
             <!-- Share-sheet target: "Share → LAMP TIK" from TikTok, YouTube,
                  Instagram, Facebook or any app that sends plain text. -->
             <intent-filter>
