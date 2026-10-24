@@ -9,6 +9,7 @@ import { PlatformSwitcher } from "@/components/platform-switcher";
 import { isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
 import { ResultPanel } from "@/components/result-panel";
 import { AdSlot } from "@/components/ads/AdSlot";
+import { VideoAdGate } from "@/components/ads/VideoAdGate";
 import { clientMirrorStreams, clientOembedMeta } from "@/lib/youtube-client";
 
 import { ToastStack, type ToastItem } from "@/components/toast";
@@ -324,6 +325,8 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
   const [adRefreshKey, setAdRefreshKey] = useState(0);
   /** Shown during the single silent auto-retry (attempt 2/2). */
   const [backupNote, setBackupNote] = useState<string | null>(null);
+  /** A user-submitted link waiting behind the HilltopAds video gate. */
+  const [gateUrl, setGateUrl] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -584,6 +587,25 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
       title: "Video stream ready",
       description: "The converted MP4 landed — Server 01 and Server 02 are live.",
     });
+  }
+
+  /**
+   * Every DIRECT input submission (typed, pasted or sample) waits behind the
+   * sponsored video gate; the resolve itself starts when the gate closes.
+   * Retries and the automatic `?shared_url=` hand-off call `handleSubmitUrl`
+   * directly, so an already-earned result never pays for a second gate.
+   */
+  function handleGateSubmit(rawUrl: string) {
+    if (isLoading || gateUrl) return;
+    setError(null);
+    setGateUrl(rawUrl);
+  }
+
+  function handleGateComplete() {
+    const pendingUrl = gateUrl;
+    setGateUrl(null);
+    if (!pendingUrl) return;
+    void handleSubmitUrl(pendingUrl);
   }
 
   async function handleSubmitUrl(rawUrl: string, options: { force?: boolean } = {}) {
@@ -847,7 +869,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
           busy={isLoading}
           error={error}
           platform={platform}
-          onSubmitUrl={handleSubmitUrl}
+          onSubmitUrl={handleGateSubmit}
           onNotify={notify}
         />
 
@@ -939,6 +961,10 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
       <div className="mt-3">
         <ToastStack toasts={toasts} onDismiss={dismissToast} />
       </div>
+
+      {/* HilltopAds VAST gate — opens on submit, closes on its own clock, then
+          hands the paused link to the resolver above. */}
+      <VideoAdGate open={gateUrl !== null} onComplete={handleGateComplete} />
 
       {/* Keyboard hint: desktop only — mobile users tap the Paste button. */}
       <p className="mt-3 hidden items-center gap-1.5 text-xs text-[var(--text-2)] sm:flex sm:text-sm">

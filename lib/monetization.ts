@@ -49,6 +49,54 @@ export const monetagVerification = process.env.NEXT_PUBLIC_MONETAG_META?.trim() 
 export const monetagSmartlinkUrl =
   process.env.NEXT_PUBLIC_MONETAG_SMARTLINK_URL?.trim() || "https://uplcm.com/4/12078941";
 
+/**
+ * HilltopAds VAST 3.0 video tag (Zone 7549085).
+ *
+ * The endpoint only fills when the request carries the site's Referer — a
+ * bare curl answers 404, `Referer: https://lamptik.online/` answers the XML.
+ * The browser supplies it automatically; when an ad-blocker strips it the
+ * gate falls back to its house sponsor card and still counts down.
+ */
+export const hilltopVastUrl =
+  process.env.NEXT_PUBLIC_HILLTOP_VAST_URL?.trim() ||
+  "https://faithfuloccasion.com/d/m.FQzwdHGNN_vWZPGnUf/SeVmw9VueZsUSlckLP/TWcu1UNxDgkYwcOnDMUntcNnzmU/0/ObTKAE4xOdQF";
+
+/** sessionStorage counter behind the gate's 10s → 30s step. */
+export const VIDEO_GATE_COUNT_KEY = "lamptik_video_count";
+
+/** The first N resolves of a session wait 10s; every one after waits 30s. */
+export const VIDEO_GATE_FIRST_RUNS = 3;
+export const VIDEO_GATE_SECONDS_FIRST = 10;
+export const VIDEO_GATE_SECONDS_REPEAT = 30;
+
+/** Countdown length for the current session video count. */
+export function videoGateSeconds(count: number): number {
+  return count < VIDEO_GATE_FIRST_RUNS ? VIDEO_GATE_SECONDS_FIRST : VIDEO_GATE_SECONDS_REPEAT;
+}
+
+/** Resolved-video count in this tab session (0 when storage is unavailable). */
+export function readVideoGateCount(): number {
+  if (typeof window === "undefined") return 0;
+  try {
+    const raw = Number(window.sessionStorage.getItem(VIDEO_GATE_COUNT_KEY) ?? 0);
+    return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** Count one completed gate. Returns the new count. */
+export function bumpVideoGateCount(): number {
+  const next = readVideoGateCount() + 1;
+  if (typeof window === "undefined") return next;
+  try {
+    window.sessionStorage.setItem(VIDEO_GATE_COUNT_KEY, String(next));
+  } catch {
+    // Private mode / quota: the countdown still works for this resolve.
+  }
+  return next;
+}
+
 export const adsConfigured = Boolean(adsterraBannerKey || monetagSmartlinkUrl);
 
 export type AdFormat = "leaderboard" | "rectangle";
