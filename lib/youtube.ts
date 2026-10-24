@@ -196,10 +196,12 @@ async function innertubeDuration(videoId: string): Promise<number> {
     signal: AbortSignal.timeout(7_000),
     body: JSON.stringify({
       videoId,
-      // The WEB client answers videoDetails (title + lengthSeconds) even when
-      // it refuses to hand out streams — exactly what a metadata probe needs.
-      // The ANDROID client returns an empty player response instead.
-      context: { client: { clientName: "WEB", clientVersion: "2.20240304.00.00", hl: "en", gl: "US" } },
+      // Same client as the primary tier: it still answers videoDetails
+      // (lengthSeconds) on refusals, where the legacy WEB client now returns
+      // a playability error with no metadata at all.
+      context: {
+        client: { clientName: "ANDROID", clientVersion: "20.10.38", androidSdkVersion: 30, hl: "en", gl: "US" },
+      },
       contentCheckOk: true,
       racyCheckOk: true,
     }),
@@ -219,10 +221,12 @@ const INNERTUBE_CLIENTS = [
   // answered with an empty body — keep this current.
   {
     name: "youtube:innertube-android",
+    clientId: 3,
     context: { clientName: "ANDROID", clientVersion: "20.10.38", androidSdkVersion: 30, hl: "en", gl: "US" },
   },
   {
     name: "youtube:innertube-ios",
+    clientId: 5,
     context: {
       clientName: "IOS",
       clientVersion: "20.10.4",
@@ -235,17 +239,126 @@ const INNERTUBE_CLIENTS = [
   },
   {
     name: "youtube:innertube-android-vr",
+    clientId: 28,
     context: { clientName: "ANDROID_VR", clientVersion: "1.62.27", androidSdkVersion: 32, hl: "en", gl: "US" },
   },
   {
     name: "youtube:innertube-android-testsuite",
+    clientId: 30,
     context: { clientName: "ANDROID_TESTSUITE", clientVersion: "1.9", androidSdkVersion: 30, hl: "en", gl: "US" },
   },
   {
     name: "youtube:innertube-tv-embedded",
+    clientId: 85,
+    // The embedded TV client only works with a third-party embed context AND a
+    // matching embed Referer (see innertubePlayer) — without both it answers
+    // "YouTube is no longer supported in this application or device".
     context: { clientName: "TVHTML5_SIMPLY_EMBEDDED_PLAYER", clientVersion: "2.0", hl: "en", gl: "US" },
   },
 ] as const;
+
+/* ------------------------------------------------------------------
+ * Datacenter context: visitorData + public-video proof.
+ *
+ * Vercel's egress IPs are asked for sign-in (`LOGIN_REQUIRED`) even on public
+ * videos. Two cheap, allowlisted calls make that survivable:
+ *   - the embed page carries a fresh `visitorData` token that gives Innertube
+ *     a real session context instead of an anonymous datacenter request;
+ *   - oEmbed is NOT bot-checked for public videos, so a 200 proves the video
+ *     is public and the player refusal is a network block, not a private
+ *     video. That distinction is what used to surface as a false 403.
+ * Both are cached per isolate.
+ * ------------------------------------------------------------------ */
+
+const VISITOR_DATA_TTL_MS = 30 * 60_000;
+let visitorDataCache: { value: string; expiresAt: number } | null = null;
+/** Single-flight: the failover clients race in parallel and must share one
+ *  embed fetch instead of each paying the same page load. */
+let visitorDataInFlight: Promise<string | null> | null = null;
+
+function extractVisitorData(html: string): string | null {
+  const at = html.indexOf("visitorData");
+  if (at < 0) return null;
+  const colon = html.indexOf(":", at);
+  if (colon < 0) return null;
+  const start = html.indexOf('"', colon);
+  if (start < 0) return null;
+  const end = html.indexOf('"', start + 1);
+  if (end < 0) return null;
+  const value = html.slice(start + 1, end);
+  return /^[A-Za-z0-9_%=-]{20,200}$/.test(value) ? value : null;
+}
+
+async function loadVisitorData(videoId: string): Promise<string | null> {
+  const now = Date.now();
+  try {
+    const response = await fetch(`https://www.youtube.com/embed/${encodeURIComponent(videoId)}`, {
+      headers: { "User-Agent": DESKTOP_UA, Accept: "text/html" },
+      cache: "no-store",
+      signal: AbortSignal.timeout(3_500),
+    });
+    if (!response.ok) {
+      await response.body?.cancel().catch(() => undefined);
+      return null;
+    }
+    const token = extractVisitorData(await response.text());
+    if (token) visitorDataCache = { value: token, expiresAt: now + VISITOR_DATA_TTL_MS };
+    return token;
+  } catch {
+    return null; // metadata page unreachable — call without a session token
+  }
+}
+
+async function visitorDataToken(videoId: string): Promise<string | null> {
+  if (visitorDataCache && visitorDataCache.expiresAt > Date.now()) return visitorDataCache.value;
+  if (!visitorDataInFlight) {
+    visitorDataInFlight = loadVisitorData(videoId).finally(() => {
+      visitorDataInFlight = null;
+    });
+  }
+  return visitorDataInFlight;
+}
+
+const PUBLIC_VIDEO_TTL_MS = 10 * 60_000;
+const publicVideoCache = new Map<string, { isPublic: boolean; expiresAt: number }>();
+
+/** True when YouTube's oEmbed endpoint vouches for this video as public. */
+async function isPublicYouTubeVideo(videoId: string): Promise<boolean> {
+  const now = Date.now();
+  const cached = publicVideoCache.get(videoId);
+  if (cached && cached.expiresAt > now) return cached.isPublic;
+
+  let isPublic = false;
+  try {
+    const response = await fetch(
+      `https://www.youtube.com/oembed?url=${encodeURIComponent(
+        `https://www.youtube.com/watch?v=${videoId}`,
+      )}&format=json`,
+      {
+        headers: { Accept: "application/json", "User-Agent": DESKTOP_UA },
+        cache: "no-store",
+        signal: AbortSignal.timeout(4_000),
+      },
+    );
+    if (response.ok) {
+      const data = asRecord(await response.json().catch(() => null));
+      isPublic = typeof data?.title === "string" && data.title.length > 0;
+    } else {
+      await response.body?.cancel().catch(() => undefined);
+    }
+  } catch {
+    // If the proof itself is unreachable, keep the player's verdict.
+    return false;
+  }
+
+  publicVideoCache.set(videoId, { isPublic, expiresAt: now + PUBLIC_VIDEO_TTL_MS });
+  while (publicVideoCache.size > 500) {
+    const oldest = publicVideoCache.keys().next().value;
+    if (oldest === undefined) break;
+    publicVideoCache.delete(oldest);
+  }
+  return isPublic;
+}
 
 interface InnertubeFormat {
   itag?: number;
@@ -260,17 +373,25 @@ async function innertubePlayer(
   videoId: string,
   client: (typeof INNERTUBE_CLIENTS)[number],
 ): Promise<TierHit> {
+  const embedded = client.context.clientName.includes("EMBEDDED");
+  const session = await visitorDataToken(videoId);
   const response = await fetch(INNERTUBE_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Origin: "https://www.youtube.com",
-      Referer: "https://www.youtube.com/",
+      // The embedded players are only accepted with an /embed/ referer.
+      Referer: embedded ? `https://www.youtube.com/embed/${videoId}` : "https://www.youtube.com/",
       "User-Agent": DESKTOP_UA,
+      "X-YouTube-Client-Name": String(client.clientId),
+      "X-YouTube-Client-Version": client.context.clientVersion,
     },
     body: JSON.stringify({
       videoId,
-      context: { client: { ...client.context, androidSdkVersion: 30 } },
+      context: {
+        client: { ...client.context, ...(session ? { visitorData: session } : {}) },
+        ...(embedded ? { thirdParty: { embedUrl: "https://www.youtube.com/" } } : {}),
+      },
       contentCheckOk: true,
       racyCheckOk: true,
     }),
@@ -284,6 +405,17 @@ async function innertubePlayer(
   const status = asString(asRecord(root.playabilityStatus)?.status)?.toUpperCase() ?? "";
   const reason = asString(asRecord(root.playabilityStatus)?.reason) ?? "";
   if (status === "LOGIN_REQUIRED" || status === "UNPLAYABLE") {
+    // A datacenter IP gets "Sign in to confirm you're not a bot" on ordinary
+    // public videos. oEmbed is not gated, so a 200 proves the video itself is
+    // fine and this refusal is the network, not the video. Only a video oEmbed
+    // cannot vouch for keeps the definitive private/age-restricted answer.
+    if (await isPublicYouTubeVideo(videoId)) {
+      throw new AppError(
+        "PROVIDER_UNAVAILABLE",
+        "YouTube is bot-checking this network for that video.",
+        "Trying the other extraction engines and your own connection.",
+      );
+    }
     throw new AppError(
       "VIDEO_PRIVATE",
       "This YouTube video needs login, is age-restricted, or is private.",
@@ -757,22 +889,36 @@ async function resolveYouTubeStreams(
     ),
   ];
 
-  const hit = await Promise.race([
-    firstDefinitiveHit(...chains),
-    new Promise<never>((_resolve, reject) => {
-      setTimeout(
-        () =>
-          reject(
-            new AppError(
-              "PROVIDER_UNAVAILABLE",
-              "Resolving high-speed stream — retry in a moment.",
-              "YouTube is answering slowly; retry shortly.",
+  let hit: TierHit;
+  try {
+    hit = await Promise.race([
+      firstDefinitiveHit(...chains),
+      new Promise<never>((_resolve, reject) => {
+        setTimeout(
+          () =>
+            reject(
+              new AppError(
+                "PROVIDER_UNAVAILABLE",
+                "Resolving high-speed stream — retry in a moment.",
+                "YouTube is answering slowly; retry shortly.",
+              ),
             ),
-          ),
-        FAILOVER_BUDGET_MS,
-      );
-    }),
-  ]);
+          FAILOVER_BUDGET_MS,
+        );
+      }),
+    ]);
+  } catch (error) {
+    if (isDefinitiveVideoError(error)) throw error;
+    // Every engine failed for a reason that is NOT the video (bot-checked
+    // datacenter IP, mirror timeout). Surface one stable, user-safe message
+    // instead of the last engine's internal timeout text; the hint is what
+    // tells the UI to hand the resolve to the visitor's own connection.
+    throw new AppError(
+      "PROVIDER_UNAVAILABLE",
+      "YouTube is bot-checking this network — trying your own connection.",
+      "If this screen returns, retry in a moment.",
+    );
+  }
 
   return requireStreams(hit);
 }

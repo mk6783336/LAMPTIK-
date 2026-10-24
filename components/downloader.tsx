@@ -660,7 +660,14 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
             continue;
           }
           const message = apiError?.message ?? "Couldn’t resolve this video.";
-          if (isYouTube) {
+          // A verdict about the VIDEO (private / deleted / a livestream) is
+          // final; only provider trouble earns a 6s mirror rescue.
+          const definitiveVideoError =
+            apiError?.code === "VIDEO_PRIVATE" ||
+            apiError?.code === "VIDEO_NOT_FOUND" ||
+            apiError?.code === "UNSUPPORTED_URL" ||
+            apiError?.code === "INVALID_URL";
+          if (isYouTube && !definitiveVideoError) {
             // Server engines exhausted (datacenter-IP blocks) — the visitor's
             // own residential IP takes over: browser-direct converter jobs +
             // CORS mirrors. This is the SaveFrom/Y2Mate architecture.
@@ -695,6 +702,13 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
       }
       setBackupNote(null);
       if ((!succeeded || !payload || !payload.ok) && isYouTube) {
+        const lastCode = lastApiError?.code;
+        if (lastCode === "VIDEO_PRIVATE" || lastCode === "VIDEO_NOT_FOUND") {
+          setStatus("idle");
+          setError(lastApiError?.message ?? "Couldn’t resolve this video.");
+          notify({ kind: "error", title: "Video unavailable", description: lastApiError?.hint });
+          return;
+        }
         // Last-resort browser-direct rescue for YouTube (see rescueYouTubeFromBrowser).
         setStatus("loading");
         const rescued = await rescueYouTubeFromBrowser({
