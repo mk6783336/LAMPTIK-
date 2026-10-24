@@ -7,7 +7,7 @@ import {
   AD_RESERVED,
   adsterraBannerKey,
   adsterraRectangleKey,
-  monetagSmartlinkUrl,
+  directLinkUrl,
   type AdFormat,
 } from "@/lib/monetization";
 interface AdSlotProps {
@@ -306,7 +306,7 @@ export function AdSlot({
           </div>
         ) : creativeState === "fallback" ? (
           <a
-            href={monetagSmartlinkUrl}
+            href={directLinkUrl}
             target="_blank"
             rel="sponsored nofollow noopener"
             aria-label="Sponsored partner offer — opens in a new tab"

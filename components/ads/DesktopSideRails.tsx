@@ -3,7 +3,7 @@
 import { Zap } from "lucide-react";
 
 import { AdSlot } from "@/components/ads/AdSlot";
-import { adsterraBannerKey, monetagSmartlinkUrl } from "@/lib/monetization";
+import { adsterraBannerKey, directLinkUrl } from "@/lib/monetization";
 
 /**
  * Desktop side rails — fills the empty left/right margins on wide screens.
@@ -33,7 +33,7 @@ function Rail({ side }: { side: "left" | "right" }) {
 
       {/* SmartLink card: fills the rail at any width. */}
       <a
-        href={monetagSmartlinkUrl}
+        href={directLinkUrl}
         target="_blank"
         rel="sponsored nofollow noopener"
         title="Sponsored: bonus high-speed offer"
@@ -56,7 +56,7 @@ function Rail({ side }: { side: "left" | "right" }) {
 export function DesktopSideRails() {
   // Unconfigured banner key: AdSlot would render nothing, so skip the rails
   // entirely rather than shipping empty fixed chrome.
-  if (!adsterraBannerKey && !monetagSmartlinkUrl) return null;
+  if (!adsterraBannerKey && !directLinkUrl) return null;
   return (
     <>
       <Rail side="left" />

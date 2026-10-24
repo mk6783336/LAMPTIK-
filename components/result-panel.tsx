@@ -10,7 +10,7 @@ import { AdSlot } from "@/components/ads/AdSlot";
 import { PlatformIcon } from "@/components/platform-icons";
 import { cn } from "@/lib/cn";
 import { PLATFORMS } from "@/lib/platforms";
-import { triggerDownloadDirectLink, monetagSmartlinkUrl } from "@/lib/monetization";
+import { triggerDownloadDirectLink, directLinkUrl } from "@/lib/monetization";
 import { isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
 import { SocialShare } from "@/components/social-share";
 import type { MediaPayload } from "@/lib/media";
@@ -51,7 +51,7 @@ interface DownloadTheater {
  *
  * The flow (identical on TikTok / Instagram / Facebook / YouTube — every
  * platform page renders this exact component):
- *   0ms — click: the Monetag Direct Link sponsor opens synchronously inside
+ *   0ms — click: the HilltopAds Direct Link sponsor opens synchronously inside
  *   the user activation, AND IN THE SAME GESTURE a hidden same-origin
  *   sandboxed iframe navigates to `/api/download` — attachment downloads
  *   only, no script execution, no top-frame movement. Chrome's NATIVE
@@ -370,7 +370,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
             />
           </div>
           <a
-            href={monetagSmartlinkUrl}
+            href={directLinkUrl}
             target="_blank"
             rel="sponsored noopener noreferrer"
             className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 text-sm font-semibold text-amber-200 transition-colors hover:border-amber-400/60 hover:bg-amber-500/15"

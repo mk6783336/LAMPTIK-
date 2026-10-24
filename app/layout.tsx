@@ -104,8 +104,8 @@ export default function RootLayout({
     >
       <head>
         {/* Resource hints: exactly one ad origin is warmed. `n6wxm.com` and
-            `uplcm.com` are click-time destinations (Monetag Direct Link), so
-            preconnecting to them only burned sockets and made Lighthouse
+            `idealistic-revenue.com` are click-time destinations (Direct Link),
+            so preconnecting to them only burned sockets and made Lighthouse
             report unused/duplicate preconnects. `bellnewyork.org` is the only
             origin the page actually fetches from at load, and it is declared
             once — a `dns-prefetch` alongside a `preconnect` is free, two

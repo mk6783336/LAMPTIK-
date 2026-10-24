@@ -10,10 +10,13 @@ import Script from "next/script";
  *
  * 1. In-flow banner slots (`AdSlot.tsx`, leaderboard + rectangle) rendered
  *    inside `position: relative; overflow: hidden` boxes.
- * 2. The Monetag Direct Link (`uplcm.com/4/12078941`) opened from a *real*
- *    user click on the download button (`triggerDownloadDirectLink`), never
- *    on page load.
+ * 2. The HilltopAds Direct Link (`idealistic-revenue.com/FtK1df`) opened from
+ *    a *real* user click on the download button
+ *    (`triggerDownloadDirectLink`), never on page load.
  * 3. The inline 10-second countdown in `result-panel.tsx`.
+ * 4. The submit-time VAST gate in `VideoAdGate.tsx` — a visible, timed card
+ *    whose countdown is independent of the ad request and which portals above
+ *    the page rather than relying on a remote creative to stay clickable.
  *
  * The Monetag Vignette (`vignette.min.js`) and the Adsterra Social Bar are
  * banned here on purpose: both inject `position: fixed; inset: 0;

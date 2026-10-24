@@ -45,9 +45,14 @@ export const adsterraRectangleKey =
 /** Monetag domain-verification token, emitted as `<meta name="monetag">`. */
 export const monetagVerification = process.env.NEXT_PUBLIC_MONETAG_META?.trim() || null;
 
-/** Monetag Direct Link (a plain https URL, no script). */
-export const monetagSmartlinkUrl =
-  process.env.NEXT_PUBLIC_MONETAG_SMARTLINK_URL?.trim() || "https://uplcm.com/4/12078941";
+/**
+ * HilltopAds Direct Link — opened only inside a real download click and
+ * capped by `triggerDownloadDirectLink` below. `NEXT_PUBLIC_DIRECT_LINK_URL`
+ * is the override; the old `NEXT_PUBLIC_MONETAG_SMARTLINK_URL` is ignored so a
+ * stale dashboard value can never replace this one.
+ */
+export const directLinkUrl =
+  process.env.NEXT_PUBLIC_DIRECT_LINK_URL?.trim() || "https://idealistic-revenue.com/FtK1df";
 
 /**
  * HilltopAds VAST 3.0 video tag (Zone 7549085).
@@ -97,7 +102,7 @@ export function bumpVideoGateCount(): number {
   return next;
 }
 
-export const adsConfigured = Boolean(adsterraBannerKey || monetagSmartlinkUrl);
+export const adsConfigured = Boolean(adsterraBannerKey || directLinkUrl);
 
 export type AdFormat = "leaderboard" | "rectangle";
 
@@ -132,7 +137,7 @@ export interface DirectLinkResult {
 export function triggerDownloadDirectLink(): DirectLinkResult {
   if (typeof window === "undefined") return { triggered: false };
 
-  const target = monetagSmartlinkUrl;
+  const target = directLinkUrl;
   if (!/^https:\/\//i.test(target)) return { triggered: false };
 
   try {
@@ -145,8 +150,21 @@ export function triggerDownloadDirectLink(): DirectLinkResult {
     // every click repeats a blocked attempt.
     window.sessionStorage.setItem(DIRECT_LINK_KEY, String(now));
 
-    const tab = window.open(target, "_blank", "noopener");
-    if (tab) return { triggered: true };
+    // A plain `window.open(target, "_blank")` returns a handle, so a null
+    // answer really means the popup was blocked. The handle is severed from
+    // this tab before the ad page can run any script, preserving the old
+    // no-opener guarantee without the `noopener` feature (which makes
+    // window.open return null even on success and used to fall through to the
+    // anchor below, opening a SECOND sponsor tab on every download).
+    const tab = window.open(target, "_blank");
+    if (tab) {
+      try {
+        tab.opener = null;
+      } catch {
+        // Already isolated by the browser — nothing to sever.
+      }
+      return { triggered: true };
+    }
 
     // Popup blocked (or an in-app browser that refuses `window.open`): fall
     // back to a synthetic sponsored anchor click, which some WebViews allow.
