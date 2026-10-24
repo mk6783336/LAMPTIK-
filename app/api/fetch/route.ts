@@ -8,7 +8,7 @@ import { MAX_FETCH_BODY_BYTES, readBoundedJson } from "@/lib/security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 /**
  * POST /api/fetch — unified metadata resolver for TikTok, Instagram, and

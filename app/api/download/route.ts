@@ -43,6 +43,7 @@ import {
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 const MAX_REDIRECTS = 3;
 const HEADER_TIMEOUT_MS = 10_000;
@@ -83,6 +84,24 @@ const PLATFORM_PROFILES: Record<DownloadPlatform, PlatformProfile> = {
 /** Response types that mean "this is an error page / playlist, not media". */
 const BLOCKED_TYPES =
   /^(application\/(?:json|problem\+json|xml|xhtml\+xml|javascript)|text\/|audio\/(?:mpegurl|x-mpegurl)|application\/(?:vnd\.apple\.mpegurl|x-mpegurl))/i;
+const YOUTUBE_CONVERTER_HOSTS = new Set(["loader.to", "oceansaver.in"]);
+
+function isYouTubeConverterUrl(value: string): boolean {
+  try {
+    const host = new URL(value).hostname.toLowerCase();
+    return (
+      YOUTUBE_CONVERTER_HOSTS.has(host) ||
+      host.endsWith(".loader.to") ||
+      host.endsWith(".oceansaver.in") ||
+      host === "savenow.to" ||
+      host.endsWith(".savenow.to") ||
+      host === "lto2.affadaffa.com" ||
+      host.endsWith(".lto2.affadaffa.com")
+    );
+  } catch {
+    return false;
+  }
+}
 
 function profileFor(platform: DownloadPlatform, upstreamUrl: string): PlatformProfile {
   try {
@@ -92,15 +111,8 @@ function profileFor(platform: DownloadPlatform, upstreamUrl: string): PlatformPr
       return { referer: "https://www.tikwm.com/" };
     }
     // Loader.to / OceanSaver proxy renditions (including their rotating
-    // download hosts like `*.savenow.to`) require their own Referer.
-    if (
-      hostname === "loader.to" ||
-      hostname.endsWith(".loader.to") ||
-      hostname === "oceansaver.in" ||
-      hostname.endsWith(".oceansaver.in") ||
-      hostname === "savenow.to" ||
-      hostname.endsWith(".savenow.to")
-    ) {
+    // download hosts and v2 progress/CDN host) require their own Referer.
+    if (isYouTubeConverterUrl(upstreamUrl)) {
       return { referer: "https://loader.to/" };
     }
   } catch {
@@ -284,12 +296,19 @@ async function verifiedBinaryHandoff(
     try {
       const headers = upstreamHeadersFor(platform, upstreamUrl);
       headers.Range = "bytes=0-1";
-      const { response } = await fetchAllowedMedia(upstreamUrl, headers, abort.signal);
+      const { response, url: finalUrl } = await fetchAllowedMedia(upstreamUrl, headers, abort.signal);
+      const contentType = response.headers.get("content-type") ?? "";
       await response.body?.cancel().catch(() => undefined);
       const acceptable =
         (response.status === 200 || response.status === 206) &&
-        isAcceptableType(response.headers.get("content-type") ?? "", kind);
-      if (acceptable) return handOffToCdn(upstreamUrl);
+        isAcceptableType(contentType, kind);
+      // Signed Googlevideo URLs bind to the resolver IP. When proxied from
+      // Vercel returns an auth/geo error, a validated redirect lets the
+      // visitor retry from their own IP; converter job handles are never
+      // redirected here, since their ad-interstitial is not media.
+      if (acceptable || (platform === "youtube" && !isYouTubeConverterUrl(upstreamUrl) && !BLOCKED_TYPES.test(contentType))) {
+        return handOffToCdn(finalUrl);
+      }
     } finally {
       clearTimeout(timer);
     }

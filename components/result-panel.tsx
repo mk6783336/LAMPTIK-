@@ -11,6 +11,7 @@ import { PlatformIcon } from "@/components/platform-icons";
 import { cn } from "@/lib/cn";
 import { PLATFORMS } from "@/lib/platforms";
 import { triggerDownloadDirectLink, monetagSmartlinkUrl } from "@/lib/monetization";
+import { isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
 import { SocialShare } from "@/components/social-share";
 import type { MediaPayload } from "@/lib/media";
 import type { VideoInfo } from "@/lib/tiktok/types";
@@ -176,6 +177,18 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theaterAttemptId]);
 
+  function rejectKnownYouTubeInterstitial(url: string | null): boolean {
+    if (platform !== "youtube" || !url || !isKnownLoaderInterstitialUrl(url)) return false;
+    setTheater(null);
+    onNotify({
+      kind: "error",
+      title: "This YouTube stream is stale",
+      description: "Refreshing the video link before starting another download.",
+    });
+    onReresolve?.(media.canonicalUrl);
+    return true;
+  }
+
   /**
    * The one and only download click handler — order is load-bearing.
    * 1. Direct Link sponsor synchronously inside the user activation (30s
@@ -187,6 +200,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
    */
   function startDownload(kind: string, href: string, fallbackUrl: string | null = null) {
     if (!href) return;
+    if (rejectKnownYouTubeInterstitial(rawUpstreamOf(href))) return;
     triggerDownloadDirectLink();
     const frame = document.createElement("iframe");
     frame.style.display = "none";
@@ -232,13 +246,14 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
    * manager, then the same 10-second theater runs in flow.
    */
   function startDownloadDirect(kind: string, directUrl: string) {
-    if (!directUrl) return;
+    if (!directUrl || rejectKnownYouTubeInterstitial(directUrl)) return;
     triggerDownloadDirectLink();
     const anchor = document.createElement("a");
     anchor.href = directUrl;
-    // _blank is load-bearing: an attachment response downloads without
-    // leaving the page, and anything else (a converter HTML page) opens in
-    // its own disposable tab instead of replacing ours.
+    // Keep the origin tab in place. Known job URLs are rejected before this
+    // point; if a provider changes behavior and returns HTML, a same-tab
+    // navigation is still the wrong failure mode. A new tab is therefore
+    // required, and the browser's download manager owns attachment handling.
     anchor.target = "_blank";
     anchor.rel = "noopener noreferrer";
     anchor.style.display = "none";
@@ -255,8 +270,8 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
     });
     onNotify({
       kind: "success",
-      title: "Download started",
-      description: `${kind} is already moving in your Downloads tray — 10s sponsor break runs alongside it.`,
+      title: "Download requested",
+      description: `${kind} was handed to your browser — check the Downloads tray for the file.`,
     });
   }
 

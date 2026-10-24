@@ -7,6 +7,7 @@ import { pollLoaderJob } from "@/lib/youtube";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 const VALID_FORMATS = new Set(["1080", "720", "360", "mp3"]);
 
@@ -46,8 +47,8 @@ export async function GET(request: NextRequest) {
   }
 
   const ready: Array<YouTubePollResponse["ready"][number]> = [];
-  const processing: YouTubePollResponse["processing"] = [];
-  const failed: YouTubePollResponse["failed"] = [];
+  const processing: YouTubePollResponse["processing"][number][] = [];
+  const failed: YouTubePollResponse["failed"][number][] = [];
 
   await Promise.all(
     idEntries.map(async (id, index) => {
@@ -60,7 +61,7 @@ export async function GET(request: NextRequest) {
       if (beat.status === "ready") {
         ready.push({ id, format, downloadUrl: beat.downloadUrl });
       } else if (beat.status === "error") {
-        failed.push({ id, format });
+        failed.push({ id, format, ...(beat.reason ? { reason: beat.reason } : {}) });
       } else {
         processing.push({ id, format, progress: beat.progress });
       }
@@ -75,8 +76,15 @@ export async function GET(request: NextRequest) {
   processing.sort(byRank);
   failed.sort(byRank);
 
+  const accessDenied = failed.some((job) => job.reason === "provider_access");
   const body: YouTubePollResponse = { ok: true, ready, processing, failed };
-  return NextResponse.json(body, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json(body, {
+    status: accessDenied && ready.length === 0 && processing.length === 0 ? 503 : 200,
+    headers: {
+      "Cache-Control": "no-store",
+      ...(accessDenied ? { "X-YouTube-Provider-Status": "access-denied" } : {}),
+    },
+  });
 }
 
 function errorResponse(body: { ok: false; error: { code: "INVALID_URL" | "RATE_LIMITED" | "BAD_REQUEST"; message: string } }): NextResponse {

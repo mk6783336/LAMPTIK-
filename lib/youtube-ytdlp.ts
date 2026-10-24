@@ -66,9 +66,14 @@ export function ytdlpBridgeUrl(): string | null {
  * in JSON mode) can emit; unknown fields are ignored, missing ones error.
  */
 async function bridgeExtract(bridgeUrl: string, canonicalUrl: string): Promise<YtdlpHit> {
+  const bridgeSecret = process.env.BRIDGE_SECRET;
   const response = await fetch(bridgeUrl.replace(/\/+$/, ""), {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      ...(bridgeSecret ? { "x-bridge-secret": bridgeSecret } : {}),
+    },
     cache: "no-store",
     signal: AbortSignal.timeout(BRIDGE_TIMEOUT_MS),
     body: JSON.stringify({ url: canonicalUrl, client: "android" }),

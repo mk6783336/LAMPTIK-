@@ -5,8 +5,11 @@ import { rateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request";
 import { isPublicMediaUrl } from "@/lib/security";
 import { rememberYouTubeStreams } from "@/lib/youtube";
+import { isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 interface ClaimApiSuccess {
   ok: true;
@@ -70,7 +73,11 @@ export async function POST(request: NextRequest) {
     thumbnail?: unknown;
   };
 
-  if (typeof claim.downloadUrl !== "string" || !isPublicMediaUrl(claim.downloadUrl)) {
+  if (
+    typeof claim.downloadUrl !== "string" ||
+    !isPublicMediaUrl(claim.downloadUrl) ||
+    isKnownLoaderInterstitialUrl(claim.downloadUrl)
+  ) {
     return claimFailure({
       ok: false,
       error: { code: "INVALID_URL", message: "Claim rejected — that download URL isn't usable." },

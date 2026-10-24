@@ -19,6 +19,8 @@
  *    /api/youtube/poll relay stalls (Vercel IP blocked).
  */
 
+import { isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
+
 /* ------------------------------------------------------------------ */
 /* Shared shapes                                                       */
 /* ------------------------------------------------------------------ */
@@ -29,6 +31,8 @@ export interface ClientConverterJob {
   format: string;
   /** Opaque converter job id (empty when the job never registered). */
   id: string;
+  /** Optional completed URL delivered alongside an id. */
+  readyUrl?: string;
 }
 
 /** One progress beat against a converter job. */
@@ -37,6 +41,7 @@ export interface ClientLoaderBeat {
   downloadUrl: string | null;
   /** Converter's own 0–100 progress when reported. */
   progress: number | null;
+  reason?: "provider_access";
 }
 
 /** What a CORS mirror (Piped / Invidious) handed back. */
@@ -59,12 +64,21 @@ export interface MirrorStreams {
 
 const CLIENT_LOADER_API = "https://loader.to/ajax/download.php";
 const CLIENT_LOADER_PROGRESS = "https://loader.to/ajax/progress.php";
+const CLIENT_V2_PROGRESS = "https://lto2.affadaffa.com/api/progress";
 /** Same rendition ladder the server engine uses, plus the audio track. */
 const CLIENT_LOADER_FORMATS = ["1080", "720", "360", "mp3"] as const;
 
+function converterAccessBlocked(data: Record<string, unknown>): boolean {
+  return typeof data.message === "string" && /application.{0,80}use our api.{0,120}contact us/i.test(data.message);
+}
+
 function safeHttps(value: unknown): value is string {
   return (
-    typeof value === "string" && value.length > 0 && value.length <= 4_096 && /^https:\/\//.test(value)
+    typeof value === "string" &&
+    value.length > 0 &&
+    value.length <= 4_096 &&
+    /^https:\/\//.test(value) &&
+    !isKnownLoaderInterstitialUrl(value)
   );
 }
 
@@ -79,10 +93,10 @@ export async function clientStartConverterJobs(canonicalUrl: string): Promise<Cl
         );
         if (!response.ok) return { format, id: "" };
         const data = (await response.json().catch(() => null)) as Record<string, unknown> | null;
-        if (!data) return { format, id: "" };
+        if (!data || converterAccessBlocked(data)) return { format, id: "" };
         // Some answers already carry the finished link (warm pool).
         const direct = [data.download_url, data.downloadUrl, data.file_url].find(safeHttps);
-        if (direct) return { format, id: `${format}|${direct}` }; // encoded-ready marker
+        if (direct) return { format, id: "", readyUrl: direct };
         const id = typeof data.id === "string" ? data.id : typeof data.hid === "string" ? data.hid : "";
         return { format, id: id.length >= 4 && id.length <= 96 ? id : "" };
       } catch {
@@ -94,11 +108,6 @@ export async function clientStartConverterJobs(canonicalUrl: string): Promise<Cl
   return starts;
 }
 
-function splitReadyMarker(job: ClientConverterJob): string | null {
-  const pipe = job.id.indexOf("|");
-  return pipe > 0 ? job.id.slice(pipe + 1) : null;
-}
-
 /** One progress beat against loader.to, directly from the visitor's IP. */
 export async function clientLoaderProgress(jobId: string): Promise<ClientLoaderBeat> {
   // Ready-at-start jobs carry their link in the id marker (no endpoint hit).
@@ -106,7 +115,10 @@ export async function clientLoaderProgress(jobId: string): Promise<ClientLoaderB
     return { state: "ready", downloadUrl: jobId.slice(jobId.indexOf("|") + 1), progress: null };
   }
   try {
-    const response = await fetch(`${CLIENT_LOADER_PROGRESS}?id=${encodeURIComponent(jobId)}`, {
+    const progressEndpoint = jobId.startsWith("v2_stream_")
+      ? CLIENT_V2_PROGRESS
+      : CLIENT_LOADER_PROGRESS;
+    const response = await fetch(`${progressEndpoint}?id=${encodeURIComponent(jobId)}`, {
       headers: { Accept: "application/json" },
       mode: "cors",
       cache: "no-store",
@@ -114,6 +126,18 @@ export async function clientLoaderProgress(jobId: string): Promise<ClientLoaderB
     if (!response.ok) return { state: "processing", downloadUrl: null, progress: null };
     const data = (await response.json().catch(() => null)) as Record<string, unknown> | null;
     if (!data) return { state: "processing", downloadUrl: null, progress: null };
+    if (converterAccessBlocked(data)) {
+      return { state: "error", downloadUrl: null, progress: null, reason: "provider_access" };
+    }
+    // Savenow's documented API has a 0–1000 scale. A job that reaches 1000
+    // without success or a real download URL has terminated, not stalled.
+    if (Number(data.progress) >= 1000) {
+      return { state: "error", downloadUrl: null, progress: 100 };
+    }
+    const rawDirect = data.download_url ?? data.downloadUrl ?? data.file_url;
+    if (typeof rawDirect === "string" && isKnownLoaderInterstitialUrl(rawDirect)) {
+      return { state: "error", downloadUrl: null, progress: null };
+    }
     const direct = [data.download_url, data.downloadUrl, data.file_url].find(safeHttps);
     if (safeHttps(direct)) return { state: "ready", downloadUrl: direct, progress: null };
     // `success: -1` / `progress: -1` — the job died upstream.
@@ -126,8 +150,6 @@ export async function clientLoaderProgress(jobId: string): Promise<ClientLoaderB
     return { state: "processing", downloadUrl: null, progress: null };
   }
 }
-
-export { splitReadyMarker };
 
 /* ------------------------------------------------------------------ */
 /* CORS metadata (title/author/thumbnail — never a 0:00 placeholder)   */
@@ -201,8 +223,22 @@ function jsonNumber(value: unknown): number {
   return Number.isFinite(n) && n >= 0 ? n : 0;
 }
 
-function googlevideoUrl(value: unknown): string | null {
-  return safeHttps(value) && value.includes("googlevideo.com") ? value : null;
+function mirrorStreamUrl(value: unknown): string | null {
+  if (!safeHttps(value)) return null;
+  try {
+    const host = new URL(value).hostname.toLowerCase();
+    if (host === "googlevideo.com" || host.endsWith(".googlevideo.com")) return value;
+    // Piped's progressive MP4s are normally served by its CORS-enabled
+    // pipedproxy tier, NOT googlevideo.com. The previous googlevideo-only
+    // filter silently discarded every such stream before the browser rescue
+    // could claim it.
+    const proxyDomain = ["kavin.rocks", "adminforge.de", "syncpundit.io"].some(
+      (domain) => host.endsWith(`.${domain}`),
+    );
+    return proxyDomain && host.split(".")[0]?.startsWith("pipedproxy") ? value : null;
+  } catch {
+    return null;
+  }
 }
 
 /** One CORS beat against every configured Piped node, first truthy wins. */
@@ -227,7 +263,7 @@ async function pipedMirror(videoId: string): Promise<MirrorStreams | null> {
         for (const raw of videoStreams) {
           const stream = raw as { url?: unknown; quality?: unknown; videoOnly?: unknown };
           if (stream.videoOnly === true) continue; // DASH segments need muxing
-          const url = googlevideoUrl(stream.url);
+          const url = mirrorStreamUrl(stream.url);
           if (!url) continue;
           const quality = typeof stream.quality === "string" ? stream.quality : "";
           if (/720|1080/.test(quality)) bestHd ??= url;
@@ -236,7 +272,7 @@ async function pipedMirror(videoId: string): Promise<MirrorStreams | null> {
         let audio: string | null = null;
         for (const raw of audioStreams) {
           const stream = raw as { url?: unknown; mimeType?: unknown };
-          const url = googlevideoUrl(stream.url);
+          const url = mirrorStreamUrl(stream.url);
           if (url && typeof stream.mimeType === "string" && stream.mimeType.startsWith("audio/mp4")) {
             audio ??= url;
           }
@@ -284,7 +320,7 @@ async function invidiousMirror(videoId: string): Promise<MirrorStreams | null> {
         let audio: string | null = null;
         for (const raw of formats) {
           const format = raw as { url?: unknown; qualityLabel?: unknown; type?: unknown };
-          const url = googlevideoUrl(format.url);
+          const url = mirrorStreamUrl(format.url);
           if (!url) continue;
           const type = typeof format.type === "string" ? format.type : "";
           const label = typeof format.qualityLabel === "string" ? format.qualityLabel : "";

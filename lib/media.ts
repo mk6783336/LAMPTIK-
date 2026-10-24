@@ -6,6 +6,8 @@ import { extractYouTube } from "@/lib/youtube";
 import { universalYtdlpHit } from "@/lib/universal-ytdlp";
 import { resolveVideo } from "@/lib/tiktok";
 import { buildDownloadLinks } from "@/lib/tiktok/links";
+import { isConverterAttachmentUrl, isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
+import { isPublicMediaUrl } from "@/lib/security";
 import type { VideoCodec, VideoInfo } from "@/lib/tiktok/types";
 import { assertInputUrl, detectPlatform, type PlatformType } from "@/lib/url-guard";
 
@@ -224,7 +226,7 @@ export function assembleYouTubeMedia(
 ): { media: MediaPayload; video: VideoInfo } {
   const primary = streams.video ?? streams.audio;
 
-  if (!primary) {
+  if (!primary || !isPublicMediaUrl(primary) || isKnownLoaderInterstitialUrl(primary)) {
     throw new AppError(
       "PROVIDER_UNAVAILABLE",
       "YouTube exposed no downloadable stream for this video right now.",
@@ -232,16 +234,22 @@ export function assembleYouTubeMedia(
     );
   }
 
+  // Only converter CDN links (loader.to family) serve any visitor IP and send
+  // their own attachment header — those open straight from the click. Signed
+  // googlevideo mirrors are bound to the resolving IP, so they ride the
+  // same-origin proxy instead (a direct browser hit would be refused, which is
+  // exactly the "Server 01 does nothing" failure this replaces).
+  const browserDirectVideo = streams.video && isConverterAttachmentUrl(streams.video) ? streams.video : null;
+  const browserDirectAudio = streams.audio && isConverterAttachmentUrl(streams.audio) ? streams.audio : null;
+
   const downloads = buildDownloadLinks(
     {
       video: streams.video ?? primary,
-      // The converter/mirror URL already serves `Content-Disposition: attachment`
-      // from its own CDN — open it directly (Server 01); the proxy stays Server 02.
-      videoDirect: streams.video,
+      videoDirect: browserDirectVideo,
       videoSd:
         streams.videoSd && streams.videoSd !== (streams.video ?? primary) ? streams.videoSd : null,
       audio: streams.audio,
-      audioDirect: streams.audio,
+      audioDirect: browserDirectAudio,
     },
     { id: meta.id, username: meta.author, platform: "youtube" },
   );

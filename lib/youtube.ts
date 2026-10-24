@@ -4,6 +4,7 @@ import { AppError } from "@/lib/errors";
 import { asRecord, asString, cleanCaption, DESKTOP_UA, toDuration } from "@/lib/http";
 import { runWaterfall, WATERFALL_TIMEOUT_MS } from "@/lib/load-balancer";
 import { ytdlpExtract } from "@/lib/youtube-ytdlp";
+import { isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
 
 /**
  * Bulletproof multi-provider YouTube resolution engine.
@@ -115,15 +116,16 @@ export function parseYouTubeUrl(raw: string): { id: string; canonicalUrl: string
  */
 const LOADER_DOWNLOAD_API = "https://loader.to/ajax/download.php";
 const LOADER_FALLBACK_PROGRESS = "https://loader.to/ajax/progress.php";
+const LOADER_V2_PROGRESS = "https://lto2.affadaffa.com/api/progress";
 /** Every video rendition starts as its own conversion job; first done wins. */
 const LOADER_VIDEO_FORMATS = ["1080", "720", "360"] as const;
 const LOADER_POLL_MS = 1_200;
-const LOADER_MAX_POLLS = 21;
+const LOADER_MAX_POLLS = 25;
 /** Budget for the conversion path (job start + polling). Measured: real
  *  conversions land between ~2s (Shorts) and ~30s (long 1080p uploads).
  *  It runs in parallel with the direct providers, so a slow conversion never
  *  delays a fast mirror — and a bot-checked direct path never starves it. */
-const LOADER_TIMEOUT_MS = 25_000;
+const LOADER_TIMEOUT_MS = 30_000;
 
 interface TierHit {
   id: string;
@@ -137,7 +139,7 @@ interface TierHit {
 function httpsUrl(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const url = value.trim();
-  return /^https:\/\//.test(url) ? url : null;
+  return /^https:\/\//.test(url) && !isKnownLoaderInterstitialUrl(url) ? url : null;
 }
 
 /** Primary: ytdl-core clean extraction (deciphered signatures included). */
@@ -238,13 +240,25 @@ async function loaderStartJob(format: string, canonicalUrl: string): Promise<Loa
   if (!data) {
     throw new AppError("PROVIDER_UNAVAILABLE", "The converter mirror returned an empty response.");
   }
+  if (converterAccessBlocked(data)) {
+    throw new AppError(
+      "PROVIDER_ACCESS_DENIED",
+      "The YouTube converter no longer allows this site to use its API.",
+      "The converter now requires authorized API access. Configure a working YTDLP_BRIDGE_URL or restore API access with the converter provider.",
+    );
+  }
   const direct = httpsUrl(data.download_url);
   const id = asString(data.id) ?? asString(data.hid) ?? "";
+  const hasConverterAccess = data.api_access !== false && data.application_access !== false;
   const progressUrl =
     httpsUrl(data.progress_url) ??
-    (id ? `${LOADER_FALLBACK_PROGRESS}?id=${encodeURIComponent(id)}` : "");
+    (id && hasConverterAccess ? `${LOADER_FALLBACK_PROGRESS}?id=${encodeURIComponent(id)}` : "");
   if (!direct && !progressUrl) {
-    throw new AppError("PROVIDER_UNAVAILABLE", "The converter mirror didn't accept this video.");
+    throw new AppError(
+      "PROVIDER_UNAVAILABLE",
+      "The converter mirror didn't accept this video.",
+      "No valid conversion job or media URL was returned.",
+    );
   }
   const info = asRecord(data.info);
   return {
@@ -261,14 +275,22 @@ const LOADER_JOB_ID = /^[A-Za-z0-9_-]{4,96}$/;
 
 /** Canonical progress endpoint for a started job. */
 export function loaderProgressUrl(jobId: string): string {
-  return `${LOADER_FALLBACK_PROGRESS}?id=${encodeURIComponent(jobId)}`;
+  const endpoint = jobId.startsWith("v2_stream_") ? LOADER_V2_PROGRESS : LOADER_FALLBACK_PROGRESS;
+  return `${endpoint}?id=${encodeURIComponent(jobId)}`;
 }
 
 export type LoaderJobPoll =
   | { status: "ready"; downloadUrl: string }
   | { status: "processing"; /** Converter's own 0–100 % when reported. */
       progress: number | null }
-  | { status: "error" };
+  | { status: "error"; reason?: "provider_access" };
+
+/** Loader currently returns a nonzero progress (often 50) while denying API
+ *  use in `message`; that is terminal, not a conversion still in progress. */
+function converterAccessBlocked(data: Record<string, unknown>): boolean {
+  const message = asString(data.message) ?? "";
+  return /application.{0,80}use our api.{0,120}contact us/i.test(message);
+}
 
 /**
  * ONE poll beat against a started conversion job. Shared by the server-side
@@ -279,20 +301,42 @@ export type LoaderJobPoll =
 export async function pollLoaderJob(jobId: string): Promise<LoaderJobPoll> {
   if (!LOADER_JOB_ID.test(jobId)) return { status: "error" };
   const finish = (status: "processing", progress: number | null): LoaderJobPoll => ({ status, progress });
-  const data = await fetch(loaderProgressUrl(jobId), {
+  const result = await fetch(loaderProgressUrl(jobId), {
     headers: {
       Accept: "application/json",
       Referer: "https://loader.to/",
       "User-Agent": DESKTOP_UA,
     },
     cache: "no-store",
+    redirect: "manual",
     signal: AbortSignal.timeout(8_000),
   })
-    .then(async (response) => (response.ok ? asRecord(await response.json().catch(() => null)) : null))
+    .then(async (response) => ({
+      status: response.status,
+      data: asRecord(await response.json().catch(() => null)),
+    }))
     .catch(() => null);
-  if (!data) return finish("processing", null);
-  const done =
-    httpsUrl(data.download_url) ?? httpsUrl(data.downloadUrl) ?? httpsUrl(data.file_url);
+  if (!result) return finish("processing", null);
+  const { data, status } = result;
+  if (!data) {
+    return status === 404 || status === 410 || (status >= 400 && status < 500 && status !== 429)
+      ? { status: "error" }
+      : finish("processing", null);
+  }
+  const rawDone = data.download_url ?? data.downloadUrl ?? data.file_url;
+  if (converterAccessBlocked(data)) {
+    return { status: "error", reason: "provider_access" };
+  }
+  if (status === 404 || status === 410 || /progress not found/i.test(asString(data.message) ?? "")) {
+    return { status: "error" };
+  }
+  // Loader's current v2 API can mark a job complete but return a Savenow
+  // `/api/v2/download/<hash>` URL that redirects through `/ajax/ad/` to an
+  // offer page, not a media file. Never surface that URL as a ready stream.
+  if (typeof rawDone === "string" && isKnownLoaderInterstitialUrl(rawDone)) {
+    return { status: "error" };
+  }
+  const done = httpsUrl(rawDone);
   if (done) return { status: "ready", downloadUrl: done };
   // loader.to answers `success: 0` while converting and `-1` when a job
   // died (cancelled upstream, dead cache pool, region-blocked worker).
@@ -314,7 +358,15 @@ async function loaderAwaitJob(job: LoaderJob): Promise<string> {
     const beat = await pollLoaderJob(job.progressUrl ? jobIdFromProgressUrl(job.progressUrl) : "");
     if (beat.status === "ready") return beat.downloadUrl;
     if (beat.status === "error") {
-      throw new AppError("PROVIDER_UNAVAILABLE", "The converter job failed upstream — retry shortly.");
+      throw new AppError(
+        beat.reason === "provider_access" ? "PROVIDER_ACCESS_DENIED" : "PROVIDER_UNAVAILABLE",
+        beat.reason === "provider_access"
+          ? "The YouTube converter requires authorized API access."
+          : "The converter job failed upstream — retry shortly.",
+        beat.reason === "provider_access"
+          ? "Configure an authorized YouTube extraction bridge or provider API access."
+          : undefined,
+      );
     }
   }
   throw new AppError("PROVIDER_UNAVAILABLE", "The converter mirror is still processing this video.");
@@ -417,6 +469,13 @@ const INNERTUBE_URL = `https://www.youtube.com/youtubei/v1/player?key=${INNERTUB
 const INNERTUBE_CLIENTS = [
   { name: "youtube:innertube-android", context: { clientName: "ANDROID", clientVersion: "19.09.37", hl: "en", gl: "US" } },
   { name: "youtube:innertube-ios", context: { clientName: "IOS", clientVersion: "19.09.37", hl: "en", gl: "US" } },
+  // ANDROID_VR is the client YouTube has left least guarded: it still hands
+  // back progressive/adaptive googlevideo URLs without a PoToken challenge,
+  // which is exactly what a datacenter IP (Vercel) needs.
+  {
+    name: "youtube:innertube-android-vr",
+    context: { clientName: "ANDROID_VR", clientVersion: "1.62.27", hl: "en", gl: "US" },
+  },
   {
     name: "youtube:innertube-tv",
     context: { clientName: "TVHTML5_SIMPLY_EMBEDDED_PLAYER", clientVersion: "2.0", hl: "en", gl: "US" },
@@ -510,20 +569,34 @@ async function innertubePlayer(
     else if (format.itag === 18 || format.qualityLabel === "360p") sd = sd ?? url;
     else if (!hd) hd = url;
   }
-  let audio: string | null = null;
-  let bestBitrate = 0;
+  // Audio pick order: AAC/M4A first, then anything else. Opus/WebM (itag
+  // 251) is routinely paced to a trickle by googlevideo on a plain sequential
+  // GET while its ranged reads are fast, which made the MP3 hand-off stall at
+  // 16 KB. M4A also saves with a matching extension instead of a WebM body
+  // wearing an .mp3 name.
+  let audioM4a: string | null = null;
+  let audioM4aBitrate = 0;
+  let audioAny: string | null = null;
+  let audioAnyBitrate = 0;
   for (const format of adaptive) {
-    if (!(format.mimeType ?? "").includes("audio/")) continue;
+    const mime = format.mimeType ?? "";
+    if (!mime.includes("audio/")) continue;
     const url =
       (typeof format.url === "string" && format.url.includes("googlevideo.com") ? format.url : null) ??
       (format.signatureCipher ? parseCipherUrl(format.signatureCipher) : null);
     if (!url) continue;
     const bitrate = typeof format.bitrate === "number" ? format.bitrate : 0;
-    if (bitrate >= bestBitrate) {
-      bestBitrate = bitrate;
-      audio = url;
+    if (mime.includes("audio/mp4")) {
+      if (bitrate >= audioM4aBitrate) {
+        audioM4aBitrate = bitrate;
+        audioM4a = url;
+      }
+    } else if (bitrate >= audioAnyBitrate) {
+      audioAnyBitrate = bitrate;
+      audioAny = url;
     }
   }
+  const audio = audioM4a ?? audioAny;
 
   const primary = hd ?? sd;
   if (!primary && !audio) {
@@ -551,7 +624,7 @@ async function innertubePlayer(
 
 // 2026-active public instances. The legacy kavin.rocks / tokhmi.xyz /
 // reallyaweso.me / tux.pizza domains are dead and were removed.
-const PIPED_APIS = ["https://pipedapi.adminforge.de"];
+const PIPED_APIS = ["https://pipedapi.kavin.rocks", "https://pipedapi.adminforge.de"];
 
 const INVIDIOUS_APIS = ["https://inv.nadeko.net", "https://invidious.nerdvpn.de"];
 
@@ -800,7 +873,7 @@ function firstDefinitiveHit(...chains: Array<Promise<TierHit>>): Promise<TierHit
  * showed a dead `0:00` card with buttons that could never download. This
  * engine splits the work:
  *
- *   Phase A (0–6s, server): start a conversion job for EVERY rendition
+ *   Phase A (0–35s, server): start a conversion job for EVERY rendition
  *     (1080/720/360 + mp3) and race the direct mirrors; the first real
  *     stream wins and resolves instantly. Jobs register their `{id}`
  *     before anything can time out.
@@ -843,7 +916,7 @@ export type YouTubeResolutionStart = ResolvedYouTubeStart | PendingYouTube;
 /** Phase-A wall clock: direct mirrors usually answer inside 1–3s; the
  *  converter lands Shorts in ~2–5s. Anything slower is a long video —
  *  hand the completion to the browser. */
-const PHASE_A_BUDGET_MS = 6_000;
+const PHASE_A_BUDGET_MS = 35_000;
 
 /* --------------------------------------------------------------------------
  *  Resolved-link cache — a second resolve of the same video must never
@@ -869,7 +942,7 @@ interface CachedYouTubeHit {
 const resolvedYouTubeCache = new Map<string, CachedYouTubeHit>();
 
 function cacheableStreamUrl(url: string | null | undefined): string | null {
-  if (!url || !url.startsWith("https://")) return null;
+  if (!url || !url.startsWith("https://") || isKnownLoaderInterstitialUrl(url)) return null;
   try {
     return new URL(url).hostname.includes("googlevideo.com") ? null : url;
   } catch {
@@ -931,7 +1004,10 @@ export function rememberYouTubeStreams(
   }
 }
 
-export async function startYouTubeResolution(rawUrl: string): Promise<YouTubeResolutionStart> {
+export async function startYouTubeResolution(
+  rawUrl: string,
+  options: { fresh?: boolean } = {},
+): Promise<YouTubeResolutionStart> {
   const parsed = parseYouTubeUrl(rawUrl);
   if (!parsed) {
     throw new AppError(
@@ -944,8 +1020,8 @@ export async function startYouTubeResolution(rawUrl: string): Promise<YouTubeRes
 
   // Cache hit: this video resolved moments ago — hand back the same
   // converter CDN streams instantly instead of re-waiting for conversion.
-  const cached = getCachedYouTubeHit(id);
-  if (cached?.streams.video) {
+  const cached = options.fresh ? null : getCachedYouTubeHit(id);
+  if (cached?.streams.video && httpsUrl(cached.streams.video) === cached.streams.video) {
     return {
       state: "resolved",
       meta: {
@@ -968,6 +1044,17 @@ export async function startYouTubeResolution(rawUrl: string): Promise<YouTubeRes
 
     // Every rendition starts as its own registered job, immediately.
     const registered: PendingLoaderJob[] = [];
+    let providerAccessError: AppError | null = null;
+    const startTrackedJob = async (format: string): Promise<LoaderJob> => {
+      try {
+        return await loaderStartJob(format, canonicalUrl);
+      } catch (error) {
+        if (error instanceof AppError && error.code === "PROVIDER_ACCESS_DENIED") {
+          providerAccessError = error;
+        }
+        throw error;
+      }
+    };
     const record = (format: string, job: LoaderJob): void => {
       if (job.id && !registered.some((entry) => entry.id === job.id)) {
         registered.push({ format, id: job.id });
@@ -975,17 +1062,27 @@ export async function startYouTubeResolution(rawUrl: string): Promise<YouTubeRes
     };
     const videoAwaits = LOADER_VIDEO_FORMATS.map((format) =>
       (async () => {
-        const job = await loaderStartJob(format, canonicalUrl);
+        const job = await startTrackedJob(format);
         record(format, job);
-        return { format, url: await loaderAwaitJob(job) };
+        try {
+          return { format, url: await loaderAwaitJob(job) };
+        } catch (error) {
+          if (error instanceof AppError && error.code === "PROVIDER_ACCESS_DENIED") {
+            providerAccessError = error;
+          }
+          throw error;
+        }
       })(),
     );
     const audioRace = (async (): Promise<string | null> => {
       try {
-        const job = await loaderStartJob("mp3", canonicalUrl);
+        const job = await startTrackedJob("mp3");
         record("mp3", job);
         return await loaderAwaitJob(job);
-      } catch {
+      } catch (error) {
+        if (error instanceof AppError && error.code === "PROVIDER_ACCESS_DENIED") {
+          providerAccessError = error;
+        }
         return null;
       }
     })();
@@ -1091,6 +1188,7 @@ export async function startYouTubeResolution(rawUrl: string): Promise<YouTubeRes
       if (error instanceof AppError && (error.code === "VIDEO_NOT_FOUND" || error.code === "UNSUPPORTED_URL")) {
         throw error;
       }
+      if (providerAccessError) throw providerAccessError;
       if (!phaseElapsed) throw error; // a real provider failure, not the budget
 
       // Phase B (pending): video metadata for the card + the registered
@@ -1110,8 +1208,9 @@ export async function startYouTubeResolution(rawUrl: string): Promise<YouTubeRes
       ]).catch(() => null);
       if (registered.length === 0) {
         // No active conversion job exists — browser-assisted polling can
-        // never finish this, so answer a clean retry error instead of a
-        // pending hand-off to nowhere.
+        // never finish this. Preserve the concrete API-access denial rather
+        // than disguising it as a YouTube network timeout.
+        if (providerAccessError) throw providerAccessError;
         throw new AppError(
           "PROVIDER_UNAVAILABLE",
           "Resolving high-speed stream — retry in a moment.",

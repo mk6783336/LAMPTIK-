@@ -101,6 +101,7 @@ export type ErrorCode =
   | "VIDEO_NOT_FOUND"
   | "VIDEO_PRIVATE"
   | "RATE_LIMITED"
+  | "PROVIDER_ACCESS_DENIED"
   | "PROVIDER_UNAVAILABLE"
   | "UPSTREAM_ERROR"
   | "BAD_REQUEST";
@@ -117,11 +118,18 @@ export interface YouTubeJobRef {
   format: string;
   /** Opaque converter job id — queried by /api/youtube/poll. */
   id: string;
+  /** Optional completed URL when the converter served a warm cached file. */
+  readyUrl?: string;
 }
 
-/** POST /api/youtube answer when a rendition needs more than 6s: the browser takes over polling. */
+/** POST /api/youtube 202 response while a valid download URL is still resolving. */
 export interface YouTubePendingResponse {
-  ok: true;
+  ok: false;
+  error: {
+    code: "PROVIDER_UNAVAILABLE";
+    message: string;
+    hint?: string;
+  };
   pending: {
     videoId: string;
     title: string;
@@ -144,7 +152,7 @@ export interface YouTubePollResponse {
   ok: true;
   ready: Array<YouTubeJobRef & { downloadUrl: string }>;
   processing: Array<YouTubeJobRef & { progress: number | null }>;
-  failed: YouTubeJobRef[];
+  failed: Array<YouTubeJobRef & { reason?: "provider_access" }>;
 }
 
 /** POST /api/youtube/claim — a polled `download_url` → the standard payload. */
