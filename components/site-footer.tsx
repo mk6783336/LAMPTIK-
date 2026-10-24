@@ -42,7 +42,10 @@ const FOOTER_LINKS = {
   // tool pages cover the rest with exact-match anchors.
   Guides: [
     { href: "/guides/download-tiktok-video-without-watermark", label: "No watermark" },
-    { href: "/guides/download-tiktok-audio-as-mp3", label: "TikTok to MP3" },
+    // Distinct text from the /tiktok-mp3-downloader tool link above: Lighthouse
+    // flags two links with the same name pointing at different pages
+    // ("Identical links have the same purpose").
+    { href: "/guides/download-tiktok-audio-as-mp3", label: "TikTok to MP3 Guide" },
     { href: "/guides/tiktok-short-links-not-working", label: "Short links" },
     { href: "/guides/how-to-download-instagram-reels-in-hd", label: "IG Reels HD" },
     { href: "/guides/how-to-download-large-facebook-videos-in-1080p-hd", label: "Long FB videos" },

@@ -117,10 +117,12 @@ const nextConfig: NextConfig = {
             key: "X-Permitted-Cross-Domain-Policies",
             value: "none",
           },
-          // HSTS: browsers that have ever seen this over HTTPS keep it.
+          // HSTS: browsers that have ever seen this over HTTPS keep it, and
+          // `preload` makes the domain eligible for browser-baked HTTPS-only
+          // enforcement (Lighthouse "Ensure HSTS is enabled").
           {
             key: "Strict-Transport-Security",
-            value: "max-age=31536000; includeSubDomains",
+            value: "max-age=63072000; includeSubDomains; preload",
           },
         ],
       },
@@ -142,7 +144,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Strict-Transport-Security",
-            value: "max-age=31536000; includeSubDomains",
+            value: "max-age=63072000; includeSubDomains; preload",
           },
         ],
       },

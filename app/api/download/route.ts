@@ -661,7 +661,16 @@ export async function GET(request: NextRequest) {
   const parsed = parseRequest(request);
   if (parsed instanceof AppError) return failDownload();
 
-  return attemptMedia(request, parsed, true);
+  // A download navigation must never receive an HTML/JSON 500 page (Chrome
+  // would save it). Any unexpected throw collapses to the bodyless failure
+  // that Chrome renders as a failed download, and the function log keeps a
+  // single line instead of a stack trace spiking Vercel's error rate.
+  try {
+    return await attemptMedia(request, parsed, true);
+  } catch (error) {
+    console.error("[download] unexpected failure:", error instanceof Error ? error.message : "unknown");
+    return failDownload();
+  }
 }
 
 /**

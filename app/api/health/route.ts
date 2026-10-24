@@ -20,7 +20,14 @@ export const dynamic = "force-dynamic";
  *     `false` after a resolve means the binary is genuinely absent.
  */
 export async function GET() {
-  const ytdlp = await ytdlpEngineHealth();
+  // The probe pings a third-party bridge; a probe failure must never make
+  // the uptime endpoint itself fail (Vercel would count that as an error).
+  let ytdlp: Awaited<ReturnType<typeof ytdlpEngineHealth>> | null = null;
+  try {
+    ytdlp = await ytdlpEngineHealth();
+  } catch {
+    ytdlp = null;
+  }
 
   return NextResponse.json(
     {
@@ -30,9 +37,9 @@ export async function GET() {
       time: new Date().toISOString(),
       youtube: {
         ytdlp: {
-          bridgeConfigured: ytdlp.bridge.configured,
-          bridgeReachable: ytdlp.bridge.reachable,
-          binaryAvailable: ytdlp.binaryAvailable,
+          bridgeConfigured: ytdlp?.bridge.configured ?? false,
+          bridgeReachable: ytdlp?.bridge.reachable ?? null,
+          binaryAvailable: ytdlp?.binaryAvailable ?? null,
         },
       },
     },

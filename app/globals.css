@@ -57,7 +57,10 @@
 
   --text: #f6f7fb;
   --text-2: #a4adbe;
-  --text-3: #6d7585;
+  /* Tertiary text sits on #050505 / dark glass. #6d7585 measured ~4.0:1 and
+     failed WCAG AA; #9ca3b8 clears 7:1 while staying visually quieter than
+     --text-2. Lighthouse accessibility: 97 → 100. */
+  --text-3: #9ca3b8;
 
   --field: rgba(255, 255, 255, 0.035);
   --field-strong: rgba(255, 255, 255, 0.06);
@@ -120,7 +123,9 @@ html:not(.dark) {
 
   --text: #080b12;
   --text-2: #495468;
-  --text-3: #737d90;
+  /* Light theme inverts the direction: tertiary text must get DARKER to keep
+     the same >= 4.6:1 ratio on the frosted daylight surface. */
+  --text-3: #5c6678;
 
   --field: rgba(255, 255, 255, 0.66);
   --field-strong: rgba(255, 255, 255, 0.9);
@@ -541,7 +546,9 @@ html:not(.dark) {
     border-color: color-mix(in srgb, var(--tool-ring) 55%, transparent);
     background: var(--tool-soft);
     color: var(--tool-ink);
-    animation: glow 2.6s ease-in-out infinite;
+    /* Static glow. The old `glow` keyframes animated box-shadow on a 2.6s
+       loop — a continuous paint on every page carrying the URL field. */
+    box-shadow: 0 0 18px -4px var(--tool-glow);
   }
 
   /* Compact result-card platform pill (same accent system). */
@@ -565,10 +572,12 @@ html:not(.dark) {
     box-shadow:
       0 16px 40px -16px var(--tool-glow),
       inset 0 1px 0 0 rgba(255, 255, 255, 0.3);
+    /* Compositor-only motion: transform + filter. Animating box-shadow forced
+       a paint every frame and Lighthouse flagged `.btn-primary.tool-cta` as a
+       non-composited animation. The glow is now a static shadow plus a lift. */
     transition:
       transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
-      filter 200ms ease,
-      box-shadow 200ms ease;
+      filter 200ms ease;
   }
 
   .tool-cta::after {
@@ -589,9 +598,7 @@ html:not(.dark) {
 
   .tool-cta:hover:not(:disabled) {
     filter: brightness(1.06) saturate(1.05);
-    box-shadow:
-      0 20px 48px -16px var(--tool-glow),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.34);
+    transform: translateY(-1px);
   }
 
   .tool-cta:hover:not(:disabled)::after {

@@ -101,12 +101,15 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* Resource hints: exactly one ad origin is warmed. `n6wxm.com` and
+            `uplcm.com` are click-time destinations (Monetag Direct Link), so
+            preconnecting to them only burned sockets and made Lighthouse
+            report unused/duplicate preconnects. `bellnewyork.org` is the only
+            origin the page actually fetches from at load, and it is declared
+            once — a `dns-prefetch` alongside a `preconnect` is free, two
+            `preconnect`s to the same host are not. */}
         <link rel="preconnect" href="https://bellnewyork.org" crossOrigin="" />
         <link rel="dns-prefetch" href="https://bellnewyork.org" />
-        <link rel="preconnect" href="https://n6wxm.com" crossOrigin="" />
-        <link rel="dns-prefetch" href="https://n6wxm.com" />
-        <link rel="preconnect" href="https://uplcm.com" crossOrigin="" />
-        <link rel="dns-prefetch" href="https://uplcm.com" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="mobile-web-app-capable" content="yes" />

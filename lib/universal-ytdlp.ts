@@ -196,20 +196,36 @@ async function binaryExtract(
   canonicalUrl: string,
   platform: UniversalPlatform,
 ): Promise<UniversalHit> {
-  const { stdout } = await execFileAsync(
-    "yt-dlp",
-    ["--no-playlist", "--no-warnings", ...platformExtractorArgs(platform), "-f", FORMAT_FLAG, "-j", canonicalUrl],
-    {
-      timeout: BINARY_TIMEOUT_MS,
-      maxBuffer: 8 * 1024 * 1024,
-      windowsHide: true,
-    },
-  );
+  // Spawn, timeout and parse failures all normalize to AppError: a caller's
+  // waterfall sees "engine out", never an unhandled rejection.
+  let stdout: string;
+  try {
+    ({ stdout } = await execFileAsync(
+      "yt-dlp",
+      ["--no-playlist", "--no-warnings", ...platformExtractorArgs(platform), "-f", FORMAT_FLAG, "-j", canonicalUrl],
+      {
+        timeout: BINARY_TIMEOUT_MS,
+        maxBuffer: 8 * 1024 * 1024,
+        windowsHide: true,
+      },
+    ));
+  } catch (error) {
+    throw new AppError(
+      "PROVIDER_UNAVAILABLE",
+      "The local yt-dlp engine is unavailable on this runtime.",
+      error instanceof Error ? error.message.slice(0, 160) : undefined,
+    );
+  }
   // `yt-dlp -j` prints exactly one JSON object per entry; --no-playlist keeps
   // it at one, but warnings could precede it — start at the first `{`.
   const jsonStart = stdout.indexOf("{");
   if (jsonStart < 0) throw new AppError("PROVIDER_UNAVAILABLE", "yt-dlp produced no extract payload.");
-  const data = JSON.parse(stdout.slice(jsonStart)) as YtdlpJson;
+  let data: YtdlpJson;
+  try {
+    data = JSON.parse(stdout.slice(jsonStart)) as YtdlpJson;
+  } catch {
+    throw new AppError("PROVIDER_UNAVAILABLE", "yt-dlp returned an unparseable payload.");
+  }
 
   // Prefer the format yt-dlp itself selected; otherwise synthesize the same
   // pick from the format list. Both must clear the public-https SSRF gate.

@@ -20,14 +20,20 @@ interface ClaimApiSuccess {
 
 interface ClaimApiFailure {
   ok: false;
-  error: { code: "RATE_LIMITED" | "INVALID_URL" | "BAD_REQUEST"; message: string };
+  error: {
+    code: "RATE_LIMITED" | "INVALID_URL" | "BAD_REQUEST" | "PROVIDER_UNAVAILABLE";
+    message: string;
+  };
 }
 
 function claimFailure(body: ClaimApiFailure): NextResponse {
-  return NextResponse.json(
-    body,
-    { status: body.error.code === "RATE_LIMITED" ? 429 : 400, headers: { "Cache-Control": "no-store" } },
-  );
+  const status =
+    body.error.code === "RATE_LIMITED"
+      ? 429
+      : body.error.code === "PROVIDER_UNAVAILABLE"
+        ? 503
+        : 400;
+  return NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
 }
 
 function claimSuccess(body: ClaimApiSuccess): NextResponse {
@@ -115,16 +121,27 @@ export async function POST(request: NextRequest) {
       ? { video: null, videoSd: null, audio: claim.downloadUrl }
       : { video: claim.downloadUrl, videoSd: null, audio: null };
 
-  const { media, video } = assembleYouTubeMedia(
-    {
-      id: claim.videoId,
-      title: title || `YouTube video ${claim.videoId}`,
-      author: author || "YouTube",
-      duration,
-      thumbnail,
-    },
-    streams,
-  );
+  // A rejected assembly is a claim-level answer, not a function crash: the
+  // browser loop treats 503 as "that stream is unusable, keep polling".
+  let assembled: ReturnType<typeof assembleYouTubeMedia>;
+  try {
+    assembled = assembleYouTubeMedia(
+      {
+        id: claim.videoId,
+        title: title || `YouTube video ${claim.videoId}`,
+        author: author || "YouTube",
+        duration,
+        thumbnail,
+      },
+      streams,
+    );
+  } catch {
+    return claimFailure({
+      ok: false,
+      error: { code: "PROVIDER_UNAVAILABLE", message: "That download URL isn't a playable stream." },
+    });
+  }
+  const { media, video } = assembled;
 
   // Remember the finished conversion so a second resolve of the same video
   // gets these streams instantly instead of waiting for a new job.

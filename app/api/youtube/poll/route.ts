@@ -57,13 +57,19 @@ export async function GET(request: NextRequest) {
         failed.push({ format, id });
         return;
       }
-      const beat = await pollLoaderJob(id);
-      if (beat.status === "ready") {
-        ready.push({ id, format, downloadUrl: beat.downloadUrl });
-      } else if (beat.status === "error") {
-        failed.push({ id, format, ...(beat.reason ? { reason: beat.reason } : {}) });
-      } else {
-        processing.push({ id, format, progress: beat.progress });
+      // One dead conversion must not 500 the whole beat: report it as failed
+      // so the browser loop keeps polling its other jobs.
+      try {
+        const beat = await pollLoaderJob(id);
+        if (beat.status === "ready") {
+          ready.push({ id, format, downloadUrl: beat.downloadUrl });
+        } else if (beat.status === "error") {
+          failed.push({ id, format, ...(beat.reason ? { reason: beat.reason } : {}) });
+        } else {
+          processing.push({ id, format, progress: beat.progress });
+        }
+      } catch {
+        failed.push({ id, format });
       }
     }),
   );

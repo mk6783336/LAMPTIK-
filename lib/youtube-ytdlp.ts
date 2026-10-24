@@ -55,9 +55,34 @@ function httpsUrl(value: unknown): string | null {
   return typeof value === "string" && /^https:\/\/.{4,4096}$/.test(value.trim()) ? value.trim() : null;
 }
 
-/** Bridge runs anywhere a container can; off unless configured. */
+/**
+ * Bridge runs anywhere a container can; off unless configured.
+ *
+ * Three names, checked in order:
+ *   1. YTDLP_WORKER_URL            — runtime server env (preferred: change it
+ *                                    without a rebuild).
+ *   2. NEXT_PUBLIC_YTDLP_WORKER_URL — the name the deployment dashboard
+ *                                    documents; inlined at build time, so a
+ *                                    change needs a redeploy.
+ *   3. YTDLP_BRIDGE_URL            — the original name, still honoured so
+ *                                    existing deployments keep working.
+ */
 export function ytdlpBridgeUrl(): string | null {
-  return httpsUrl(process.env.YTDLP_BRIDGE_URL ?? "");
+  return (
+    httpsUrl(process.env.YTDLP_WORKER_URL ?? "") ??
+    httpsUrl(process.env.NEXT_PUBLIC_YTDLP_WORKER_URL ?? "") ??
+    httpsUrl(process.env.YTDLP_BRIDGE_URL ?? "")
+  );
+}
+
+/**
+ * Vercel's serverless runtime ships no Python and no yt-dlp executable. The
+ * probe therefore short-circuits there instead of paying an ENOENT spawn on
+ * every cold isolate (and leaving an error in the function log for an engine
+ * that can never work on that host).
+ */
+function hostingBlocksBinary(): boolean {
+  return Boolean(process.env.VERCEL) || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME);
 }
 
 /**
@@ -132,6 +157,7 @@ let binaryProbe: { available: boolean; expiresAt: number } | null = null;
  * local binary through the SAME 10-minute cache (one probe per isolate).
  */
 export async function binaryAvailable(): Promise<boolean> {
+  if (hostingBlocksBinary()) return false;
   const now = Date.now();
   if (binaryProbe && binaryProbe.expiresAt > now) return binaryProbe.available;
   let available = false;
@@ -146,16 +172,32 @@ export async function binaryAvailable(): Promise<boolean> {
 }
 
 async function binaryExtract(canonicalUrl: string): Promise<YtdlpHit> {
-  const { stdout } = await execFileAsync("yt-dlp", [...YTDLP_ARGS, canonicalUrl], {
-    timeout: EXTRACTION_TIMEOUT_MS,
-    maxBuffer: 4 * 1024 * 1024,
-    windowsHide: true,
-  });
+  // A missing binary / killed process must surface as a clean engine "out",
+  // never as an unhandled rejection that a route turns into a 500.
+  let stdout: string;
+  try {
+    ({ stdout } = await execFileAsync("yt-dlp", [...YTDLP_ARGS, canonicalUrl], {
+      timeout: EXTRACTION_TIMEOUT_MS,
+      maxBuffer: 4 * 1024 * 1024,
+      windowsHide: true,
+    }));
+  } catch (error) {
+    throw new AppError(
+      "PROVIDER_UNAVAILABLE",
+      "The local yt-dlp engine is unavailable on this runtime.",
+      error instanceof Error ? error.message.slice(0, 160) : undefined,
+    );
+  }
   // `yt-dlp -j` prints exactly one JSON object per entry; --no-playlist keeps
   // it at one, but warnings could precede it — start at the first `{`.
   const jsonStart = stdout.indexOf("{");
   if (jsonStart < 0) throw new AppError("PROVIDER_UNAVAILABLE", "yt-dlp produced no extract payload.");
-  const data = JSON.parse(stdout.slice(jsonStart)) as Record<string, unknown>;
+  let data: Record<string, unknown>;
+  try {
+    data = JSON.parse(stdout.slice(jsonStart)) as Record<string, unknown>;
+  } catch {
+    throw new AppError("PROVIDER_UNAVAILABLE", "yt-dlp returned an unparseable payload.");
+  }
 
   const video = httpsUrl(data.url);
   if (!video || !isPublicMediaUrl(video)) {
