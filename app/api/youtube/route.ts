@@ -21,6 +21,12 @@ export const maxDuration = 60;
  * through `/api/youtube/poll` + `/api/youtube/claim` so the wait never dies
  * inside a serverless function ceiling. Fast path answers still carry
  * `jobs` so the mp3/1080 merge can land after the card appears.
+ *
+ * Expected upstream refusals (`PROVIDER_ACCESS_DENIED`, `PROVIDER_UNAVAILABLE`)
+ * answer HTTP 200 with the same `{ ok: false }` body: they are the designed
+ * START of the browser-side rescue, not a server fault, so a 5xx here would
+ * count a working fallback as a crashed function in Vercel's error rate. The
+ * client branches on `body.ok`, never on the status code.
  */
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request.headers);
@@ -111,7 +117,13 @@ export async function POST(request: NextRequest) {
       },
     );
   } catch (error) {
-    const response = errorResponse(error);
+    // A hand-off is not a failure: the browser rescue (visitor's residential
+    // IP) takes over for both of these codes, so answer 200 and keep the
+    // structured `{ ok:false, error }` body the client already understands.
+    const softHandoff =
+      error instanceof AppError &&
+      (error.code === "PROVIDER_ACCESS_DENIED" || error.code === "PROVIDER_UNAVAILABLE");
+    const response = errorResponse(error, undefined, softHandoff ? 200 : undefined);
     if (error instanceof AppError && error.code === "PROVIDER_ACCESS_DENIED") {
       response.headers.set("X-YouTube-Provider-Status", "access-denied");
     }

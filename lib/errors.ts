@@ -44,7 +44,16 @@ export function toAppError(error: unknown): AppError {
   return new AppError("UPSTREAM_ERROR");
 }
 
-export function errorResponse(error: unknown, extraHeaders?: HeadersInit): NextResponse {
+export function errorResponse(
+  error: unknown,
+  extraHeaders?: HeadersInit,
+  /**
+   * Explicit status override. Only for a route whose failure shape is a
+   * designed hand-off rather than a server fault (see /api/youtube): a 5xx
+   * there would count a working fallback in Vercel's function error rate.
+   */
+  statusOverride?: number,
+): NextResponse {
   const appError = toAppError(error);
 
   if (appError.code === "UPSTREAM_ERROR") {
@@ -62,7 +71,7 @@ export function errorResponse(error: unknown, extraHeaders?: HeadersInit): NextR
       },
     },
     {
-      status: appError.status,
+      status: statusOverride ?? appError.status,
       headers: {
         "Cache-Control": "no-store",
         ...(extraHeaders as Record<string, string> | undefined),
