@@ -9,29 +9,14 @@ import { PlatformSwitcher } from "@/components/platform-switcher";
 import { isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
 import { ResultPanel } from "@/components/result-panel";
 import { AdSlot } from "@/components/ads/AdSlot";
-import {
-  clientLoaderProgress,
-  clientMirrorStreams,
-  clientOembedMeta,
-  clientStartConverterJobs,
-  type ClientConverterJob,
-  type MirrorStreams,
-} from "@/lib/youtube-client";
+import { clientMirrorStreams, clientOembedMeta } from "@/lib/youtube-client";
 
 import { ToastStack, type ToastItem } from "@/components/toast";
 import { UrlField } from "@/components/url-field";
 import { cn } from "@/lib/cn";
 import { PLATFORMS, type Platform } from "@/lib/platforms";
 import type { MediaPayload } from "@/lib/media";
-import type {
-  ApiFailure,
-  ApiSuccess,
-  ApiResponse,
-  VideoInfo,
-  YouTubeJobRef,
-  YouTubePollResponse,
-  YouTubeResolveResponse,
-} from "@/lib/tiktok/types";
+import type { ApiFailure, ApiSuccess, ApiResponse, VideoInfo } from "@/lib/tiktok/types";
 
 const SAMPLE_URL = "https://www.tiktok.com/@scout2015/video/6718335390845095173";
 
@@ -105,25 +90,6 @@ function createToastId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-/* --------------------------------------------------------------------------
- *  Client-assisted YouTube completion.
- *
- *  A 30-minute upload takes loader.to 30–120s to convert — longer than a
- *  serverless function may live. The server resolve therefore answers after
- *  ~6s with the STARTED job ids (`{ ok, pending }`), and this BROWSER loop
- *  keeps polling `/api/youtube/poll` until a `download_url` exists, then
- *  exchanges it for the full payload via `/api/youtube/claim`. The conversion
- *  runs on the converter's own infrastructure — no Vercel timeout involved.
- * ------------------------------------------------------------------------ */
-
-const JOB_POLL_MS = 2_000;
-/** Wall clock for the whole browser-assisted wait (mp3-only fallback incl.). */
-const JOB_WAIT_BUDGET_MS = 240_000;
-
-function jobBeat(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 interface YouTubeJobMeta {
   videoId: string;
   title: string;
@@ -156,269 +122,24 @@ async function claimYouTubeJob(
   if (!response.ok || !body || !body.ok) {
     const failure = body as ApiFailure | null;
     throw new Error(
-      failure && !failure.ok ? failure.error.message : "The converter result couldn't be claimed.",
+      failure && !failure.ok ? failure.error.message : "That mirror result couldn't be claimed.",
     );
   }
   return body;
 }
 
-interface YouTubeWaitResult {
-  /** Claimed payload (video preferred; mp3-only as last resort on budget). */
-  payload: ApiSuccess | null;
-  /** mp3 `download_url` that landed while waiting for the video payload. */
-  heldAudioUrl: string | null;
-}
-
-async function watchYouTubeJobs(args: {
-  jobs: YouTubeJobRef[];
-  meta: YouTubeJobMeta;
-  signal: AbortSignal;
-  /** true = wait for the first VIDEO job and claim it (resolve path);
-   *  false = only care about the mp3 job (background merge after fast path). */
-  wantVideo: boolean;
-  onNote?: (note: string) => void;
-  onMergeMp3?: (payload: ApiSuccess) => void;
-  /** For DETACHED watchers: deliver the claimed video payload via this
-   *  callback (merge into the live panel) instead of the resolve return. */
-  onClaimVideo?: (payload: ApiSuccess) => void;
-  /** Run once with the visitor's browser IP, even if no converter jobs registered. */
-  browserRescue?: () => Promise<ApiSuccess | null>;
-}): Promise<YouTubeWaitResult> {
-  const { jobs, meta, signal, wantVideo, onNote, onMergeMp3, onClaimVideo, browserRescue } = args;
-  const startedAt = Date.now();
-  let remaining = jobs.slice();
-  // Direct-to-browser extraction uses the visitor's network (CORS APIs)
-  // instead of the Vercel egress route that is failing on this production IP.
-  let browserRescueDone = false;
-  let mirrorDone = false;
-  const mirrorAt = startedAt + 6_000;
-  let heldAudioUrl: string | null = null;
-  let providerAccessDenied = false;
-  /** Consecutive dead /api/youtube/poll beats before direct-CORS takeover. */
-  let serverStalls = 0;
-  const deadline = startedAt + JOB_WAIT_BUDGET_MS;
-  let firstBeat = true;
-
-  while ((remaining.length > 0 || (wantVideo && (!mirrorDone || !browserRescueDone))) && Date.now() < deadline) {
-    if (signal.aborted) throw new DOMException("Aborted", "AbortError");
-    if (firstBeat) {
-      firstBeat = false;
-    } else {
-      await jobBeat(JOB_POLL_MS);
-    }
-
-    const readyBatch: Array<{ format: string; downloadUrl: string }> = remaining
-      .filter((job) => job.readyUrl)
-      .map((job) => ({ format: job.format, downloadUrl: job.readyUrl as string }));
-    remaining = remaining.filter((job) => !job.readyUrl);
-    let beatFailed = false;
-
-    const query = new URLSearchParams();
-    for (const job of remaining) {
-      query.append("id", job.id);
-      query.append("format", job.format);
-    }
-
-    // When every job is already terminal and the relay failed, there is no
-    // reason to issue a malformed empty-query poll. Move directly to the
-    // visitor-side mirror/rescue phase below.
-    if (remaining.length === 0) {
-      beatFailed = true;
-    }
-
-    // Beat 1 — the server relay. Vercel's datacenter IP is blocked by
-    // loader.to, so every /api/youtube/poll fetch can fail outright while
-    // the conversions themselves keep running on loader.to.
-    try {
-      if (remaining.length === 0) throw new Error("No active conversion jobs remain.");
-      const response = await fetch(`/api/youtube/poll?${query.toString()}`, { signal });
-      if (response.ok || response.status === 503) {
-        const body = (await response.json().catch(() => null)) as YouTubePollResponse | null;
-
-        if (body && body.ok) {
-          remaining = remaining.filter((job) => !body.failed.some((dead) => dead.id === job.id));
-          for (const readyJob of body.ready) {
-            readyBatch.push(readyJob);
-            remaining = remaining.filter((job) => job.id !== readyJob.id);
-          }
-          if (body.failed.some((job) => job.reason === "provider_access")) {
-            providerAccessDenied = true;
-            serverStalls = 3;
-            onNote?.("The converter API is restricting access; trying your connection and public mirrors…");
-          }
-        } else {
-          beatFailed = true;
-        }
-      } else {
-        beatFailed = true;
-      }
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") throw error;
-      beatFailed = true; // transient network beat
-    }
-
-    // Beat 2 — direct CORS takeover. After 3 dead relay beats, or as soon as
-    // the relay confirms provider API access is denied, poll progress.php
-    // straight from the visitor's network instead of repeatedly hitting the
-    // blocked endpoint from Vercel.
-    if (beatFailed) {
-      serverStalls += 1;
-    }
-    if (serverStalls >= 3 && remaining.length > 0) {
-      serverStalls = 0;
-      const direct = await Promise.all(
-        remaining.map(async (job) => ({
-          job,
-          beat: job.readyUrl
-            ? { state: "ready" as const, downloadUrl: job.readyUrl, progress: null }
-            : await clientLoaderProgress(job.id),
-        })),
-      );
-      const accessDeniedBeats = direct.filter((entry) => entry.beat.reason === "provider_access");
-      if (accessDeniedBeats.length === direct.length && direct.length > 0) {
-        providerAccessDenied = true;
-      }
-      remaining = remaining.filter((job) => {
-        const entry = direct.find((candidate) => candidate.job.id === job.id);
-        if (entry?.beat.reason === "provider_access") providerAccessDenied = true;
-        return !entry || entry.beat.state !== "error";
-      });
-
-      for (const { job, beat } of direct) {
-        if (beat.state === "ready" && beat.downloadUrl) {
-          readyBatch.push({ format: job.format, downloadUrl: beat.downloadUrl });
-          remaining = remaining.filter((pendingJob) => pendingJob.id !== job.id);
-        }
-      }
-    } else if (!beatFailed) {
-      serverStalls = 0;
-    }
-
-    // Browser-direct rescue starts converter jobs through CORS endpoints
-    // using the visitor's IP. The result can be returned even if the server
-    // resolved only to pending and every server-side job later failed.
-    if (wantVideo && !browserRescueDone && Date.now() >= mirrorAt && browserRescue) {
-      browserRescueDone = true;
-      const rescued = await browserRescue();
-      if (rescued) {
-        if (onClaimVideo) onClaimVideo(rescued);
-        return { payload: rescued, heldAudioUrl: null };
-      }
-    }
-
-    // Browser CORS mirror path runs alongside converter jobs and also when
-    // all server jobs were false-ready ad/interstitial URLs. Only one probe
-    // per resolve; URLs are host-filtered and signed for this browser.
-    if (wantVideo && !mirrorDone && Date.now() >= mirrorAt) {
-      mirrorDone = true;
-      const mirror = await clientMirrorStreams(meta.videoId);
-      if (mirror?.video && !isKnownLoaderInterstitialUrl(mirror.video)) {
-        const mirrorMeta: YouTubeJobMeta = {
-          ...meta,
-          title: mirror.title || meta.title,
-          author: mirror.author || meta.author,
-          duration: mirror.duration > 0 ? mirror.duration : meta.duration,
-          thumbnail: mirror.thumbnail ?? meta.thumbnail,
-        };
-        if (mirror.audio && !isKnownLoaderInterstitialUrl(mirror.audio) && onMergeMp3) {
-          const audioJob = { format: "mp3", downloadUrl: mirror.audio };
-          void claimYouTubeJob(audioJob, mirrorMeta, signal).then(onMergeMp3).catch(() => undefined);
-        }
-        const payload = await claimYouTubeJob({ format: "720", downloadUrl: mirror.video }, mirrorMeta, signal);
-        if (onClaimVideo) onClaimVideo(payload);
-        return { payload, heldAudioUrl: null };
-      }
-      if (mirror?.audio && !isKnownLoaderInterstitialUrl(mirror.audio)) {
-        const payload = await claimYouTubeJob({ format: "mp3", downloadUrl: mirror.audio }, meta, signal);
-        if (onClaimVideo) onClaimVideo(payload);
-        return { payload, heldAudioUrl: null };
-      }
-    }
-
-    // `ready` arrives ranked 1080 → 720 → 360 → mp3, so the first video
-    // entry gets claimed (HD preferred); the mp3 waits as a merge.
-    for (const readyJob of readyBatch) {
-      if (readyJob.format !== "mp3") {
-        if (!wantVideo) continue;
-        const payload = await claimYouTubeJob(readyJob, meta, signal);
-        // Detached video-watcher mode: the mp3 claim already produced the
-        // card, so deliver the late video payload via the callback.
-        if (onClaimVideo) {
-          onClaimVideo(payload);
-          return { payload, heldAudioUrl: null };
-        }
-        // The audio job may still be converting — keep a DETACHED watcher
-        // going so the MP3 button lights up while the video panel shows.
-        const audioStill = remaining.filter((job) => job.format === "mp3");
-        if (audioStill.length > 0 && onMergeMp3) {
-          const mergeContext = onMergeMp3;
-          void watchYouTubeJobs({
-            jobs: audioStill,
-            meta,
-            signal,
-            wantVideo: false,
-            onMergeMp3: mergeContext,
-          }).catch(() => undefined);
-        } else if (heldAudioUrl && onMergeMp3) {
-          const audioClaimContext = onMergeMp3;
-          void claimYouTubeJob({ format: "mp3", downloadUrl: heldAudioUrl }, meta, signal)
-            .then((audioClaim) => audioClaimContext(audioClaim))
-            .catch(() => undefined);
-        }
-        return { payload, heldAudioUrl: null };
-      }
-      if (!heldAudioUrl) heldAudioUrl = readyJob.downloadUrl;
-      remaining = remaining.filter((job) => job.format !== "mp3");
-    }
-
-    if (onNote && remaining.length > 0) {
-      const seconds = Math.round((Date.now() - startedAt) / 1_000);
-      onNote(`High-speed server converting this long video… ${seconds}s (keeps running server-side)`);
-    }
-  }
-
-  // The server/browser converter can mark a v2 interstitial job as failed.
-  // Do not let that empty the queue and skip every other engine: fall back to
-  // the CORS mirror with the visitor's connection, including its real duration.
-  // Nothing else landed but the audio did: claim the mp3 as the payload —
-  // a working MP3 card beats a dead screen.
-  if (heldAudioUrl) {
-    const payload = await claimYouTubeJob({ format: "mp3", downloadUrl: heldAudioUrl }, meta, signal);
-    // Video conversions may still be running — spawn a DETACHED watcher so
-    // Server 01 / Server 02 light up the moment the MP4 lands.
-    const videoStill = remaining.filter((job) => job.format !== "mp3");
-    if (videoStill.length > 0 && onClaimVideo) {
-      void watchYouTubeJobs({
-        jobs: videoStill,
-        meta,
-        signal: new AbortController().signal,
-        wantVideo: true,
-        onClaimVideo,
-      }).catch(() => undefined);
-    }
-    return { payload, heldAudioUrl: null };
-  }
-  if (providerAccessDenied) {
-    throw new Error(
-      "YouTube downloads are temporarily unavailable — the converter refused this request. Please try again in a minute.",
-    );
-  }
-  return { payload: null, heldAudioUrl: null };
-}
-
 /* --------------------------------------------------------------------------
- *  Browser-direct rescue — the SaveFrom/Y2Mate architecture.
+ *  Browser-direct rescue — the last resort when the server cannot resolve.
  *
- *  When EVERY server-side provider fails (Vercel's datacenter IP is blocked
- *  by loader.to / Innertube / the mirrors), the visitor's own residential
- *  IP is clean and loader.to's CORS endpoints answer it happily. This loop
- *  starts the conversions from the BROWSER, polls progress.php directly,
- *  and races the CORS Piped/Invidious mirrors — then exchanges whatever
- *  landed for the standard payload through /api/youtube/claim.
+ *  The visitor's residential IP is not on a datacenter blocklist, and the
+ *  public Piped / Invidious APIs answer CORS `*`, so the same JSON extraction
+ *  runs here and the resulting stream is exchanged for the standard payload
+ *  through /api/youtube/claim. There is no converter in this path: loader.to
+ *  now demands authorized API access and answers an HTML ad card.
  * ------------------------------------------------------------------------ */
 
-const RESCUE_BUDGET_MS = 180_000;
-const RESCUE_POLL_MS = 1_500;
+/** Never let a dead mirror list hold the result screen for long. */
+const RESCUE_MIRROR_TIMEOUT_MS = 6_000;
 
 const YT_ID_RE = /(?:v=|\/shorts\/|\/embed\/|youtu\.be\/)([A-Za-z0-9_-]{11})/;
 
@@ -434,171 +155,49 @@ async function rescueYouTubeFromBrowser(args: {
   onMergeAudio: (payload: ApiSuccess) => void;
   onMergeVideo: (payload: ApiSuccess) => void;
 }): Promise<ApiSuccess | null> {
-  const { rawUrl, signal, onNote, onMergeAudio, onMergeVideo } = args;
+  const { rawUrl, signal, onNote, onMergeAudio } = args;
   if (typeof window === "undefined") return null;
   const videoId = extractYouTubeId(rawUrl);
   if (!videoId) return null;
-  const canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
-  onNote("Resolving on your connection — the server route is rate-limited right now…");
-  // Metadata + converter starts run together; the oEmbed answer (CORS `*`)
-  // keeps the card from ever showing a 0:00 placeholder title.
-  const [meta, startedJobs] = await Promise.all([
+  onNote("Resolving on your connection — trying public mirrors…");
+  const [meta, mirror] = await Promise.all([
     clientOembedMeta(videoId),
-    clientStartConverterJobs(canonicalUrl),
+    Promise.race([
+      clientMirrorStreams(videoId),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), RESCUE_MIRROR_TIMEOUT_MS)),
+    ]),
   ]);
-  let pending: ClientConverterJob[] = startedJobs.filter((job) => job.id);
-  const readyAtStart = startedJobs.find((job) => job.readyUrl && job.format !== "mp3");
-  const audioAtStart = startedJobs.find((job) => job.readyUrl && job.format === "mp3");
+  if (!mirror) return null;
+
   const metaFor = (): YouTubeJobMeta => ({
     videoId,
-    title: meta.title ?? `YouTube video ${videoId}`,
-    author: meta.author ?? "YouTube",
-    duration: meta.duration,
-    thumbnail: meta.thumbnail,
+    title: mirror.title || meta.title || `YouTube video ${videoId}`,
+    author: mirror.author || meta.author || "YouTube",
+    duration: mirror.duration > 0 ? mirror.duration : meta.duration,
+    thumbnail: mirror.thumbnail ?? meta.thumbnail,
   });
-  if (readyAtStart?.readyUrl) {
-    if (audioAtStart?.readyUrl) {
-      void claimYouTubeJob({ format: "mp3", downloadUrl: audioAtStart.readyUrl }, metaFor(), signal)
-        .then(onMergeAudio)
-        .catch(() => undefined);
-    }
-    return claimYouTubeJob({ format: readyAtStart.format, downloadUrl: readyAtStart.readyUrl }, metaFor(), signal);
-  }
-  if (audioAtStart?.readyUrl) {
-    const audioPayload = await claimYouTubeJob({ format: "mp3", downloadUrl: audioAtStart.readyUrl }, metaFor(), signal);
-    if (pending.length === 0) return audioPayload;
-    onMergeAudio(audioPayload);
-  }
-  const mirrorAt = Date.now() + 6_000;
-  let mirrorDone = false;
-  let mirrorPayload: ApiSuccess | null = null;
-  const deadline = Date.now() + RESCUE_BUDGET_MS;
 
-  // Still test direct browser mirrors when the converter API refuses all job
-  // starts (for example because CORS is blocked by the visitor's network).
-  while ((pending.length > 0 || !mirrorDone) && Date.now() < deadline && !signal.aborted) {
-    await new Promise((resolve) => setTimeout(resolve, RESCUE_POLL_MS));
-    const ready: Array<{ format: string; downloadUrl: string }> = [];
-    const still: ClientConverterJob[] = [];
-    for (const job of pending) {
-      const beat = job.readyUrl
-        ? { state: "ready" as const, downloadUrl: job.readyUrl, progress: null }
-        : await clientLoaderProgress(job.id);
-      if (beat.state === "ready" && beat.downloadUrl) {
-        ready.push({ format: job.format, downloadUrl: beat.downloadUrl });
-      } else if (beat.state !== "error") {
-        still.push(job);
-      }
-    }
-    pending = still;
+  const mirrorVideo =
+    mirror.video && !isKnownLoaderInterstitialUrl(mirror.video) ? mirror.video : null;
+  const mirrorAudio =
+    mirror.audio && !isKnownLoaderInterstitialUrl(mirror.audio) ? mirror.audio : null;
+  if (!mirrorVideo) return null;
 
-    if (ready.length > 0) {
-      // Current Savenow v2 download URLs can redirect to an ad-offer page.
-      // `clientLoaderProgress` filters the known v2 interstitial before it
-      // reports a job ready, so never claim that URL as a video stream.
-      const videoReady = ready.find(
-        (entry) => entry.format !== "mp3" && !isKnownLoaderInterstitialUrl(entry.downloadUrl),
-      ) ?? null;
-      const audioReady = ready.find(
-        (entry) => entry.format === "mp3" && !isKnownLoaderInterstitialUrl(entry.downloadUrl),
-      ) ?? null;
-      if (videoReady) {
-        if (audioReady) {
-          void claimYouTubeJob({ format: "mp3", downloadUrl: audioReady.downloadUrl }, metaFor(), signal)
-            .then(onMergeAudio)
-            .catch(() => undefined);
-        }
-        return await claimYouTubeJob(
-          { format: videoReady.format === "1080" ? "1080" : videoReady.format === "360" ? "360" : "720", downloadUrl: videoReady.downloadUrl },
-          metaFor(),
-          signal,
-        );
-      }
-      if (audioReady) {
-        const audioPayload = await claimYouTubeJob(
-          { format: "mp3", downloadUrl: audioReady.downloadUrl },
-          metaFor(),
-          signal,
-        );
-        // A working MP3 card beats a dead screen; the video conversions keep
-        // running on the visitor's IP — rescue them detached when they land.
-        if (pending.some((job) => job.format !== "mp3")) {
-          const videoJobs = pending.filter((job) => job.format !== "mp3");
-          void (async () => {
-            const videoDeadline = Date.now() + RESCUE_BUDGET_MS;
-            while (videoJobs.length > 0 && Date.now() < videoDeadline && !signal.aborted) {
-              await new Promise((resolve) => setTimeout(resolve, RESCUE_POLL_MS));
-              for (const job of videoJobs) {
-                const beat = job.readyUrl
-                  ? { state: "ready" as const, downloadUrl: job.readyUrl, progress: null }
-                  : await clientLoaderProgress(job.id);
-                if (beat.state === "ready" && beat.downloadUrl) {
-                  if (isKnownLoaderInterstitialUrl(beat.downloadUrl)) continue;
-                  const videoClaim = await claimYouTubeJob(
-                    { format: job.format === "1080" ? "1080" : job.format === "360" ? "360" : "720", downloadUrl: beat.downloadUrl },
-                    metaFor(),
-                    signal,
-                  ).catch(() => null);
-                  if (videoClaim) onMergeVideo(videoClaim);
-                  return;
-                }
-              }
-            }
-          })().catch(() => undefined);
-        }
-        return audioPayload;
-      }
-    }
-
-    // CORS mirror engine (Piped / Invidious) — progressive MP4 straight
-    // from the visitor's IP, with the real duration for the card.
-    if (!mirrorDone && Date.now() >= mirrorAt) {
-      mirrorDone = true;
-      const mirror: MirrorStreams | null = await clientMirrorStreams(videoId);
-      if (mirror) {
-        const mirrorMeta: YouTubeJobMeta = {
-          videoId,
-          title: mirror.title,
-          author: mirror.author,
-          duration: mirror.duration,
-          thumbnail: mirror.thumbnail ?? meta.thumbnail,
-        };
-        // These URLs come from a trusted CORS mirror response and were
-        // already host-filtered in youtube-client.ts. Keep googlevideo URLs
-        // usable: Google does not expose CORS for media bytes, but a normal
-        // browser navigation/download is still valid.
-        const mirrorVideo = mirror.video && !isKnownLoaderInterstitialUrl(mirror.video) ? mirror.video : null;
-        const mirrorAudio = mirror.audio && !isKnownLoaderInterstitialUrl(mirror.audio) ? mirror.audio : null;
-        if (mirrorVideo) {
-          const videoClaim = await claimYouTubeJob(
-            { format: "720", downloadUrl: mirrorVideo },
-            mirrorMeta,
-            signal,
-          );
-          if (mirrorAudio) {
-            void claimYouTubeJob({ format: "mp3", downloadUrl: mirrorAudio }, mirrorMeta, signal)
-              .then(onMergeAudio)
-              .catch(() => undefined);
-          }
-          mirrorPayload = videoClaim;
-          if (pending.length === 0) return videoClaim;
-        } else if (mirrorAudio) {
-          const audioClaim = await claimYouTubeJob(
-            { format: "mp3", downloadUrl: mirrorAudio },
-            mirrorMeta,
-            signal,
-          );
-          mirrorPayload = audioClaim;
-          if (pending.length === 0) return audioClaim;
-        }
-      }
-    }
+  if (mirrorAudio) {
+    void claimYouTubeJob({ format: "mp3", downloadUrl: mirrorAudio }, metaFor(), signal)
+      .then(onMergeAudio)
+      .catch(() => undefined);
   }
-  return mirrorPayload;
+  try {
+    return await claimYouTubeJob({ format: "720", downloadUrl: mirrorVideo }, metaFor(), signal);
+  } catch {
+    return null;
+  }
 }
 
 const STEPS = [
+
   "Resolving the share link",
   "Extracting the clean stream",
   "Verifying HD CDN nodes",
@@ -1013,11 +612,11 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     const controller = new AbortController();
     abortRef.current = controller;
     // Client-side bail-out just before the server's own maxDuration (30s), so
-    // the UI never hangs on a request Vercel is about to kill. The YouTube
-    // route is EXEMPT: its long-video path hands the wait to THIS component
-    // (watchYouTubeJobs enforces its own 4-minute budget instead).
+    // the UI never hangs on a request Vercel is about to kill. YouTube gets a
+    // slightly longer window because its route may fall through the failover
+    // engines when the primary player client refuses.
     const isYouTube = detectedIncoming?.platform === "youtube";
-    const timeout = isYouTube ? null : window.setTimeout(() => controller.abort(), 28_000);
+    const timeout = window.setTimeout(() => controller.abort(), isYouTube ? 40_000 : 28_000);
     // YouTube resolves through its own route (dedicated waterfall, 1080p
     // selection rules); every other platform uses the shared resolver. Both
     // are open to any browser — there is no install gate.
@@ -1025,8 +624,6 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
 
     try {
       let payload: ApiSuccess | null = null;
-      /** Fast-path still-running mp3 job (merge the MP3 button when done). */
-      let trailingMp3Job: YouTubeJobRef | null = null;
       let lastApiError: { message?: string; hint?: string; code?: string } | null = null;
       let succeeded = false;
       // Smart client-side auto-healing: one silent background retry
@@ -1042,51 +639,12 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
             body: JSON.stringify({ url, force: options.force === true }),
             signal: controller.signal,
           });
-          const body = (await response.json().catch(() => null)) as ApiResponse | YouTubeResolveResponse | null;
-          if (response.status === 202 && body && "pending" in body) {
-            // LONG VIDEO — the conversion takes longer than the resolving
-            // function may live, so this browser owns the wait now: poll the
-            // started jobs until a download_url exists, then claim the full
-            // payload. (The sponsor loading console above stays on screen.)
-            setBackupNote("High-speed server converting this long video — usually seconds, long uploads a couple of minutes…");
-            const watched = await watchYouTubeJobs({
-              jobs: body.pending.jobs,
-              meta: {
-                videoId: body.pending.videoId,
-                title: body.pending.title,
-                author: body.pending.author,
-                duration: body.pending.duration,
-                thumbnail: body.pending.thumbnail,
-              },
-              signal: controller.signal,
-              wantVideo: true,
-              onNote: (note) => setBackupNote(note),
-              onMergeMp3: mergeAudioClaim,
-              onClaimVideo: mergeVideoClaim,
-              browserRescue: () => rescueYouTubeFromBrowser({
-                rawUrl: url,
-                signal: controller.signal,
-                onNote: (note) => setBackupNote(note),
-                onMergeAudio: mergeAudioClaim,
-                onMergeVideo: mergeVideoClaim,
-              }),
-            });
-            if (!watched.payload) {
-              throw new Error(
-                "This long video still isn't ready — the converter needs a few more minutes. Try again shortly.",
-              );
-            }
-            payload = watched.payload;
-            succeeded = true;
-            break;
-          }
-          if (response.ok && body && body.ok && !("pending" in body)) {
+          const body = (await response.json().catch(() => null)) as ApiResponse | null;
+          // Soft errors arrive as HTTP 200 + `{ ok:false }` (so provider
+          // outages never count as function errors) — the body is the
+          // contract, not the status code.
+          if (body?.ok) {
             payload = body;
-            // Fast path needs no polling, but its mp3 job may still be
-            // converting — spawn the detached watcher so the MP3 button
-            // lights up right when the audio is done.
-            const jobs = "jobs" in body ? body.jobs : undefined;
-            trailingMp3Job = jobs?.find((job) => job.format === "mp3") ?? null;
             succeeded = true;
             break;
           }
@@ -1174,25 +732,6 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
             : "Clean source stream resolved.",
       });
 
-      // Fast path: the mp3 job may still be converting — spawn a DETACHED
-      // watcher so Download Audio lights up the moment the converter
-      // finishes. It outlives this request (own signal, no UI block); the
-      // merge only ever adds fields the card is missing.
-      if (trailingMp3Job && isYouTube) {
-        void watchYouTubeJobs({
-          jobs: [trailingMp3Job],
-          meta: {
-            videoId: payload.media.id,
-            title: payload.media.title,
-            author: payload.media.author,
-            duration: payload.media.duration,
-            thumbnail: payload.media.thumbnail,
-          },
-          signal: new AbortController().signal,
-          wantVideo: false,
-          onMergeMp3: mergeAudioClaim,
-        }).catch(() => undefined);
-      }
     } catch (requestError) {
       const timedOut =
         requestError instanceof DOMException && requestError.name === "AbortError";

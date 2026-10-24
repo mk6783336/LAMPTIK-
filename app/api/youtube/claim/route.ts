@@ -27,12 +27,11 @@ interface ClaimApiFailure {
 }
 
 function claimFailure(body: ClaimApiFailure): NextResponse {
-  const status =
-    body.error.code === "RATE_LIMITED"
-      ? 429
-      : body.error.code === "PROVIDER_UNAVAILABLE"
-        ? 503
-        : 400;
+  // A rejected candidate is expected while the browser walks the mirror list,
+  // not a server fault: 200 + `{ ok:false }` keeps it out of Vercel's error
+  // rate (the client branches on the body, never on the status). Only abuse
+  // keeps a 4xx.
+  const status = body.error.code === "RATE_LIMITED" ? 429 : 200;
   return NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
 }
 
@@ -41,13 +40,30 @@ function claimSuccess(body: ClaimApiSuccess): NextResponse {
 }
 
 /**
- * POST /api/youtube/claim — exchange a loader.to `download_url` (polled by
- * the BROWSER so the wait survives serverless execution ceilings) for the
- * standard `{ media, video }` payload the result panel consumes. The claim
- * never sees media bytes: the URL is validated here and, when the user later
- * downloads, `/api/download` re-validates the hop chain end to end.
+ * POST /api/youtube/claim — turn a stream URL found by the BROWSER (the CORS
+ * mirror rescue, running on the visitor's own IP) into the standard
+ * `{ media, video }` payload the result panel consumes. The claim never sees
+ * media bytes: the URL is validated here and `/api/download` re-validates the
+ * hop chain end to end when the visitor downloads.
  */
 export async function POST(request: NextRequest) {
+  try {
+    return await handleClaim(request);
+  } catch {
+    // A claim that cannot be assembled is a soft answer, never a 500: the
+    // client retries the next mirror. 200 keeps a rejected candidate out of
+    // Vercel's function-error rate.
+    return claimFailure({
+      ok: false,
+      error: {
+        code: "PROVIDER_UNAVAILABLE",
+        message: "That stream could not be claimed — trying the next mirror.",
+      },
+    });
+  }
+}
+
+async function handleClaim(request: NextRequest) {
   const ip = getClientIp(request.headers);
   const limit = rateLimit(`yt-claim:${ip}`, 35, 60_000);
   if (!limit.ok) {
@@ -122,7 +138,7 @@ export async function POST(request: NextRequest) {
       : { video: claim.downloadUrl, videoSd: null, audio: null };
 
   // A rejected assembly is a claim-level answer, not a function crash: the
-  // browser loop treats 503 as "that stream is unusable, keep polling".
+  // browser loop treats `ok:false` as "that stream is unusable, try the next".
   let assembled: ReturnType<typeof assembleYouTubeMedia>;
   try {
     assembled = assembleYouTubeMedia(
@@ -143,11 +159,9 @@ export async function POST(request: NextRequest) {
   }
   const { media, video } = assembled;
 
-  // Remember the finished conversion so a second resolve of the same video
-  // gets these streams instantly instead of waiting for a new job.
-  // Converter CDN links (loader.to family) answer any visitor IP. Claims
-  // carrying googlevideo URLs (IP-locked to the claimant) are refused by
-  // the cache itself — only shareable artifacts get stored.
+  // Remember the claimed stream so a second resolve of the same video can
+  // reuse it. Only mirror/CDN links answer any visitor IP; googlevideo URLs
+  // (IP-locked to the claimant) are refused by the cache itself.
   rememberYouTubeStreams(
     claim.videoId,
     {

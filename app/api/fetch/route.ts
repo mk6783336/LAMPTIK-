@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { AppError, errorResponse } from "@/lib/errors";
+import { AppError, errorResponse, toAppError } from "@/lib/errors";
 import { resolveMedia } from "@/lib/media";
 import { rateLimit } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/request";
@@ -89,6 +89,10 @@ export async function POST(request: NextRequest) {
       },
     );
   } catch (error) {
-    return errorResponse(error);
+    // Upstream outages (503/502) answer 200 with `{ ok:false, error }` so a
+    // provider hiccup is not counted as a crashed function; input, private
+    // and not-found errors keep their real 4xx status.
+    const status = toAppError(error).status;
+    return errorResponse(error, undefined, status >= 500 ? 200 : undefined);
   }
 }

@@ -234,11 +234,10 @@ export function assembleYouTubeMedia(
     );
   }
 
-  // Only converter CDN links (loader.to family) serve any visitor IP and send
-  // their own attachment header — those open straight from the click. Signed
-  // googlevideo mirrors are bound to the resolving IP, so they ride the
-  // same-origin proxy instead (a direct browser hit would be refused, which is
-  // exactly the "Server 01 does nothing" failure this replaces).
+  // Signed googlevideo URLs are bound to the resolving (Vercel) IP, so they
+  // always ride the same-origin proxy — a direct browser hit would be refused.
+  // `browserDirect` therefore only ever carries a converter-style attachment
+  // link when a mirror happens to expose one.
   const browserDirectVideo = streams.video && isConverterAttachmentUrl(streams.video) ? streams.video : null;
   const browserDirectAudio = streams.audio && isConverterAttachmentUrl(streams.audio) ? streams.audio : null;
 

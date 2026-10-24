@@ -32,7 +32,7 @@ import {
  *   error document NEVER answers the download navigation with HTML or JSON:
  *   Chrome saves any 2xx response of a download navigation as a file — a 302
  *   to our own `/?dl=…` page was literally saved as `download.html`. Every
- *   failure is therefore a bodyless 502 (Chrome reports a failed download,
+ *   failure is therefore a bodyless 422 (Chrome reports a failed download,
  *   nothing is saved).
  * - A 302 hand-off to the CDN happens ONLY after the target hop is probed
  *   and verified to serve a real media content type — never to an HTML page.
@@ -85,6 +85,15 @@ const PLATFORM_PROFILES: Record<DownloadPlatform, PlatformProfile> = {
 const BLOCKED_TYPES =
   /^(application\/(?:json|problem\+json|xml|xhtml\+xml|javascript)|text\/|audio\/(?:mpegurl|x-mpegurl)|application\/(?:vnd\.apple\.mpegurl|x-mpegurl))/i;
 const YOUTUBE_CONVERTER_HOSTS = new Set(["loader.to", "oceansaver.in"]);
+
+function isGooglevideoUrl(value: string): boolean {
+  try {
+    const host = new URL(value).hostname.toLowerCase();
+    return host === "googlevideo.com" || host.endsWith(".googlevideo.com");
+  } catch {
+    return false;
+  }
+}
 
 function isYouTubeConverterUrl(value: string): boolean {
   try {
@@ -211,7 +220,10 @@ function handOffToCdn(upstreamUrl: string): Response {
  */
 function failDownload(): Response {
   return new NextResponse(null, {
-    status: 502,
+    // 4xx, not 5xx: a failed download navigation must never land in Vercel's
+    // function-error rate, and Chrome treats any non-2xx as "download failed"
+    // (nothing is saved) exactly the same way.
+    status: 422,
     headers: {
       "Cache-Control": "no-store, max-age=0",
       "X-Content-Type-Options": "nosniff",
@@ -302,11 +314,10 @@ async function verifiedBinaryHandoff(
       const acceptable =
         (response.status === 200 || response.status === 206) &&
         isAcceptableType(contentType, kind);
-      // Signed Googlevideo URLs bind to the resolver IP. When proxied from
-      // Vercel returns an auth/geo error, a validated redirect lets the
-      // visitor retry from their own IP; converter job handles are never
-      // redirected here, since their ad-interstitial is not media.
-      if (acceptable || (platform === "youtube" && !isYouTubeConverterUrl(upstreamUrl) && !BLOCKED_TYPES.test(contentType))) {
+      // A redirect is only ever allowed to a hop that actually serves media
+      // (the ranged probe above). No platform exception: a blind redirect is
+      // how Chrome used to save an HTML error page as a download.
+      if (acceptable) {
         return handOffToCdn(finalUrl);
       }
     } finally {
@@ -383,7 +394,7 @@ function looksLikeMedia(bytes: Uint8Array): boolean {
 
 /**
  * Read the first chunk before sending headers so a JSON/HTML body can still be
- * answered with a clean 502 instead of an attachment. The chunk is replayed
+ * answered with a clean 422 instead of an attachment. The chunk is replayed
  * into a pull-based stream that keeps native backpressure.
  */
 async function validateAndReplay(
@@ -505,7 +516,7 @@ interface AttemptArgs {
  * with an HTML or JSON body (Chrome saves 2xx navigation bodies):
  * - TikTok first self-heals once via TikWM (fresh signed stream).
  * - Otherwise a 302 goes out ONLY to a CDN hop verified to serve real media
- *   (ranged probe); anything else is a bodyless 502.
+ *   (ranged probe); anything else is a bodyless 422.
  */
 async function attemptMedia(request: NextRequest, args: AttemptArgs, allowHeal: boolean): Promise<Response> {
   const { kind, upstreamUrl, platform, range } = args;
@@ -524,6 +535,10 @@ async function attemptMedia(request: NextRequest, args: AttemptArgs, allowHeal: 
   try {
     const headers = upstreamHeadersFor(platform, upstreamUrl);
     if (range) headers.Range = range;
+    // Signed googlevideo URLs answer 403 to a plain GET but serve the whole
+    // file to `bytes=0-`. Ask for that explicitly, otherwise every audio
+    // download fell through to a bare 302 and arrived without a filename.
+    else if (isGooglevideoUrl(upstreamUrl)) headers.Range = "bytes=0-";
     ({ response: upstream, url: upstreamFinalUrl } = await fetchAllowedMedia(
       upstreamUrl,
       headers,
@@ -634,7 +649,7 @@ async function attemptMedia(request: NextRequest, args: AttemptArgs, allowHeal: 
  * 2. Anything else: probe the CDN hop; only if the FINAL hop serves a real
  *    media content type does the visitor's browser take over the transfer
  *    (their own IP / connection). A dead Loader.to job answers text/html to
- *    every IP — that spells `download.html` — so it ends as a bodyless 502.
+ *    every IP — that spells `download.html` — so it ends as a bodyless 422.
  */
 async function recoverFromFailure(request: NextRequest, args: AttemptArgs, allowHeal: boolean): Promise<Response> {
   if (allowHeal && args.platform === "tiktok") {
@@ -654,7 +669,8 @@ export async function GET(request: NextRequest) {
   if (!limit.ok) {
     // A navigation download must never receive a JSON rate-limit body (mobile
     // Chrome saves it as download.json) nor redirect to an HTML page (saved
-    // as download.html). Bodyless 502: a failed download, nothing saved.
+    // as download.html). Bodyless 422: a failed download, nothing saved.
+    // 4xx keeps an expected upstream refusal out of Vercel's error rate.
     return failDownload();
   }
 
@@ -705,12 +721,12 @@ export async function HEAD(request: NextRequest) {
     await upstream.body?.cancel().catch(() => undefined);
 
     if (upstream.status !== 200 && upstream.status !== 206) {
-      return new Response(null, { status: 502 });
+      return new Response(null, { status: 422 });
     }
 
     const contentType = upstream.headers.get("content-type") ?? "";
     if (!isAcceptableType(contentType, kind)) {
-      return new Response(null, { status: 502 });
+      return new Response(null, { status: 422 });
     }
 
     const size = mediaSize(upstream.headers, upstream.status);
@@ -726,7 +742,7 @@ export async function HEAD(request: NextRequest) {
       },
     });
   } catch {
-    return new Response(null, { status: 502 });
+    return new Response(null, { status: 422 });
   } finally {
     clearTimeout(timer);
     request.signal.removeEventListener("abort", onClientAbort);
