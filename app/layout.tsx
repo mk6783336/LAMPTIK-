@@ -34,7 +34,9 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
   category: "utilities",
   formatDetection: { telephone: false, address: false, email: false },
-  referrer: "strict-origin-when-cross-origin",
+  // Requested by ClickAdilla for site verification: send the full referrer on
+  // same-scheme hops and none only when a secure page links to plain HTTP.
+  referrer: "no-referrer-when-downgrade",
   openGraph: {
     type: "website",
     url: siteUrl,
