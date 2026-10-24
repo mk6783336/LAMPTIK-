@@ -14,8 +14,8 @@ const execFileAsync = promisify(execFile);
  *          --extractor-args "<platform flags>"
  *          -f "best[ext=mp4]/best" -j "<url>"
  *
- * Platforms and their fixed server-side flags (mirrored in bridge/app.py —
- * the two must stay in sync):
+ * Platforms and their fixed server-side flags (mirrored in the optional
+ * worker contract — the two must stay in sync):
  *   youtube    → youtube:player_client=android   (delegates to the existing
  *                lib/youtube-ytdlp.ts engine, which is already battle-tested)
  *   tiktok     → tiktok:api_hostname=api16-normal-c-useast1a.tiktokv.com
@@ -25,14 +25,16 @@ const execFileAsync = promisify(execFile);
  *   facebook   → plain Facebook extractor, no special args
  *
  * Same two engines as the YouTube tier, tried in order:
- *   1. YTDLP_BRIDGE_URL — the self-hosted container (the production engine;
- *      Vercel's serverless runtime has no Python). Sends the platform and
- *      the optional x-bridge-secret so the deployment is ours alone.
+ *   1. An optional YTDLP_WORKER_URL / NEXT_PUBLIC_YTDLP_WORKER_URL /
+ *      YTDLP_BRIDGE_URL endpoint, when one is configured. Sends the platform
+ *      and the optional x-bridge-secret so the endpoint is ours alone.
  *   2. Local `yt-dlp` binary — dev machines / self-hosted Node runtimes.
  *
- * Callers treat a failure here as "engine out" and fall through to the
- * existing per-platform waterfalls — ZERO regression risk on any platform
- * while the bridge is down or unconfigured.
+ * On Vercel neither exists, and that is the normal, supported state: the
+ * bridge lookup answers null and the binary probe short-circuits, so this
+ * module throws in microseconds and the per-platform JavaScript waterfalls
+ * carry every resolve. Callers treat that as "engine out" — no delay, no
+ * unhandled rejection, zero regression risk.
  */
 
 export type UniversalPlatform = "youtube" | "tiktok" | "instagram" | "facebook";
@@ -63,7 +65,7 @@ function httpsUrl(value: unknown): string | null {
 }
 
 /* ------------------------------------------------------------------ */
-/* Per-platform fixed flags (mirror of bridge/app.py)                  */
+/* Per-platform fixed flags (mirror of the worker contract)             */
 /* ------------------------------------------------------------------ */
 
 function platformExtractorArgs(platform: UniversalPlatform): string[] {

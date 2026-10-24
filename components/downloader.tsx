@@ -400,7 +400,7 @@ async function watchYouTubeJobs(args: {
   }
   if (providerAccessDenied) {
     throw new Error(
-      "YouTube downloads are temporarily unavailable because the converter now requires API authorization. Configure a working yt-dlp bridge for this Vercel deployment, then try again.",
+      "YouTube downloads are temporarily unavailable — the converter refused this request. Please try again in a minute.",
     );
   }
   return { payload: null, heldAudioUrl: null };

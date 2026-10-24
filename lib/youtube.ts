@@ -244,7 +244,7 @@ async function loaderStartJob(format: string, canonicalUrl: string): Promise<Loa
     throw new AppError(
       "PROVIDER_ACCESS_DENIED",
       "The YouTube converter no longer allows this site to use its API.",
-      "The converter now requires authorized API access. Configure a working YTDLP_BRIDGE_URL or restore API access with the converter provider.",
+      "The browser-side conversion route is trying next; retry in a minute if the buttons don't appear.",
     );
   }
   const direct = httpsUrl(data.download_url);

@@ -9,19 +9,21 @@
  * answers title / author / duration / thumbnail with the picked format — a
  * real duration in one shot, so the result card can never show `0:00`.
  *
- * Two engines, tried in order:
- *  1. YTDLP_BRIDGE_URL  — a self-hosted yt-dlp HTTP endpoint (docker container
- *     / cobalt-style bridge). The production engine: Vercel's serverless
- *     runtime carries no Python and cannot spawn yt-dlp, but a small bridge
- *     container absolutely can, and its output URL is validated below and
- *     re-validated end-to-end by /api/download before any byte moves.
+ * Two optional engines, tried in order:
+ *  1. A yt-dlp HTTP endpoint (YTDLP_WORKER_URL / NEXT_PUBLIC_YTDLP_WORKER_URL
+ *     / YTDLP_BRIDGE_URL). Vercel's serverless runtime carries no Python and
+ *     cannot spawn yt-dlp; if you host such an endpoint elsewhere, its output
+ *     URL is validated below and re-validated end-to-end by /api/download
+ *     before any byte moves.
  *  2. Local `yt-dlp` binary — dev machines and self-hosted Node deployments
  *     where the executable is on PATH.
  *
- * Availability is probed ONCE per 10 minutes and cached: when neither engine
- * exists on this runtime (a plain Vercel deploy), the extractor throws a
- * clean AppError and the existing waterfall (mirrors → ytdl-core Innertube
- * ANDROID/IOS → converter jobs) continues untouched. Zero regression risk.
+ * NEITHER is required — the site is fully self-contained on Vercel. When
+ * neither engine exists (the normal production case) the bridge lookup
+ * answers null (so no fetch is attempted) and the binary probe short-circuits
+ * without spawning, so this module fails in microseconds with a clean
+ * AppError and the JavaScript waterfall (mirrors → ytdl-core Innertube
+ * ANDROID/IOS → converter jobs) carries the resolve. Zero delay, zero risk.
  */
 
 import { execFile } from "node:child_process";

@@ -12,12 +12,14 @@ export const dynamic = "force-dynamic";
  * about resolution failures in a single request: is the strongest extractor
  * (Android-player-client yt-dlp) wired up here, or is the waterfall running
  * on mirrors / ytdl-core / converter engines alone?
- *   - `bridgeConfigured: false` → set YTDLP_BRIDGE_URL (or ensure the local
- *     binary) for ytdlp-android to join the resolve.
- *   - `bridgeReachable: false` (network-level failure, not a 4xx) → the
- *     bridge is down; fix the container before blaming resolution code.
- *   - `binaryAvailable: null` → the probe hasn't run on this isolate yet;
- *     `false` after a resolve means the binary is genuinely absent.
+ *   - `bridgeConfigured: false` → the normal self-contained state: no
+ *     optional yt-dlp endpoint is set, so the JavaScript engines carry every
+ *     resolve and nothing external has to be deployed.
+ *   - `bridgeReachable: false` (only when configured; network-level failure,
+ *     not a 4xx) → that endpoint is down; resolution has already fallen back,
+ *     so fix the endpoint only if you want that tier back.
+ *   - `binaryAvailable: null` → the probe hasn't run on this isolate (Vercel
+ *     short-circuits it); `false` after a resolve means it is absent.
  */
 export async function GET() {
   // The probe pings a third-party bridge; a probe failure must never make
