@@ -43,6 +43,42 @@ distribution, so the command prints a direct `.apk` download link. Publish that
 link in `NEXT_PUBLIC_APK_DOWNLOAD_URL` (Vercel env) and the website's `/apps`
 page starts serving it.
 
+## CI Release Signing (`build-apk.yml`)
+
+`.github/workflows/build-apk.yml` builds this folder on `ubuntu-latest`
+(JDK 17, `expo prebuild`, `./gradlew assembleRelease`) and republishes
+`lamptik-android.apk` to the rolling `latest-apk` release, which is the URL
+`lamptik.online/apps` links to. No Expo account is involved.
+
+The signing key comes from three repository secrets:
+
+| Secret | Holds |
+| --- | --- |
+| `ANDROID_KEYSTORE_BASE64` | base64 of the `lamptik-release.keystore` file |
+| `ANDROID_KEYSTORE_PASSWORD` | the keystore and key password |
+| `ANDROID_KEY_ALIAS` | the key alias, `lamptik` |
+
+When `ANDROID_KEYSTORE_BASE64` is present the job signs with that permanent
+key, so every build shares one identity and installed copies update in place:
+
+- subject: `CN=LampTik, OU=Android, O=LampTik, L=Internet, C=PK`
+- certificate SHA-256:
+  `6ae49e8761f741d06d6fd552fc52b2f7aeb7e4cf90b2d2698c2c1aa5fc5929e1`
+
+Verify a published APK with
+`apksigner verify --print-certs lamptik-android.apk`.
+
+**Do not rotate or delete those secrets.** Android identifies an app by its
+signing certificate: a different key means the update is rejected, and users
+have to uninstall (losing their library) before installing the new build. If
+the secret ever has to change, upload the same keystore back rather than
+generating a new one. Without the secret the job generates a throwaway
+keystore per run — the APK still installs cleanly, but every build is a
+different signer, so updates require an uninstall first.
+
+Note that editing this README touches `mobile-app/**` and therefore triggers a
+full Gradle build; the republished APK keeps the same signature.
+
 ## Share → LampTik on Android
 
 `app.json` declares an `android.intent.action.SEND` filter for `text/plain`.
