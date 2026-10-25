@@ -657,7 +657,9 @@ async function ytdlpAndroidResolve(videoId: string, canonicalUrl: string): Promi
     author: hit.author || "YouTube",
     duration: hit.duration,
     thumbnail: hit.thumbnail ?? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
-    streams: { video: hit.video, videoSd: null, audio: null },
+    // The bridge hands back a lazily-resolved audio URL, so a music video it
+    // rescued still gets its MP3 button instead of "Audio unavailable".
+    streams: { video: hit.video, videoSd: null, audio: hit.audio },
   };
 }
 

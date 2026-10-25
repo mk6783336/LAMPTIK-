@@ -719,8 +719,9 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
       ) {
         // Name the real situation and the way out. "It usually clears" was
         // false for label music videos, which are blocked from datacenter IPs
-        // permanently — the visitor needs the external server, not a loop.
-        return "YouTube is blocking this video from our server network. Retry once, or use Server 03 to download it with your own connection.";
+        // permanently — the visitor needs one clear action, not a loop, and
+        // never a hand-off to a competitor downloader.
+        return "YouTube is blocking this video from our server network right now. Retry in a moment.";
       }
       return apiError?.message ?? "Couldn’t resolve this video.";
     };

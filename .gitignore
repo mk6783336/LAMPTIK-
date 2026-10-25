@@ -39,3 +39,10 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+.vercel
+.env*
+
+# python
+__pycache__/
+*.pyc

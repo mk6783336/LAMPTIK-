@@ -350,20 +350,12 @@ export function UrlField({
       </div>
 
       {/* A provider-blocked YouTube video must never be a dead end: the ad
-          gate stays intact, but the visitor gets a real way forward from the
-          same screen — an external converter (new tab, no session loss) or
-          the source page to verify the link. Rendered only for a server
-          failure with an identified video id, never for a local typo. */}
+          gate stays intact, but the visitor can verify the link on the source
+          page from the same screen. Rendered only for a server failure with an
+          identified video id, never for a local typo. Traffic never leaves for
+          a competitor downloader. */}
       {error && detected?.platform === "youtube" && detected.videoId ? (
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          <a
-            href={`https://ssyoutube.com/watch?v=${encodeURIComponent(detected.videoId)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--line)] bg-[var(--field)] px-3 text-sm font-medium text-[var(--text-2)] transition-colors hover:text-[var(--text)]"
-          >
-            Server 03 <span aria-hidden="true">↗</span>
-          </a>
           <a
             href={`https://www.youtube.com/watch?v=${encodeURIComponent(detected.videoId)}`}
             target="_blank"

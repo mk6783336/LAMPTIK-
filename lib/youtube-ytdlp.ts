@@ -38,6 +38,16 @@ const execFileAsync = promisify(execFile);
 export interface YtdlpHit {
   /** Progressive MP4 (video+audio) direct stream URL. */
   video: string;
+  /**
+   * Audio-only track when the engine can expose one without a second run.
+   *
+   * The bridge signs this URL eagerly but resolves the audio ladder lazily on
+   * the first byte request — the Android client that produces the muxed video
+   * advertises no audio-only format, so resolving both up front would double
+   * every resolve. `null` when no track is advertised (binary engine, other
+   * platforms), which simply keeps the MP3 button disabled.
+   */
+  audio: string | null;
   /** Real length in seconds (> 0 when the source reports it). */
   duration: number;
   title: string;
@@ -117,9 +127,11 @@ async function bridgeExtract(bridgeUrl: string, canonicalUrl: string): Promise<Y
   if (!video || !isPublicMediaUrl(video)) {
     throw new AppError("PROVIDER_UNAVAILABLE", "yt-dlp bridge exposed no usable stream URL.");
   }
+  const audio = httpsUrl(data.audio);
   const duration = typeof data.duration === "number" && data.duration > 0 ? Math.round(data.duration) : 0;
   return {
     video,
+    audio: audio && isPublicMediaUrl(audio) ? audio : null,
     duration,
     title: typeof data.title === "string" ? data.title.slice(0, 200) : "",
     author:
@@ -209,6 +221,9 @@ async function binaryExtract(canonicalUrl: string): Promise<YtdlpHit> {
 
   return {
     video,
+    // The local binary runs a single muxed-format extraction; an audio track
+    // would need another spawn, so it stays unavailable here.
+    audio: null,
     duration: Number.isFinite(seconds) && seconds > 0 ? Math.round(seconds) : 0,
     title: typeof data.title === "string" ? data.title.slice(0, 200) : "",
     author: typeof data.uploader === "string" ? data.uploader.slice(0, 120) : "",

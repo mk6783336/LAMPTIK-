@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { AlertTriangle, ArrowUpRight, Clock3, Download, Globe, Music2, RefreshCw, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Clock3, Download, Music2, RefreshCw, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { formatBytes, formatDuration } from "@/lib/format";
@@ -513,29 +513,6 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
                 </span>
               ) : null}
             </button>
-          ) : null}
-
-          {/* Server 03 — guaranteed instant backup for YouTube. Opens a
-              pre-filled external converter tunnel in a new tab from a REAL
-              user gesture, so a protected VEVO/T-Series music video never
-              hits a dead end when our own transports are being blocked
-              upstream. In flow, never an overlay. */}
-          {platform === "youtube" ? (
-            <a
-              href={`https://ssyoutube.com/watch?v=${encodeURIComponent(video.id)}`}
-              target="_blank"
-              rel="noopener noreferrer sponsored"
-              className="btn btn-ghost h-[52px] w-full gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--bg-sunken)] px-4 text-sm font-medium hover:border-[var(--glass-border-hover)]"
-            >
-              <Globe className="size-4 shrink-0 text-[var(--text-3)]" />
-              <span className="flex min-w-0 flex-1 flex-col items-start">
-                <span>Download MP4 (Server 03 — Instant Backup)</span>
-                <span className="text-xs font-normal text-[var(--text-3)]">
-                  Pre-filled backup converter, opens in a new tab
-                </span>
-              </span>
-              <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)]" />
-            </a>
           ) : null}
 
           {/* MP3 audio — IP-bound converter links open directly from the

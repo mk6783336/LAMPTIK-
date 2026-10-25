@@ -211,9 +211,17 @@ on a warm container and is cached for 120 s afterwards, so a second click on
 the same video answers instantly. That window is the reason a blocked music
 video now resolves instead of dying at the old fixed 3.5 s cutoff.
 
-Limitation: the bridge answers with one **muxed MP4** (video + audio). The MP3
-button stays disabled for videos that only the bridge can resolve — a separate
-audio-only extraction would double the resolve time.
+The bridge answers with one **muxed MP4** (video + audio). The audio track is a
+second, *lazy* extraction: `/resolve` signs an `audio` URL but does not run
+yt-dlp for it, and the first byte request on that URL resolves the audio ladder
+with yt-dlp's default (web) client — the Android client that produces the muxed
+file advertises no audio-only format at all, so both cannot come from one run.
+That keeps a resolve at ~4 s and makes the MP3 click the only thing that pays
+for the extra run (~6 s cold, then instant from the 120 s cache). Only YouTube
+advertises `audio`; that is the ladder verified here.
+
+The audio file is the platform's AAC track (`.m4a`), exactly what the MP3
+button already returns for Innertube-resolved videos — nothing is transcoded.
 
 ## Security
 
