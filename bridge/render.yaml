@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: lamptik-ytdlp
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerContext: bridge
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: BRIDGE_SECRET
+        generateValue: true

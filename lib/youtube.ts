@@ -1084,8 +1084,18 @@ function requireStreams(hit: TierHit): TierHit & { streams: YouTubeStreams } {
   }
   return { ...hit, streams: hit.streams };
 }
-/** Tier 2 wall clock: the whole failover race, never longer. */
-const FAILOVER_BUDGET_MS = 3_500;
+/**
+ * Wall clock for the WHOLE resolve, failover included. Vercel's smallest plan
+ * kills a function at ~6 s, so the failover race gets whatever is left of
+ * this after Tier 1 — not a fixed slice.
+ *
+ * That matters for the one engine that survives YouTube's datacenter
+ * bot-check on label music: the yt-dlp bridge has to spawn Python, fetch the
+ * player response and pick a format, which is seconds, not milliseconds. The
+ * old fixed 3.5 s race killed it mid-extraction on exactly the videos the
+ * mirrors cannot resolve.
+ */
+const RESOLVE_BUDGET_MS = 5_400;
 
 /**
  * Tier 1 — ANDROID Innertube. This is the engine that actually works from a
@@ -1099,6 +1109,7 @@ async function resolveYouTubeStreams(
   id: string,
   canonicalUrl: string,
 ): Promise<TierHit & { streams: YouTubeStreams }> {
+  const startedAt = Date.now();
   const [android, ...fallbacks] = INNERTUBE_CLIENTS;
 
   try {
@@ -1110,12 +1121,17 @@ async function resolveYouTubeStreams(
     if (isDefinitiveVideoError(error)) throw error;
   }
 
+  // What is left of the function budget. A blocked music video spends it in
+  // the yt-dlp bridge, so the bridge gets the whole window instead of the
+  // old 8 s inner deadline that the race always cut short anyway.
+  const failoverBudget = Math.max(1_800, RESOLVE_BUDGET_MS - (Date.now() - startedAt));
+
   const chains: Array<Promise<TierHit>> = [
     ...fallbacks.map((client) =>
       withDeadline(innertubePlayer(id, client), WATERFALL_TIMEOUT_MS, client.name),
     ),
     withDeadline(ytdlCoreResolve(id, canonicalUrl), WATERFALL_TIMEOUT_MS, "youtube:ytdl-core"),
-    withDeadline(ytdlpAndroidResolve(id, canonicalUrl), 8_000, "youtube:ytdlp-android"),
+    withDeadline(ytdlpAndroidResolve(id, canonicalUrl), failoverBudget, "youtube:ytdlp-android"),
     ...INVIDIOUS_APIS.map((api) =>
       withDeadline(
         invidiousStreams(id, api),
@@ -1145,7 +1161,7 @@ async function resolveYouTubeStreams(
                 "YouTube is answering slowly; retry shortly.",
               ),
             ),
-          FAILOVER_BUDGET_MS,
+          failoverBudget,
         );
       }),
     ]);

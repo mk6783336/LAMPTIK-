@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "bridge:tunnel": "node scripts/bridge-tunnel.mjs",
     "verify": "tsc --noEmit && next lint --max-warnings=0 && next build"
   },
   "dependencies": {
