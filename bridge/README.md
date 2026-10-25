@@ -171,6 +171,30 @@ commands.
 
 For a host outside this PC, a small VPS with the same Dockerfile works too.
 
+## Start on boot (Windows)
+
+The tunnel and the bridge only exist while this PC is running. Install the
+logon launcher once:
+
+```bash
+npm run bridge:autostart
+```
+
+That writes `LampTik Bridge.vbs` into the user's Startup folder — no
+administrator rights, no console window — and starts the services immediately.
+At every logon it runs `scripts/bridge-autostart.ps1`, which starts only what
+is missing: the bridge with `BRIDGE_SECRET` read from `.env.local`, then the
+named tunnel, and logs the result to `.scratch/bridge-autostart.log`.
+
+Verified cold (both processes killed, launcher run): the bridge and tunnel were
+back and `https://bridge.lamptik.online/health` answered `200` in ~4 s.
+
+Remove the entry with:
+
+```bash
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-bridge-autostart.ps1 -Uninstall
+```
+
 ## Wire-up contract
 
 The Next.js side (`lib/youtube-ytdlp.ts`) tries the bridge for YouTube after
