@@ -72,29 +72,36 @@ export async function clientOembedMeta(videoId: string): Promise<ClientVideoMeta
     )}&format=json`,
     `https://noembed.com/embed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`)}`,
   ];
-  for (const endpoint of endpoints) {
-    try {
-      const response = await fetch(endpoint, {
-        headers: { Accept: "application/json" },
-        mode: "cors",
-        cache: "no-store",
-        signal: AbortSignal.timeout(3_500),
-      });
-      if (!response.ok) continue;
-      const data = (await response.json().catch(() => null)) as Record<string, unknown> | null;
-      if (!data || typeof data.title !== "string") continue;
-      return {
-        title: data.title.slice(0, 200),
-        author: typeof data.author_name === "string" ? data.author_name.slice(0, 120) : null,
-        thumbnail:
-          typeof data.thumbnail_url === "string" && data.thumbnail_url.startsWith("https://")
-            ? data.thumbnail_url
-            : fallback.thumbnail,
-        duration: 0,
-      };
-    } catch {
-      continue; // CORS/network refusal — try the next endpoint
-    }
+  // Both endpoints in parallel: the rescue is on a wall clock and must not
+  // spend two sequential 3.5s timeouts before it even tries a mirror.
+  const results = await Promise.allSettled(
+    endpoints.map(async (endpoint): Promise<ClientVideoMeta | null> => {
+      try {
+        const response = await fetch(endpoint, {
+          headers: { Accept: "application/json" },
+          mode: "cors",
+          cache: "no-store",
+          signal: AbortSignal.timeout(3_500),
+        });
+        if (!response.ok) return null;
+        const data = (await response.json().catch(() => null)) as Record<string, unknown> | null;
+        if (!data || typeof data.title !== "string") return null;
+        return {
+          title: data.title.slice(0, 200),
+          author: typeof data.author_name === "string" ? data.author_name.slice(0, 120) : null,
+          thumbnail:
+            typeof data.thumbnail_url === "string" && data.thumbnail_url.startsWith("https://")
+              ? data.thumbnail_url
+              : fallback.thumbnail,
+          duration: 0,
+        };
+      } catch {
+        return null; // CORS/network refusal
+      }
+    }),
+  );
+  for (const result of results) {
+    if (result.status === "fulfilled" && result.value) return result.value;
   }
   return fallback;
 }
@@ -120,19 +127,17 @@ function jsonNumber(value: unknown): number {
   return Number.isFinite(n) && n >= 0 ? n : 0;
 }
 
-function mirrorStreamUrl(value: unknown): string | null {
+function mirrorStreamUrl(value: unknown, instanceHost: string): string | null {
   if (!safeHttps(value)) return null;
   try {
     const host = new URL(value).hostname.toLowerCase();
-    if (host === "googlevideo.com" || host.endsWith(".googlevideo.com")) return value;
-    // Piped's progressive MP4s are normally served by its CORS-enabled
-    // pipedproxy tier, NOT googlevideo.com. The previous googlevideo-only
-    // filter silently discarded every such stream before the browser rescue
-    // could claim it.
-    const proxyDomain = ["kavin.rocks", "adminforge.de", "syncpundit.io"].some(
-      (domain) => host.endsWith(`.${domain}`),
-    );
-    return proxyDomain && host.split(".")[0]?.startsWith("pipedproxy") ? value : null;
+    // ONLY a URL the instance itself proxies. A googlevideo URL is signed for
+    // the IP that resolved it (the mirror's, or this browser's), so neither
+    // our server proxy nor the visitor can fetch it later — claiming one just
+    // creates a download that dies at the first byte.
+    if (host === instanceHost || host.endsWith(`.${instanceHost}`)) return value;
+    // Piped serves progressive MP4 through its own CORS proxy tier.
+    return host.split(".")[0]?.startsWith("pipedproxy") ? value : null;
   } catch {
     return null;
   }
@@ -143,6 +148,7 @@ async function pipedMirror(videoId: string): Promise<MirrorStreams | null> {
   const attempts = await Promise.allSettled(
     CLIENT_PIPED_APIS.map(async (api): Promise<MirrorStreams | null> => {
       try {
+        const instanceHost = new URL(api).hostname.toLowerCase();
         const response = await fetch(`${api}/streams/${encodeURIComponent(videoId)}`, {
           headers: { Accept: "application/json" },
           mode: "cors",
@@ -161,7 +167,7 @@ async function pipedMirror(videoId: string): Promise<MirrorStreams | null> {
         for (const raw of videoStreams) {
           const stream = raw as { url?: unknown; quality?: unknown; videoOnly?: unknown };
           if (stream.videoOnly === true) continue; // DASH segments need muxing
-          const url = mirrorStreamUrl(stream.url);
+          const url = mirrorStreamUrl(stream.url, instanceHost);
           if (!url) continue;
           const quality = typeof stream.quality === "string" ? stream.quality : "";
           if (/720|1080/.test(quality)) bestHd ??= url;
@@ -170,7 +176,7 @@ async function pipedMirror(videoId: string): Promise<MirrorStreams | null> {
         let audio: string | null = null;
         for (const raw of audioStreams) {
           const stream = raw as { url?: unknown; mimeType?: unknown };
-          const url = mirrorStreamUrl(stream.url);
+          const url = mirrorStreamUrl(stream.url, instanceHost);
           if (url && typeof stream.mimeType === "string" && stream.mimeType.startsWith("audio/mp4")) {
             audio ??= url;
           }
@@ -204,6 +210,7 @@ async function invidiousMirror(videoId: string): Promise<MirrorStreams | null> {
   const attempts = await Promise.allSettled(
     CLIENT_INVIDIOUS_APIS.map(async (api): Promise<MirrorStreams | null> => {
       try {
+        const instanceHost = new URL(api).hostname.toLowerCase();
         const response = await fetch(`${api}/api/v1/videos/${encodeURIComponent(videoId)}`, {
           headers: { Accept: "application/json" },
           mode: "cors",
@@ -219,7 +226,7 @@ async function invidiousMirror(videoId: string): Promise<MirrorStreams | null> {
         let audio: string | null = null;
         for (const raw of formats) {
           const format = raw as { url?: unknown; qualityLabel?: unknown; type?: unknown };
-          const url = mirrorStreamUrl(format.url);
+          const url = mirrorStreamUrl(format.url, instanceHost);
           if (!url) continue;
           const type = typeof format.type === "string" ? format.type : "";
           const label = typeof format.qualityLabel === "string" ? format.qualityLabel : "";

@@ -442,13 +442,21 @@ async function visitorDataToken(videoId: string): Promise<string | null> {
 const PUBLIC_VIDEO_TTL_MS = 10 * 60_000;
 const publicVideoCache = new Map<string, { isPublic: boolean; expiresAt: number }>();
 
-/** True when YouTube's oEmbed endpoint vouches for this video as public. */
-async function isPublicYouTubeVideo(videoId: string): Promise<boolean> {
-  const now = Date.now();
-  const cached = publicVideoCache.get(videoId);
-  if (cached && cached.expiresAt > now) return cached.isPublic;
+function cachePublicVerdict(videoId: string, isPublic: boolean): void {
+  publicVideoCache.set(videoId, { isPublic, expiresAt: Date.now() + PUBLIC_VIDEO_TTL_MS });
+  while (publicVideoCache.size > 500) {
+    const oldest = publicVideoCache.keys().next().value;
+    if (oldest === undefined) break;
+    publicVideoCache.delete(oldest);
+  }
+}
 
-  let isPublic = false;
+/**
+ * Definite public/not-public verdict from oEmbed, or null when the proof
+ * itself is unreachable. A network failure must NEVER become a video
+ * verdict: that is what produced the false "private"/"not found" banners.
+ */
+async function checkPublicYouTubeVideo(videoId: string): Promise<boolean | null> {
   try {
     const response = await fetch(
       `https://www.youtube.com/oembed?url=${encodeURIComponent(
@@ -460,24 +468,37 @@ async function isPublicYouTubeVideo(videoId: string): Promise<boolean> {
         signal: AbortSignal.timeout(4_000),
       },
     );
-    if (response.ok) {
-      const data = asRecord(await response.json().catch(() => null));
-      isPublic = typeof data?.title === "string" && data.title.length > 0;
-    } else {
+    if (!response.ok) {
       await response.body?.cancel().catch(() => undefined);
+      // Only a genuine "this video is not public" answer may become a
+      // verdict. 403 is what YouTube's edge sends to a blocked network, and
+      // caching that as "not found" is what produced false 404s.
+      if (response.status === 401 || response.status === 404) {
+        cachePublicVerdict(videoId, false);
+        return false;
+      }
+      return null; // rate limit / 5xx: the proof is unavailable, not the video
     }
+    const data = asRecord(await response.json().catch(() => null));
+    const isPublic = typeof data?.title === "string" && data.title.length > 0;
+    cachePublicVerdict(videoId, isPublic);
+    return isPublic;
   } catch {
-    // If the proof itself is unreachable, keep the player's verdict.
-    return false;
+    return null;
   }
+}
 
-  publicVideoCache.set(videoId, { isPublic, expiresAt: now + PUBLIC_VIDEO_TTL_MS });
-  while (publicVideoCache.size > 500) {
-    const oldest = publicVideoCache.keys().next().value;
-    if (oldest === undefined) break;
-    publicVideoCache.delete(oldest);
-  }
-  return isPublic;
+const publicVideoInFlight = new Map<string, Promise<boolean | null>>();
+
+/** Single-flight wrapper: every racing player client shares one oEmbed proof. */
+async function isPublicYouTubeVideo(videoId: string): Promise<boolean | null> {
+  const cached = publicVideoCache.get(videoId);
+  if (cached && cached.expiresAt > Date.now()) return cached.isPublic;
+  const inFlight = publicVideoInFlight.get(videoId);
+  if (inFlight) return inFlight;
+  const task = checkPublicYouTubeVideo(videoId).finally(() => publicVideoInFlight.delete(videoId));
+  publicVideoInFlight.set(videoId, task);
+  return task;
 }
 
 interface InnertubeFormat {
@@ -524,27 +545,32 @@ async function innertubePlayer(
   if (!root) throw new AppError("PROVIDER_UNAVAILABLE", "YouTube returned an empty player response.");
 
   const status = asString(asRecord(root.playabilityStatus)?.status)?.toUpperCase() ?? "";
-  const reason = asString(asRecord(root.playabilityStatus)?.reason) ?? "";
   if (status === "LOGIN_REQUIRED" || status === "UNPLAYABLE") {
     // A datacenter IP gets "Sign in to confirm you're not a bot" on ordinary
     // public videos. oEmbed is not gated, so a 200 proves the video itself is
-    // fine and this refusal is the network, not the video. Only a video oEmbed
-    // cannot vouch for keeps the definitive private/age-restricted answer.
-    if (await isPublicYouTubeVideo(videoId)) {
+    // fine and this refusal is the network, not the video. Only a DEFINITE
+    // not-public verdict may produce the private/age-restricted answer; an
+    // unreachable proof stays a provider error so the race keeps going.
+    const isPublic = await isPublicYouTubeVideo(videoId);
+    if (isPublic === false) {
       throw new AppError(
-        "PROVIDER_UNAVAILABLE",
-        "YouTube is bot-checking this network for that video.",
-        "Trying the other extraction engines and your own connection.",
+        "VIDEO_PRIVATE",
+        "This YouTube video needs login, is age-restricted, or is private.",
+        "Public videos and Shorts download normally.",
       );
     }
     throw new AppError(
-      "VIDEO_PRIVATE",
-      "This YouTube video needs login, is age-restricted, or is private.",
-      "Public videos and Shorts download normally.",
+      "PROVIDER_UNAVAILABLE",
+      "YouTube is bot-checking this network for that video.",
+      "Trying the other extraction engines and your own connection.",
     );
   }
   if (status !== "OK") {
-    if (/unavailable|not found|deleted/i.test(reason)) {
+    // A single client can answer "unavailable" for a perfectly public video
+    // (embedded/TV refusals do exactly that). Never let that one reply become
+    // a definitive 404 unless oEmbed also says the video is gone.
+    const isPublic = await isPublicYouTubeVideo(videoId);
+    if (isPublic === false) {
       throw new AppError("VIDEO_NOT_FOUND", "That YouTube video wasn't found — it may be deleted or private.");
     }
     throw new AppError(
@@ -1035,8 +1061,13 @@ export interface ResolvedYouTubeStart {
   jobs: [];
 }
 
-/** Tier 1 wall clock: the ANDROID client answers in ~300 ms. */
-const PRIMARY_BUDGET_MS = 6_000;
+/**
+ * Tier 1 wall clock. The ANDROID client answers in ~300 ms from a clean IP
+ * and refuses in about the same time from a blocked one, so a long wait only
+ * delays the browser rescue. Kept short to stay inside a 6-second function
+ * budget (the smallest Vercel plan) with room to return the soft failure.
+ */
+const PRIMARY_BUDGET_MS = 2_500;
 
 /**
  * Narrow a provider hit to one that can become a download card. Only a muxed
@@ -1054,7 +1085,7 @@ function requireStreams(hit: TierHit): TierHit & { streams: YouTubeStreams } {
   return { ...hit, streams: hit.streams };
 }
 /** Tier 2 wall clock: the whole failover race, never longer. */
-const FAILOVER_BUDGET_MS = 12_000;
+const FAILOVER_BUDGET_MS = 3_500;
 
 /**
  * Tier 1 — ANDROID Innertube. This is the engine that actually works from a
@@ -1095,6 +1126,9 @@ async function resolveYouTubeStreams(
     ...PIPED_APIS.map((api) =>
       withDeadline(pipedStreams(id, api), WATERFALL_TIMEOUT_MS, `youtube:piped:${new URL(api).hostname}`),
     ),
+    // Sits IN the race, not after it: a dead mirror probe must never add its
+    // timeout to a resolve that already ran out of function budget.
+    withDeadline(invidiousDirectStream(id, canonicalUrl), WATERFALL_TIMEOUT_MS, "youtube:invidious-direct"),
   ];
 
   let hit: TierHit;
@@ -1117,11 +1151,6 @@ async function resolveYouTubeStreams(
     ]);
   } catch (error) {
     if (isDefinitiveVideoError(error)) throw error;
-    // Last resort: a direct Invidious attachment endpoint, verified with a
-    // real byte-range request. This is the only path left when every player
-    // client is bot-checked and the JSON mirrors are down.
-    const direct = await invidiousDirectStream(id, canonicalUrl).catch(() => null);
-    if (direct) return requireStreams(direct);
     // Every engine failed for a reason that is NOT the video (bot-checked
     // datacenter IP, mirror timeout). Surface one stable, user-safe message
     // instead of the last engine's internal timeout text.

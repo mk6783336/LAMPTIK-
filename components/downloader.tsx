@@ -140,7 +140,7 @@ async function claimYouTubeJob(
  * ------------------------------------------------------------------------ */
 
 /** Never let a dead mirror list hold the result screen for long. */
-const RESCUE_MIRROR_TIMEOUT_MS = 6_000;
+const RESCUE_MIRROR_TIMEOUT_MS = 4_000;
 
 const YT_ID_RE = /(?:v=|\/shorts\/|\/embed\/|youtu\.be\/)([A-Za-z0-9_-]{11})/;
 
@@ -162,14 +162,15 @@ async function rescueYouTubeFromBrowser(args: {
   if (!videoId) return null;
 
   onNote("Resolving on your connection — trying public mirrors…");
-  const [meta, mirror] = await Promise.all([
-    clientOembedMeta(videoId),
-    Promise.race([
-      clientMirrorStreams(videoId),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), RESCUE_MIRROR_TIMEOUT_MS)),
-    ]),
+  // Metadata starts first but must never delay a dead-mirror verdict: await
+  // the stream, and only then (usually already settled) the title/thumbnail.
+  const metaPromise = clientOembedMeta(videoId);
+  const mirror = await Promise.race([
+    clientMirrorStreams(videoId),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), RESCUE_MIRROR_TIMEOUT_MS)),
   ]);
   if (!mirror) return null;
+  const meta = await metaPromise;
 
   const metaFor = (): YouTubeJobMeta => ({
     videoId,
@@ -699,7 +700,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
             onMergeVideo: mergeVideoClaim,
           }),
           new Promise<null>((resolve) => {
-            timer = window.setTimeout(() => resolve(null), 12_000);
+            timer = window.setTimeout(() => resolve(null), 7_000);
           }),
         ]);
       } catch {
@@ -716,7 +717,10 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
         isYouTube &&
         (apiError?.code === "PROVIDER_UNAVAILABLE" || apiError?.code === "UPSTREAM_ERROR")
       ) {
-        return "YouTube is limiting this video on our network right now. Tap Retry — it usually clears in a few seconds.";
+        // Name the real situation and the way out. "It usually clears" was
+        // false for label music videos, which are blocked from datacenter IPs
+        // permanently — the visitor needs the external server, not a loop.
+        return "YouTube is blocking this video from our server network. Retry once, or use Server 03 to download it with your own connection.";
       }
       return apiError?.message ?? "Couldn’t resolve this video.";
     };
