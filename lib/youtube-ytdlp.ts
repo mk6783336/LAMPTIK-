@@ -61,7 +61,10 @@ export interface YtdlpHit {
 /* Engine 1: self-hosted HTTP bridge (YTDLP_BRIDGE_URL)                */
 /* ------------------------------------------------------------------ */
 
-const BRIDGE_TIMEOUT_MS = 12_000;
+// The bridge gives a cold extraction 15s (audio resolves lazily with the
+// slower web client), so the client must outwait it — a shorter abort turned a
+// slow-but-successful resolve into "provider unavailable".
+const BRIDGE_TIMEOUT_MS = 22_000;
 
 function httpsUrl(value: unknown): string | null {
   return typeof value === "string" && /^https:\/\/.{4,4096}$/.test(value.trim()) ? value.trim() : null;
