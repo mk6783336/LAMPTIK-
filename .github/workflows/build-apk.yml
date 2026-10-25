@@ -1,0 +1,208 @@
+name: Android APK
+
+# Builds a signed release APK for mobile-app/ with no Expo account involved:
+# `expo prebuild` generates the native project from app.json, and Gradle signs
+# it with a keystore this job creates. The result is published to a rolling
+# `latest-apk` release, which is the file lamptik.online/apps links to.
+#
+# Signing note: if the repository defines ANDROID_KEYSTORE_BASE64 (plus
+# ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_ALIAS), that keystore is used, which
+# keeps the signature stable across builds so installed copies can update in
+# place. Without the secret, a throwaway keystore is generated per run — the
+# APK still installs cleanly, but Android treats each build as a different
+# signer, so an update needs an uninstall first.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "mobile-app/**"
+      - ".github/workflows/build-apk.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    name: assembleRelease
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile-app/package-lock.json
+
+      # JDK 17 is the supported toolchain for React Native 0.79 / AGP 8.x, and
+      # it is what the runner image ships with.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Install dependencies
+        working-directory: mobile-app
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate the native Android project
+        working-directory: mobile-app
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Generate or restore the signing keystore
+        working-directory: mobile-app/android/app
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          PASSWORD="${KEYSTORE_PASSWORD:-lamptik-ci-release}"
+          ALIAS="${KEY_ALIAS:-lamptik}"
+          if [ -n "${KEYSTORE_BASE64:-}" ]; then
+            echo "Restoring the committed keystore from repository secrets."
+            printf '%s' "$KEYSTORE_BASE64" | base64 -d > lamptik-release.keystore
+          else
+            echo "::warning::ANDROID_KEYSTORE_BASE64 is not set — generating a throwaway keystore. Installed builds will need an uninstall before updating."
+            keytool -genkeypair -v \
+              -keystore lamptik-release.keystore \
+              -storetype PKCS12 \
+              -alias "$ALIAS" \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "$PASSWORD" -keypass "$PASSWORD" \
+              -dname "CN=LampTik, OU=Android, O=LampTik, L=Internet, C=PK"
+          fi
+          echo "LAMPTIK_KEYSTORE_PASSWORD=$PASSWORD" >> "$GITHUB_ENV"
+          echo "LAMPTIK_KEY_ALIAS=$ALIAS" >> "$GITHUB_ENV"
+
+      # Expo's template signs `release` with the debug key. Point that build
+      # type at our keystore instead — the generated file lives only on the
+      # runner, so the patch happens here rather than in version control.
+      - name: Point the release build type at the release keystore
+        working-directory: mobile-app/android
+        run: |
+          node - <<'NODE'
+          const { readFileSync, writeFileSync } = require("node:fs");
+          const file = "app/build.gradle";
+          let gradle = readFileSync(file, "utf8");
+
+          if (gradle.includes("signingConfig signingConfigs.release")) {
+            console.log("release signing already configured");
+            process.exit(0);
+          }
+
+          // 1. Add a `release` entry INSIDE the existing signingConfigs block
+          //    (credentials come from the environment, never the repo).
+          const anchor = "signingConfigs {";
+          const at = gradle.indexOf(anchor);
+          if (at === -1) throw new Error("signingConfigs block not found in app/build.gradle");
+          const close = gradle.indexOf("\n    }", at + anchor.length);
+          if (close === -1) throw new Error("could not find the end of signingConfigs");
+
+          const releaseEntry = [
+            "",
+            "        release {",
+            '            storeFile file("lamptik-release.keystore")',
+            '            storePassword System.getenv("LAMPTIK_KEYSTORE_PASSWORD")',
+            '            keyAlias System.getenv("LAMPTIK_KEY_ALIAS")',
+            '            keyPassword System.getenv("LAMPTIK_KEYSTORE_PASSWORD")',
+            "        }",
+          ].join("\n");
+
+          gradle = gradle.slice(0, close) + releaseEntry + gradle.slice(close);
+
+          // 2. Repoint only the release buildType (the debug one keeps the
+          //    debug key, so `assembleDebug` still works locally).
+          const buildTypes = gradle.indexOf("buildTypes");
+          if (buildTypes === -1) throw new Error("buildTypes block not found");
+          const releaseBlock = gradle.indexOf("release {", buildTypes);
+          if (releaseBlock === -1) throw new Error("release buildType not found");
+
+          const target = "signingConfig signingConfigs.debug";
+          const signed = gradle.indexOf(target, releaseBlock);
+          if (signed === -1) throw new Error("release buildType has no signingConfig line");
+
+          gradle =
+            gradle.slice(0, signed) +
+            "signingConfig signingConfigs.release" +
+            gradle.slice(signed + target.length);
+
+          if (!gradle.includes("signingConfig signingConfigs.release")) {
+            throw new Error("the release build type is still signed with the debug key");
+          }
+
+          writeFileSync(file, gradle);
+          console.log("release buildType now signs with lamptik-release.keystore");
+          NODE
+
+      - name: Build the release APK
+        working-directory: mobile-app/android
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Stage the APK
+        working-directory: mobile-app
+        run: |
+          set -euo pipefail
+          cp android/app/build/outputs/apk/release/app-release.apk lamptik-android.apk
+          ls -lh lamptik-android.apk
+          sha256sum lamptik-android.apk | tee lamptik-android.apk.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lamptik-android-apk
+          path: |
+            mobile-app/lamptik-android.apk
+            mobile-app/lamptik-android.apk.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      # A private repository's release assets require authentication, so the
+      # URL above would 404 for website visitors. In that case publish the APK
+      # into the site's own public/ folder instead and let the next Vercel build
+      # serve it from lamptik.online. On a public repository the release asset
+      # is already downloadable, so this step is skipped.
+      - name: Publish the APK with the site (private repositories)
+        if: github.event.repository.private == true && github.ref == 'refs/heads/main'
+        run: |
+          set -euo pipefail
+          mkdir -p public/downloads
+          cp mobile-app/lamptik-android.apk public/downloads/lamptik-android.apk
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/downloads/lamptik-android.apk
+          if git diff --cached --quiet; then
+            echo "APK unchanged since the last build."
+            exit 0
+          fi
+          git commit -m "chore(apk): publish the CI-built Android APK"
+          git push
+
+      - name: Publish to the rolling release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-apk
+          name: LampTik Android APK
+          prerelease: false
+          fail_on_unmatched_files: true
+          overwrite_files: true
+          body: |
+            Signed release APK built from `mobile-app/` by GitHub Actions.
+
+            - Commit: `${{ github.sha }}`
+            - Direct download: https://github.com/mk6783336/LAMPTIK-/releases/download/latest-apk/lamptik-android.apk
+
+            Install it on Android 8 or newer (allow installing from this source
+            when prompted). The app catches a copied link from the clipboard, or
+            Share → LampTik from YouTube, TikTok, Instagram and Facebook.
+          files: |
+            mobile-app/lamptik-android.apk
+            mobile-app/lamptik-android.apk.sha256

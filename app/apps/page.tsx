@@ -44,15 +44,42 @@ export const metadata: Metadata = {
  */
 const EXTENSION_ZIP = "/downloads/lamptik-chrome-extension.zip";
 
-function resolveApk(): { href: string; direct: boolean } {
+/**
+ * The signed APK is produced by `.github/workflows/build-apk.yml`, which
+ * rebuilds `mobile-app/` on every push and overwrites the asset on the
+ * `latest-apk` release. This is the asset URL, not the release page: clicking
+ * Download has to start the file, not open GitHub in a new tab.
+ */
+const RELEASE_APK =
+  "https://github.com/mk6783336/LAMPTIK-/releases/download/latest-apk/lamptik-android.apk";
+
+interface ApkTarget {
+  href: string;
+  /** True when the file is served from this deployment (so `download` applies). */
+  local: boolean;
+  /** Shown under the buttons when the file is not part of the deployment. */
+  note: string | null;
+}
+
+function resolveApk(): ApkTarget {
   const fromEnv = process.env.NEXT_PUBLIC_APK_DOWNLOAD_URL?.trim();
-  if (fromEnv) return { href: fromEnv, direct: true };
+  if (fromEnv) {
+    return {
+      href: fromEnv,
+      local: fromEnv.startsWith("/"),
+      note: "Build published by this repository's Android workflow.",
+    };
+  }
   // Checked at build time: `public/` is baked into the deployment, so this is
   // a static answer, not a per-request filesystem probe.
   if (existsSync(join(process.cwd(), "public", "downloads", "lamptik-android.apk"))) {
-    return { href: "/downloads/lamptik-android.apk", direct: true };
+    return { href: "/downloads/lamptik-android.apk", local: true, note: null };
   }
-  return { href: "https://github.com/mk6783336/LAMPTIK-/releases/latest", direct: false };
+  return {
+    href: RELEASE_APK,
+    local: false,
+    note: "Signed by this repository's GitHub Actions build and served straight from the release asset, so the button downloads the .apk itself. Installing from a file means updates are manual — the web downloader always stays current.",
+  };
 }
 
 const EXTENSION_STEPS: ReadonlyArray<readonly [string, string]> = [
@@ -279,13 +306,11 @@ export default function AppsPage() {
                 <div className="mt-auto flex flex-col gap-2 sm:flex-row">
                   <a
                     href={apk.href}
-                    {...(apk.direct
-                      ? { download: true }
-                      : { target: "_blank", rel: "noopener noreferrer" })}
+                    {...(apk.local ? { download: true } : {})}
                     className="btn btn-primary h-11 flex-1 gap-2 px-5 text-sm font-semibold"
                   >
                     <Download className="size-4" />
-                    {apk.direct ? "Download APK" : "Get the APK on GitHub"}
+                    Download APK
                   </a>
                   <Link
                     href="#android-steps"
@@ -296,13 +321,9 @@ export default function AppsPage() {
                   </Link>
                 </div>
 
-                {apk.direct ? null : (
-                  <p className="text-xs leading-relaxed text-[var(--text-3)]">
-                    The signed build is published as a release asset from this repository&apos;s
-                    Android build. Installing from an APK means updates are manual — the web
-                    downloader always stays current.
-                  </p>
-                )}
+                {apk.note ? (
+                  <p className="text-xs leading-relaxed text-[var(--text-3)]">{apk.note}</p>
+                ) : null}
               </article>
             </div>
           </section>
