@@ -10,6 +10,13 @@ import { startYouTubeResolution } from "@/lib/youtube";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
+/**
+ * Resolve from Mumbai, not the default US region. YouTube treats US
+ * datacenter IPs as bot traffic for label music (T-Series/VEVO), while the
+ * same videos resolve from an Indian egress. Pakistan/India is this site's
+ * primary audience, so the nearest region is also the one that works.
+ */
+export const preferredRegion = "bom1";
 
 /**
  * POST /api/youtube — dedicated YouTube resolver.
