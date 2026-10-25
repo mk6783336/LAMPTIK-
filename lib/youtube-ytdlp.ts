@@ -29,6 +29,7 @@
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
+import { bridgeEndpoints, primaryBridgeUrl } from "@/lib/bridge-urls";
 import { AppError } from "@/lib/errors";
 import { isPublicMediaUrl } from "@/lib/security";
 
@@ -73,21 +74,14 @@ function httpsUrl(value: unknown): string | null {
 /**
  * Bridge runs anywhere a container can; off unless configured.
  *
- * Three names, checked in order:
- *   1. YTDLP_WORKER_URL            — runtime server env (preferred: change it
- *                                    without a rebuild).
- *   2. NEXT_PUBLIC_YTDLP_WORKER_URL — the name the deployment dashboard
- *                                    documents; inlined at build time, so a
- *                                    change needs a redeploy.
- *   3. YTDLP_BRIDGE_URL            — the original name, still honoured so
- *                                    existing deployments keep working.
+ * `lib/bridge-urls.ts` owns the env parsing: three aliases plus an optional
+ * `YTDLP_BRIDGE_BACKUP_URL`, each of which may itself be a comma-separated
+ * list. The first entry is the primary (normally the home PC behind a tunnel),
+ * the rest are failover — so a sleeping PC costs one fast probe, not a lost
+ * resolve.
  */
 export function ytdlpBridgeUrl(): string | null {
-  return (
-    httpsUrl(process.env.YTDLP_WORKER_URL ?? "") ??
-    httpsUrl(process.env.NEXT_PUBLIC_YTDLP_WORKER_URL ?? "") ??
-    httpsUrl(process.env.YTDLP_BRIDGE_URL ?? "")
-  );
+  return primaryBridgeUrl();
 }
 
 /**
@@ -245,13 +239,12 @@ async function binaryExtract(canonicalUrl: string): Promise<YtdlpHit> {
  * mirrors / ytdl-core / converter engines in play.
  */
 export async function ytdlpExtract(canonicalUrl: string): Promise<YtdlpHit> {
-  const bridge = ytdlpBridgeUrl();
-  if (bridge) {
+  if (bridgeEndpoints().length > 0) {
     try {
-      return await bridgeExtract(bridge, canonicalUrl);
+      return await bridgeExtractWithFailover(canonicalUrl);
     } catch {
-      // Bridge down / rate-limited — fall through to the binary while the
-      // waterfall's other engines race in parallel anyway.
+      // Every bridge down / rate-limited — fall through to the binary while
+      // the waterfall's other engines race in parallel anyway.
     }
   }
   if (await binaryAvailable()) {
@@ -270,61 +263,109 @@ export async function ytdlpExtract(canonicalUrl: string): Promise<YtdlpHit> {
 
 export interface YtdlpEngineHealth {
   bridge: {
-    /** YTDLP_BRIDGE_URL is configured for this deployment. */
+    /** At least one bridge URL is configured for this deployment. */
     configured: boolean;
-    /** Last ping answered (any status, even 4xx = something is listening).
-     *  null = no configured bridge, ping skipped. */
+    /** Primary bridge answered its last ping (any status, even 4xx = something
+     *  is listening). null = no configured bridge, ping skipped. */
     reachable: boolean | null;
   };
+  /** Every configured bridge, primary first — the failover chain. */
+  bridges: Array<{ url: string; reachable: boolean }>;
   /** Native `yt-dlp` on PATH. null = probe never ran on this isolate. */
   binaryAvailable: boolean | null;
 }
 
-/** Bridge ping cached 60s so monitoring polling /api/health stays cheap. */
-let bridgePing: { reachable: boolean; expiresAt: number } | null = null;
+/**
+ * Liveness probe cache, per bridge, kept short so a recovered PC is picked up
+ * quickly. A probe answer is authoritative either way: a 4xx still proves
+ * something is listening at that host.
+ */
+const bridgeAlive = new Map<string, { reachable: boolean; expiresAt: number }>();
+const BRIDGE_ALIVE_TTL_MS = 20_000;
+const BRIDGE_ALIVE_TIMEOUT_MS = 8_000;
+/**
+ * Failover probe deadline. The primary is a home PC behind a Cloudflare
+ * tunnel: when it is asleep the TCP connect either hangs or is refused, and
+ * waiting the full extraction budget there would lose the resolve. 2.5s is
+ * enough for a healthy tunnel to answer `/health` (measured 0.3-1.5s).
+ */
+const BRIDGE_FAILOVER_PROBE_MS = 2_500;
 
-const BRIDGE_PING_TTL_MS = 60_000;
-// The bridge is usually reached through a Cloudflare tunnel, and a cold hop
-// from a Vercel region regularly takes longer than 3s — which reported a
-// perfectly healthy bridge as `bridgeReachable: false`. The result is cached,
-// so a generous bound keeps the uptime probe honest without making it slow.
-const BRIDGE_PING_TIMEOUT_MS = 8_000;
+async function bridgeReachable(base: string, timeoutMs: number, useCache: boolean): Promise<boolean> {
+  const now = Date.now();
+  if (useCache) {
+    const cached = bridgeAlive.get(base);
+    if (cached && cached.expiresAt > now) return cached.reachable;
+  }
+
+  let reachable = false;
+  try {
+    const response = await fetch(`${base}/health`, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    reachable = response.status < 500;
+  } catch {
+    reachable = false; // DNS / connect / refused / timeout — down
+  }
+  bridgeAlive.set(base, { reachable, expiresAt: now + BRIDGE_ALIVE_TTL_MS });
+  return reachable;
+}
 
 /**
- * One health snapshot — no streaming, no extraction, bounded well under a
- * second in the common case (bridge ping ≤3s worst case, cached 60s).
- * Frontline for production debugging of YouTube resolution: answers in a
- * single GET whether the strongest extractor is wired up or gracefully out.
+ * Try every configured bridge in order.
+ *
+ * With a single bridge configured the POST goes straight out — a probe failure
+ * must never disable the only engine that can resolve label music. With a
+ * failover pair, the primary is probed first and skipped in ~2.5s when the PC
+ * is offline, so the cloud backup gets the rest of the extraction window.
+ */
+async function bridgeExtractWithFailover(canonicalUrl: string): Promise<YtdlpHit> {
+  const bridges = bridgeEndpoints();
+  if (bridges.length === 1) return bridgeExtract(bridges[0], canonicalUrl);
+
+  let lastError: unknown = null;
+  for (const base of bridges) {
+    if (!(await bridgeReachable(base, BRIDGE_FAILOVER_PROBE_MS, true))) continue;
+    try {
+      return await bridgeExtract(base, canonicalUrl);
+    } catch (error) {
+      lastError = error;
+      // A refused/failed attempt is not proof the host is dead (a cold
+      // extraction answers 502), so only drop it from the cache when the
+      // failure was a transport error rather than an application answer.
+      if (error instanceof TypeError) {
+        bridgeAlive.set(base, { reachable: false, expiresAt: Date.now() + BRIDGE_ALIVE_TTL_MS });
+      }
+    }
+  }
+  throw lastError instanceof AppError
+    ? lastError
+    : new AppError("PROVIDER_UNAVAILABLE", "No yt-dlp bridge answered.");
+}
+
+/**
+ * One health snapshot for /api/health. Each configured bridge is probed (cached
+ * 20s), so a deployment with a primary + backup answers which one is live
+ * instead of a single ambiguous boolean.
  */
 export async function ytdlpEngineHealth(): Promise<YtdlpEngineHealth> {
-  const bridgeUrl = ytdlpBridgeUrl();
-  if (!bridgeUrl) {
-    return { bridge: { configured: false, reachable: null }, binaryAvailable: null };
+  const bridges = bridgeEndpoints();
+  if (bridges.length === 0) {
+    return { bridge: { configured: false, reachable: null }, bridges: [], binaryAvailable: null };
   }
 
-  const now = Date.now();
-  if (!bridgePing || bridgePing.expiresAt <= now) {
-    // ANY authoritative HTTP answer counts as reachable — even a 4xx means
-    // something is listening at that host (our probe just isn't valid JSON
-    // for it). Only network-level failure (DNS, refused, TLS, timeout) says
-    // the bridge is down.
-    let reachable = false;
-    try {
-      await fetch(bridgeUrl.replace(/\/+$/, ""), {
-        method: "GET",
-        headers: { Accept: "application/json" },
-        cache: "no-store",
-        signal: AbortSignal.timeout(BRIDGE_PING_TIMEOUT_MS),
-      });
-      reachable = true;
-    } catch {
-      reachable = false; // DNS / connect / timeout — bridge is down
-    }
-    bridgePing = { reachable, expiresAt: now + BRIDGE_PING_TTL_MS };
-  }
+  const statuses = await Promise.all(
+    bridges.map(async (url) => ({
+      url,
+      reachable: await bridgeReachable(url, BRIDGE_ALIVE_TIMEOUT_MS, true),
+    })),
+  );
 
   return {
-    bridge: { configured: true, reachable: bridgePing.reachable },
+    bridge: { configured: true, reachable: statuses[0]?.reachable ?? null },
+    bridges: statuses,
     binaryAvailable: binaryProbe ? binaryProbe.available : null,
   };
 }

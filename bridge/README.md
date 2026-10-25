@@ -61,46 +61,105 @@ the same `BRIDGE_SECRET` exists in Vercel. `/health` stays public.
 Only public https links on YouTube, TikTok, Instagram, Facebook and
 `fb.watch` are accepted, so the service is not an open proxy.
 
-## Deploy on Hugging Face (free Docker Space)
+## Deploy a 24/7 backup bridge (3 minutes)
 
-1. **Create** → *Docker* Space → *Blank*. Name it `lamptik-ytdlp`, hardware
-   **CPU basic (free)**.
-2. Upload the four files in this folder to the Space root:
-   `Dockerfile`, `app.py`, `requirements.txt`, `README.md`.
-3. **Settings → Variables and secrets** → add `BRIDGE_SECRET` as a *secret*
-   (any long random string, e.g. `openssl rand -hex 24`).
-4. Wait for the build. The Space is served at
-   `https://<user>-<space>.hf.space`.
-5. Verify:
+The home PC behind the tunnel is the best bridge (residential IP), but it sleeps
+with the machine. Run a second copy on a free cloud host and list it as the
+backup: when the PC is offline the app probes it in ~2.5s and fails over, so
+label music still resolves.
 
-   ```bash
-   curl https://<user>-<space>.hf.space/health
-   # {"status":"ok","secured":true,"ytdlp":"2026.xx.xx"}
-   ```
+### Hugging Face (free Docker Space, ~3 minutes)
 
-6. In **Vercel → Project → Settings → Environment Variables** add:
+1. **Create → Docker → Blank**: name it `lamptik-ytdlp`, hardware **CPU basic
+   (free)**.
+2. Upload three files to the Space root: `Dockerfile`, `app.py`,
+   `requirements.txt` (the README is optional).
+3. **Settings → Variables and secrets**:
 
-   ```
-   YTDLP_BRIDGE_URL=https://<user>-<space>.hf.space
-   BRIDGE_SECRET=<the same secret>
-   ```
+   | Name | Value |
+   | --- | --- |
+   | `BRIDGE_SECRET` | same secret as the PC bridge (`openssl rand -hex 24`) |
+   | `YTDLP_COOKIES_BASE64` | *optional*, see [Cookies](#cookies-and-proxy) |
+   | `YTDLP_PROXY` | *optional*, see [Cookies](#cookies-and-proxy) |
 
-   `YTDLP_BRIDGE_URL` is read at runtime, so it takes effect on the next
-   request. `YTDLP_WORKER_URL` and `NEXT_PUBLIC_YTDLP_WORKER_URL` are accepted
-   aliases; the latter is compiled into the build and needs a redeploy.
-
-7. Confirm the app sees it:
+4. Wait for the build, then verify — it must report the runtime it found:
 
    ```bash
-   curl https://www.lamptik.online/api/health
+   curl https://<user>-lamptik-ytdlp.hf.space/health
+   # {"status":"ok","secured":true,"ytdlp":"2026.xx.xx",
+   #  "cookies":false,"proxy":false,"js_runtime":"deno"}
    ```
 
-   Look for `"bridge": { "configured": true, "reachable": true }`.
+   `"js_runtime":"deno"` confirms signature solving is available. If it says
+   `null`, the image was built from an old Dockerfile.
 
-> Hugging Face free Spaces sleep after a period of inactivity. The first
-> request after sleep can take 30–60s and will exceed the app's 12s bridge
-> timeout; that resolve falls back to the normal waterfall. A later retry
-> usually hits the awake Space.
+### Render
+
+`render.yaml` in this folder is a Blueprint for a free Docker web service.
+Render → **New → Blueprint** → pick the repo, or create a Docker web service
+with root directory `bridge`, health check `/health`, and add `BRIDGE_SECRET`.
+The image's `CMD` expands Render's `PORT`, so the same file works on both.
+
+### Wire the failover in Vercel
+
+Add both hosts, primary first — comma-separated in one variable, or a dedicated
+backup variable (either works, and both may be combined):
+
+```
+YTDLP_BRIDGE_URL=https://bridge.lamptik.online
+YTDLP_BRIDGE_BACKUP_URL=https://<user>-lamptik-ytdlp.hf.space
+BRIDGE_SECRET=<the same secret on both bridges>
+```
+
+Then confirm the chain:
+
+```bash
+curl https://www.lamptik.online/api/health
+# "bridges": [
+#   {"url":"https://bridge.lamptik.online","reachable":true},
+#   {"url":"https://…hf.space","reachable":true}
+# ]
+```
+
+A `reachable: false` primary with a `true` backup is the *expected* state when
+the PC is off — resolves still work. Both `false` means every bridge is down
+and the app is running on its JavaScript waterfall alone.
+
+> Free Spaces go to sleep after inactivity. The first request after sleep takes
+> 30–60s and will miss the 2.5s failover probe, so that resolve uses the
+> JavaScript waterfall; the next one usually hits the awake Space. A paid
+> instance (or a Fly/Railway machine with `auto_stop=false`) removes that
+> first-hit penalty.
+
+## Cookies and proxy
+
+Both are optional and only worth setting when the cloud IP is bot-checked on a
+specific video.
+
+**`YTDLP_COOKIES_BASE64`** — export a `cookies.txt` for youtube.com with any
+browser extension in Netscape format, then base64 it into the platform's secret
+store (never commit it):
+
+```bash
+base64 -w0 cookies.txt | pbcopy      # macOS: base64 -i - | pbcopy
+```
+
+The bridge decodes it at boot to a `0600` temp file, removes it on exit, and
+passes `--cookies` to every extraction. `/health` reports `"cookies": true`
+and never returns the value. Use an account you do not mind risking: YouTube
+can flag accounts whose cookies are used from datacenter IPs.
+
+**`YTDLP_PROXY`** — any `http(s)://` or `socks5://` URL (user:pass inline is
+fine). Passed as `--proxy`; useful when a residential proxy is available.
+`/health` reports `"proxy": true`.
+
+**`YTDLP_REMOTE_COMPONENTS`** — defaults to `ejs:github` whenever a JS runtime
+exists, which is what actually solves `nsig`. Set it to `off` to stop the
+one-time fetch from GitHub (yt-dlp then falls back to throttled URLs).
+
+> Older README advice said a first request can exceed the app's "12s bridge
+timeout" — the client now waits 22s and the failover probe is 2.5s, so only a
+> genuinely cold Space is skipped.
 
 ## Deploy on Render (free web service)
 

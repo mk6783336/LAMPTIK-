@@ -18,6 +18,9 @@ export const dynamic = "force-dynamic";
  *   - `bridgeReachable: false` (only when configured; network-level failure,
  *     not a 4xx) → that endpoint is down; resolution has already fallen back,
  *     so fix the endpoint only if you want that tier back.
+ *   - `bridges[]` → the whole failover chain, primary first. A primary that is
+ *     asleep reads `reachable: false` while a cloud backup reads `true`, which
+ *     is the expected, working state — not an outage.
  *   - `binaryAvailable: null` → the probe hasn't run on this isolate (Vercel
  *     short-circuits it); `false` after a resolve means it is absent.
  */
@@ -41,6 +44,7 @@ export async function GET() {
         ytdlp: {
           bridgeConfigured: ytdlp?.bridge.configured ?? false,
           bridgeReachable: ytdlp?.bridge.reachable ?? null,
+          bridges: ytdlp?.bridges ?? [],
           binaryAvailable: ytdlp?.binaryAvailable ?? null,
         },
       },

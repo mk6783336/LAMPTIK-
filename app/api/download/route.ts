@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { isBridgeHost } from "@/lib/bridge-urls";
 import { AppError } from "@/lib/errors";
 import { DESKTOP_UA } from "@/lib/http";
 import { rateLimit } from "@/lib/rate-limit";
@@ -223,16 +224,9 @@ function handOffToCdn(upstreamUrl: string): Response {
  * fastest and the only reliable transport here.
  */
 function isBridgeStreamUrl(candidate: string): boolean {
-  const configured =
-    process.env.YTDLP_WORKER_URL ??
-    process.env.NEXT_PUBLIC_YTDLP_WORKER_URL ??
-    process.env.YTDLP_BRIDGE_URL;
-  if (!configured) return false;
-  try {
-    return new URL(candidate).host === new URL(configured).host;
-  } catch {
-    return false;
-  }
+  // Every configured host counts, not just the primary: a video resolved by the
+  // cloud backup must hand off the same way the local bridge does.
+  return isBridgeHost(candidate);
 }
 
 /** Attach the browser-side filename to a hand-off URL the bridge understands. */

@@ -29,6 +29,8 @@ Security:
 
 from __future__ import annotations
 
+import atexit
+import base64
 import hashlib
 import hmac
 import json
@@ -37,6 +39,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from collections.abc import Iterator
@@ -62,6 +65,15 @@ MAX_URL_LENGTH = 2048
 # blocked music video: 10 KB/s sequential vs ~110 KB/s ranged for the audio
 # track, with yt-dlp's own downloader (which also fragments) at ~600 KB/s.
 STREAM_CHUNK_BYTES = 1 << 20
+
+# --- Optional cloud hardening ---------------------------------------------
+# A datacenter IP (Hugging Face, Render, Fly) hits YouTube's bot wall on label
+# music exactly as Vercel does. Two optional inputs lift that; both are read
+# once at boot and never logged or echoed back in a response.
+#   YTDLP_COOKIES_BASE64 — a Netscape cookies.txt, base64-encoded
+#   YTDLP_PROXY          — proxy URL yt-dlp routes through (http(s)/socks5)
+YTDLP_COOKIES_BASE64 = os.environ.get("YTDLP_COOKIES_BASE64", "").strip()
+YTDLP_PROXY = os.environ.get("YTDLP_PROXY", "").strip()
 
 # A secret-less bridge still needs signed stream URLs. This random key only
 # lives for the process lifetime; production deployments should set
@@ -171,6 +183,52 @@ def _is_youtube(url: str) -> bool:
     return any(_host_matches(host, base) for base in YOUTUBE_HOSTS)
 
 
+def _prepare_cookies() -> str | None:
+    """Decode YTDLP_COOKIES_BASE64 into a private Netscape cookies file.
+
+    Written 0600 in the system temp dir and removed at exit. Anything that is
+    not tab-separated Netscape format is ignored (yt-dlp would reject it, and a
+    silent bad file is worse than no file).
+    """
+    if not YTDLP_COOKIES_BASE64:
+        return None
+    try:
+        decoded = base64.b64decode(YTDLP_COOKIES_BASE64, validate=False).decode("utf-8", "ignore")
+    except Exception:  # noqa: BLE001 — a bad blob must not stop the service
+        return None
+    if "\t" not in decoded or "youtube" not in decoded.lower():
+        return None
+    handle = tempfile.NamedTemporaryFile(
+        mode="w", prefix="lamptik-cookies-", suffix=".txt", delete=False, encoding="utf-8"
+    )
+    try:
+        handle.write(decoded)
+        handle.close()
+        os.chmod(handle.name, 0o600)
+    except OSError:
+        return None
+    path = handle.name
+    atexit.register(lambda: os.path.exists(path) and os.remove(path))
+    return path
+
+
+COOKIES_PATH = _prepare_cookies()
+# A JS runtime lets yt-dlp solve YouTube's `n` signature. Without one it warns
+# that formats may be missing and the surviving URLs are throttled hard.
+JS_RUNTIME = "deno" if shutil.which("deno") else ("node" if shutil.which("node") else "")
+
+# The challenge-solver script is what actually solves `nsig`; deno alone is not
+# enough. Enabled by default when a runtime exists, disabled with
+# YTDLP_REMOTE_COMPONENTS=off, overridable with any yt-dlp component spec.
+_remote_env = os.environ.get("YTDLP_REMOTE_COMPONENTS")
+if _remote_env is None:
+    REMOTE_COMPONENTS = "ejs:github" if JS_RUNTIME else ""
+elif _remote_env.strip().lower() in ("", "off", "none", "0"):
+    REMOTE_COMPONENTS = ""
+else:
+    REMOTE_COMPONENTS = _remote_env.strip()
+
+
 def _base_args(url: str, kind: str = "video") -> list[str]:
     args = [YTDLP, "--no-playlist", "--no-warnings", "--no-cache-dir"]
     # Only the video path forces the Android client. It is the one that
@@ -178,6 +236,14 @@ def _base_args(url: str, kind: str = "video") -> list[str]:
     # no audio-only stream, so the audio path uses yt-dlp's default client.
     if kind == "video" and _is_youtube(url):
         args += ["--extractor-args", "youtube:player_client=android"]
+    if COOKIES_PATH:
+        args += ["--cookies", COOKIES_PATH]
+    if YTDLP_PROXY:
+        args += ["--proxy", YTDLP_PROXY]
+    if JS_RUNTIME:
+        args += ["--js-runtimes", JS_RUNTIME]
+    if REMOTE_COMPONENTS:
+        args += ["--remote-components", REMOTE_COMPONENTS]
     return args
 
 
@@ -336,12 +402,16 @@ def index() -> Response:
 
 @app.get("/health")
 def health() -> Response:
+    # Booleans only: the cookie blob and the proxy URL never leave the process.
     return _json(
         {
             "status": "ok",
             "ytdlp": _ytdlp_version(),
             "secured": bool(BRIDGE_SECRET),
             "stream_signature": "persistent" if not STREAM_KEY_IS_EPHEMERAL else "ephemeral",
+            "cookies": bool(COOKIES_PATH),
+            "proxy": bool(YTDLP_PROXY),
+            "js_runtime": JS_RUNTIME or None,
         }
     )
 
