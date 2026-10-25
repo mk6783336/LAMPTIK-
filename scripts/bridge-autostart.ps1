@@ -1,8 +1,16 @@
 # Start the yt-dlp bridge and its named Cloudflare tunnel, once.
 #
-# Idempotent: whatever is already listening (or already running) is skipped, so
-# this is safe to call at logon, from the installer, or by hand while the
-# services are up. Paths are resolved from this script, so the repo can move.
+# Idempotent: whatever is already listening (or already running *and serving*)
+# is skipped, so this is safe to call at logon, from the installer, or by hand
+# while the services are up. Paths are resolved from this script, so the repo
+# can move.
+#
+# The tunnel runs with `--protocol http2` on purpose. cloudflared defaults to
+# QUIC (UDP), and residential ISPs drop UDP often enough that connections die
+# with "no recent network activity" - Cloudflare then answers 530 for the
+# hostname even though the process is still alive. HTTP/2 rides TCP and holds.
+# A process that exists but does not answer /health is therefore recycled
+# instead of being trusted.
 #
 #   powershell -NoProfile -ExecutionPolicy Bypass -File scripts/bridge-autostart.ps1
 #
@@ -73,17 +81,50 @@ if ($listening) {
 }
 
 # --- named tunnel ---------------------------------------------------------
-$tunnelRunning = $false
+$config = Join-Path $scratch "cloudflared-bridge.yml"
+
+# Public health of the hostname, which is the only thing a visitor experiences.
+# A live cloudflared process with a dead QUIC connection is exactly the 530.
+function Test-TunnelHealth([int]$attempts = 3, [int]$delaySeconds = 5) {
+    for ($i = 0; $i -lt $attempts; $i++) {
+        try {
+            $response = Invoke-WebRequest -Uri "https://$tunnelHost/health" -UseBasicParsing -TimeoutSec 8
+            if ($response.StatusCode -eq 200) { return $true }
+        } catch {
+            # 530 / timeout: the edge has no live connection to this machine
+        }
+        if ($i -lt ($attempts - 1)) { Start-Sleep -Seconds $delaySeconds }
+    }
+    return $false
+}
+
+$tunnelProcs = @()
 try {
-    $tunnelRunning = [bool](Get-CimInstance Win32_Process -Filter "Name='cloudflared.exe'" -ErrorAction Stop |
+    $tunnelProcs = @(Get-CimInstance Win32_Process -Filter "Name='cloudflared.exe'" -ErrorAction Stop |
         Where-Object { $_.CommandLine -and $_.CommandLine -like "*$tunnelName*" })
 } catch {
     Log "WARN could not inspect cloudflared processes: $($_.Exception.Message)"
 }
 
-if ($tunnelRunning) {
-    Log "tunnel $tunnelName already running, skipped"
+$tunnelHealthy = Test-TunnelHealth
+
+if ($tunnelProcs.Count -gt 0 -and $tunnelHealthy) {
+    Log "tunnel $tunnelName already running and https://$tunnelHost/health is 200, skipped"
 } else {
+    if ($tunnelProcs.Count -gt 0) {
+        # Serve-side dead but process alive: recycle instead of trusting it.
+        Log "cloudflared is running but https://$tunnelHost/health is not 200 - recycling it with --protocol http2"
+        foreach ($proc in $tunnelProcs) {
+            try {
+                Stop-Process -Id $proc.ProcessId -Force -ErrorAction Stop
+                Log "killed stale cloudflared pid $($proc.ProcessId)"
+            } catch {
+                Log "WARN could not kill cloudflared pid $($proc.ProcessId): $($_.Exception.Message)"
+            }
+        }
+        Start-Sleep -Seconds 3
+    }
+
     $cloudflared = $null
     foreach ($candidate in @(
             (Join-Path $scratch "cloudflared.exe"),
@@ -95,7 +136,6 @@ if ($tunnelRunning) {
         if ($onPath) { $cloudflared = $onPath.Source }
     }
 
-    $config = Join-Path $scratch "cloudflared-bridge.yml"
     if (-not $cloudflared) {
         Log "ERROR cloudflared not found (expected .scratch\cloudflared.exe)"
     } elseif (-not (Test-Path $config)) {
@@ -105,7 +145,11 @@ if ($tunnelRunning) {
         # items with spaces without quoting, so a repo path containing a space
         # ("E:\lamp tik\...") would split --config into "E:\lamp" + "tik\..."
         # and cloudflared would exit with "open E:\lamp: cannot find the file".
-        $tunnelArgs = 'tunnel --config "{0}" run {1}' -f $config, $tunnelName
+        #
+        # `--protocol http2` before `run`: TCP survives the UDP drops that kill
+        # QUIC on a home connection. `--no-autoupdate` keeps a background
+        # update from restarting the tunnel under a live download.
+        $tunnelArgs = 'tunnel --protocol http2 --no-autoupdate --config "{0}" run {1}' -f $config, $tunnelName
         try {
             Start-Process -FilePath $cloudflared `
                 -ArgumentList $tunnelArgs `
@@ -113,7 +157,7 @@ if ($tunnelRunning) {
                 -WindowStyle Hidden `
                 -RedirectStandardOutput (Join-Path $scratch "tunnel.out.log") `
                 -RedirectStandardError (Join-Path $scratch "tunnel.err.log") | Out-Null
-            Log "tunnel $tunnelName started"
+            Log "tunnel $tunnelName started with --protocol http2"
         } catch {
             Log "ERROR starting tunnel: $($_.Exception.Message)"
         }
@@ -135,7 +179,7 @@ for ($i = 0; $i -lt 30; $i++) {
 if ($healthy) {
     Log "https://$tunnelHost/health answered 200"
 } else {
-    Log "WARN https://$tunnelHost/health did not answer within 60s (cloudflared retries on its own)"
+    Log "WARN https://$tunnelHost/health did not answer within 60s (cloudflared retries on its own; run again to recycle it)"
 }
 
 exit 0

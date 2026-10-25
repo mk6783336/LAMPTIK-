@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
 import { ArrowUpRight, Chrome, Download, ShieldCheck, Smartphone, Sparkles } from "lucide-react";
 
 import { AmbientBackground } from "@/components/ambient-background";
@@ -45,24 +43,17 @@ export const metadata: Metadata = {
 const EXTENSION_ZIP = "/downloads/lamptik-chrome-extension.zip";
 
 /**
- * The Android APK, in order of preference:
+ * The Android APK lives on the public `latest-apk` release, which the Android
+ * workflow overwrites on every build. Serving it from there instead of
+ * committing the 23 MB binary means the repository does not grow by a video's
+ * worth of bytes on each build, and GitHub serves it from its own CDN.
  *
- * 1. `NEXT_PUBLIC_APK_DOWNLOAD_URL` — an explicit override (store listing, CDN).
- * 2. The copy the Android workflow commits into `public/downloads`, so the
- *    file is served from this origin.
- * 3. The `latest-apk` release asset, for a checkout where the workflow has
- *    not produced that file yet. The repository is public, so this URL is
- *    downloadable by visitors — no GitHub login page, no 404.
- *
- * All three are a file, never a web page: clicking Download has to start the
- * .apk, not open a tab.
+ * It is an asset URL, not the release page: clicking Download has to start the
+ * .apk. `NEXT_PUBLIC_APK_DOWNLOAD_URL` overrides it for a store listing or CDN.
  */
 const APK_URL =
   process.env.NEXT_PUBLIC_APK_DOWNLOAD_URL?.trim() ||
-  (existsSync(join(process.cwd(), "public", "downloads", "lamptik-android.apk"))
-    ? "/downloads/lamptik-android.apk"
-    : "https://github.com/mk6783336/LAMPTIK-/releases/download/latest-apk/lamptik-android.apk");
-const APK_IS_LOCAL = APK_URL.startsWith("/");
+  "https://github.com/mk6783336/LAMPTIK-/releases/download/latest-apk/lamptik-android.apk";
 
 const EXTENSION_STEPS: ReadonlyArray<readonly [string, string]> = [
   [
@@ -287,7 +278,6 @@ export default function AppsPage() {
                 <div className="mt-auto flex flex-col gap-2 sm:flex-row">
                   <a
                     href={APK_URL}
-                    {...(APK_IS_LOCAL ? { download: true } : {})}
                     className="btn btn-primary h-11 flex-1 gap-2 px-5 text-sm font-semibold"
                   >
                     <Download className="size-4" />

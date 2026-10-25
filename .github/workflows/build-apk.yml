@@ -169,28 +169,10 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      # Also publish the APK with the website. The GitHub asset is public, but
-      # a same-origin download from lamptik.online is faster for visitors and
-      # keeps working if the repository ever goes private, when release assets
-      # stop being downloadable. The build only pushes when the file actually
-      # changed, and this commit touches only public/downloads (never
-      # mobile-app/**), so it cannot re-trigger this workflow.
-      - name: Publish the APK with the site
-        if: github.ref == 'refs/heads/main'
-        run: |
-          set -euo pipefail
-          mkdir -p public/downloads
-          cp mobile-app/lamptik-android.apk public/downloads/lamptik-android.apk
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/downloads/lamptik-android.apk
-          if git diff --cached --quiet; then
-            echo "APK unchanged since the last build."
-            exit 0
-          fi
-          git commit -m "chore(apk): publish the CI-built Android APK"
-          git push
-
+      # The APK is published to the release below and NOT committed back into
+      # the repository: the asset URL is public (the repo is public), and a
+      # 23 MB binary per build would grow git history without giving visitors
+      # anything the release does not already serve.
       - name: Publish to the rolling release
         uses: softprops/action-gh-release@v2
         with:

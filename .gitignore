@@ -34,6 +34,10 @@ yarn-error.log*
 # screenshots (dev/QA captures, not source)
 /screenshots/
 
+# built Android APK — served from the public `latest-apk` GitHub release, not
+# from git (a 23 MB binary per build would bloat history for no gain)
+/public/downloads/*.apk
+
 # freebuff tooling metadata
 .freebuff/
 
