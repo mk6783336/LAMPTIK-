@@ -10,7 +10,7 @@ import { AdSlot } from "@/components/ads/AdSlot";
 import { PlatformIcon } from "@/components/platform-icons";
 import { cn } from "@/lib/cn";
 import { PLATFORMS } from "@/lib/platforms";
-import { triggerDownloadDirectLink, directLinkUrl } from "@/lib/monetization";
+
 import { isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
 import { SocialShare } from "@/components/social-share";
 import type { MediaPayload } from "@/lib/media";
@@ -51,9 +51,8 @@ interface DownloadTheater {
  *
  * The flow (identical on TikTok / Instagram / Facebook / YouTube — every
  * platform page renders this exact component):
- *   0ms — click: the HilltopAds Direct Link sponsor opens synchronously inside
- *   the user activation, AND IN THE SAME GESTURE a hidden same-origin
- *   sandboxed iframe navigates to `/api/download` — attachment downloads
+ *   0ms — click: a hidden same-origin sandboxed iframe navigates to
+ *   `/api/download` inside the same gesture — attachment downloads
  *   only, no script execution, no top-frame movement. Chrome's NATIVE
  *   download manager starts at ~0s —
  *   the old 10-second delayed hand-off died to Chrome twice over: the user
@@ -154,9 +153,10 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
   /* ------------------------------------------------------------------
    * 10-second sponsor theater that runs AFTER the real download.
    *
-   * t = 0ms → the Direct Link sponsor opens inside the user activation AND
-   *   the hidden same-origin iframe hands the file to Chrome's download
-   *   manager in the SAME gesture — downloads never wait for the timer.
+ * t = 0ms → the hidden same-origin iframe hands the file to Chrome's
+ *   download manager in the SAME gesture as the click — downloads never
+ *   wait for the timer, and no second tab is opened: the file is the only
+ *   thing this button produces.
    * t = 0ms → 10s → sponsor theater in flow (fresh 300×250 banner),
    *   while bytes move in the tray. A ~6s validity probe flips dead
    *   streams to the retry/failure card with a raw-CDN fallback link.
@@ -191,17 +191,19 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
 
   /**
    * The one and only download click handler — order is load-bearing.
-   * 1. Direct Link sponsor synchronously inside the user activation (30s
-   *    cap lives inside the trigger).
-   * 2. The file hand-off fires in THE SAME GESTURE (hidden iframe to the
+   * 1. The file hand-off fires in THE SAME GESTURE (hidden iframe to the
    *    same-origin attachment stream) — Chrome's native download manager
    *    starts at ~0s. Downloads never wait for a timer again.
-   * 3. The panel becomes the 10-second post-download sponsor theater.
+   * 2. The panel becomes the 10-second post-download sponsor theater.
+   *
+   * Clicking Download produces exactly one thing: the media file. No
+   * Direct Link tab, no pop-under — a download button that also opens an
+   * unrelated tab is what made trust scanners and users read the site as
+   * adware.
    */
   function startDownload(kind: string, href: string, fallbackUrl: string | null = null) {
     if (!href) return;
     if (rejectKnownYouTubeInterstitial(rawUpstreamOf(href))) return;
-    triggerDownloadDirectLink();
     const frame = document.createElement("iframe");
     frame.style.display = "none";
     frame.setAttribute("aria-hidden", "true");
@@ -247,7 +249,6 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
    */
   function startDownloadDirect(kind: string, directUrl: string) {
     if (!directUrl || rejectKnownYouTubeInterstitial(directUrl)) return;
-    triggerDownloadDirectLink();
     const anchor = document.createElement("a");
     anchor.href = directUrl;
     // Keep the origin tab in place. Known job URLs are rejected before this
@@ -369,14 +370,6 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
               label="Sponsored — keeps LAMP TIK free"
             />
           </div>
-          <a
-            href={directLinkUrl}
-            target="_blank"
-            rel="sponsored noopener noreferrer"
-            className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 text-sm font-semibold text-amber-200 transition-colors hover:border-amber-400/60 hover:bg-amber-500/15"
-          >
-            🔥 Sponsored High-Speed Partner — Check Out Today&apos;s Offer ↗
-          </a>
 
           {/* Never-stuck fallback: if Chrome's tray shows nothing, one click
               on the RAW CDN attachment URL still starts the file — handed

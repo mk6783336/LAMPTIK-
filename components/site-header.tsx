@@ -96,6 +96,27 @@ export function SiteHeader() {
             </nav>
 
             <div className="flex shrink-0 items-center gap-2">
+              {/* Corner badge for the off-store clients. It lives beside the
+                  theme toggle instead of inside NAV: a sixth full-size nav
+                  item pushed the desktop row past 1152px, and this is a
+                  secondary surface, not a platform page. */}
+              <Link
+                href="/apps"
+                prefetch={true}
+                aria-current={isCurrent(pathname, "/apps") ? "page" : undefined}
+                className={cn(
+                  "inline-flex h-9 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition-colors duration-200 sm:px-3 sm:text-sm",
+                  isCurrent(pathname, "/apps")
+                    ? "border-[var(--glass-border-hover)] bg-[var(--field-strong)] text-[var(--text)]"
+                    : "border-[var(--glass-border)] bg-[var(--field)] text-[var(--text-2)] hover:border-[var(--glass-border-hover)] hover:text-[var(--text)]",
+                )}
+              >
+                <span aria-hidden="true" className="text-[13px] leading-none">
+                  📲
+                </span>
+                <span className="hidden whitespace-nowrap sm:inline">App &amp; Extension</span>
+                <span className="whitespace-nowrap sm:hidden">App</span>
+              </Link>
               <ThemeToggle />
             </div>
           </div>

@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LampTik downloader</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        width: 360px;
+        background: #0b0c10;
+        color: #f4f5f7;
+        font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+      .wrap {
+        padding: 14px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+      }
+      .mark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 7px;
+        background: linear-gradient(135deg, #22d3ee 0%, #6366f1 55%, #a855f7 100%);
+        font-size: 13px;
+      }
+      .tag {
+        padding: 2px 8px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.05);
+        color: #9aa1ad;
+        font-size: 10.5px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      .url {
+        margin: 12px 0 0;
+        padding: 7px 9px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.04);
+        color: #b9bfc9;
+        font-size: 11px;
+        font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .card {
+        display: none;
+        margin-top: 12px;
+        padding: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.035);
+      }
+      .card.is-on {
+        display: block;
+      }
+      .media {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .media img {
+        width: 92px;
+        height: 54px;
+        flex: 0 0 auto;
+        border-radius: 8px;
+        object-fit: cover;
+        background: rgba(255, 255, 255, 0.06);
+      }
+      .title {
+        margin: 0;
+        font-size: 12.5px;
+        font-weight: 600;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .sub {
+        margin: 3px 0 0;
+        color: #9aa1ad;
+        font-size: 11px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .status {
+        margin: 10px 0 0;
+        color: #9aa1ad;
+        font-size: 11.5px;
+      }
+      .status[data-state="ready"] {
+        color: #62d6a0;
+      }
+      .status[data-state="error"] {
+        color: #ff9a9a;
+      }
+      .actions {
+        display: grid;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      button,
+      .link-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 38px;
+        padding: 0 12px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.06);
+        color: #f4f5f7;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      button:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.12);
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+      .primary {
+        border-color: transparent;
+        background: linear-gradient(135deg, #22d3ee 0%, #6366f1 55%, #a855f7 100%);
+        color: #ffffff;
+      }
+      .primary:hover:not(:disabled) {
+        filter: brightness(1.06);
+        background: linear-gradient(135deg, #22d3ee 0%, #6366f1 55%, #a855f7 100%);
+      }
+      .muted {
+        margin-top: 10px;
+        padding: 9px 10px;
+        border: 1px dashed rgba(255, 255, 255, 0.12);
+        border-radius: 10px;
+        color: #7d838f;
+        font-size: 10.5px;
+        text-align: center;
+      }
+      footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        color: #7d838f;
+        font-size: 10.5px;
+      }
+      footer a {
+        color: #9aa1ad;
+        text-decoration: none;
+        font-weight: 600;
+      }
+      footer a:hover {
+        color: #f4f5f7;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <span class="brand"><span class="mark">⚡</span>LampTik</span>
+        <span class="tag" id="platform-tag">detecting</span>
+      </header>
+
+      <p class="url" id="url-line">Reading the current tab…</p>
+
+      <section class="card" id="card" aria-live="polite">
+        <div class="media">
+          <img id="thumb" alt="" />
+          <div style="min-width: 0">
+            <p class="title" id="title">Video</p>
+            <p class="sub" id="sub"></p>
+          </div>
+        </div>
+        <p class="status" id="status" data-state="loading">Resolving the best stream…</p>
+        <div class="actions">
+          <button class="primary" id="mp4" type="button" disabled>Download HD MP4</button>
+          <button id="mp3" type="button" disabled>Download MP3</button>
+        </div>
+      </section>
+
+      <p class="status" id="hint" data-state="idle" style="margin-top: 12px"></p>
+
+      <div class="muted">Free · no account · files go to your Downloads</div>
+
+      <footer>
+        <span>Powered by lamptik.online</span>
+        <a id="site" href="https://www.lamptik.online" target="_blank" rel="noopener noreferrer">
+          Open site ↗
+        </a>
+      </footer>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>

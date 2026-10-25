@@ -36,6 +36,7 @@ const FOOTER_LINKS = {
   ],
   Company: [
     { href: "/about", label: "About" },
+    { href: "/apps", label: "App & Extension" },
     { href: "/contact", label: "Contact & DMCA" },
   ],
   // Highest-intent guides, sitewide. The below-the-fold matrices on the three

@@ -94,6 +94,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const company: MetadataRoute.Sitemap = [
     {
+      // Distribution hub for the off-store clients — a real page with its own
+      // install steps, so it belongs in the index next to About and Contact.
+      url: `${siteUrl}/apps`,
+      lastModified: updated,
+      changeFrequency: "monthly",
+      priority: 0.6,
+    },
+    {
       url: `${siteUrl}/about`,
       lastModified: updated,
       changeFrequency: "monthly",

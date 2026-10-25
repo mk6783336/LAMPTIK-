@@ -113,11 +113,11 @@ export default function RootLayout({
             `preconnect`s to the same host are not. */}
         <link rel="preconnect" href="https://bellnewyork.org" crossOrigin="" />
         <link rel="dns-prefetch" href="https://bellnewyork.org" />
-        <link rel="manifest" href="/manifest.json" />
+        {/* No `manifest.json` link and no install-prompt code: the PWA shell
+            was retired when the real Chrome extension and Android app landed
+            (/apps). The one remaining service worker, `/sw.js`, is the ad
+            network's domain-verification worker — not a PWA stub. */}
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="LAMP TIK" />
         <link
           rel="preload"

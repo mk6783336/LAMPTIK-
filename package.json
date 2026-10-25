@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "extension:package": "node scripts/package-extension.mjs",
     "bridge:tunnel": "node scripts/bridge-tunnel.mjs",
     "bridge:autostart": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-bridge-autostart.ps1",
     "verify": "tsc --noEmit && next lint --max-warnings=0 && next build"

@@ -1,0 +1,9 @@
+# Standalone products that are NOT part of the Next.js build. They have their
+# own toolchains (Chrome MV3 has no build step; mobile-app/ is Expo/React
+# Native; bridge/ is Python; android-app/ is Gradle) and their sources are
+# shipped in this repo so anyone can rebuild the distributables.
+extension/
+mobile-app/
+bridge/
+android-app/
+.scratch/

@@ -46,10 +46,15 @@ export const adsterraRectangleKey =
 export const monetagVerification = process.env.NEXT_PUBLIC_MONETAG_META?.trim() || null;
 
 /**
- * HilltopAds Direct Link — opened only inside a real download click and
- * capped by `triggerDownloadDirectLink` below. `NEXT_PUBLIC_DIRECT_LINK_URL`
- * is the override; the old `NEXT_PUBLIC_MONETAG_SMARTLINK_URL` is ignored so a
- * stale dashboard value can never replace this one.
+ * HilltopAds Direct Link — used ONLY as the href of an in-page sponsored card
+ * (the side rail and the banner fallback), i.e. somewhere the visitor can see
+ * what they are clicking. It is deliberately never opened programmatically
+ * from the download button: a download click must produce the file and
+ * nothing else, or the site reads as adware to users and to trust scanners.
+ *
+ * `NEXT_PUBLIC_DIRECT_LINK_URL` is the override; the old
+ * `NEXT_PUBLIC_MONETAG_SMARTLINK_URL` is ignored so a stale dashboard value
+ * can never replace this one.
  */
 export const directLinkUrl =
   process.env.NEXT_PUBLIC_DIRECT_LINK_URL?.trim() || "https://idealistic-revenue.com/FtK1df";
@@ -114,70 +119,3 @@ export const AD_RESERVED: Record<AdFormat, { width: number; height: number; minP
   leaderboard: { width: 728, height: 90, minPx: 90 },
   rectangle: { width: 300, height: 250, minPx: 250 },
 };
-
-/** Session-storage key for the Direct Link cap. */
-const DIRECT_LINK_KEY = "lamptik_dl_direct_ts";
-/** One Direct Link tab per 30 seconds (repeat downloads stay monetizable). */
-const DIRECT_LINK_CAP_MS = 30 * 1_000;
-
-export interface DirectLinkResult {
-  triggered: boolean;
-  capped?: boolean;
-  blocked?: boolean;
-}
-
-/**
- * Direct Link fired from a download-button click.
- *
- * MUST be called synchronously inside the click handler — before any `await` —
- * because `window.open` only works while the user activation is still live.
- * The download itself happens on the same click via the anchor's default
- * navigation: the file starts moving while the sponsor tab opens.
- */
-export function triggerDownloadDirectLink(): DirectLinkResult {
-  if (typeof window === "undefined") return { triggered: false };
-
-  const target = directLinkUrl;
-  if (!/^https:\/\//i.test(target)) return { triggered: false };
-
-  try {
-    const now = Date.now();
-    const previous = Number(window.sessionStorage.getItem(DIRECT_LINK_KEY) ?? 0);
-    if (Number.isFinite(previous) && previous > 0 && now - previous < DIRECT_LINK_CAP_MS) {
-      return { triggered: false, capped: true };
-    }
-    // Stamp first: a blocked popup must still respect the cap, otherwise
-    // every click repeats a blocked attempt.
-    window.sessionStorage.setItem(DIRECT_LINK_KEY, String(now));
-
-    // A plain `window.open(target, "_blank")` returns a handle, so a null
-    // answer really means the popup was blocked. The handle is severed from
-    // this tab before the ad page can run any script, preserving the old
-    // no-opener guarantee without the `noopener` feature (which makes
-    // window.open return null even on success and used to fall through to the
-    // anchor below, opening a SECOND sponsor tab on every download).
-    const tab = window.open(target, "_blank");
-    if (tab) {
-      try {
-        tab.opener = null;
-      } catch {
-        // Already isolated by the browser — nothing to sever.
-      }
-      return { triggered: true };
-    }
-
-    // Popup blocked (or an in-app browser that refuses `window.open`): fall
-    // back to a synthetic sponsored anchor click, which some WebViews allow.
-    const anchor = document.createElement("a");
-    anchor.href = target;
-    anchor.target = "_blank";
-    anchor.rel = "noopener noreferrer sponsored";
-    anchor.style.display = "none";
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    return { triggered: false, blocked: true };
-  } catch {
-    return { triggered: false, blocked: true };
-  }
-}

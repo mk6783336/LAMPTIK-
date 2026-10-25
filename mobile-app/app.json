@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "LampTik",
+    "slug": "lamptik",
+    "scheme": "lamptik",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#050505",
+    "newArchEnabled": true,
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "bundleIdentifier": "com.lamptik.app",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.lamptik.app",
+      "versionCode": 1,
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ],
+      "intentFilters": [
+        {
+          "action": "SEND",
+          "data": [{ "mimeType": "text/plain" }],
+          "category": ["DEFAULT"]
+        }
+      ]
+    },
+    "plugins": [
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "LampTik saves the videos you download from YouTube, TikTok, Instagram and Facebook to your gallery.",
+          "savePhotosPermission": "LampTik needs gallery access to save your downloaded videos and MP3 audio.",
+          "isAccessMediaLocationEnabled": false
+        }
+      ]
+    ],
+    "extra": {
+      "apiOrigin": "https://www.lamptik.online"
+    }
+  }
+}
