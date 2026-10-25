@@ -31,6 +31,18 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react", "framer-motion"],
   },
+  /**
+   * Tool-shaped URLs that visitors and old backlinks use. The TikTok downloader
+   * is the home page, so `/tiktok-downloader` is a permanent redirect to it
+   * rather than a 404: a keyword URL that answers (even by redirecting) is a
+   * trust signal, and listing the 404 in the sitemap would be a quality
+   * penalty instead.
+   */
+  async redirects() {
+    return [
+      { source: "/tiktok-downloader", destination: "/", permanent: true },
+    ];
+  },
   // Security headers + cache policy
   async headers() {
     return [
