@@ -169,13 +169,14 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      # A private repository's release assets require authentication, so the
-      # URL above would 404 for website visitors. In that case publish the APK
-      # into the site's own public/ folder instead and let the next Vercel build
-      # serve it from lamptik.online. On a public repository the release asset
-      # is already downloadable, so this step is skipped.
-      - name: Publish the APK with the site (private repositories)
-        if: github.event.repository.private == true && github.ref == 'refs/heads/main'
+      # Also publish the APK with the website. The GitHub asset is public, but
+      # a same-origin download from lamptik.online is faster for visitors and
+      # keeps working if the repository ever goes private, when release assets
+      # stop being downloadable. The build only pushes when the file actually
+      # changed, and this commit touches only public/downloads (never
+      # mobile-app/**), so it cannot re-trigger this workflow.
+      - name: Publish the APK with the site
+        if: github.ref == 'refs/heads/main'
         run: |
           set -euo pipefail
           mkdir -p public/downloads

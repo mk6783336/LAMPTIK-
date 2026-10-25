@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { ArrowUpRight, Chrome, Download, ShieldCheck, Smartphone, Sparkles } from "lucide-react";
 
 import { AmbientBackground } from "@/components/ambient-background";
@@ -41,8 +43,25 @@ export const metadata: Metadata = {
  * send visitors to a 404 page instead of starting a download.
  */
 const EXTENSION_ZIP = "/downloads/lamptik-chrome-extension.zip";
+
+/**
+ * The Android APK, in order of preference:
+ *
+ * 1. `NEXT_PUBLIC_APK_DOWNLOAD_URL` — an explicit override (store listing, CDN).
+ * 2. The copy the Android workflow commits into `public/downloads`, so the
+ *    file is served from this origin.
+ * 3. The `latest-apk` release asset, for a checkout where the workflow has
+ *    not produced that file yet. The repository is public, so this URL is
+ *    downloadable by visitors — no GitHub login page, no 404.
+ *
+ * All three are a file, never a web page: clicking Download has to start the
+ * .apk, not open a tab.
+ */
 const APK_URL =
-  process.env.NEXT_PUBLIC_APK_DOWNLOAD_URL?.trim() || "/downloads/lamptik-android.apk";
+  process.env.NEXT_PUBLIC_APK_DOWNLOAD_URL?.trim() ||
+  (existsSync(join(process.cwd(), "public", "downloads", "lamptik-android.apk"))
+    ? "/downloads/lamptik-android.apk"
+    : "https://github.com/mk6783336/LAMPTIK-/releases/download/latest-apk/lamptik-android.apk");
 const APK_IS_LOCAL = APK_URL.startsWith("/");
 
 const EXTENSION_STEPS: ReadonlyArray<readonly [string, string]> = [
