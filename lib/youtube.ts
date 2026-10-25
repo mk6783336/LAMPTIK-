@@ -1097,7 +1097,13 @@ function requireStreams(hit: TierHit): TierHit & { streams: YouTubeStreams } {
  * old fixed 3.5 s race killed it mid-extraction on exactly the videos the
  * mirrors cannot resolve.
  */
-const RESOLVE_BUDGET_MS = 5_400;
+// The bridge is the only engine that survives YouTube's datacenter bot-check
+// on label music, and a cold run spawns Python, fetches the player response and
+// picks a format — 8-15 s, not milliseconds. A 5.4 s window cut it off
+// mid-extraction and reported PROVIDER_UNAVAILABLE for videos it then resolved
+// fine on a second attempt. 16 s fits just under the bridge's own 15 s ceiling,
+// so a genuinely unavailable video still fails inside the 60 s function.
+const RESOLVE_BUDGET_MS = 16_000;
 
 /**
  * Tier 1 — ANDROID Innertube. This is the engine that actually works from a
