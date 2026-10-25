@@ -13,9 +13,7 @@ import {
   faqPageNode,
   howToNode,
   JsonLd,
-  organizationNode,
   webApplicationNode,
-  websiteNode,
 } from "@/components/seo/JsonLd";
 import { ToolSeoContent } from "@/components/seo/ToolSeoContent";
 import { SiteFooter } from "@/components/site-footer";
@@ -124,8 +122,6 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
-      organizationNode(),
-      websiteNode(),
       webApplicationNode({
         id: `${pageUrl}/#app`,
         name: APP_NAMES[platform],

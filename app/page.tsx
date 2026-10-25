@@ -14,9 +14,7 @@ import {
   faqPageNode,
   howToNode,
   JsonLd,
-  organizationNode,
   webApplicationNode,
-  websiteNode,
 } from "@/components/seo/JsonLd";
 import { ToolSeoContent } from "@/components/seo/ToolSeoContent";
 import { TOOL_SEO } from "@/lib/content/tool-seo";
@@ -61,8 +59,6 @@ export default function HomePage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
-      organizationNode(),
-      websiteNode(),
       webApplicationNode({
         id: `${siteUrl}/#app`,
         name: `${siteConfig.name} — TikTok Video Downloader`,

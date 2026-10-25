@@ -12,9 +12,7 @@ import {
   faqPageNode,
   howToNode,
   JsonLd,
-  organizationNode,
   webApplicationNode,
-  websiteNode,
 } from "@/components/seo/JsonLd";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -37,8 +35,6 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
-      organizationNode(),
-      websiteNode(),
       webApplicationNode({
         id: `${pageUrl}/#app`,
         name: tool.appName,

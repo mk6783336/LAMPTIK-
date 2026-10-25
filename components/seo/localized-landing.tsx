@@ -11,8 +11,6 @@ import {
   faqPageNode,
   howToNode,
   JsonLd,
-  organizationNode,
-  websiteNode,
 } from "@/components/seo/JsonLd";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -45,8 +43,6 @@ export function LocalizedLanding({ copy }: { copy: LandingCopy }) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
-      organizationNode(),
-      { ...websiteNode(), inLanguage: copy.htmlLang },
       {
         "@type": "WebApplication",
         "@id": `${pageUrl}/#app`,
@@ -54,7 +50,7 @@ export function LocalizedLanding({ copy }: { copy: LandingCopy }) {
         url: pageUrl,
         description: copy.description,
         applicationCategory: "MultimediaApplication",
-        operatingSystem: "All",
+        operatingSystem: "All (Web Browser)",
         browserRequirements: "Requires JavaScript",
         inLanguage: copy.htmlLang,
         isAccessibleForFree: true,

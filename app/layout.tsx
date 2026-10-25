@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { AdScripts } from "@/components/ads/AdScripts";
 import { DesktopSideRails } from "@/components/ads/DesktopSideRails";
 import { ConsentModeScript } from "@/components/consent-mode";
+import { JsonLd, siteEntityGraph } from "@/components/seo/JsonLd";
 import { googleSiteVerification } from "@/lib/ads";
 import { monetagVerification } from "@/lib/monetization";
 import { siteConfig, siteUrl } from "@/lib/site";
@@ -126,6 +127,11 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <meta name="color-scheme" content="dark" />
+        {/* One entity graph for the whole site: Organization + WebSite +
+            SoftwareApplication, stated once here and referenced by `@id` from
+            every page's own schema. This is the disambiguation that stops
+            "LAMP TIK" being summarised as a lamp shop. */}
+        <JsonLd data={siteEntityGraph()} />
         <script dangerouslySetInnerHTML={{ __html: bootScript }} />
         {/* hreflang is per page (`alternates.languages` on the home tool and the
             four translated landings), not global: emitting this cluster from the

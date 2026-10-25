@@ -9,7 +9,7 @@ import { siteConfig, siteUrl } from "@/lib/site";
 export const metadata: Metadata = {
   title: "About",
   description:
-    "About LAMP TIK: a privacy-first, watermark-free media resolver built for creators archiving their own work — no accounts, no logs, strict copyright respect.",
+    "LampTik (lamptik.online) is a free browser-based TikTok, YouTube, Instagram and Facebook video/MP3 downloader. It is not a store: no lamps, no products, no accounts, no payments.",
   alternates: { canonical: "/about" },
   openGraph: {
     images: ["/opengraph-image"],
@@ -25,22 +25,6 @@ export default function AboutPage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
-      {
-        "@type": "Organization",
-        "@id": `${siteUrl}/#organization`,
-        name: siteConfig.name,
-        url: siteUrl,
-        email: "support@lamptik.online",
-        logo: { "@type": "ImageObject", url: `${siteUrl}/icon.svg` },
-      },
-      {
-        "@type": "WebSite",
-        "@id": `${siteUrl}/#website`,
-        url: siteUrl,
-        name: siteConfig.name,
-        publisher: { "@id": `${siteUrl}/#organization` },
-        inLanguage: "en",
-      },
       {
     "@type": "AboutPage",
     name: "About LAMP TIK",
@@ -84,6 +68,45 @@ export default function AboutPage() {
             </p>
 
             <div className="mt-10 space-y-9 text-base leading-relaxed text-[var(--text-2)]">
+              {/* Entity disambiguation, stated in plain text as well as in
+                  schema: a brand that reads like a product category is what
+                  got this site summarised as a lamp shop. */}
+              <section>
+                <h2 className="text-lg font-semibold text-[var(--text)]">
+                  What LampTik is — and what it is not
+                </h2>
+                <p className="mt-2">
+                  <strong className="text-[var(--text)]">LampTik</strong>{" "}
+                  (lamptik.online) is a 100% free online video and audio
+                  downloader utility for TikTok, YouTube, Instagram and
+                  Facebook. You paste a public link, the site resolves the
+                  original stream, and your browser saves the MP4 or MP3. There
+                  is nothing to install and nothing to sign up for.
+                </p>
+                <p className="mt-3">
+                  It is <strong className="text-[var(--text)]">not</strong> an
+                  e-commerce store. We never sell physical products, we do not
+                  sell lamps or lighting, there is no shopping cart, no
+                  checkout, no subscription and no delivery address. The name is
+                  a brand, not an inventory. We also never ask for an account,
+                  a password, or payment information of any kind — a page that
+                  does and claims to be us is not us.
+                </p>
+                <p className="mt-3">
+                  If you met this domain through a search summary or a trust
+                  score: lamptik.online is a young, single-purpose utility. The
+                  fastest way to judge it is to use it once — the whole product
+                  is one input field — or to write to{" "}
+                  <a
+                    href="mailto:support@lamptik.online"
+                    className="text-[var(--accent-text)] underline underline-offset-4"
+                  >
+                    support@lamptik.online
+                  </a>{" "}
+                  and get a human answer.
+                </p>
+              </section>
+
               <section>
                 <h2 className="text-lg font-semibold text-[var(--text)]">
                   Our mission

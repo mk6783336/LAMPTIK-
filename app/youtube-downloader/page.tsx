@@ -13,9 +13,7 @@ import {
   faqPageNode,
   howToNode,
   JsonLd,
-  organizationNode,
   webApplicationNode,
-  websiteNode,
 } from "@/components/seo/JsonLd";
 import { Downloader } from "@/components/downloader";
 import { PLATFORMS } from "@/lib/platforms";
@@ -96,8 +94,6 @@ export default function YouTubeDownloaderPage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
-      organizationNode(),
-      websiteNode(),
       webApplicationNode({
         id: `${pageUrl}/#app`,
         name: "LAMP TIK YouTube Video Downloader",

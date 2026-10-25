@@ -27,21 +27,6 @@ export default function ContactPage() {
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": "Organization",
-        "@id": `${siteUrl}/#organization`,
-        name: siteConfig.name,
-        url: siteUrl,
-        email: "support@lamptik.online",
-      },
-      {
-        "@type": "WebSite",
-        "@id": `${siteUrl}/#website`,
-        url: siteUrl,
-        name: siteConfig.name,
-        publisher: { "@id": `${siteUrl}/#organization` },
-        inLanguage: "en",
-      },
-      {
     "@type": "ContactPage",
     name: "Contact LAMP TIK",
     url: `${siteUrl}/contact`,
@@ -161,6 +146,12 @@ export default function ContactPage() {
                   Before you write
                 </h2>
                 <p className="mt-2">
+                  One thing worth saying up front: there is nothing to buy here.
+                  LAMP TIK has no store, cart, subscription or payment page, so
+                  we cannot look up an order or issue a refund — and a site
+                  charging money for a “LAMP TIK download” is not us.
+                </p>
+                <p className="mt-3">
                   Many questions are answered instantly in our{" "}
                   <Link
                     href="/guides"

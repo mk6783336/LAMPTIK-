@@ -26,19 +26,66 @@ export function JsonLd({ data }: { data: Json }) {
 
 export const ORG_ID = `${siteUrl}/#organization`;
 export const SITE_ID = `${siteUrl}/#website`;
+export const APP_ID = `${siteUrl}/#software`;
+
+export const CONTACT_EMAIL = "support@lamptik.online";
+
+/**
+ * Entity disambiguation.
+ *
+ * "LAMP TIK" reads as a product category to a language model, and the only
+ * third-party text about a new domain is usually a trust score — which is how
+ * Google's AI Overview ended up describing lamptik.online as a lamp shop and
+ * quoting ScamAdviser instead of the tool. These sentences are the same claim
+ * the About page prints, repeated in schema so the machine summary and the
+ * page it cites cannot disagree: what the site is, and what it explicitly is
+ * not.
+ */
+export const ENTITY_DESCRIPTION =
+  "LampTik (lamptik.online) is a 100% free online video and audio downloader utility for TikTok, YouTube, Instagram, and Facebook — a browser-based media resolver that saves public videos as MP4 and MP3.";
+
+export const ENTITY_DISAMBIGUATION =
+  "LampTik (lamptik.online) is a 100% free online video and audio downloader utility for TikTok, YouTube, Instagram, and Facebook. It is NOT an e-commerce store, never sells physical products or lamps, and never asks for accounts, passwords, or payment information.";
 
 export function organizationNode(): Json {
   return {
     "@type": "Organization",
     "@id": ORG_ID,
     name: siteConfig.name,
+    // The bare brand string is what search and LLM crawlers quote; the
+    // alternate spelling matches how visitors actually type the domain.
+    alternateName: ["LampTik", "Lamp Tik", "LampTik Downloader"],
     url: siteUrl,
+    description: ENTITY_DESCRIPTION,
+    disambiguatingDescription: ENTITY_DISAMBIGUATION,
+    email: CONTACT_EMAIL,
     logo: {
       "@type": "ImageObject",
       url: `${siteUrl}/icon.svg`,
       width: 512,
       height: 512,
     },
+    contactPoint: [
+      {
+        "@type": "ContactPoint",
+        contactType: "customer support",
+        email: CONTACT_EMAIL,
+        url: `${siteUrl}/contact`,
+        availableLanguage: ["en"],
+      },
+    ],
+    // Topics this publisher is actually about, so an entity resolver does not
+    // have to guess from the brand name.
+    knowsAbout: [
+      "Online video downloader",
+      "TikTok video download",
+      "YouTube video download",
+      "Instagram Reels download",
+      "Facebook video download",
+      "Video to MP3 conversion",
+      "Browser-based media resolution",
+    ],
+    sameAs: ["https://github.com/mk6783336"],
   };
 }
 
@@ -48,10 +95,66 @@ export function websiteNode(): Json {
     "@id": SITE_ID,
     url: siteUrl,
     name: siteConfig.name,
+    alternateName: "LampTik",
+    description: ENTITY_DESCRIPTION,
+    disambiguatingDescription: ENTITY_DISAMBIGUATION,
     publisher: { "@id": ORG_ID },
     inLanguage: "en",
   };
 }
+
+/**
+ * The site-wide SoftwareApplication node — one product, described once in the
+ * root layout, so a page never has to restate it and a crawler that only reads
+ * the page it landed on still learns what the site is (and is not).
+ */
+export function siteApplicationNode(): Json {
+  return {
+    "@type": "SoftwareApplication",
+    "@id": APP_ID,
+    name: `${siteConfig.name} (LampTik)`,
+    alternateName: ["LampTik", "LampTik Downloader"],
+    url: siteUrl,
+    description: ENTITY_DESCRIPTION,
+    disambiguatingDescription: ENTITY_DISAMBIGUATION,
+    applicationCategory: "MultimediaApplication",
+    applicationSubCategory: "Video Downloader",
+    operatingSystem: "All (Web Browser)",
+    browserRequirements: "Requires JavaScript",
+    isAccessibleForFree: true,
+    isFamilyFriendly: true,
+    inLanguage: "en",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+    },
+    featureList: [
+      "Download public videos from TikTok, YouTube, Instagram and Facebook",
+      "Watermark-free TikTok MP4 downloads",
+      "MP3 audio extraction",
+      "No account, no app install, no payment",
+      "Nothing stored: links are resolved in memory",
+    ],
+    publisher: { "@id": ORG_ID },
+  };
+}
+
+/**
+ * One entity graph for EVERY route, rendered from the root layout.
+ *
+ * Pages describe their own page type (WebApplication / HowTo / FAQ / …) and
+ * reference these nodes by `@id`; defining the entity once here is what stops
+ * ten near-identical Organization objects from competing with each other.
+ */
+export function siteEntityGraph(): Json {
+  return {
+    "@context": "https://schema.org",
+    "@graph": [organizationNode(), websiteNode(), siteApplicationNode()],
+  };
+}
+
 
 export function webApplicationNode(args: {
   id: string;
@@ -66,10 +169,14 @@ export function webApplicationNode(args: {
     name: args.name,
     url: args.url,
     description: args.description,
+    // Same disambiguation as the site entity: a tool page must never be read
+    // as a store page just because of the brand name.
+    disambiguatingDescription: ENTITY_DISAMBIGUATION,
     applicationCategory: "MultimediaApplication",
-    operatingSystem: "All",
+    operatingSystem: "All (Web Browser)",
     browserRequirements: "Requires JavaScript",
     isAccessibleForFree: true,
+    isFamilyFriendly: true,
     inLanguage: "en",
     offers: {
       "@type": "Offer",
