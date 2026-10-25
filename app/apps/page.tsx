@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
 import { ArrowUpRight, Chrome, Download, ShieldCheck, Smartphone, Sparkles } from "lucide-react";
 
 import { AmbientBackground } from "@/components/ambient-background";
@@ -37,50 +35,15 @@ export const metadata: Metadata = {
 /**
  * Distribution is deliberately off-store: Chrome Web Store review and a Play
  * Store listing both demand a privacy policy contact they can audit and a
- * publisher identity this project does not have. The ZIP and the APK are built
- * from this repository, so the download button points at real files — and when
- * a build has not been published yet, it says so and links to the release
- * page instead of 404ing a button that claims to start a download.
+ * publisher identity this project does not have. Both files are built from
+ * this repository, but the APK is served by us rather than by GitHub: release
+ * assets on a private repository need authentication, so a release URL would
+ * send visitors to a 404 page instead of starting a download.
  */
 const EXTENSION_ZIP = "/downloads/lamptik-chrome-extension.zip";
-
-/**
- * The signed APK is produced by `.github/workflows/build-apk.yml`, which
- * rebuilds `mobile-app/` on every push and overwrites the asset on the
- * `latest-apk` release. This is the asset URL, not the release page: clicking
- * Download has to start the file, not open GitHub in a new tab.
- */
-const RELEASE_APK =
-  "https://github.com/mk6783336/LAMPTIK-/releases/download/latest-apk/lamptik-android.apk";
-
-interface ApkTarget {
-  href: string;
-  /** True when the file is served from this deployment (so `download` applies). */
-  local: boolean;
-  /** Shown under the buttons when the file is not part of the deployment. */
-  note: string | null;
-}
-
-function resolveApk(): ApkTarget {
-  const fromEnv = process.env.NEXT_PUBLIC_APK_DOWNLOAD_URL?.trim();
-  if (fromEnv) {
-    return {
-      href: fromEnv,
-      local: fromEnv.startsWith("/"),
-      note: "Build published by this repository's Android workflow.",
-    };
-  }
-  // Checked at build time: `public/` is baked into the deployment, so this is
-  // a static answer, not a per-request filesystem probe.
-  if (existsSync(join(process.cwd(), "public", "downloads", "lamptik-android.apk"))) {
-    return { href: "/downloads/lamptik-android.apk", local: true, note: null };
-  }
-  return {
-    href: RELEASE_APK,
-    local: false,
-    note: "Signed by this repository's GitHub Actions build and served straight from the release asset, so the button downloads the .apk itself. Installing from a file means updates are manual — the web downloader always stays current.",
-  };
-}
+const APK_URL =
+  process.env.NEXT_PUBLIC_APK_DOWNLOAD_URL?.trim() || "/downloads/lamptik-android.apk";
+const APK_IS_LOCAL = APK_URL.startsWith("/");
 
 const EXTENSION_STEPS: ReadonlyArray<readonly [string, string]> = [
   [
@@ -113,7 +76,6 @@ const ANDROID_STEPS: ReadonlyArray<readonly [string, string]> = [
 ];
 
 export default function AppsPage() {
-  const apk = resolveApk();
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -305,8 +267,8 @@ export default function AppsPage() {
 
                 <div className="mt-auto flex flex-col gap-2 sm:flex-row">
                   <a
-                    href={apk.href}
-                    {...(apk.local ? { download: true } : {})}
+                    href={APK_URL}
+                    {...(APK_IS_LOCAL ? { download: true } : {})}
                     className="btn btn-primary h-11 flex-1 gap-2 px-5 text-sm font-semibold"
                   >
                     <Download className="size-4" />
@@ -321,9 +283,11 @@ export default function AppsPage() {
                   </Link>
                 </div>
 
-                {apk.note ? (
-                  <p className="text-xs leading-relaxed text-[var(--text-3)]">{apk.note}</p>
-                ) : null}
+                <p className="text-xs leading-relaxed text-[var(--text-3)]">
+                  Signed release build from this repository&apos;s Android workflow, rebuilt on every
+                  change to the app. Installing from a file means updates are manual — the web
+                  downloader always stays current.
+                </p>
               </article>
             </div>
           </section>

@@ -144,9 +144,13 @@ jobs:
           console.log("release buildType now signs with lamptik-release.keystore");
           NODE
 
+      # One ABI only. React Native builds all four by default, which turns a
+      # ~20 MB APK into a 60-80 MB universal one — over Git's comfortable
+      # commit size and slow to download on mobile. arm64-v8a covers every
+      # Android 8+ device that matters (arm32 is emulator/old-kitkat era).
       - name: Build the release APK
         working-directory: mobile-app/android
-        run: ./gradlew assembleRelease --no-daemon --stacktrace
+        run: ./gradlew assembleRelease --no-daemon --stacktrace -PreactNativeArchitectures=arm64-v8a
 
       - name: Stage the APK
         working-directory: mobile-app
