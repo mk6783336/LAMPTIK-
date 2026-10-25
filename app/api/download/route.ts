@@ -335,6 +335,7 @@ async function verifiedBinaryHandoff(
   upstreamUrl: string,
   platform: DownloadPlatform,
   kind: DownloadKind,
+  request: NextRequest,
 ): Promise<Response> {
   try {
     const abort = new AbortController();
@@ -352,7 +353,13 @@ async function verifiedBinaryHandoff(
       // (the ranged probe above). No platform exception: a blind redirect is
       // how Chrome used to save an HTML error page as a download.
       if (acceptable) {
-        return handOffToCdn(finalUrl);
+        // A bridge fallback still names the file: without it the browser saves
+        // "stream" (or `lamptik-audio.m4a`) instead of the platform filename.
+        return handOffToCdn(
+          isBridgeStreamUrl(finalUrl)
+            ? withDownloadName(finalUrl, filenameFor(request, kind, contentType))
+            : finalUrl,
+        );
       }
     } finally {
       clearTimeout(timer);
@@ -639,7 +646,7 @@ async function attemptMedia(request: NextRequest, args: AttemptArgs, allowHeal: 
   // save that page as `download.html`).
   if (!isPartial && contentLength !== null && contentLength >= DIRECT_HANDOFF_BYTES) {
     await upstream.body.cancel().catch(() => undefined);
-    return verifiedBinaryHandoff(upstreamFinalUrl, platform, kind);
+    return verifiedBinaryHandoff(upstreamFinalUrl, platform, kind, request);
   }
 
   // Guard #3: sniff the first chunk (JSON/HTML start bytes).
@@ -701,7 +708,7 @@ async function recoverFromFailure(request: NextRequest, args: AttemptArgs, allow
       return attemptMedia(request, { ...args, upstreamUrl: freshUrl }, false);
     }
   }
-  return verifiedBinaryHandoff(args.upstreamUrl, args.platform, args.kind);
+  return verifiedBinaryHandoff(args.upstreamUrl, args.platform, args.kind, request);
 }
 
 export async function GET(request: NextRequest) {
