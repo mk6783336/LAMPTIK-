@@ -327,6 +327,9 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
   const [backupNote, setBackupNote] = useState<string | null>(null);
   /** A user-submitted link waiting behind the HilltopAds video gate. */
   const [gateUrl, setGateUrl] = useState<string | null>(null);
+  /** Last URL that actually failed, so the inline Retry can skip the gate. */
+  const lastFailureRef = useRef<{ url: string; at: number } | null>(null);
+  const lastSubmittedUrlRef = useRef<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -348,7 +351,12 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
   }, []);
 
   const notify = useCallback((toast: Omit<ToastItem, "id">) => {
-    setToasts((current) => [...current.slice(-2), { ...toast, id: createToastId() }]);
+    // Replace an identical banner instead of stacking a copy under it — the
+    // repeated "couldn't resolve" stack was half of the reported error loop.
+    setToasts((current) => [
+      ...current.filter((item) => item.title !== toast.title).slice(-2),
+      { ...toast, id: createToastId() },
+    ]);
   }, []);
 
   const stopTicker = useCallback(() => {
@@ -507,6 +515,8 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
   function reset() {
     abortRef.current?.abort();
     stopTicker();
+    lastFailureRef.current = null;
+    lastSubmittedUrlRef.current = null;
     setStatus("idle");
     setVideo(null);
     setMedia(null);
@@ -597,6 +607,15 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
    */
   function handleGateSubmit(rawUrl: string) {
     if (isLoading || gateUrl) return;
+    // A retry of the URL that just failed is a recovery action, not a new
+    // video: run it immediately instead of charging another 10s/30s ad
+    // break. Every fresh submission still goes through the gate.
+    const failed = lastFailureRef.current;
+    if (failed && failed.url === rawUrl.trim() && Date.now() - failed.at < 120_000) {
+      setError(null);
+      void handleSubmitUrl(rawUrl, { force: true });
+      return;
+    }
     setError(null);
     setGateUrl(rawUrl);
   }
@@ -606,6 +625,15 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     setGateUrl(null);
     if (!pendingUrl) return;
     void handleSubmitUrl(pendingUrl);
+  }
+
+  /** Inline recovery action: force a fresh resolve without the ad gate. */
+  function retryLastResolve() {
+    if (isLoading) return;
+    const url = lastFailureRef.current?.url ?? lastSubmittedUrlRef.current;
+    if (!url) return;
+    setError(null);
+    void handleSubmitUrl(url, { force: true });
   }
 
   async function handleSubmitUrl(rawUrl: string, options: { force?: boolean } = {}) {
@@ -618,12 +646,17 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     const detectedIncoming = detectIncoming(rawUrl);
     const url = detectedIncoming ? detectedIncoming.url : rawUrl.trim();
 
+    // A new submission supersedes an older in-flight one: abort the stale
+    // request so it cannot repaint the UI with an old error later.
+    abortRef.current?.abort();
+
     setError(null);
     setStatus("loading");
     setVideo(null);
     setMedia(null);
     setElapsedMs(0);
     setBackupNote(null);
+    lastSubmittedUrlRef.current = url;
 
     // Real elapsed-time readout while the resolver runs.
     const startedAt = performance.now();
@@ -644,12 +677,69 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     // are open to any browser — there is no install gate.
     const endpoint = isYouTube ? "/api/youtube" : "/api/fetch";
 
+    /**
+     * Browser rescue, at most ONCE per submission. The old flow could run it
+     * inside the retry loop and again after the loop, doubling the wait and
+     * repainting the same red banner — the reported "error loop".
+     */
+    let rescueAttempted = false;
+    const tryBrowserRescue = async (): Promise<ApiSuccess | null> => {
+      if (rescueAttempted) return null;
+      rescueAttempted = true;
+      setStatus("loading");
+      setBackupNote("Trying your own connection for this video…");
+      let timer: number | null = null;
+      try {
+        return await Promise.race([
+          rescueYouTubeFromBrowser({
+            rawUrl: url,
+            signal: controller.signal,
+            onNote: (note) => setBackupNote(note),
+            onMergeAudio: mergeAudioClaim,
+            onMergeVideo: mergeVideoClaim,
+          }),
+          new Promise<null>((resolve) => {
+            timer = window.setTimeout(() => resolve(null), 12_000);
+          }),
+        ]);
+      } catch {
+        return null;
+      } finally {
+        if (timer !== null) window.clearTimeout(timer);
+      }
+    };
+
+    /** Never repeat the server's internal bot-check line after the rescue
+     *  has already failed; give the visitor one clear next action. */
+    const finalMessage = (apiError: { code?: string; message?: string } | null): string => {
+      if (
+        isYouTube &&
+        (apiError?.code === "PROVIDER_UNAVAILABLE" || apiError?.code === "UPSTREAM_ERROR")
+      ) {
+        return "YouTube is limiting this video on our network right now. Tap Retry — it usually clears in a few seconds.";
+      }
+      return apiError?.message ?? "Couldn’t resolve this video.";
+    };
+
+    const fail = (apiError: { code?: string; message?: string; hint?: string } | null): void => {
+      const message = finalMessage(apiError);
+      lastFailureRef.current = { url, at: Date.now() };
+      setStatus("idle");
+      setBackupNote(null);
+      setError(message);
+      // One inline recovery action is enough: a provider block used to add a
+      // toast on every retry, producing the stacked red banners users saw.
+      if (apiError?.code !== "PROVIDER_UNAVAILABLE" || !isYouTube) {
+        notify({ kind: "error", title: message, description: apiError?.hint });
+      }
+    };
+
     try {
       let payload: ApiSuccess | null = null;
       let lastApiError: { message?: string; hint?: string; code?: string } | null = null;
       let succeeded = false;
-      // Smart client-side auto-healing: one silent background retry
-      // (attempt 2/2) on transient hiccups before ever showing an error.
+      // One silent retry (attempt 2/2) for transient hiccups. Provider
+      // trouble then earns exactly one browser rescue, never a second one.
       for (let attempt = 1; attempt <= 2; attempt += 1) {
         if (attempt === 2) setBackupNote("Switching to backup high-speed server… (attempt 2/2)");
         try {
@@ -674,47 +764,39 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
           lastApiError = apiError;
           const transient =
             !response.ok && (response.status === 502 || response.status === 503 || response.status === 504);
-          const retriableCode =
-            apiError?.code === "PROVIDER_UNAVAILABLE" || apiError?.code === "UPSTREAM_ERROR";
-          if (attempt === 1 && (transient || retriableCode || !response.ok)) {
-            // Silent retry once; the badge above reassures while we do.
+          // A provider block already burned the server's whole waterfall;
+          // running that waterfall a second time just doubles the wait. Only
+          // a genuine transient/upstream hiccup earns the silent retry.
+          const providerBlocked = apiError?.code === "PROVIDER_UNAVAILABLE";
+          const retriableCode = apiError?.code === "UPSTREAM_ERROR";
+          const shouldRetry =
+            !providerBlocked &&
+            (transient || retriableCode || (!response.ok && !apiError));
+          if (attempt === 1 && shouldRetry) {
             await new Promise((resolve) => setTimeout(resolve, 700));
             continue;
           }
-          const message = apiError?.message ?? "Couldn’t resolve this video.";
           // A verdict about the VIDEO (private / deleted / a livestream) is
-          // final; only provider trouble earns a 6s mirror rescue.
+          // final; only provider trouble earns the browser rescue.
           const definitiveVideoError =
             apiError?.code === "VIDEO_PRIVATE" ||
             apiError?.code === "VIDEO_NOT_FOUND" ||
             apiError?.code === "UNSUPPORTED_URL" ||
             apiError?.code === "INVALID_URL";
           if (isYouTube && !definitiveVideoError) {
-            // Server engines exhausted (datacenter-IP blocks) — the visitor's
-            // own residential IP takes over: browser-direct converter jobs +
-            // CORS mirrors. This is the SaveFrom/Y2Mate architecture.
-            setStatus("loading");
-            const rescued = await rescueYouTubeFromBrowser({
-              rawUrl: url,
-              signal: controller.signal,
-              onNote: (note) => setBackupNote(note),
-              onMergeAudio: mergeAudioClaim,
-              onMergeVideo: mergeVideoClaim,
-            });
+            const rescued = await tryBrowserRescue();
             if (rescued) {
               payload = rescued;
               succeeded = true;
               break;
             }
-            setStatus("idle");
           }
-          setStatus("idle");
-          setBackupNote(null);
-          setError(message);
-          notify({ kind: "error", title: message, description: apiError?.hint });
+          if (abortRef.current !== controller) return;
+          fail(apiError);
           return;
         } catch (networkError) {
           if (networkError instanceof DOMException && networkError.name === "AbortError") throw networkError;
+          if (abortRef.current !== controller) return;
           if (attempt === 1) {
             await new Promise((resolve) => setTimeout(resolve, 700));
             continue;
@@ -722,37 +804,14 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
           throw networkError;
         }
       }
-      setBackupNote(null);
-      if ((!succeeded || !payload || !payload.ok) && isYouTube) {
-        const lastCode = lastApiError?.code;
-        if (lastCode === "VIDEO_PRIVATE" || lastCode === "VIDEO_NOT_FOUND") {
-          setStatus("idle");
-          setError(lastApiError?.message ?? "Couldn’t resolve this video.");
-          notify({ kind: "error", title: "Video unavailable", description: lastApiError?.hint });
-          return;
-        }
-        // Last-resort browser-direct rescue for YouTube (see rescueYouTubeFromBrowser).
-        setStatus("loading");
-        const rescued = await rescueYouTubeFromBrowser({
-          rawUrl: url,
-          signal: controller.signal,
-          onNote: (note) => setBackupNote(note),
-          onMergeAudio: mergeAudioClaim,
-          onMergeVideo: mergeVideoClaim,
-        });
-        if (rescued) {
-          payload = rescued;
-          succeeded = true;
-        }
-      }
+
       if (!succeeded || !payload || !payload.ok) {
-        const message = lastApiError?.message ?? "Couldn’t resolve this video.";
-        setStatus("idle");
-        setError(message);
-        notify({ kind: "error", title: message, description: lastApiError?.hint });
+        if (abortRef.current !== controller) return;
+        fail(lastApiError);
         return;
       }
 
+      lastFailureRef.current = null;
       setVideo(payload.video);
       setMedia(payload.media);
       setStatus("success");
@@ -769,29 +828,30 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
       });
 
     } catch (requestError) {
+      // A newer submission (or a reset) owns the UI now; do not clobber it.
+      if (abortRef.current !== controller) return;
       const timedOut =
         requestError instanceof DOMException && requestError.name === "AbortError";
+      const message = timedOut
+        ? "The resolver timed out. Try again in a moment."
+        : "Network error. Check your connection and try again.";
+      lastFailureRef.current = { url, at: Date.now() };
       setStatus("idle");
       setBackupNote(null);
-      if (timedOut) {
-        setError("The resolver timed out. Try again in a moment.");
-        notify({
-          kind: "error",
-          title: "Request timed out",
-          description: "TikTok is responding slowly — retry shortly.",
-        });
-      } else {
-        setError("Network error. Check your connection and try again.");
-        notify({
-          kind: "error",
-          title: "Network error",
-          description: "Check your connection, then retry.",
-        });
-      }
+      setError(message);
+      notify({
+        kind: "error",
+        title: timedOut ? "Request timed out" : "Network error",
+        description: timedOut
+          ? "The server is responding slowly — retry shortly."
+          : "Check your connection, then retry.",
+      });
     } finally {
-      stopTicker();
-      if (timeout !== null) window.clearTimeout(timeout);
-      abortRef.current = null;
+      if (abortRef.current === controller) {
+        stopTicker();
+        if (timeout !== null) window.clearTimeout(timeout);
+        abortRef.current = null;
+      }
     }
   }
 
@@ -870,6 +930,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
           error={error}
           platform={platform}
           onSubmitUrl={handleGateSubmit}
+          onRetry={retryLastResolve}
           onNotify={notify}
         />
 

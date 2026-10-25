@@ -6,7 +6,7 @@ import { extractYouTube } from "@/lib/youtube";
 import { universalYtdlpHit } from "@/lib/universal-ytdlp";
 import { resolveVideo } from "@/lib/tiktok";
 import { buildDownloadLinks } from "@/lib/tiktok/links";
-import { isConverterAttachmentUrl, isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
+import { isConverterAttachmentUrl, isInvidiousDirectUrl, isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
 import { isPublicMediaUrl } from "@/lib/security";
 import type { VideoCodec, VideoInfo } from "@/lib/tiktok/types";
 import { assertInputUrl, detectPlatform, type PlatformType } from "@/lib/url-guard";
@@ -238,7 +238,10 @@ export function assembleYouTubeMedia(
   // always ride the same-origin proxy — a direct browser hit would be refused.
   // `browserDirect` therefore only ever carries a converter-style attachment
   // link when a mirror happens to expose one.
-  const browserDirectVideo = streams.video && isConverterAttachmentUrl(streams.video) ? streams.video : null;
+  const browserDirectVideo =
+    streams.video && (isConverterAttachmentUrl(streams.video) || isInvidiousDirectUrl(streams.video))
+      ? streams.video
+      : null;
   const browserDirectAudio = streams.audio && isConverterAttachmentUrl(streams.audio) ? streams.audio : null;
 
   const downloads = buildDownloadLinks(

@@ -4,7 +4,7 @@ import { AppError } from "@/lib/errors";
 import { asRecord, asString, cleanCaption, DESKTOP_UA, toDuration } from "@/lib/http";
 import { runWaterfall, WATERFALL_TIMEOUT_MS } from "@/lib/load-balancer";
 import { ytdlpExtract } from "@/lib/youtube-ytdlp";
-import { isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
+import { INVIDIOUS_DIRECT_HOSTS, isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
 
 /**
  * YouTube resolution engine — no third-party converter in the path.
@@ -178,6 +178,15 @@ async function ytdlCoreResolve(videoId: string, canonicalUrl: string): Promise<T
   };
 }
 
+const INNERTUBE_KEY = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
+const INNERTUBE_URL = `https://www.youtube.com/youtubei/v1/player?key=${INNERTUBE_KEY}&prettyPrint=false`;
+
+/** Client-specific HTTP UAs. Sending a desktop UA with an Android context is
+ *  itself a bot signal — YouTube expects the UA to match the client. */
+const ANDROID_UA = "com.google.android.youtube/21.26.364 (Linux; U; Android 11) gzip";
+const SAFARI_UA =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.5 Safari/605.1.15,gzip(gfe)";
+
 /**
  * POST /youtubei/v1/player purely for METADATA: the real duration in seconds.
  * The converted-file path gives us a stream but never a duration, and the
@@ -185,13 +194,15 @@ async function ytdlCoreResolve(videoId: string, canonicalUrl: string): Promise<T
  * usually answers even when YouTube bot-checks every stream provider.
  */
 async function innertubeDuration(videoId: string): Promise<number> {
+  const session = await visitorDataToken(videoId).catch(() => null);
   const response = await fetch(INNERTUBE_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Origin: "https://www.youtube.com",
       Referer: "https://www.youtube.com/",
-      "User-Agent": DESKTOP_UA,
+      "User-Agent": ANDROID_UA,
+      ...(session ? { "X-Goog-Visitor-Id": session } : {}),
     },
     signal: AbortSignal.timeout(7_000),
     body: JSON.stringify({
@@ -200,7 +211,16 @@ async function innertubeDuration(videoId: string): Promise<number> {
       // (lengthSeconds) on refusals, where the legacy WEB client now returns
       // a playability error with no metadata at all.
       context: {
-        client: { clientName: "ANDROID", clientVersion: "20.10.38", androidSdkVersion: 30, hl: "en", gl: "US" },
+        client: {
+          clientName: "ANDROID",
+          clientVersion: "21.26.364",
+          androidSdkVersion: 30,
+          osName: "Android",
+          osVersion: "11",
+          hl: "en",
+          gl: "US",
+          ...(session ? { visitorData: session } : {}),
+        },
       },
       contentCheckOk: true,
       racyCheckOk: true,
@@ -212,24 +232,82 @@ async function innertubeDuration(videoId: string): Promise<number> {
   return toDuration(asRecord(root?.videoDetails)?.lengthSeconds);
 }
 
-const INNERTUBE_KEY = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
-const INNERTUBE_URL = `https://www.youtube.com/youtubei/v1/player?key=${INNERTUBE_KEY}&prettyPrint=false`;
+type InnertubeContext = {
+  clientName: string;
+  clientVersion: string;
+} & Record<string, string | number>;
 
-const INNERTUBE_CLIENTS = [
-  // The one client that still returns a muxed MP4 (itag 18) from a
-  // datacenter IP, with the AAC ladder and a real duration. Version 19.x is
-  // answered with an empty body — keep this current.
+interface InnertubeClient {
+  name: string;
+  clientId: number;
+  /** HTTP UA that matches this client's context. */
+  userAgent: string;
+  /** Embedded players need a third-party embed context. */
+  embedUrl?: string;
+  context: InnertubeContext;
+}
+
+/**
+ * Player clients mirrored from the current yt-dlp set. `visionos` is the
+ * JS-less default upstream; `tv_samsung` is the TV fallback; `web_embedded`
+ * (with a non-YouTube third-party embed URL) is the age/embed path. The
+ * Android client stays first because it is the only one that returns a
+ * progressive muxed MP4 (itag 18) in one URL.
+ */
+const INNERTUBE_CLIENTS: [InnertubeClient, ...InnertubeClient[]] = [
   {
     name: "youtube:innertube-android",
     clientId: 3,
-    context: { clientName: "ANDROID", clientVersion: "20.10.38", androidSdkVersion: 30, hl: "en", gl: "US" },
+    userAgent: ANDROID_UA,
+    context: {
+      clientName: "ANDROID",
+      clientVersion: "21.26.364",
+      androidSdkVersion: 30,
+      osName: "Android",
+      osVersion: "11",
+      hl: "en",
+      gl: "US",
+    },
+  },
+  {
+    name: "youtube:innertube-visionos",
+    clientId: 101,
+    userAgent: SAFARI_UA,
+    context: {
+      clientName: "VISIONOS",
+      clientVersion: "1.02",
+      deviceMake: "Apple",
+      deviceModel: "RealityDevice17,1",
+      osName: "visionOS",
+      osVersion: "26.5.23O471",
+      hl: "en",
+      gl: "US",
+    },
+  },
+  {
+    name: "youtube:innertube-tv-samsung",
+    clientId: 7,
+    userAgent:
+      "Mozilla/5.0 (SMART-TV; Linux; Tizen 2.4.0) AppleWebKit/538.1 (KHTML, like Gecko) Version/2.4.0 TV Safari/538.1",
+    context: {
+      clientName: "TVHTML5",
+      clientVersion: "5.20260707",
+      deviceMake: "Samsung",
+      deviceModel: "UKS9800",
+      osName: "Tizen",
+      osVersion: "2.4.0",
+      hl: "en",
+      gl: "US",
+    },
   },
   {
     name: "youtube:innertube-ios",
     clientId: 5,
+    userAgent: "com.google.ios.youtube/21.26.4 (iPhone16,2; U; CPU iOS 18_3_2 like Mac OS X;)",
     context: {
       clientName: "IOS",
-      clientVersion: "20.10.4",
+      clientVersion: "21.26.4",
+      deviceMake: "Apple",
       deviceModel: "iPhone16,2",
       osName: "iPhone",
       osVersion: "18.3.2.22D82",
@@ -240,22 +318,47 @@ const INNERTUBE_CLIENTS = [
   {
     name: "youtube:innertube-android-vr",
     clientId: 28,
-    context: { clientName: "ANDROID_VR", clientVersion: "1.62.27", androidSdkVersion: 32, hl: "en", gl: "US" },
+    userAgent:
+      "com.google.android.apps.youtube.vr.oculus/1.65.10 (Linux; U; Android 12L; eureka-user Build/SQ3A.220605.009.A1) gzip",
+    context: {
+      clientName: "ANDROID_VR",
+      clientVersion: "1.65.10",
+      deviceMake: "Oculus",
+      deviceModel: "Quest 3",
+      androidSdkVersion: 32,
+      osName: "Android",
+      osVersion: "12L",
+      hl: "en",
+      gl: "US",
+    },
   },
   {
-    name: "youtube:innertube-android-testsuite",
-    clientId: 30,
-    context: { clientName: "ANDROID_TESTSUITE", clientVersion: "1.9", androidSdkVersion: 30, hl: "en", gl: "US" },
+    name: "youtube:innertube-web-embedded",
+    clientId: 56,
+    userAgent: SAFARI_UA,
+    // A non-YouTube embed URL is what the embedded client expects; using
+    // youtube.com here makes YouTube answer "video unavailable".
+    embedUrl: "https://www.reddit.com/",
+    context: {
+      clientName: "WEB_EMBEDDED_PLAYER",
+      clientVersion: "2.20260708.00.00",
+      hl: "en",
+      gl: "US",
+    },
   },
   {
     name: "youtube:innertube-tv-embedded",
     clientId: 85,
-    // The embedded TV client only works with a third-party embed context AND a
-    // matching embed Referer (see innertubePlayer) — without both it answers
-    // "YouTube is no longer supported in this application or device".
-    context: { clientName: "TVHTML5_SIMPLY_EMBEDDED_PLAYER", clientVersion: "2.0", hl: "en", gl: "US" },
+    userAgent: SAFARI_UA,
+    embedUrl: "https://www.reddit.com/",
+    context: {
+      clientName: "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
+      clientVersion: "2.0",
+      hl: "en",
+      gl: "US",
+    },
   },
-] as const;
+];
 
 /* ------------------------------------------------------------------
  * Datacenter context: visitorData + public-video proof.
@@ -291,22 +394,39 @@ function extractVisitorData(html: string): string | null {
 
 async function loadVisitorData(videoId: string): Promise<string | null> {
   const now = Date.now();
-  try {
-    const response = await fetch(`https://www.youtube.com/embed/${encodeURIComponent(videoId)}`, {
-      headers: { "User-Agent": DESKTOP_UA, Accept: "text/html" },
-      cache: "no-store",
-      signal: AbortSignal.timeout(3_500),
-    });
-    if (!response.ok) {
-      await response.body?.cancel().catch(() => undefined);
-      return null;
+  // The embed page usually carries visitorData, but a consent/challenge page
+  // can replace it. The watch page and the homepage carry the same ytcfg
+  // token, so try all three before giving up on a session context.
+  const pages = [
+    `https://www.youtube.com/embed/${encodeURIComponent(videoId)}`,
+    `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`,
+    "https://www.youtube.com/",
+  ];
+  for (const page of pages) {
+    try {
+      const response = await fetch(page, {
+        headers: {
+          "User-Agent": DESKTOP_UA,
+          Accept: "text/html,application/xhtml+xml",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(3_500),
+      });
+      if (!response.ok) {
+        await response.body?.cancel().catch(() => undefined);
+        continue;
+      }
+      const token = extractVisitorData(await response.text());
+      if (token) {
+        visitorDataCache = { value: token, expiresAt: now + VISITOR_DATA_TTL_MS };
+        return token;
+      }
+    } catch {
+      // Try the next page; a missing session token is a soft downgrade.
     }
-    const token = extractVisitorData(await response.text());
-    if (token) visitorDataCache = { value: token, expiresAt: now + VISITOR_DATA_TTL_MS };
-    return token;
-  } catch {
-    return null; // metadata page unreachable — call without a session token
   }
+  return null;
 }
 
 async function visitorDataToken(videoId: string): Promise<string | null> {
@@ -371,26 +491,27 @@ interface InnertubeFormat {
 
 async function innertubePlayer(
   videoId: string,
-  client: (typeof INNERTUBE_CLIENTS)[number],
+  client: InnertubeClient,
 ): Promise<TierHit> {
-  const embedded = client.context.clientName.includes("EMBEDDED");
   const session = await visitorDataToken(videoId);
   const response = await fetch(INNERTUBE_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Origin: "https://www.youtube.com",
-      // The embedded players are only accepted with an /embed/ referer.
-      Referer: embedded ? `https://www.youtube.com/embed/${videoId}` : "https://www.youtube.com/",
-      "User-Agent": DESKTOP_UA,
+      // Embedded players must look like a third-party embed, not a YouTube
+      // page load. A YouTube referer here makes them answer "unavailable".
+      Referer: client.embedUrl ?? "https://www.youtube.com/",
+      "User-Agent": client.userAgent,
       "X-YouTube-Client-Name": String(client.clientId),
       "X-YouTube-Client-Version": client.context.clientVersion,
+      ...(session ? { "X-Goog-Visitor-Id": session } : {}),
     },
     body: JSON.stringify({
       videoId,
       context: {
         client: { ...client.context, ...(session ? { visitorData: session } : {}) },
-        ...(embedded ? { thirdParty: { embedUrl: "https://www.youtube.com/" } } : {}),
+        ...(client.embedUrl ? { thirdParty: { embedUrl: client.embedUrl } } : {}),
       },
       contentCheckOk: true,
       racyCheckOk: true,
@@ -632,6 +753,93 @@ async function invidiousStreams(videoId: string, api: string): Promise<TierHit> 
     thumbnail: thumb,
     streams: { video: primary, videoSd: primary && sd && sd !== primary ? sd : null, audio: null },
   };
+}
+
+/**
+ * Direct Invidious attachment (`/latest_version?id=…&itag=18&local=true`).
+ * The instance proxies the bytes, so a datacenter-blocked resolver can still
+ * hand off a file. The endpoint is never trusted blindly: a real Range
+ * request must return MP4/WebM bytes, not the Cloudflare/HTML page that dead
+ * mirrors answer with.
+ */
+async function invidiousDirectStream(videoId: string, canonicalUrl: string): Promise<TierHit> {
+  const candidates = await Promise.all(
+    INVIDIOUS_DIRECT_HOSTS.map(async (host) => {
+      const url = `https://${host}/latest_version?id=${encodeURIComponent(videoId)}&itag=18&local=true`;
+      try {
+        const response = await fetch(url, {
+          headers: {
+            "User-Agent": DESKTOP_UA,
+            Range: "bytes=0-4095",
+            Accept: "video/mp4,video/webm,*/*",
+          },
+          redirect: "follow",
+          cache: "no-store",
+          signal: AbortSignal.timeout(4_500),
+        });
+        if (!response.ok) {
+          await response.body?.cancel().catch(() => undefined);
+          return null;
+        }
+        const type = (response.headers.get("content-type") ?? "").toLowerCase();
+        if (type.startsWith("video/")) {
+          await response.body?.cancel().catch(() => undefined);
+          return url;
+        }
+        const bytes = new Uint8Array(await response.arrayBuffer());
+        const mp4 =
+          bytes.length >= 8 &&
+          bytes[4] === 0x66 && // f
+          bytes[5] === 0x74 && // t
+          bytes[6] === 0x79 && // y
+          bytes[7] === 0x70; // p
+        const webm =
+          bytes.length >= 4 &&
+          bytes[0] === 0x1a &&
+          bytes[1] === 0x45 &&
+          bytes[2] === 0xdf &&
+          bytes[3] === 0xa3;
+        return mp4 || webm ? url : null;
+      } catch {
+        return null;
+      }
+    }),
+  );
+  const direct = candidates.find((value): value is string => Boolean(value)) ?? null;
+  if (!direct) {
+    throw new AppError("PROVIDER_UNAVAILABLE", "No direct mirror answered.");
+  }
+
+  const meta = await oembedMeta(videoId, canonicalUrl).catch(() => null);
+  const duration = await watchPageDuration(videoId);
+  return {
+    id: videoId,
+    title: meta?.title ?? `YouTube video ${videoId}`,
+    author: meta?.author ?? "YouTube",
+    duration,
+    thumbnail: meta?.thumbnail ?? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+    streams: { video: direct, videoSd: null, audio: null },
+  };
+}
+
+/** Real duration from the watch page (works when the player API is gated). */
+async function watchPageDuration(videoId: string): Promise<number> {
+  try {
+    const response = await fetch(`https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`, {
+      headers: { "User-Agent": DESKTOP_UA, "Accept-Language": "en-US,en;q=0.9" },
+      cache: "no-store",
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!response.ok) {
+      await response.body?.cancel().catch(() => undefined);
+      return 0;
+    }
+    const html = await response.text();
+    const match = html.match(/"lengthSeconds":"(\d+)"/);
+    return match ? toDuration(match[1]) : 0;
+  } catch {
+    return 0;
+  }
 }
 
 /** Cobalt-era tunnel URLs expired within ~2 minutes and produced the
@@ -909,14 +1117,18 @@ async function resolveYouTubeStreams(
     ]);
   } catch (error) {
     if (isDefinitiveVideoError(error)) throw error;
+    // Last resort: a direct Invidious attachment endpoint, verified with a
+    // real byte-range request. This is the only path left when every player
+    // client is bot-checked and the JSON mirrors are down.
+    const direct = await invidiousDirectStream(id, canonicalUrl).catch(() => null);
+    if (direct) return requireStreams(direct);
     // Every engine failed for a reason that is NOT the video (bot-checked
     // datacenter IP, mirror timeout). Surface one stable, user-safe message
-    // instead of the last engine's internal timeout text; the hint is what
-    // tells the UI to hand the resolve to the visitor's own connection.
+    // instead of the last engine's internal timeout text.
     throw new AppError(
       "PROVIDER_UNAVAILABLE",
-      "YouTube is bot-checking this network — trying your own connection.",
-      "If this screen returns, retry in a moment.",
+      "YouTube is limiting downloads on this server network right now.",
+      "Retry in a moment — the browser fallback also tries your own connection.",
     );
   }
 
@@ -974,8 +1186,8 @@ export async function startYouTubeResolution(
     if (error instanceof AppError) throw error;
     throw new AppError(
       "PROVIDER_UNAVAILABLE",
-      "Resolving high-speed stream — retry in a moment.",
-      "YouTube is rate-limiting this network; try again shortly.",
+      "YouTube is limiting downloads on this server network right now.",
+      "Retry in a moment — the browser fallback also tries your own connection.",
     );
   }
 }
@@ -1025,8 +1237,8 @@ export async function extractYouTube(rawUrl: string): Promise<ResolvedYouTube> {
 
     throw new AppError(
       "PROVIDER_UNAVAILABLE",
-      "Resolving high-speed stream — retry in a moment.",
-      "YouTube is rate-limiting this network; try again shortly.",
+      "YouTube is limiting downloads on this server network right now.",
+      "Retry in a moment — the browser fallback also tries your own connection.",
     );
   }
 }

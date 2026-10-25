@@ -78,6 +78,7 @@ export async function clientOembedMeta(videoId: string): Promise<ClientVideoMeta
         headers: { Accept: "application/json" },
         mode: "cors",
         cache: "no-store",
+        signal: AbortSignal.timeout(3_500),
       });
       if (!response.ok) continue;
       const data = (await response.json().catch(() => null)) as Record<string, unknown> | null;
@@ -146,6 +147,7 @@ async function pipedMirror(videoId: string): Promise<MirrorStreams | null> {
           headers: { Accept: "application/json" },
           mode: "cors",
           cache: "no-store",
+          signal: AbortSignal.timeout(3_500),
         });
         if (!response.ok) return null;
         const data = (await response.json().catch(() => null)) as Record<string, unknown> | null;
@@ -206,6 +208,7 @@ async function invidiousMirror(videoId: string): Promise<MirrorStreams | null> {
           headers: { Accept: "application/json" },
           mode: "cors",
           cache: "no-store",
+          signal: AbortSignal.timeout(3_500),
         });
         if (!response.ok) return null;
         const data = (await response.json().catch(() => null)) as Record<string, unknown> | null;

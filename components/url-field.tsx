@@ -31,6 +31,8 @@ interface UrlFieldProps {
   platform: Platform;
   /** Valid video link (any platform) ready to resolve. */
   onSubmitUrl: (url: string) => void;
+  /** Inline recovery after a failed resolve (skips the ad gate). */
+  onRetry?: () => void;
   onNotify: (toast: Omit<ToastItem, "id">) => void;
 }
 
@@ -51,6 +53,7 @@ export function UrlField({
   error,
   platform,
   onSubmitUrl,
+  onRetry,
   onNotify,
 }: UrlFieldProps) {
   const [input, setInput] = useState("");
@@ -307,9 +310,10 @@ export function UrlField({
         className="mt-2 flex min-h-[18px] items-center justify-between gap-3 px-0.5 text-sm"
       >
         <span
+          title={displayError ?? undefined}
           className={cn(
-            "min-w-0 truncate",
-            displayError && "text-[var(--err)]",
+            "min-w-0",
+            displayError ? "text-[var(--err)]" : "truncate",
             !displayError && !detected && "text-[var(--text-3)]",
             !displayError && detected && "text-[var(--text-2)]",
           )}
@@ -330,9 +334,19 @@ export function UrlField({
             </>
           )}
         </span>
-        <span className="micro hidden shrink-0 items-center gap-1 text-[var(--text-3)] sm:flex">
-          ⌘V paste
-        </span>
+        {displayError && error && onRetry ? (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="shrink-0 rounded-lg border border-[var(--err)]/35 bg-[var(--err-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--err)] transition-colors hover:border-[var(--err)]/60"
+          >
+            Retry now
+          </button>
+        ) : (
+          <span className="micro hidden shrink-0 items-center gap-1 text-[var(--text-3)] sm:flex">
+            ⌘V paste
+          </span>
+        )}
       </div>
 
       <button

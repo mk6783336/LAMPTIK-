@@ -48,6 +48,32 @@ export function isConverterAttachmentUrl(value: string): boolean {
   }
 }
 
+/**
+ * Invidious instances that expose `/latest_version`. With `local=true` the
+ * instance itself proxies the media bytes, so a visitor whose network cannot
+ * reach googlevideo.com can still download through a public mirror.
+ */
+export const INVIDIOUS_DIRECT_HOSTS = [
+  "yewtu.be",
+  "invidious.nerdvpn.de",
+  "inv.nadeko.net",
+] as const;
+
+/** True for an Invidious `/latest_version` attachment URL we can hand off. */
+export function isInvidiousDirectUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase();
+    return (
+      INVIDIOUS_DIRECT_HOSTS.some((known) => host === known || host.endsWith(`.${known}`)) &&
+      /^\/latest_version\/?$/.test(url.pathname) &&
+      url.searchParams.has("id")
+    );
+  } catch {
+    return false;
+  }
+}
+
 /** True for Loader/Savenow links which are still converter job handles. */
 export function isLoaderJobUrl(value: string): boolean {
   try {
