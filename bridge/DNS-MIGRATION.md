@@ -8,6 +8,30 @@ keeps serving the site, Cloudflare only answers DNS.
 Do the records **before** the nameservers, so there is no window where the site
 has no DNS.
 
+## Status (2026-10-25) — live
+
+The migration is done and `bridge.lamptik.online` serves traffic:
+
+- Zone `lamptik.online` is active on Cloudflare: `gail.ns.cloudflare.com`,
+  `piotr.ns.cloudflare.com`.
+- `cloudflared tunnel login` was authorized; the origin cert lives at
+  `~/.cloudflared/cert.pem`.
+- Tunnel **`lamptik-bridge`**: `1914e86b-9d47-49e8-870f-6a793835641b`,
+  credentials in `~/.cloudflared/1914e86b-….json`, config in
+  `.scratch/cloudflared-bridge.yml`.
+- Verified end to end: `/health` 200, `YQHsXMglC9A` (Adele – Hello) resolves
+  with duration 367 s, the signed stream answers `206 video/mp4` with a real
+  `ftyp`, and the app's `/api/download` proxies it in ~1.3 s.
+- `.env.local` holds `YTDLP_BRIDGE_URL=https://bridge.lamptik.online`. The same
+  value plus `BRIDGE_SECRET` must be set in Vercel for production.
+
+Restarting the bridge + tunnel after a reboot is two commands:
+
+```bash
+python bridge/app.py                                    # with BRIDGE_SECRET set
+cloudflared tunnel --config .scratch/cloudflared-bridge.yml run lamptik-bridge
+```
+
 ## What DNS answers today (verified 2026-10-25)
 
 | Type | Name | Value | Proxy |
@@ -50,8 +74,8 @@ No CAA and no DMARC record exist today, so nothing else has to be preserved.
    curl -sS https://www.lamptik.online/api/health
    ```
 
-7. Only then create the tunnel, once `cloudflared tunnel login` has authorized
-   the zone:
+7. Tunnel creation is already done here (see *Status* above); the commands are
+   kept for a rebuild from scratch:
 
    ```bash
    cloudflared tunnel login                       # browser, pick lamptik.online

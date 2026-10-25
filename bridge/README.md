@@ -153,9 +153,23 @@ cloudflared tunnel --url http://127.0.0.1:7860
 Cloudflare prints a `https://<random>.trycloudflare.com` URL. Put that URL in
 Vercel as `YTDLP_BRIDGE_URL`, keep the terminal and the PC awake, and the
 Vercel resolver will use your residential connection. The URL **changes every
-time the tunnel restarts**; update the Vercel variable then. For a stable
-hostname, use a named Cloudflare Tunnel on a domain you control (for example
-`bridge.lamptik.online`) or a small VPS.
+time the tunnel restarts**; update the Vercel variable then.
+
+### Permanent hostname (named tunnel)
+
+A named tunnel fixes the rotating URL. One already exists for this deployment:
+
+```bash
+cloudflared tunnel --config .scratch/cloudflared-bridge.yml run lamptik-bridge
+```
+
+It publishes `https://bridge.lamptik.online` — a CNAME to
+`1914e86b-….cfargotunnel.com` — so restarting the PC never changes the value in
+Vercel. It answers whenever the PC, the bridge and the tunnel are running; see
+[DNS-MIGRATION.md](DNS-MIGRATION.md) for the DNS side and the verification
+commands.
+
+For a host outside this PC, a small VPS with the same Dockerfile works too.
 
 ## Wire-up contract
 
