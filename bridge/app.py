@@ -33,6 +33,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -47,7 +48,10 @@ from flask import Flask, Response, jsonify, request, stream_with_context
 app = Flask(__name__)
 
 BRIDGE_SECRET = os.environ.get("BRIDGE_SECRET", "").strip()
-RESOLVE_TIMEOUT_S = int(os.environ.get("RESOLVE_TIMEOUT_S", "9"))
+# Audio resolves lazily on the first byte request and uses the web client,
+# which is slower than the Android video path (~6-8s cold). A 9s ceiling lost
+# that race often enough to answer the first MP3 click with a 502.
+RESOLVE_TIMEOUT_S = int(os.environ.get("RESOLVE_TIMEOUT_S", "15"))
 STREAM_TTL_S = int(os.environ.get("STREAM_TTL_S", "7200"))
 MEDIA_CACHE_TTL_S = int(os.environ.get("MEDIA_CACHE_TTL_S", "120"))
 MAX_URL_LENGTH = 2048
@@ -376,12 +380,24 @@ def resolve() -> Response:
     )
 
 
+def _download_name(kind: str) -> str:
+    """The `name` query argument, sanitised, so a direct link still saves as a
+    real media file. Display-only: it is not part of the signature, and every
+    character outside `[A-Za-z0-9._-]` is dropped."""
+    raw = (request.args.get("name") or "").strip()
+    safe = re.sub(r"[^A-Za-z0-9._-]", "", raw)[:120].lstrip(".")
+    if not safe or "." not in safe:
+        return f"lamptik-{kind}.{'mp4' if kind == 'video' else 'm4a'}"
+    return safe
+
+
 def _media_headers(upstream: requests.Response, kind: str) -> dict[str, str]:
     headers = {
         "Content-Type": upstream.headers.get(
             "Content-Type", "audio/mp4" if kind == "audio" else "video/mp4"
         ),
         "Accept-Ranges": upstream.headers.get("Accept-Ranges", "bytes"),
+        "Content-Disposition": f'attachment; filename="{_download_name(kind)}"',
         "Cache-Control": "no-store",
     }
     for name in ("Content-Length", "Content-Range"):
@@ -461,6 +477,12 @@ def stream() -> Response:
         return _json({"error": "expired or invalid stream signature"}, 403)
 
     media, _, error = _media_for(url, kind)
+    if error or not media:
+        # One retry: a cold lazy extraction can lose its race with YouTube's
+        # first response, and the visitor sees that as a dead MP3 button.
+        with _media_lock:
+            _media_cache.pop((url, kind), None)
+        media, _, error = _media_for(url, kind)
     if error or not media:
         return _json({"error": error or "stream unavailable"}, 502)
 

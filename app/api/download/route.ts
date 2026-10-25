@@ -213,6 +213,40 @@ function handOffToCdn(upstreamUrl: string): Response {
 }
 
 /**
+ * The self-hosted yt-dlp bridge is a streaming server in its own right: it
+ * answers with `Content-Length` + `Content-Disposition` and reads YouTube in
+ * 1 MiB byte ranges. Relaying those bytes through the Edge function measured
+ * ~15 KB/s and truncated a mid-size music video, while the same signed bridge
+ * URL served a browser at ~240 KB/s — so a bridge hop is redirected, never
+ * relayed. Every bridge URL is already public https and IP-independent (it
+ * proxies the platform itself), so the visitor's own connection is both the
+ * fastest and the only reliable transport here.
+ */
+function isBridgeStreamUrl(candidate: string): boolean {
+  const configured =
+    process.env.YTDLP_WORKER_URL ??
+    process.env.NEXT_PUBLIC_YTDLP_WORKER_URL ??
+    process.env.YTDLP_BRIDGE_URL;
+  if (!configured) return false;
+  try {
+    return new URL(candidate).host === new URL(configured).host;
+  } catch {
+    return false;
+  }
+}
+
+/** Attach the browser-side filename to a hand-off URL the bridge understands. */
+function withDownloadName(url: string, name: string): string {
+  try {
+    const target = new URL(url);
+    target.searchParams.set("name", name);
+    return target.toString();
+  } catch {
+    return url;
+  }
+}
+
+/**
  * Unattachable failure. Chrome never saves a non-2xx download navigation —
  * no `download.html`, no `download.json`, just the regular failed-download
  * state. This replaces the old 302-to-`/?dl=…` hand-off, which caused Chrome
@@ -588,6 +622,14 @@ async function attemptMedia(request: NextRequest, args: AttemptArgs, allowHeal: 
   if (!isPartial && contentLength !== null && contentLength < MIN_MEDIA_BYTES) {
     await upstream.body.cancel().catch(() => undefined);
     return recoverFromFailure(request, args, allowHeal);
+  }
+
+  // A bridge hop always hands off: the response just validated is the signed
+  // attachment URL itself, so no extra probe is needed and the Edge function
+  // stops being the bottleneck for a large video.
+  if (!isPartial && isBridgeStreamUrl(upstreamUrl)) {
+    await upstream.body.cancel().catch(() => undefined);
+    return handOffToCdn(withDownloadName(upstreamUrl, filenameFor(request, kind, upstreamType)));
   }
 
   // Too big to finish inside the runtime's 300s streaming window: hand the

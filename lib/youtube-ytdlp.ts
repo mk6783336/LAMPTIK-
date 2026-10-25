@@ -281,7 +281,11 @@ export interface YtdlpEngineHealth {
 let bridgePing: { reachable: boolean; expiresAt: number } | null = null;
 
 const BRIDGE_PING_TTL_MS = 60_000;
-const BRIDGE_PING_TIMEOUT_MS = 3_000;
+// The bridge is usually reached through a Cloudflare tunnel, and a cold hop
+// from a Vercel region regularly takes longer than 3s — which reported a
+// perfectly healthy bridge as `bridgeReachable: false`. The result is cached,
+// so a generous bound keeps the uptime probe honest without making it slow.
+const BRIDGE_PING_TIMEOUT_MS = 8_000;
 
 /**
  * One health snapshot — no streaming, no extraction, bounded well under a
