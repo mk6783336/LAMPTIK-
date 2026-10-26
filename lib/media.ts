@@ -34,6 +34,14 @@ export interface MediaPayload {
   videoSd: string | null;
   audioDirect: string | null;
   audioMp3: string | null;
+  /**
+   * Container of the audio file the user actually receives. The field name
+   * `audioMp3` is historical: YouTube audio comes from an AAC ladder and is
+   * saved as `.m4a`, while TikTok's original sound really is MPEG audio.
+   * `null` means "do not promise a format" (Instagram/Facebook, unknown
+   * mirrors) — the button then says just "Audio".
+   */
+  audioFormat: "mp3" | "m4a" | null;
   /** Real byte sizes from the CDN/probe, for honest button labels. */
   videoHdBytes: number | null;
   videoSdBytes: number | null;
@@ -92,6 +100,9 @@ function mediaFromVideo(video: VideoInfo, canonicalUrl: string): MediaPayload {
     videoSd: isHd ? video.downloads.videoSd : video.downloads.video,
     audioDirect: video.downloads.audioDirect,
     audioMp3: video.downloads.audio,
+    // TikWM's music URL is `audio_mpeg`; YouTube overrides this below with the
+    // container its winning tier actually serves.
+    audioFormat: platform === "tiktok" ? "mp3" : null,
     videoHdBytes: isHd ? video.byteSize ?? null : null,
     videoSdBytes: isHd ? video.byteSizeSd ?? null : video.byteSize ?? null,
     videoCodec: video.codec ?? "unknown",
@@ -222,7 +233,12 @@ async function resolveInstagramPlatform(url: string): Promise<{ media: MediaPayl
  */
 export function assembleYouTubeMedia(
   meta: { id: string; title: string; author: string; duration: number; thumbnail: string | null },
-  streams: { video: string | null; videoSd?: string | null; audio: string | null },
+  streams: {
+    video: string | null;
+    videoSd?: string | null;
+    audio: string | null;
+    audioFormat?: "m4a" | "mp3" | null;
+  },
 ): { media: MediaPayload; video: VideoInfo } {
   const primary = streams.video ?? streams.audio;
 
@@ -278,7 +294,11 @@ export function assembleYouTubeMedia(
     downloads,
   };
 
-  return { media: mediaFromVideo(video, `https://www.youtube.com/watch?v=${meta.id}`), video };
+  const base = mediaFromVideo(video, `https://www.youtube.com/watch?v=${meta.id}`);
+  return {
+    media: { ...base, audioFormat: streams.audio ? streams.audioFormat ?? null : null },
+    video,
+  };
 }
 
 /** YouTube adapter: multi-tier resolver → same-origin downloads. */

@@ -207,7 +207,7 @@ const STEPS = [
 
 const YT_STEPS = [
   "Resolving high-speed stream",
-  "Trying HD mirrors (1080p / 720p / MP3)",
+  "Trying HD mirrors (1080p / 720p / audio)",
   "Preparing instant download buttons",
 ] as const;
 
@@ -559,7 +559,7 @@ export function Downloader({ platform = "tiktok" }: DownloaderProps) {
     );
     notify({
       kind: "success",
-      title: "MP3 ready",
+      title: "Audio ready",
       description: "The audio track finished converting — Download Audio is live.",
     });
   }

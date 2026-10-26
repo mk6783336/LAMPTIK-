@@ -122,11 +122,18 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
         ? (media.videoHd ?? video.downloads.video ?? "")
         : "";
   const showServer02 = Boolean(server02Href && server02Href !== server01Href);
-  /** MP3: proxy attachment covers both direct and proxied upstreams. */
+  /** Audio: proxy attachment covers both direct and proxied upstreams. */
   const mp3Href = media.audioDirect
     ? proxyHref("audio", media.audioDirect, "2")
     : (media.audioMp3 ?? "");
   const mp3Url = mp3Href || null;
+  /**
+   * Label with the container the user will actually receive. `/api/download`
+   * names the file from the upstream content type, so a bridge stream saves as
+   * `.m4a` (AAC) — calling that button "MP3" was a promise the file did not
+   * keep. Unknown containers fall back to the neutral word "Audio".
+   */
+  const audioFormatLabel = media.audioFormat === "m4a" ? "M4A" : media.audioFormat === "mp3" ? "MP3" : "Audio";
 
   const size = formatBytes(media.videoHdBytes ?? media.videoSdBytes ?? video.byteSize);
   const isAudioUnavailable = !mp3Url && platform === "tiktok";
@@ -439,12 +446,12 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
                     type="button"
                     onClick={() =>
                       youtubeDirectAudio
-                        ? startDownloadDirect("MP3 audio", youtubeDirectAudio)
-                        : startDownload("MP3 audio", mp3Href, rawUpstreamOf(mp3Href))
+                        ? startDownloadDirect(`${audioFormatLabel} audio`, youtubeDirectAudio)
+                        : startDownload(`${audioFormatLabel} audio`, mp3Href, rawUpstreamOf(mp3Href))
                     }
                     className="rounded-full border border-[var(--glass-border)] px-3 py-1.5 text-xs font-medium underline-offset-4 hover:underline"
                   >
-                    MP3
+                    {audioFormatLabel}
                   </button>
                 ) : null}
               </div>
@@ -508,7 +515,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
             </button>
           ) : null}
 
-          {/* MP3 audio — IP-bound converter links open directly from the
+          {/* Audio — IP-bound converter links open directly from the
               gesture, everything else rides the forced-attachment proxy so
               the music file lands in the Downloads tray, never an inline
               player. */}
@@ -517,14 +524,14 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
               type="button"
               onClick={() =>
                 youtubeDirectAudio
-                  ? startDownloadDirect("MP3 audio", youtubeDirectAudio)
-                  : startDownload("MP3 audio", mp3Href, rawUpstreamOf(mp3Href))
+                  ? startDownloadDirect(`${audioFormatLabel} audio`, youtubeDirectAudio)
+                  : startDownload(`${audioFormatLabel} audio`, mp3Href, rawUpstreamOf(mp3Href))
               }
               className="btn btn-ghost h-12 w-full gap-3 rounded-full border border-[var(--glass-border)] px-4 text-sm font-medium hover:border-[var(--glass-border-hover)]"
             >
               <Music2 className="size-4 shrink-0" />
               <span className="flex min-w-0 flex-1 flex-col items-start">
-                <span>Download Audio (MP3)</span>
+                <span>Download Audio ({audioFormatLabel})</span>
                 <span className="text-xs font-normal text-[var(--text-3)]">Original sound track</span>
               </span>
             </button>

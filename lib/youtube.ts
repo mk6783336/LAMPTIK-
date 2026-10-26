@@ -34,8 +34,15 @@ export interface YouTubeStreams {
   video: string | null;
   /** Lower-bitrate MP4, when distinct from `video`. */
   videoSd: string | null;
-  /** Highest-bitrate audio (M4A/MP3-ready), when exposed. */
+  /** Highest-bitrate audio, when exposed. */
   audio: string | null;
+  /**
+   * Container behind `audio`, so the UI can label the button with the file the
+   * user actually gets. The bridge and the Innertube ladders are AAC in M4A;
+   * Piped may answer Opus in WebM, and unknown sources are left null rather
+   * than guessed.
+   */
+  audioFormat?: "m4a" | "mp3" | null;
 }
 
 export interface ResolvedYouTube {
@@ -659,8 +666,14 @@ async function ytdlpAndroidResolve(videoId: string, canonicalUrl: string): Promi
     duration: hit.duration,
     thumbnail: hit.thumbnail ?? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
     // The bridge hands back a lazily-resolved audio URL, so a music video it
-    // rescued still gets its MP3 button instead of "Audio unavailable".
-    streams: { video: hit.video, videoSd: null, audio: hit.audio },
+    // rescued still gets an audio button instead of "Audio unavailable".
+    // That ladder is AAC, which is the M4A the download route names it.
+    streams: {
+      video: hit.video,
+      videoSd: null,
+      audio: hit.audio,
+      audioFormat: hit.audio ? "m4a" : null,
+    },
   };
 }
 
@@ -1114,7 +1127,7 @@ async function withBridgeAudio(
   try {
     const bridge = await withDeadline(ytdlpExtract(canonicalUrl), budget, "youtube:ytdlp-audio");
     if (!bridge.audio) return hit;
-    return { ...hit, streams: { ...hit.streams, audio: bridge.audio } };
+    return { ...hit, streams: { ...hit.streams, audio: bridge.audio, audioFormat: "m4a" } };
   } catch {
     // No MP3 button rather than a failed resolve.
     return hit;
