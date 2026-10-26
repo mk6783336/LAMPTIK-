@@ -95,13 +95,22 @@ function hostingBlocksBinary(): boolean {
 }
 
 /**
- * POST { url } → JSON { url | video, duration, title, uploader, thumbnail }.
- * The exact wire format any `yt-dlp -j` HTTP wrapper (or a cobalt instance
- * in JSON mode) can emit; unknown fields are ignored, missing ones error.
+ * Cloudflare answers 502/503/504 with an HTML page while a tunnel connection
+ * rotates. That is a transport blip, not a verdict on the video, so it earns
+ * exactly one retry after a short backoff. A bridge that fails extraction
+ * answers JSON (`{"error": …}`) with the same status and is NOT retried —
+ * repeating it would just spend another 15 s extraction window.
  */
-async function bridgeExtract(bridgeUrl: string, canonicalUrl: string): Promise<YtdlpHit> {
+const EDGE_RETRY_STATUS = new Set([502, 503, 504]);
+const EDGE_RETRY_DELAY_MS = 700;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function postResolve(bridgeUrl: string, canonicalUrl: string): Promise<Response> {
   const bridgeSecret = process.env.BRIDGE_SECRET;
-  const response = await fetch(bridgeUrl.replace(/\/+$/, ""), {
+  return fetch(bridgeUrl.replace(/\/+$/, ""), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -112,6 +121,26 @@ async function bridgeExtract(bridgeUrl: string, canonicalUrl: string): Promise<Y
     signal: AbortSignal.timeout(BRIDGE_TIMEOUT_MS),
     body: JSON.stringify({ url: canonicalUrl, client: "android" }),
   });
+}
+
+/** True when a 5xx came from the edge rather than from the bridge itself. */
+async function opaqueEdgeFailure(response: Response): Promise<boolean> {
+  if (!EDGE_RETRY_STATUS.has(response.status)) return false;
+  const text = await response.clone().text().catch(() => "");
+  return !text.trimStart().startsWith("{");
+}
+
+/**
+ * POST { url } → JSON { url | video, duration, title, uploader, thumbnail }.
+ * The exact wire format any `yt-dlp -j` HTTP wrapper (or a cobalt instance
+ * in JSON mode) can emit; unknown fields are ignored, missing ones error.
+ */
+async function bridgeExtract(bridgeUrl: string, canonicalUrl: string): Promise<YtdlpHit> {
+  let response = await postResolve(bridgeUrl, canonicalUrl);
+  if (await opaqueEdgeFailure(response)) {
+    await sleep(EDGE_RETRY_DELAY_MS);
+    response = await postResolve(bridgeUrl, canonicalUrl);
+  }
   if (!response.ok) {
     throw new AppError("PROVIDER_UNAVAILABLE", `yt-dlp bridge answered ${response.status}.`);
   }

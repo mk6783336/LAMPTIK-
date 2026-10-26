@@ -1,5 +1,6 @@
 import ytdl from "@distube/ytdl-core";
 
+import { bridgeEndpoints } from "@/lib/bridge-urls";
 import { AppError } from "@/lib/errors";
 import { asRecord, asString, cleanCaption, DESKTOP_UA, toDuration } from "@/lib/http";
 import { runWaterfall, WATERFALL_TIMEOUT_MS } from "@/lib/load-balancer";
@@ -1086,6 +1087,40 @@ function requireStreams(hit: TierHit): TierHit & { streams: YouTubeStreams } {
   }
   return { ...hit, streams: hit.streams };
 }
+
+/**
+ * The failover race stops at the first tier that returns a muxed video, and
+ * several of those tiers (ytdl-core, Invidious, Piped, the direct Invidious
+ * loader) carry no audio-only ladder. Label music often wins through exactly
+ * one of them, so the card arrived with a working MP4 and no MP3 button even
+ * though the bridge resolves both streams for the same video in ~1 s.
+ *
+ * Ask the bridge for the audio handle only when the winner lacks one, and
+ * only with wall clock that is still left — a missing MP3 must never turn a
+ * good resolve into a failure.
+ */
+const AUDIO_ENRICH_MIN_BUDGET_MS = 2_200;
+const AUDIO_ENRICH_MAX_MS = 6_000;
+
+async function withBridgeAudio(
+  hit: TierHit & { streams: YouTubeStreams },
+  canonicalUrl: string,
+  remainingMs: number,
+): Promise<TierHit & { streams: YouTubeStreams }> {
+  if (hit.streams.audio) return hit;
+  if (bridgeEndpoints().length === 0) return hit;
+  const budget = Math.min(remainingMs, AUDIO_ENRICH_MAX_MS);
+  if (budget < AUDIO_ENRICH_MIN_BUDGET_MS) return hit;
+  try {
+    const bridge = await withDeadline(ytdlpExtract(canonicalUrl), budget, "youtube:ytdlp-audio");
+    if (!bridge.audio) return hit;
+    return { ...hit, streams: { ...hit.streams, audio: bridge.audio } };
+  } catch {
+    // No MP3 button rather than a failed resolve.
+    return hit;
+  }
+}
+
 /**
  * Wall clock for the WHOLE resolve, failover included. Vercel's smallest plan
  * kills a function at ~6 s, so the failover race gets whatever is left of
@@ -1121,9 +1156,10 @@ async function resolveYouTubeStreams(
   const [android, ...fallbacks] = INNERTUBE_CLIENTS;
 
   try {
-    return requireStreams(
+    const primary = requireStreams(
       await withDeadline(innertubePlayer(id, android), PRIMARY_BUDGET_MS, android.name),
     );
+    return await withBridgeAudio(primary, canonicalUrl, RESOLVE_BUDGET_MS - (Date.now() - startedAt));
   } catch (error) {
     // A private / deleted / livestream answer is definitive — never retried.
     if (isDefinitiveVideoError(error)) throw error;
@@ -1185,7 +1221,8 @@ async function resolveYouTubeStreams(
     );
   }
 
-  return requireStreams(hit);
+  const resolved = requireStreams(hit);
+  return withBridgeAudio(resolved, canonicalUrl, RESOLVE_BUDGET_MS - (Date.now() - startedAt));
 }
 
 export async function startYouTubeResolution(
