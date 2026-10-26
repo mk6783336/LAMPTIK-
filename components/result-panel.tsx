@@ -134,6 +134,13 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
    * keep. Unknown containers fall back to the neutral word "Audio".
    */
   const audioFormatLabel = media.audioFormat === "m4a" ? "M4A" : media.audioFormat === "mp3" ? "MP3" : "Audio";
+  /**
+   * A true MP3, encoded by the bridge's ffmpeg on first request. Offered as a
+   * SECOND audio button: the source track keeps its original quality, and the
+   * MP3 exists for players that cannot open AAC.
+   */
+  const encodedMp3Href = media.audioMp3Encoded ?? null;
+  const encodedMp3Url = encodedMp3Href || null;
 
   const size = formatBytes(media.videoHdBytes ?? media.videoSdBytes ?? video.byteSize);
   const isAudioUnavailable = !mp3Url && platform === "tiktok";
@@ -454,6 +461,15 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
                     {audioFormatLabel}
                   </button>
                 ) : null}
+                {encodedMp3Url ? (
+                  <button
+                    type="button"
+                    onClick={() => startDownload("MP3 audio", encodedMp3Url, rawUpstreamOf(encodedMp3Url))}
+                    className="rounded-full border border-[var(--glass-border)] px-3 py-1.5 text-xs font-medium underline-offset-4 hover:underline"
+                  >
+                    MP3
+                  </button>
+                ) : null}
               </div>
             </div>
           ) : null}
@@ -544,6 +560,25 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
             >
               <Music2 className="size-4" />
               Audio unavailable
+            </button>
+          ) : null}
+
+          {/* Real MP3 — the bridge downloads the audio pick and encodes it with
+              ffmpeg on the first click, then serves the cached file. Its size
+              is bigger than the AAC source, so it stays a secondary option. */}
+          {encodedMp3Url ? (
+            <button
+              type="button"
+              onClick={() => startDownload("MP3 audio", encodedMp3Url, rawUpstreamOf(encodedMp3Url))}
+              className="btn btn-ghost h-12 w-full gap-3 rounded-full border border-[var(--glass-border)] px-4 text-sm font-medium hover:border-[var(--glass-border-hover)]"
+            >
+              <Music2 className="size-4 shrink-0" />
+              <span className="flex min-w-0 flex-1 flex-col items-start">
+                <span>Download Audio (MP3)</span>
+                <span className="text-xs font-normal text-[var(--text-3)]">
+                  Encoded on our bridge — plays in any MP3 player
+                </span>
+              </span>
             </button>
           ) : null}
 

@@ -5,7 +5,7 @@ import { extractInstagram, type InstagramSource } from "@/lib/instagram";
 import { extractYouTube } from "@/lib/youtube";
 import { universalYtdlpHit } from "@/lib/universal-ytdlp";
 import { resolveVideo } from "@/lib/tiktok";
-import { buildDownloadLinks } from "@/lib/tiktok/links";
+import { buildDownloadLinks, proxyDownloadLink } from "@/lib/tiktok/links";
 import { isConverterAttachmentUrl, isInvidiousDirectUrl, isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
 import { isPublicMediaUrl } from "@/lib/security";
 import type { VideoCodec, VideoInfo } from "@/lib/tiktok/types";
@@ -42,6 +42,12 @@ export interface MediaPayload {
    * mirrors) — the button then says just "Audio".
    */
   audioFormat: "mp3" | "m4a" | null;
+  /**
+   * True-MP3 download link (bridge-side ffmpeg encode), when the resolver can
+   * offer one. Null everywhere else — the UI then renders only the source
+   * audio button.
+   */
+  audioMp3Encoded: string | null;
   /** Real byte sizes from the CDN/probe, for honest button labels. */
   videoHdBytes: number | null;
   videoSdBytes: number | null;
@@ -103,6 +109,7 @@ function mediaFromVideo(video: VideoInfo, canonicalUrl: string): MediaPayload {
     // TikWM's music URL is `audio_mpeg`; YouTube overrides this below with the
     // container its winning tier actually serves.
     audioFormat: platform === "tiktok" ? "mp3" : null,
+    audioMp3Encoded: null,
     videoHdBytes: isHd ? video.byteSize ?? null : null,
     videoSdBytes: isHd ? video.byteSizeSd ?? null : video.byteSize ?? null,
     videoCodec: video.codec ?? "unknown",
@@ -238,6 +245,7 @@ export function assembleYouTubeMedia(
     videoSd?: string | null;
     audio: string | null;
     audioFormat?: "m4a" | "mp3" | null;
+    audioEncoded?: string | null;
   },
 ): { media: MediaPayload; video: VideoInfo } {
   const primary = streams.video ?? streams.audio;
@@ -295,8 +303,21 @@ export function assembleYouTubeMedia(
   };
 
   const base = mediaFromVideo(video, `https://www.youtube.com/watch?v=${meta.id}`);
+  // The true-MP3 rendition rides the same attachment proxy as the source
+  // audio; `/api/download` names it from the upstream `audio/mpeg` type.
+  const encodedMp3 = streams.audioEncoded
+    ? proxyDownloadLink("audio", streams.audioEncoded, {
+        id: meta.id,
+        username: meta.author,
+        platform: "youtube",
+      })
+    : null;
   return {
-    media: { ...base, audioFormat: streams.audio ? streams.audioFormat ?? null : null },
+    media: {
+      ...base,
+      audioFormat: streams.audio ? streams.audioFormat ?? null : null,
+      audioMp3Encoded: encodedMp3,
+    },
     video,
   };
 }

@@ -49,6 +49,12 @@ export interface YtdlpHit {
    * platforms), which simply keeps the MP3 button disabled.
    */
   audio: string | null;
+  /**
+   * A true MP3 rendition, when the bridge can encode one (ffmpeg present).
+   * Separate from `audio`, which is the source AAC track: encoding is a full
+   * download plus a transcode, so it only happens when a visitor asks for it.
+   */
+  mp3: string | null;
   /** Real length in seconds (> 0 when the source reports it). */
   duration: number;
   title: string;
@@ -154,10 +160,12 @@ async function bridgeExtract(bridgeUrl: string, canonicalUrl: string): Promise<Y
     throw new AppError("PROVIDER_UNAVAILABLE", "yt-dlp bridge exposed no usable stream URL.");
   }
   const audio = httpsUrl(data.audio);
+  const mp3 = httpsUrl(data.mp3);
   const duration = typeof data.duration === "number" && data.duration > 0 ? Math.round(data.duration) : 0;
   return {
     video,
     audio: audio && isPublicMediaUrl(audio) ? audio : null,
+    mp3: mp3 && isPublicMediaUrl(mp3) ? mp3 : null,
     duration,
     title: typeof data.title === "string" ? data.title.slice(0, 200) : "",
     author:
@@ -248,8 +256,9 @@ async function binaryExtract(canonicalUrl: string): Promise<YtdlpHit> {
   return {
     video,
     // The local binary runs a single muxed-format extraction; an audio track
-    // would need another spawn, so it stays unavailable here.
+    // would need another spawn, and an MP3 a third, so both stay unavailable.
     audio: null,
+    mp3: null,
     duration: Number.isFinite(seconds) && seconds > 0 ? Math.round(seconds) : 0,
     title: typeof data.title === "string" ? data.title.slice(0, 200) : "",
     author: typeof data.uploader === "string" ? data.uploader.slice(0, 120) : "",

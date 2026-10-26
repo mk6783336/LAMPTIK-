@@ -43,6 +43,12 @@ export interface YouTubeStreams {
    * than guessed.
    */
   audioFormat?: "m4a" | "mp3" | null;
+  /**
+   * A real MP3 the bridge can encode on request. Absent when no bridge is
+   * configured or its ffmpeg is missing, so the button never promises a file
+   * that cannot be produced.
+   */
+  audioEncoded?: string | null;
 }
 
 export interface ResolvedYouTube {
@@ -673,6 +679,7 @@ async function ytdlpAndroidResolve(videoId: string, canonicalUrl: string): Promi
       videoSd: null,
       audio: hit.audio,
       audioFormat: hit.audio ? "m4a" : null,
+      audioEncoded: hit.mp3,
     },
   };
 }
@@ -1127,7 +1134,15 @@ async function withBridgeAudio(
   try {
     const bridge = await withDeadline(ytdlpExtract(canonicalUrl), budget, "youtube:ytdlp-audio");
     if (!bridge.audio) return hit;
-    return { ...hit, streams: { ...hit.streams, audio: bridge.audio, audioFormat: "m4a" } };
+    return {
+      ...hit,
+      streams: {
+        ...hit.streams,
+        audio: bridge.audio,
+        audioFormat: "m4a",
+        audioEncoded: bridge.mp3 ?? hit.streams.audioEncoded ?? null,
+      },
+    };
   } catch {
     // No MP3 button rather than a failed resolve.
     return hit;

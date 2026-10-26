@@ -54,6 +54,15 @@ a permanent host below.
 
 `/resolve` also accepts `{"url": "…", "platform": "youtube"}`.
 
+`/stream` serves three kinds, each signed separately: `video`, `audio` (the
+source AAC track, saved as `.m4a`) and `mp3`. The MP3 is a real encode: yt-dlp
+downloads the audio pick and ffmpeg transcodes it to MP3 at the best quality on
+the first request, then the file is cached on disk for an hour. The container
+image installs ffmpeg; elsewhere the `imageio-ffmpeg` wheel provides a static
+binary, so `pip install -r requirements.txt` is enough. `/health` reports
+`"ffmpeg"` and `"mp3"`, and `/resolve` only advertises an `mp3` handle when a
+binary exists — a button the bridge cannot honour is worse than no button.
+
 If `BRIDGE_SECRET` is set on the bridge, every `/` and `/resolve` request must
 carry it as the `x-bridge-secret` header. The app sends it automatically when
 the same `BRIDGE_SECRET` exists in Vercel. `/health` stays public.

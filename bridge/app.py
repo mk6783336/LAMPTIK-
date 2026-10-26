@@ -46,7 +46,7 @@ from collections.abc import Iterator
 from urllib.parse import quote, urlparse
 
 import requests
-from flask import Flask, Response, jsonify, request, stream_with_context
+from flask import Flask, Response, jsonify, request, send_file, stream_with_context
 
 app = Flask(__name__)
 
@@ -211,6 +211,38 @@ def _prepare_cookies() -> str | None:
     atexit.register(lambda: os.path.exists(path) and os.remove(path))
     return path
 
+
+# --- Optional real MP3 encode ---------------------------------------------
+# yt-dlp transcribes its audio pick to MP3 through ffmpeg, which the container
+# image installs but a laptop or a slim host often does not. The binary is
+# resolved once at boot (FFMPEG_LOCATION → PATH → the imageio-ffmpeg wheel,
+# which ships a static build), and the MP3 option is only advertised when one
+# exists: a button that 502s is worse than no button.
+def _ffmpeg_binary() -> str | None:
+    configured = os.environ.get("FFMPEG_LOCATION", "").strip()
+    if configured:
+        candidate = configured
+        if os.path.isdir(candidate):
+            candidate = os.path.join(candidate, "ffmpeg.exe" if os.name == "nt" else "ffmpeg")
+        if os.path.exists(candidate):
+            return candidate
+    found = shutil.which("ffmpeg")
+    if found:
+        return found
+    try:
+        import imageio_ffmpeg  # optional dependency: static ffmpeg, no PATH needed
+
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:  # noqa: BLE001 — no wheel, no ffmpeg, no MP3
+        return None
+
+
+FFMPEG = _ffmpeg_binary()
+MP3_READY = bool(FFMPEG)
+MP3_TIMEOUT_S = int(os.environ.get("MP3_TIMEOUT_S", "120"))
+MP3_CACHE_TTL_S = int(os.environ.get("MP3_CACHE_TTL_S", "3600"))
+MP3_CACHE_MAX_FILES = int(os.environ.get("MP3_CACHE_MAX_FILES", "24"))
+MP3_CACHE_DIR = tempfile.mkdtemp(prefix="lamptik-mp3-")
 
 COOKIES_PATH = _prepare_cookies()
 # A JS runtime lets yt-dlp solve YouTube's `n` signature. Without one it warns
@@ -412,6 +444,10 @@ def health() -> Response:
             "cookies": bool(COOKIES_PATH),
             "proxy": bool(YTDLP_PROXY),
             "js_runtime": JS_RUNTIME or None,
+            # `mp3` is the capability the resolver checks before it renders a
+            # real MP3 button; `ffmpeg` says which binary answered.
+            "ffmpeg": bool(FFMPEG),
+            "mp3": MP3_READY,
         }
     )
 
@@ -439,6 +475,9 @@ def resolve() -> Response:
             # YouTube is advertised — that is the ladder we verified — so other
             # platforms never get a button that could 502.
             "audio": _stream_url(url, "audio") if _is_youtube(url) else None,
+            # A separate signed handle for a true MP3: resolved only when a
+            # visitor asks for it, and only advertised when ffmpeg exists.
+            "mp3": _stream_url(url, "mp3") if _is_youtube(url) and MP3_READY else None,
             "id": data.get("id"),
             "title": data.get("title"),
             "duration": data.get("duration") or 0,
@@ -457,7 +496,8 @@ def _download_name(kind: str) -> str:
     raw = (request.args.get("name") or "").strip()
     safe = re.sub(r"[^A-Za-z0-9._-]", "", raw)[:120].lstrip(".")
     if not safe or "." not in safe:
-        return f"lamptik-{kind}.{'mp4' if kind == 'video' else 'm4a'}"
+        extension = {"video": "mp4", "audio": "m4a", "mp3": "mp3"}.get(kind, "mp4")
+        return f"lamptik-{kind}.{extension}"
     return safe
 
 
@@ -527,6 +567,128 @@ def _range_reader(first: requests.Response, total: int, next_range) -> Iterator[
             response.close()
 
 
+# --- MP3 encode cache ------------------------------------------------------
+# A transcode is a full yt-dlp download plus an ffmpeg pass (~5-15 s), far too
+# slow to repeat per byte range. The finished file is kept on disk and served
+# with Range support, so a browser download manager can still resume it.
+_mp3_files: dict[str, tuple[str, float]] = {}
+_mp3_lock = threading.Lock()
+_mp3_inflight: dict[str, threading.Event] = {}
+
+
+def _prune_mp3_cache() -> None:
+    """Drop expired files, then the oldest entries past the cap.
+
+    Called with `_mp3_lock` held. The newest entry is last in insertion order,
+    so the cap never deletes the file that was just produced.
+    """
+    now = time.time()
+    for key, (path, expires) in list(_mp3_files.items()):
+        if expires > now:
+            continue
+        _mp3_files.pop(key, None)
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+    while len(_mp3_files) > MP3_CACHE_MAX_FILES:
+        key, (path, _expires) = next(iter(_mp3_files.items()))
+        _mp3_files.pop(key, None)
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+
+
+def _encode_mp3(url: str) -> tuple[str | None, str | None]:
+    """Download the audio pick and transcode it to MP3 in a private directory.
+
+    Each job gets its own folder, so two visitors asking for different videos
+    at the same time can never pick up each other's file.
+    """
+    if not FFMPEG:
+        return None, "ffmpeg is not installed on this bridge"
+    workdir = tempfile.mkdtemp(dir=MP3_CACHE_DIR, prefix="job-")
+    args = _base_args(url, "audio") + [
+        "-f",
+        FORMATS["audio"],
+        "-x",
+        "--audio-format",
+        "mp3",
+        "--audio-quality",
+        "0",
+        "--ffmpeg-location",
+        FFMPEG,
+        "-o",
+        os.path.join(workdir, "%(id)s.%(ext)s"),
+        url,
+    ]
+    try:
+        completed = subprocess.run(args, capture_output=True, text=True, timeout=MP3_TIMEOUT_S)
+    except subprocess.TimeoutExpired:
+        return None, "the MP3 conversion timed out"
+    except OSError:
+        return None, "yt-dlp is not installed in this container"
+    if completed.returncode != 0:
+        detail = (completed.stderr or "").strip().splitlines()
+        return None, detail[-1][:200] if detail else "the MP3 conversion failed"
+    produced = [
+        os.path.join(workdir, name)
+        for name in (os.listdir(workdir) if os.path.isdir(workdir) else [])
+        if name.endswith(".mp3")
+    ]
+    if not produced:
+        return None, "no MP3 file was produced"
+    return produced[0], None
+
+
+def _mp3_response(url: str) -> Response:
+    """Serve the transcoded MP3, converting it on first request only."""
+    if not MP3_READY:
+        return _json({"error": "MP3 encoding is not available on this bridge"}, 503)
+    with _mp3_lock:
+        cached = _mp3_files.get(url)
+        path = cached[0] if cached and cached[1] > time.time() and os.path.exists(cached[0]) else None
+    if not path:
+        with _mp3_lock:
+            event = _mp3_inflight.get(url)
+            owner = event is None
+            if owner:
+                event = threading.Event()
+                _mp3_inflight[url] = event
+        if not owner:
+            # Same video, second request: wait for the first encode instead of
+            # doubling the work YouTube already rate-limits.
+            event.wait(timeout=MP3_TIMEOUT_S + 5)
+            with _mp3_lock:
+                cached = _mp3_files.get(url)
+            path = cached[0] if cached and os.path.exists(cached[0]) else None
+            if not path:
+                return _json({"error": "the MP3 conversion is still running"}, 503)
+        else:
+            try:
+                path, error = _encode_mp3(url)
+            finally:
+                with _mp3_lock:
+                    _mp3_inflight.pop(url, None)
+                event.set()
+            if not path:
+                return _json({"error": error or "the MP3 conversion failed"}, 502)
+            with _mp3_lock:
+                _mp3_files[url] = (path, time.time() + MP3_CACHE_TTL_S)
+                _prune_mp3_cache()
+    response = send_file(
+        path,
+        mimetype="audio/mpeg",
+        as_attachment=True,
+        download_name=_download_name("mp3"),
+        conditional=True,
+        max_age=0,
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return _cors(response)
+
+
 @app.route("/stream", methods=["GET", "HEAD", "OPTIONS"])
 def stream() -> Response:
     if request.method == "OPTIONS":
@@ -536,8 +698,8 @@ def stream() -> Response:
     if not url:
         return _json({"error": "a supported public https video URL is required"}, 400)
     kind = (request.args.get("kind") or "video").strip().lower()
-    if kind not in FORMATS:
-        return _json({"error": "kind must be 'video' or 'audio'"}, 400)
+    if kind not in (*FORMATS, "mp3"):
+        return _json({"error": "kind must be 'video', 'audio' or 'mp3'"}, 400)
     try:
         expires = int(request.args.get("exp", "0"))
     except ValueError:
@@ -545,6 +707,9 @@ def stream() -> Response:
     signature = request.args.get("sig", "")
     if not signature or not _valid_signature(url, kind, expires, signature):
         return _json({"error": "expired or invalid stream signature"}, 403)
+
+    if kind == "mp3":
+        return _mp3_response(url)
 
     media, _, error = _media_for(url, kind)
     if error or not media:
