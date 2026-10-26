@@ -68,7 +68,17 @@ with the machine. Run a second copy on a free cloud host and list it as the
 backup: when the PC is offline the app probes it in ~2.5s and fails over, so
 label music still resolves.
 
-### Hugging Face (free Docker Space, ~3 minutes)
+> **Hugging Face needs PRO now (checked October 2026).** Creating a Docker
+> Space on a free account fails with `402 … hosting Gradio and Docker Spaces
+> on free cpu-basic requires a PRO subscription`, and downgrading an existing
+> Space to `cpu-basic` is refused with the same 402. The steps below still
+> work on a PRO account; on a free one use Render.
+>
+> **Supabase cannot host this.** Its Edge Functions are a Deno runtime with no
+> shell, no Python and no ffmpeg, so `yt-dlp` cannot run there; the database,
+> auth and storage products do not run containers at all.
+
+### Hugging Face (Docker Space, PRO plan)
 
 1. **Create → Docker → Blank**: name it `lamptik-ytdlp`, hardware **CPU basic
    (free)**.

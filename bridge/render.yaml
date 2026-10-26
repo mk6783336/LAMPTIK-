@@ -8,5 +8,9 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     envVars:
+      # `sync: false` prompts for the value instead of generating one: the
+      # backup must authenticate with the SAME secret Vercel already sends as
+      # `x-bridge-secret`. A generated value makes every /resolve answer 401,
+      # so the failover would look deployed and still be useless.
       - key: BRIDGE_SECRET
-        generateValue: true
+        sync: false
