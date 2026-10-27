@@ -1,3 +1,5 @@
+import { consentSignals, gtagCommand } from "@/lib/gtag";
+
 const CONSENT_KEY = "lamptik-consent";
 
 /**
@@ -26,6 +28,13 @@ export function ConsentModeScript() {
     "ad_personalization:'denied',analytics_storage:'denied'",
     "});",
     "window.__lamptikConsentKey=" + JSON.stringify(CONSENT_KEY) + ";",
+    // Returning visitor who already accepted: re-grant BEFORE the Google tag
+    // loads, otherwise every later page view would start denied again.
+    "try{if(localStorage.getItem(" + JSON.stringify(CONSENT_KEY) + ")==='granted'){",
+    "gtag('consent','update',{",
+    "ad_storage:'granted',ad_user_data:'granted',",
+    "ad_personalization:'granted',analytics_storage:'granted'",
+    "});}}catch(e){}",
   ].join("");
 
   return <script dangerouslySetInnerHTML={{ __html: code }} />;
@@ -56,21 +65,10 @@ export function writeConsent(decision: ConsentDecision): void {
   }
 }
 
+/**
+ * Push one Consent Mode v2 update. Positional args, because that is the only
+ * shape gtag.js reads: `gtag('consent','update',{…})`.
+ */
 export function pushConsent(decision: ConsentDecision): void {
-  const gtag = (window as unknown as { dataLayer?: unknown[] }).dataLayer;
-  if (!Array.isArray(gtag)) return;
-  gtag.push({
-    consent: "update",
-    ...(decision === "granted"
-      ? {
-          ad_storage: "granted",
-          ad_user_data: "granted",
-          ad_personalization: "granted",
-        }
-      : {
-          ad_storage: "denied",
-          ad_user_data: "denied",
-          ad_personalization: "denied",
-        }),
-  });
+  gtagCommand("consent", "update", consentSignals(decision === "granted"));
 }

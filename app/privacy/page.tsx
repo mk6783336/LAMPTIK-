@@ -65,7 +65,7 @@ export default function PrivacyPage() {
               Privacy policy
             </h1>
             <p className="mt-3 text-sm text-[var(--text-3)]">
-              Last updated: October 19, 2026
+              Last updated: October 28, 2026
             </p>
 
             <div className="mt-10 space-y-9 text-base leading-relaxed text-[var(--text-2)]">
@@ -78,7 +78,9 @@ export default function PrivacyPage() {
                   you download, and does not keep logs of your activity. The
                   only data stored about you lives in your own browser (theme
                   and privacy choices). Advertising, if enabled, uses cookies
-                  governed by your consent choice.
+                  governed by your consent choice, and Google Analytics 4 counts
+                  page views under that same choice — cookieless until you
+                  accept, and never told which links you download.
                 </p>
               </section>
 
@@ -110,6 +112,16 @@ export default function PrivacyPage() {
                       Your theme and ad-consent choices are stored in your
                       browser&apos;s local storage on your device, never on our
                       servers.
+                    </span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span aria-hidden="true" className="mt-2 size-1 shrink-0 rounded-full bg-[var(--accent)]" />
+                    <span>
+                      <strong className="text-[var(--text)]">Aggregate page views.</strong>{" "}
+                      Google Analytics 4 (measurement ID G-TLNZNDJD4J) records
+                      which pages are visited, the referring site, approximate
+                      location and device type. It never receives the video
+                      links you paste, and never receives a file you download.
                     </span>
                   </li>
                 </ul>
@@ -213,9 +225,15 @@ export default function PrivacyPage() {
                   <li className="flex gap-3">
                     <span aria-hidden="true" className="mt-2 size-1 shrink-0 rounded-full bg-[var(--accent)]" />
                     <span>
-                      <strong className="text-[var(--text)]">No tracking pixels of our own.</strong>{" "}
-                      We run no analytics trackers, no fingerprinting, and no
-                      third-party embeds beyond the optional ad units.
+                      <strong className="text-[var(--text)]">Analytics cookies (only after consent).</strong>{" "}
+                      Google Analytics 4 may set the <code className="text-[var(--text)]">_ga</code>{" "}
+                      cookie once you press Accept, so a returning visit is not
+                      counted as a new person. Until then it runs in Google
+                      Consent Mode with storage denied: no cookie is set and the
+                      hit carries no identifier that could tie it to a returning
+                      device. Declining keeps that cookieless mode permanently.
+                      There is no fingerprinting and no tracking pixel beyond the
+                      Google tag and the optional ad units.
                     </span>
                   </li>
                 </ul>

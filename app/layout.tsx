@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { AdScripts } from "@/components/ads/AdScripts";
 import { DesktopSideRails } from "@/components/ads/DesktopSideRails";
 import { ConsentModeScript } from "@/components/consent-mode";
+import { GoogleAnalytics } from "@/components/google-analytics";
 import { JsonLd, siteEntityGraph } from "@/components/seo/JsonLd";
 import { googleSiteVerification } from "@/lib/ads";
 import { monetagVerification } from "@/lib/monetization";
@@ -149,6 +150,10 @@ export default function RootLayout({
             (no consent gate) after hydration, so first paint and LCP are
             untouched while every pageview is monetized. */}
         <AdScripts />
+        {/* One GA4 tag (G-TLNZNDJD4J) for the whole site. Rendered here so it
+            exists exactly once per document, after the Consent Mode defaults
+            in <head>, and sends a page_view on client-side navigations too. */}
+        <GoogleAnalytics />
       </body>
     </html>
   );
