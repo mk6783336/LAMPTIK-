@@ -3,7 +3,7 @@
 import Script from "next/script";
 import { useEffect } from "react";
 
-import { gaMeasurementId } from "@/lib/analytics";
+import { gaMeasurementId, trackEvent } from "@/lib/analytics";
 import { gtagCommand as gtag } from "@/lib/gtag";
 
 /**
@@ -27,11 +27,41 @@ import { gtagCommand as gtag } from "@/lib/gtag";
  * stream → Enhanced measurement → Page views), not in a gtag option, so the
  * tag defers to it: `config` sends the first page view, GA sends the rest.
  */
+/**
+ * `config` must run once per document. Module scope (not a ref) so React
+ * StrictMode's double-invoked effects in development, and any remount in
+ * production, cannot count the same first page view twice.
+ */
+let configured = false;
+
 export function GoogleAnalytics() {
   useEffect(() => {
-    if (!gaMeasurementId) return;
+    if (!gaMeasurementId || configured) return;
+    configured = true;
     gtag("js", new Date());
     gtag("config", gaMeasurementId);
+  }, []);
+
+  /**
+   * Platform switches, tracked by delegation. The switcher and the home grid
+   * are plain `<Link>`s (the grid is a server component), so the listener
+   * reads `data-platform` / `data-platform-from` off the anchor instead of
+   * turning every card into a client component. Capture phase: the event is
+   * queued before the App Router starts the navigation.
+   */
+  useEffect(() => {
+    function onClick(event: MouseEvent) {
+      const anchor =
+        event.target instanceof Element ? event.target.closest("a[data-platform]") : null;
+      const to = anchor?.getAttribute("data-platform");
+      if (!to) return;
+      trackEvent("platform_switch", {
+        from: anchor?.getAttribute("data-platform-from") ?? "direct",
+        to,
+      });
+    }
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
   }, []);
 
   if (!gaMeasurementId) return null;

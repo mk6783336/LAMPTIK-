@@ -8,6 +8,10 @@ import { PLATFORM_LIST, PLATFORMS } from "@/lib/platforms";
  * Home-page cross-links as a four-up bento: one card per platform, each
  * carrying its own accent so the grid reads as a product family rather than
  * four copies of the same tile.
+ *
+ * `data-platform` / `data-platform-from` feed the GA4 click listener in
+ * `components/google-analytics.tsx`: a server component cannot attach an
+ * onClick, so the switch is reported from one delegated document listener.
  */
 export function PlatformGrid() {
   return (
@@ -41,6 +45,8 @@ export function PlatformGrid() {
                 href={config.path}
                 prefetch={true}
                 data-accent={id}
+                data-platform={id}
+                data-platform-from="home"
                 className="bento-card group flex flex-col"
               >
                 <div className="flex items-center justify-between gap-3">

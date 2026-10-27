@@ -4,6 +4,7 @@
 import { AlertTriangle, Clock3, Download, Music2, RefreshCw, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { trackEvent, type DownloadEventMeta } from "@/lib/analytics";
 import { formatBytes, formatDuration } from "@/lib/format";
 import type { ToastItem } from "@/components/toast";
 import { AdSlot } from "@/components/ads/AdSlot";
@@ -145,6 +146,29 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
   const size = formatBytes(media.videoHdBytes ?? media.videoSdBytes ?? video.byteSize);
   const isAudioUnavailable = !mp3Url && platform === "tiktok";
 
+  /**
+   * GA4 parameters per button, computed beside the hrefs they describe so the
+   * event can never drift from what was actually handed to the browser.
+   * `delivery` distinguishes a direct CDN gesture from the same-origin proxy
+   * and from the bridge encode.
+   */
+  const videoMeta: DownloadEventMeta = {
+    format: "mp4",
+    delivery: youtubeDirectVideo ? "direct" : "proxy",
+    quality: "hd",
+  };
+  const server02Meta: DownloadEventMeta = {
+    format: "mp4",
+    delivery: "proxy",
+    quality: media.videoSd && media.videoSd !== server01Href ? "sd" : "hd",
+  };
+  const audioMeta: DownloadEventMeta = {
+    format:
+      media.audioFormat === "m4a" ? "m4a" : media.audioFormat === "mp3" ? "mp3" : "audio",
+    delivery: youtubeDirectAudio ? "direct" : "proxy",
+  };
+  const encodedMp3Meta: DownloadEventMeta = { format: "mp3", delivery: "bridge" };
+
   const codecBadge =
     media.videoCodec === "h264" ? (
       <span
@@ -215,9 +239,18 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
    * unrelated tab is what made trust scanners and users read the site as
    * adware.
    */
-  function startDownload(kind: string, href: string, fallbackUrl: string | null = null) {
+  function startDownload(
+    kind: string,
+    href: string,
+    meta: DownloadEventMeta,
+    fallbackUrl: string | null = null,
+  ) {
     if (!href) return;
     if (rejectKnownYouTubeInterstitial(rawUpstreamOf(href))) return;
+    // Click intent, not completion: the browser owns the transfer once it
+    // starts, so no client code can observe the last byte (see the privacy
+    // page — nothing about the file is tracked).
+    trackEvent("download_start", { platform, ...meta });
     const frame = document.createElement("iframe");
     frame.style.display = "none";
     frame.setAttribute("aria-hidden", "true");
@@ -261,8 +294,9 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
    * `Content-Disposition: attachment` hands the file to Chrome's download
    * manager, then the same 10-second theater runs in flow.
    */
-  function startDownloadDirect(kind: string, directUrl: string) {
+  function startDownloadDirect(kind: string, directUrl: string, meta: DownloadEventMeta) {
     if (!directUrl || rejectKnownYouTubeInterstitial(directUrl)) return;
+    trackEvent("download_start", { platform, ...meta });
     const anchor = document.createElement("a");
     anchor.href = directUrl;
     // Keep the origin tab in place. Known job URLs are rejected before this
@@ -432,8 +466,8 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
                   type="button"
                   onClick={() =>
                     youtubeDirectVideo
-                      ? startDownloadDirect("Server 01", youtubeDirectVideo)
-                      : startDownload("Server 01", server01Href, rawUpstreamOf(server01Href))
+                      ? startDownloadDirect("Server 01", youtubeDirectVideo, videoMeta)
+                      : startDownload("Server 01", server01Href, videoMeta, rawUpstreamOf(server01Href))
                   }
                   className="rounded-full border border-[var(--glass-border)] px-3 py-1.5 text-xs font-medium underline-offset-4 hover:underline"
                 >
@@ -442,7 +476,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
                 {showServer02 ? (
                   <button
                     type="button"
-                    onClick={() => startDownload("Server 02", server02Href, rawUpstreamOf(server02Href))}
+                    onClick={() => startDownload("Server 02", server02Href, server02Meta, rawUpstreamOf(server02Href))}
                     className="rounded-full border border-[var(--glass-border)] px-3 py-1.5 text-xs font-medium underline-offset-4 hover:underline"
                   >
                     Server 02
@@ -453,8 +487,8 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
                     type="button"
                     onClick={() =>
                       youtubeDirectAudio
-                        ? startDownloadDirect(`${audioFormatLabel} audio`, youtubeDirectAudio)
-                        : startDownload(`${audioFormatLabel} audio`, mp3Href, rawUpstreamOf(mp3Href))
+                        ? startDownloadDirect(`${audioFormatLabel} audio`, youtubeDirectAudio, audioMeta)
+                        : startDownload(`${audioFormatLabel} audio`, mp3Href, audioMeta, rawUpstreamOf(mp3Href))
                     }
                     className="rounded-full border border-[var(--glass-border)] px-3 py-1.5 text-xs font-medium underline-offset-4 hover:underline"
                   >
@@ -464,7 +498,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
                 {encodedMp3Url ? (
                   <button
                     type="button"
-                    onClick={() => startDownload("MP3 audio", encodedMp3Url, rawUpstreamOf(encodedMp3Url))}
+                    onClick={() => startDownload("MP3 audio", encodedMp3Url, encodedMp3Meta, rawUpstreamOf(encodedMp3Url))}
                     className="rounded-full border border-[var(--glass-border)] px-3 py-1.5 text-xs font-medium underline-offset-4 hover:underline"
                   >
                     MP3
@@ -494,8 +528,8 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
             type="button"
             onClick={() =>
               youtubeDirectVideo
-                ? startDownloadDirect("Server 01", youtubeDirectVideo)
-                : startDownload("Server 01", server01Href, rawUpstreamOf(server01Href))
+                ? startDownloadDirect("Server 01", youtubeDirectVideo, videoMeta)
+                : startDownload("Server 01", server01Href, videoMeta, rawUpstreamOf(server01Href))
             }
             className="btn btn-primary tool-cta h-[52px] w-full gap-3 px-4 text-sm font-semibold"
           >
@@ -513,7 +547,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
           {showServer02 ? (
             <button
               type="button"
-              onClick={() => startDownload("Server 02", server02Href, rawUpstreamOf(server02Href))}
+              onClick={() => startDownload("Server 02", server02Href, server02Meta, rawUpstreamOf(server02Href))}
               className="btn btn-secondary h-[52px] w-full gap-3 border-[color-mix(in_srgb,var(--ok)_35%,transparent)] bg-[color-mix(in_srgb,var(--ok)_12%,var(--field))] px-4 text-sm font-medium text-[var(--ok)] hover:border-[color-mix(in_srgb,var(--ok)_50%,transparent)]"
             >
               <Download className="size-4 shrink-0" />
@@ -540,8 +574,8 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
               type="button"
               onClick={() =>
                 youtubeDirectAudio
-                  ? startDownloadDirect(`${audioFormatLabel} audio`, youtubeDirectAudio)
-                  : startDownload(`${audioFormatLabel} audio`, mp3Href, rawUpstreamOf(mp3Href))
+                  ? startDownloadDirect(`${audioFormatLabel} audio`, youtubeDirectAudio, audioMeta)
+                  : startDownload(`${audioFormatLabel} audio`, mp3Href, audioMeta, rawUpstreamOf(mp3Href))
               }
               className="btn btn-ghost h-12 w-full gap-3 rounded-full border border-[var(--glass-border)] px-4 text-sm font-medium hover:border-[var(--glass-border-hover)]"
             >
@@ -569,7 +603,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
           {encodedMp3Url ? (
             <button
               type="button"
-              onClick={() => startDownload("MP3 audio", encodedMp3Url, rawUpstreamOf(encodedMp3Url))}
+              onClick={() => startDownload("MP3 audio", encodedMp3Url, encodedMp3Meta, rawUpstreamOf(encodedMp3Url))}
               className="btn btn-ghost h-12 w-full gap-3 rounded-full border border-[var(--glass-border)] px-4 text-sm font-medium hover:border-[var(--glass-border-hover)]"
             >
               <Music2 className="size-4 shrink-0" />

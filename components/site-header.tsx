@@ -49,6 +49,11 @@ function isCurrent(pathname: string, href: string): boolean {
 
 export function SiteHeader() {
   const pathname = usePathname();
+  /** The tool the visitor is on, for GA4's `platform_switch` event. The
+   *  delegated listener in `components/google-analytics.tsx` reads the
+   *  `data-platform` / `data-platform-from` attributes rendered below. */
+  const activePlatform =
+    NAV.find((item) => item.platform && isCurrent(pathname, item.href))?.platform ?? null;
 
   return (
     <header className="sticky top-0 z-[2147483647] isolate pt-3 sm:pt-4">
@@ -73,6 +78,8 @@ export function SiteHeader() {
                     prefetch={true}
                     aria-current={active ? "page" : undefined}
                     data-accent={item.platform ?? undefined}
+                    data-platform={item.platform ?? undefined}
+                    data-platform-from={activePlatform ?? "direct"}
                     className={cn(
                       "group relative flex items-center gap-2 rounded-full px-3 py-2 text-sm transition-colors duration-200",
                       active
@@ -136,6 +143,8 @@ export function SiteHeader() {
                   prefetch={true}
                   aria-current={active ? "page" : undefined}
                   data-accent={item.platform ?? undefined}
+                  data-platform={item.platform ?? undefined}
+                  data-platform-from={activePlatform ?? "direct"}
                   className={cn(
                     // Compact on phones so all five destinations (four platforms,
                     // Guides) fit one 390px row without a hidden "scroll for

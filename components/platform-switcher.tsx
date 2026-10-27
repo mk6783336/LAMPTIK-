@@ -12,6 +12,10 @@ import { PLATFORM_LIST, PLATFORMS, type Platform } from "@/lib/platforms";
  * Plain `<Link prefetch={true}>`: the App Router serves prefetched RSC
  * payloads from cache, so a switch paints the next page with no refetch and
  * no full-document flicker.
+ *
+ * `data-platform` / `data-platform-from` exist for the GA4 click listener in
+ * `components/google-analytics.tsx`, which reports every switch as
+ * `platform_switch { from, to }` without making the links client-side.
  */
 export function PlatformSwitcher({ active }: { active: Platform }) {
   return (
@@ -26,6 +30,7 @@ export function PlatformSwitcher({ active }: { active: Platform }) {
             prefetch={true}
             aria-current={isActive ? "page" : undefined}
             data-platform={id}
+            data-platform-from={active}
             className={cn("seg-item", isActive && "is-active")}
           >
             <PlatformIcon platform={id} className="size-4 shrink-0" />
