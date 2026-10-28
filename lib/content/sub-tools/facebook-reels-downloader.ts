@@ -81,8 +81,8 @@ export const entry: SubTool = {
     "Free and unlimited downloads",
   ],
   related: [
+    "facebook-video-download-without-app",
+    "fb-watch-downloader",
     "instagram-story-downloader",
-    "youtube-shorts-downloader",
-    "tiktok-mp3-downloader",
   ],
 };

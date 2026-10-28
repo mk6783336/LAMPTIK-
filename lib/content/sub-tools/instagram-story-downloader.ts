@@ -82,8 +82,8 @@ export const entry: SubTool = {
     "Free and unlimited, in any browser",
   ],
   related: [
+    "instagram-reels-download-without-login",
+    "instagram-reels-download-iphone",
     "facebook-reels-downloader",
-    "tiktok-story-downloader",
-    "youtube-shorts-downloader",
   ],
 };

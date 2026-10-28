@@ -16,6 +16,7 @@ import {
 } from "@/components/seo/JsonLd";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { getGuide } from "@/lib/content/guides";
 import { getSubTool } from "@/lib/content/sub-tools";
 import type { SubTool } from "@/lib/content/sub-tool-types";
 import { PLATFORMS } from "@/lib/platforms";
@@ -62,6 +63,12 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
   const related = tool.related
     .map((slug) => getSubTool(slug))
     .filter((entry): entry is SubTool => Boolean(entry));
+
+  // Titles and summaries come from the guide itself, never duplicated here.
+  const guideLinks = (tool.guides ?? []).flatMap((link) => {
+    const guide = getGuide(link.slug);
+    return guide ? [{ guide, anchor: link.anchor ?? guide.metaTitle ?? guide.title }] : [];
+  });
 
   return (
     <>
@@ -217,6 +224,37 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
               </div>
             </div>
           </section>
+
+          {guideLinks.length > 0 ? (
+            <section className="section-pad border-t border-[var(--line)]">
+              <div className="shell">
+                <p className="eyebrow">
+                  <span aria-hidden="true" className="eyebrow-dot" />
+                  Keep reading
+                </p>
+                <h2 className="balance mt-4 text-4xl font-semibold leading-tight tracking-headline">
+                  The details behind this tool
+                </h2>
+                <div className="mt-8 grid gap-3.5 sm:grid-cols-3">
+                  {guideLinks.map(({ guide, anchor }) => (
+                    <Link
+                      key={guide.slug}
+                      href={`/guides/${guide.slug}`}
+                      className="bento-card group flex flex-col"
+                    >
+                      <span className="flex items-start justify-between gap-3">
+                        <span className="text-base font-semibold tracking-tight">{anchor}</span>
+                        <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
+                      </span>
+                      <span className="pretty mt-2 block text-sm leading-relaxed text-[var(--text-2)]">
+                        {guide.description}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </section>
+          ) : null}
         </main>
 
         <SiteFooter />

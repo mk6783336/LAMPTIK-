@@ -78,5 +78,5 @@ export const entry: SubTool = {
     "Shorts up to three minutes long",
     "Free with no account or sign-up",
   ],
-  related: ["youtube-to-mp3", "tiktok-story-downloader", "facebook-reels-downloader"],
+  related: ["youtube-shorts-to-mp3", "youtube-to-mp4-1080p", "youtube-to-mp3"],
 };

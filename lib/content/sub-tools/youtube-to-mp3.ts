@@ -79,5 +79,5 @@ export const entry: SubTool = {
     "Music, podcasts and long uploads supported",
     "Free, unlimited, no account required",
   ],
-  related: ["youtube-shorts-downloader", "tiktok-mp3-downloader", "instagram-story-downloader"],
+  related: ["youtube-shorts-to-mp3", "youtube-music-to-mp3", "youtube-shorts-downloader"],
 };

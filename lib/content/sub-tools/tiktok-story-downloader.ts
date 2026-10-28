@@ -82,5 +82,5 @@ export const entry: SubTool = {
     "Works with story short links",
     "No account and no app required",
   ],
-  related: ["tiktok-mp3-downloader", "instagram-story-downloader", "facebook-reels-downloader"],
+  related: ["tiktok-video-download-iphone", "tiktok-mp3-downloader", "instagram-story-downloader"],
 };

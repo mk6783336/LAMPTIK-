@@ -22,6 +22,17 @@ export interface SubToolFaq {
   answer: string;
 }
 
+/**
+ * A supporting guide, linked from the bottom of the tool page. Only the slug
+ * and an optional anchor live here: title and summary are read from
+ * `lib/content/guides.ts`, so a guide rename can never leave a stale card.
+ */
+export interface SubToolGuide {
+  slug: string;
+  /** Card headline. Defaults to the guide's own `metaTitle`/`title`. */
+  anchor?: string;
+}
+
 export interface SubTool {
   /** Route segment without a leading slash. */
   slug: string;
@@ -55,4 +66,6 @@ export interface SubTool {
   features: string[];
   /** Other sub-tool slugs to cross-link, in reading order. */
   related: string[];
+  /** Supporting guides for this query, in reading order. */
+  guides?: SubToolGuide[];
 }
