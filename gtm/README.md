@@ -13,12 +13,12 @@ contains no tags on purpose.**
 
 ## Why no tags
 
-The direct GA4 tag in `components/google-analytics.tsx` already sends both
-events to `G-TLNZNDJD4J` through `gtag()`. A GA4 tag inside this container
-would send them a second time to the same property, and a GA4 Configuration
-tag would also duplicate every page view. So the container is set up to
-*receive* the events; attach only destinations that are not already covered
-by the direct tag.
+The direct GA4 tags in `components/google-analytics.tsx` already send both
+events to `G-TLNZNDJD4J` and `G-8YQHV877RV` through `gtag()`. A GA4 tag
+inside this container would send them a second time to the same properties,
+and a GA4 Configuration tag would also duplicate every page view. So the
+container is set up to *receive* the events; attach only destinations that
+are not already covered by the direct tag.
 
 If GTM should own GA4 instead, that is a migration, not an addition: remove
 the `gtag('config', …)` call and the `gtagCommand("event", …)` call in

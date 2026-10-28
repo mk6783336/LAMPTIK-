@@ -19,11 +19,12 @@ import { gtmContainerId } from "@/lib/analytics";
  * Mode v2 defaults in `components/consent-mode.tsx` are a plain inline head
  * script, so they always run before this container can load a single tag.
  *
- * One Google property per job: the direct GA4 tag (`G-TLNZNDJD4J`) in
- * `components/google-analytics.tsx` remains the measurement path for this
- * site, and it is what the `download_start` / `platform_switch` events are
- * sent to. Do not also configure a GA4 configuration tag for the same
- * measurement ID inside this container — that counts every page view twice.
+ * One Google property per job: the direct GA4 tags (`G-TLNZNDJD4J` and
+ * `G-8YQHV877RV`) in `components/google-analytics.tsx` remain the measurement
+ * path for this site, and they are what the `download_start` /
+ * `platform_switch` events are sent to. Do not also configure GA4
+ * configuration tags for those measurement IDs inside this container — that
+ * counts every page view once more per property.
  * GTM is here for everything else (remarketing, verification pixels, future
  * tags) and sees the same custom events through `lib/analytics.ts`, which
  * mirrors each one into `dataLayer`. The triggers that read those events are

@@ -161,7 +161,8 @@ export default function RootLayout({
             (no consent gate) after hydration, so first paint and LCP are
             untouched while every pageview is monetized. */}
         <AdScripts />
-        {/* One GA4 tag (G-TLNZNDJD4J) for the whole site. Rendered here so it
+        {/* One Google tag for the whole site, configured for both GA4
+            destinations (G-TLNZNDJD4J and G-8YQHV877RV). Rendered here so it
             exists exactly once per document, after the Consent Mode defaults
             in <head>, and sends a page_view on client-side navigations too. */}
         <GoogleAnalytics />

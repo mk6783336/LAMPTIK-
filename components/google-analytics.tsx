@@ -3,11 +3,14 @@
 import Script from "next/script";
 import { useEffect } from "react";
 
-import { gaMeasurementId, trackEvent } from "@/lib/analytics";
+import { gaMeasurementIds, trackEvent } from "@/lib/analytics";
 import { gtagCommand as gtag } from "@/lib/gtag";
 
 /**
- * One Google tag for the whole site — GA4 property `G-TLNZNDJD4J`.
+ * One Google tag for the whole site — gtag.js loaded once, then `config`d for
+ * every GA4 destination in `gaMeasurementIds` (`G-TLNZNDJD4J`, then
+ * `G-8YQHV877RV`). Loading the script twice, once per property, would pull
+ * duplicate copies of the same library; configuring twice does not.
  *
  * Why this is a component and not a pasted `<head>` snippet:
  *
@@ -36,10 +39,10 @@ let configured = false;
 
 export function GoogleAnalytics() {
   useEffect(() => {
-    if (!gaMeasurementId || configured) return;
+    if (!gaMeasurementIds.length || configured) return;
     configured = true;
     gtag("js", new Date());
-    gtag("config", gaMeasurementId);
+    for (const id of gaMeasurementIds) gtag("config", id);
   }, []);
 
   /**
@@ -64,14 +67,14 @@ export function GoogleAnalytics() {
     return () => document.removeEventListener("click", onClick, true);
   }, []);
 
-  if (!gaMeasurementId) return null;
+  if (!gaMeasurementIds.length) return null;
 
   return (
     <Script
       id="ga-gtag"
       strategy="afterInteractive"
       src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(
-        gaMeasurementId,
+        gaMeasurementIds[0],
       )}`}
     />
   );

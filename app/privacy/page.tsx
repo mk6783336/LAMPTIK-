@@ -118,7 +118,7 @@ export default function PrivacyPage() {
                     <span aria-hidden="true" className="mt-2 size-1 shrink-0 rounded-full bg-[var(--accent)]" />
                     <span>
                       <strong className="text-[var(--text)]">Aggregate page views.</strong>{" "}
-                      Google Analytics 4 (measurement ID G-TLNZNDJD4J) records
+                      Google Analytics 4 (measurement IDs G-TLNZNDJD4J and G-8YQHV877RV) records
                       which pages are visited, the referring site, approximate
                       location and device type. It never receives the video
                       links you paste, and never receives a file you download.
