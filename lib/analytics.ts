@@ -1,4 +1,4 @@
-import { gtagCommand } from "@/lib/gtag";
+import { gtagCommand, pushDataLayerEvent } from "@/lib/gtag";
 
 /**
  * Google Analytics 4 configuration.
@@ -16,6 +16,15 @@ import { gtagCommand } from "@/lib/gtag";
  */
 export const gaMeasurementId =
   process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() || "G-TLNZNDJD4J";
+
+/**
+ * Google Tag Manager container. Declared here, next to the measurement ID,
+ * because both are the site's Google tag configuration and both are read by
+ * the root layout. `NEXT_PUBLIC_GTM_ID` overrides it; an empty value disables
+ * the container entirely (useful on a preview that should not pollute it).
+ */
+export const gtmContainerId =
+  process.env.NEXT_PUBLIC_GTM_ID?.trim() || "GTM-PF5KDMW4";
 
 /**
  * Structured parameters for a download click. The visible label cannot carry
@@ -47,6 +56,12 @@ export function trackEvent(
   name: AnalyticsEvent,
   params: Record<string, string | number | boolean | undefined>,
 ): void {
-  if (!gaMeasurementId || typeof window === "undefined") return;
+  if (typeof window === "undefined") return;
+
+  // Mirrored into `dataLayer` so a GTM trigger can use the same event. GTM
+  // reads plain objects, gtag.js reads commands — one push per consumer.
+  if (gtmContainerId) pushDataLayerEvent(name, params);
+
+  if (!gaMeasurementId) return;
   gtagCommand("event", name, params);
 }

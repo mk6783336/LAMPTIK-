@@ -29,6 +29,25 @@ export function gtagCommand(...args: unknown[]): void {
   w.dataLayer.push(args);
 }
 
+/**
+ * Push a plain `{ event: … }` object onto `dataLayer`.
+ *
+ * This is the shape Google Tag Manager triggers read — `gtag()` commands are
+ * `arguments` objects and GTM does not fire triggers on them, so a container
+ * would otherwise never see the site's custom events. gtag.js ignores plain
+ * objects, so mirroring here cannot double-send to GA4 through the direct
+ * tag; only a tag *configured in the container* for the same event would.
+ */
+export function pushDataLayerEvent(
+  name: string,
+  params?: Record<string, string | number | boolean | undefined>,
+): void {
+  if (typeof window === "undefined") return;
+  const w = window as GtagWindow;
+  w.dataLayer = w.dataLayer || [];
+  w.dataLayer.push({ event: name, ...params });
+}
+
 /** Consent Mode v2 signals for one decision. */
 export function consentSignals(granted: boolean): Record<string, "granted" | "denied"> {
   const value = granted ? "granted" : "denied";

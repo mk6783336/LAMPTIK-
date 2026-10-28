@@ -4,6 +4,10 @@ import { AdScripts } from "@/components/ads/AdScripts";
 import { DesktopSideRails } from "@/components/ads/DesktopSideRails";
 import { ConsentModeScript } from "@/components/consent-mode";
 import { GoogleAnalytics } from "@/components/google-analytics";
+import {
+  GoogleTagManager,
+  GoogleTagManagerNoScript,
+} from "@/components/google-tag-manager";
 import { JsonLd, siteEntityGraph } from "@/components/seo/JsonLd";
 import { googleSiteVerification } from "@/lib/ads";
 import { monetagVerification } from "@/lib/monetization";
@@ -138,8 +142,15 @@ export default function RootLayout({
             four translated landings), not global: emitting this cluster from the
             root layout made every tool page claim a translation it never had. */}
         <ConsentModeScript />
+        {/* Google Tag Manager (GTM-PF5KDMW4). Deliberately after the Consent
+            Mode defaults above: the container must never load a tag before
+            storage is denied. */}
+        <GoogleTagManager />
       </head>
       <body className="min-h-dvh">
+        {/* GTM's no-JavaScript fallback, first element in <body> as Google
+            specifies. */}
+        <GoogleTagManagerNoScript />
         {children}
         {/* Desktop side rails (xl+ margins) only. The fixed sticky bottom bar
             was removed: on phones it parked a blurred bar over the last
