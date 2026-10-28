@@ -26,7 +26,8 @@ import { gtmContainerId } from "@/lib/analytics";
  * measurement ID inside this container — that counts every page view twice.
  * GTM is here for everything else (remarketing, verification pixels, future
  * tags) and sees the same custom events through `lib/analytics.ts`, which
- * mirrors each one into `dataLayer`.
+ * mirrors each one into `dataLayer`. The triggers that read those events are
+ * in `gtm/GTM-PF5KDMW4-events.json`, with import steps in `gtm/README.md`.
  */
 export function GoogleTagManager() {
   if (!gtmContainerId) return null;
