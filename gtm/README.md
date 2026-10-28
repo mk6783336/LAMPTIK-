@@ -36,10 +36,14 @@ and turn off GA4's enhanced-measurement history listener. Do not do both.
 5. Review the preview — expect **6 variables and 2 triggers added, 0 tags** —
    then **Confirm**.
 6. **Preview** → connect to `https://www.lamptik.online`, accept the consent
-   bar, then paste a video and press a download button. In the Tag Assistant
-   event list you should see `download_start` with the parameters above; a
-   navigation between downloaders should show `platform_switch`.
-7. Back in the workspace: **Submit → Publish**.
+   bar, then paste a video and press a download button. Tag Assistant will
+   say **0 tags fired — that is expected**, because the container has none.
+   Open its **Data Layer** tab instead: `download_start` should appear with
+   the parameters above, and switching downloader should show
+   `platform_switch`.
+7. Leave it as a workspace draft until a tag actually uses these triggers —
+   Preview reads the draft, so nothing is lost. When you add that tag, use
+   **Submit → Publish**.
 
 The `accountId` / `containerId` values in the file are `0` by design. The
 import screen maps the file onto whichever container you import it into.
