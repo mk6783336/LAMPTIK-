@@ -45,6 +45,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ];
 
   /**
+   * The tool hub. One hop from the home page, one hop to each of the sixteen
+   * leaf pages below — it is the crawl path that keeps them from being found
+   * only through the sitemap.
+   */
+  const hubs: MetadataRoute.Sitemap = [
+    {
+      url: `${siteUrl}/tools`,
+      lastModified: updated,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+  ];
+
+  /**
    * Programmatic sub-tools. Generated from the same array the pages render,
    * so a page can never exist without being listed (or vice versa).
    */
@@ -130,5 +144,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  return [...tools, ...subTools, ...languages, ...guides, ...company, ...legal];
+  return [
+    ...tools,
+    ...hubs,
+    ...subTools,
+    ...languages,
+    ...guides,
+    ...company,
+    ...legal,
+  ];
 }

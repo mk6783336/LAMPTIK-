@@ -15,6 +15,9 @@ const FOOTER_LINKS = {
   // Programmatic sub-tools: one link per high-intent query. These are real
   // pages with their own copy and schema, not anchors on the platform pages.
   "Sub-tools": [
+    // The hub, first in the column: it lists all sixteen, so it is the better
+    // entry point for anyone who is not already looking for one format.
+    { href: "/tools", label: "All 16 tools" },
     { href: "/tiktok-mp3-downloader", label: "TikTok to MP3" },
     { href: "/youtube-to-mp3", label: "YouTube to MP3" },
     { href: "/tiktok-story-downloader", label: "TikTok Story" },
