@@ -48,11 +48,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
    * The tool hub. One hop from the home page, one hop to each of the sixteen
    * leaf pages below — it is the crawl path that keeps them from being found
    * only through the sitemap.
+   *
+   * Its own date, not `siteConfig.lastModified`: the hub did not exist when
+   * that site-wide date was set, and an inaccurate lastmod is exactly what
+   * Google tells publishers not to send.
    */
   const hubs: MetadataRoute.Sitemap = [
     {
       url: `${siteUrl}/tools`,
-      lastModified: updated,
+      lastModified: new Date("2026-10-29"),
       changeFrequency: "weekly",
       priority: 0.8,
     },
