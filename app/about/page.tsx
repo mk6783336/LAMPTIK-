@@ -9,7 +9,7 @@ import { siteConfig, siteUrl } from "@/lib/site";
 export const metadata: Metadata = {
   title: "About",
   description:
-    "LampTik (lamptik.online) is a free browser-based TikTok, YouTube, Instagram and Facebook video/MP3 downloader. It is not a store: no lamps, no products, no accounts, no payments.",
+    "LampTik (lamptik.online) is a free browser-based downloader for TikTok, YouTube, Instagram and Facebook. Not a store: no products, accounts or payments.",
   alternates: { canonical: "/about" },
   openGraph: {
     images: ["/opengraph-image"],

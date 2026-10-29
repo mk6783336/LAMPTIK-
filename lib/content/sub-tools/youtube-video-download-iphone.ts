@@ -11,7 +11,7 @@ export const entry: SubTool = {
   title: "Download YouTube Video on iPhone - Save MP4 to Photos",
   socialTitle: "Download a YouTube Video on iPhone - Safari, Files, Then Photos",
   description:
-    "Save a YouTube video on iPhone without an app: paste the link in Safari, download the MP4, then move it from Files to Photos in two taps. Works on iOS 16 and later.",
+    "Save a YouTube video on iPhone without an app: paste the link in Safari, download the MP4, then move it from Files to Photos in two taps. iOS 16 and later.",
   keywords: [
     "download youtube video iphone",
     "youtube downloader iphone",

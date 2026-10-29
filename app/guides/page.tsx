@@ -33,9 +33,14 @@ export default function GuidesPage() {
         name: "LAMP TIK Guides",
         url: "/guides",
         isPartOf: { "@type": "WebSite", name: siteConfig.name },
+        // `WebPage`, not `Article`: these entries describe the guide pages
+        // without being the articles themselves. Typing them Article made
+        // Google's validator demand datePublished, author and image on a hub
+        // listing that has none of them — the one-page rich-results error in
+        // the 29 Oct audit. The guide pages carry a complete Article node.
         hasPart: GUIDE_LIST.map((guide) => ({
-          "@type": "Article",
-          headline: guide.title,
+          "@type": "WebPage",
+          name: guide.title,
           description: guide.description,
           dateModified: guide.updatedAt,
           url: `/guides/${guide.slug}`,

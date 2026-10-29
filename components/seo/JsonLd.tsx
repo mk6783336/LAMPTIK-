@@ -120,7 +120,10 @@ export function siteApplicationNode(): Json {
     applicationCategory: "MultimediaApplication",
     applicationSubCategory: "Video Downloader",
     operatingSystem: "All (Web Browser)",
-    browserRequirements: "Requires JavaScript",
+    // No `browserRequirements` here: it is a WebApplication property, and the
+    // schema.org validator flags it as UNKNOWN_FIELD on SoftwareApplication —
+    // which put this node's error on all 43 crawled URLs. The per-page
+    // `webApplicationNode` is a WebApplication and may keep it.
     isAccessibleForFree: true,
     isFamilyFriendly: true,
     inLanguage: "en",

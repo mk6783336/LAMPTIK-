@@ -8,7 +8,7 @@ const TITLE = "Instagram Reels Downloader — Save Reels & Videos in HD";
 const SOCIAL_TITLE =
   "Instagram Reels Downloader — Save IG Reels & Videos in Original HD MP4";
 const DESCRIPTION =
-  "Save Instagram Reels, IGTV and video posts in their original Full HD 1080p MP4 with audio. No watermark, no login, no app — paste a /reel/, /p/, /tv/ or instagr.am link and download instantly on iPhone, Android or PC.";
+  "Save Instagram Reels, IGTV and video posts in original 1080p MP4 with audio — no watermark, no login, no app. Paste a /reel/, /p/ or /tv/ link.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },

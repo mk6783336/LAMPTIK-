@@ -10,7 +10,7 @@ import { siteConfig, siteUrl } from "@/lib/site";
 
 const TITLE = "App & Extension — download with one click, anywhere";
 const DESCRIPTION =
-  "Get LampTik outside the browser tab: a Chrome extension that puts a Download button inside YouTube, TikTok, Instagram and Facebook, and the Android app that catches a link the moment you share it.";
+  "LampTik outside the browser tab: a Chrome extension with a Download button for YouTube, TikTok, Instagram and Facebook, plus an Android share app.";
 
 export const metadata: Metadata = {
   title: { absolute: `${TITLE} · ${siteConfig.name}` },

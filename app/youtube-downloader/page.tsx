@@ -24,7 +24,7 @@ import { pageAlternates, siteUrl } from "@/lib/site";
 const TITLE = "YouTube Video Downloader 1080p HD — Shorts & MP3";
 const SOCIAL_TITLE = "YouTube Video Downloader 1080p HD — Shorts, Long Videos & MP3";
 const DESCRIPTION =
-  "Download YouTube videos in Full HD 1080p, 720p, 360p MP4 plus MP3 audio — Shorts and long videos included. Free, unlimited, no app, no sign-up: paste a link and save immediately.";
+  "Download YouTube videos in 1080p, 720p or 360p MP4 plus MP3 audio — Shorts and long uploads included. Free, unlimited, no app or sign-up.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },

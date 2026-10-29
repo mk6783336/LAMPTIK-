@@ -6,24 +6,27 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { siteUrl } from "@/lib/site";
 
+/** One string for the three tags below, so the SERP description cannot
+ *  drift from the social card. 110+ characters keeps it out of the
+ *  "meta description too short" bucket. */
+const DESCRIPTION =
+  "Rules for using LAMP TIK: personal use only, respect for creators' copyright, no automated scraping, and the limits of what a download can promise.";
+
 export const metadata: Metadata = {
   title: "Terms of Service",
-  description:
-    "The rules for using LAMP TIK: personal use, respecting creators' rights, and acceptable behavior.",
+  description: DESCRIPTION,
   alternates: { canonical: "/terms" },
   openGraph: {
     images: ["/opengraph-image"],
     title: "Terms of Service · LAMP TIK",
-    description:
-      "The rules for using LAMP TIK: personal use, respecting creators' rights, and acceptable behavior.",
+    description: DESCRIPTION,
     url: "/terms",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "Terms of Service · LAMP TIK",
-    description:
-      "The rules for using LAMP TIK: personal use, respecting creators' rights, and acceptable behavior.",
+    description: DESCRIPTION,
   },
 };
 

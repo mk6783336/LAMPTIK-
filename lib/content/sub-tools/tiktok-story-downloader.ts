@@ -14,7 +14,7 @@ export const entry: SubTool = {
   title: "TikTok Story Downloader - Save Stories Without Watermark",
   socialTitle: "TikTok Story Downloader - Save Photo and Video Stories Before They Expire",
   description:
-    "Download TikTok stories before they vanish: save photo and video story slides without a watermark, in original quality. Paste the story link - no app, no account.",
+    "Download TikTok stories before they vanish: save photo and video slides without a watermark in original quality. Paste the story link — no app, no account.",
   keywords: [
     "tiktok story downloader",
     "save tiktok story",

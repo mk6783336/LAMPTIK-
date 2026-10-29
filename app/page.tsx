@@ -28,7 +28,7 @@ const TITLE = "TikTok Video Downloader Without Watermark — HD MP4 & MP3";
 const SOCIAL_TITLE =
   "TikTok Video Downloader Without Watermark — Full HD 1080p MP4 & MP3 (Free, Fast)";
 const DESCRIPTION =
-  "Download TikTok videos without a watermark in Full HD 1080p MP4, convert to MP3, and resolve vt/vm short links. Free, no app, no sign-up — files save instantly to iPhone, Android and PC.";
+  "Download TikTok videos without a watermark in Full HD 1080p MP4 or MP3, and resolve vt/vm short links. Free, no app, no sign-up — saves to phone or PC.";
 
 export const metadata: Metadata = {
   // `absolute` bypasses the layout template: this is the exact SERP title.

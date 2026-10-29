@@ -12,7 +12,7 @@ export const entry: SubTool = {
   title: "Instagram Story Downloader — Save Stories in HD",
   socialTitle: "Instagram Story & Highlights Downloader — Save in Full HD",
   description:
-    "Download Instagram stories and highlights in full HD MP4 before they vanish after 24 hours. Paste a story or highlight link, save the original file free — no login.",
+    "Download Instagram stories and highlights in full HD MP4 before they vanish. Paste a story or highlight link and save the original file free — no login.",
   keywords: [
     "instagram story downloader",
     "download instagram stories",

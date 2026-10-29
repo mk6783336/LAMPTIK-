@@ -8,7 +8,7 @@ const TITLE = "Facebook Video Downloader HD — Download Videos to MP4";
 const SOCIAL_TITLE =
   "Facebook Video Downloader HD — Download FB Reels & Public Videos to MP4";
 const DESCRIPTION =
-  "Download Facebook videos in HD MP4 — Watch uploads, page videos, Reels and 1GB+ long files. fb.watch and share links resolve instantly. Free, no app, no login, no watermark.";
+  "Download Facebook videos in HD MP4 — Watch uploads, page videos, Reels and 1GB+ files. fb.watch and share links resolve instantly. No app, no login.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },

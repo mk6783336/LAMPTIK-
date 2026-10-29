@@ -369,7 +369,9 @@ export const GUIDES: Guide[] = [
     ],
     related: [
       "download-tiktok-video-without-watermark",
-      "why-tiktok-video-quality-drops-after-upload",
+      // Was its own slug: the page rendered a link to itself, and the audit
+      // counted this guide as reachable from one page only.
+      "repurpose-tiktok-videos-for-youtube-shorts-instagram-reels",
       "is-downloading-tiktok-videos-legal",
     ],
   },

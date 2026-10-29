@@ -11,7 +11,7 @@ export const entry: SubTool = {
   title: "Facebook Video Download Without App - HD MP4",
   socialTitle: "Download a Facebook Video Without Installing Anything",
   description:
-    "Download a public Facebook video without installing anything: paste the post, Watch or fb.watch link and save the HD MP4 in your browser. No login, no extension.",
+    "Download a public Facebook video with no install: paste the post, Watch or fb.watch link and save the HD MP4 in your browser. No login, no extension.",
   keywords: [
     "facebook video download without app",
     "download fb video no app",
