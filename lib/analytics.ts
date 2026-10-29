@@ -64,6 +64,17 @@ export const ahrefsAnalyticsKey =
   process.env.NEXT_PUBLIC_AHREFS_ANALYTICS_KEY?.trim() || "bvFt4FqjILDAl/TYJk2XAA";
 
 /**
+ * Ahrefs Site Audit ownership token. Rendered as
+ * `<meta name="ahrefs-site-verification" content="…">` in the root layout, so
+ * it is on the homepage (and every other page) in the server HTML — Ahrefs
+ * does not execute JavaScript. The same token is also served as a file at
+ * `/ahrefs_…`, an independent method for the same verification.
+ */
+export const ahrefsSiteVerification =
+  process.env.NEXT_PUBLIC_AHREFS_SITE_VERIFICATION?.trim() ||
+  "31d8588b0be8a718465b7565aabe1e038c4cd5423bc8bacf2c515277cbed212c";
+
+/**
  * Structured parameters for a download click. The visible label cannot carry
  * this: "Server 02" is either the SD rendition or the alternate CDN, and the
  * audio button says "M4A" while the bridge's is a real MP3.

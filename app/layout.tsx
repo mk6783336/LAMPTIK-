@@ -11,6 +11,7 @@ import {
 } from "@/components/google-tag-manager";
 import { JsonLd, siteEntityGraph } from "@/components/seo/JsonLd";
 import { googleSiteVerification } from "@/lib/ads";
+import { ahrefsSiteVerification } from "@/lib/analytics";
 import { monetagVerification } from "@/lib/monetization";
 import { siteConfig, siteUrl } from "@/lib/site";
 
@@ -67,9 +68,13 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  ...(googleSiteVerification
-    ? { verification: { google: googleSiteVerification } }
-    : {}),
+  verification: {
+    ...(googleSiteVerification ? { google: googleSiteVerification } : {}),
+    // Ahrefs Site Audit ownership check. Must be in the server HTML: Ahrefs
+    // states it does not render JavaScript when it looks for this tag. The
+    // matching `/ahrefs_…` file in public/ is a second, independent method.
+    other: { "ahrefs-site-verification": ahrefsSiteVerification },
+  },
   // Monetag domain verification. Renders `<meta name="monetag" content="…">`
   // only when NEXT_PUBLIC_MONETAG_META is set, so an unconfigured deploy never
   // advertises a verification token it does not own.
