@@ -72,8 +72,29 @@ export default async function GuidePage({
         datePublished: guide.updatedAt,
         dateModified: guide.updatedAt,
         inLanguage: "en",
+        // `image` is REQUIRED for Google's article rich result, and leaving it
+        // off was the one field every guide failed on. These are the real
+        // generated brand images the page already ships in its OG tags, at
+        // their real dimensions — not a placeholder URL.
+        image: {
+          "@type": "ImageObject",
+          url: `${siteUrl}/opengraph-image`,
+          width: 1200,
+          height: 630,
+        },
         author: { "@type": "Organization", name: "LAMP TIK Editorial Team" },
-        publisher: { "@type": "Organization", name: siteConfig.name },
+        // Google also requires publisher.logo, and it must be a raster image,
+        // so this points at the generated PNG icon rather than the SVG mark.
+        publisher: {
+          "@type": "Organization",
+          name: siteConfig.name,
+          logo: {
+            "@type": "ImageObject",
+            url: `${siteUrl}/apple-icon`,
+            width: 180,
+            height: 180,
+          },
+        },
         mainEntityOfPage: {
           "@type": "WebPage",
           "@id": guideUrl,
