@@ -7,6 +7,7 @@ import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
 import { Downloader } from "@/components/downloader";
 import { PlatformGrid } from "@/components/platform-grid";
+import { Breadcrumb } from "@/components/seo/breadcrumb";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import {
@@ -83,7 +84,12 @@ export default function HomePage() {
         anchor: "how",
       }),
       faqPageNode(`${siteUrl}/#faq`, seo.faqs, siteUrl),
-      breadcrumbNode(`${siteUrl}/#breadcrumb`, [{ name: "Home", url: siteUrl }]),
+      // The homepage is the TikTok downloader, so its trail starts at the hub
+      // rather than at Home: "Home → TikTok" would point both ends at `/`.
+      breadcrumbNode(`${siteUrl}/#breadcrumb`, [
+        { name: "Tools", url: `${siteUrl}/tools` },
+        { name: "TikTok Downloader", url: siteUrl },
+      ]),
     ],
   };
 
@@ -111,7 +117,11 @@ export default function HomePage() {
           <section className="pb-12 pt-10 sm:pb-16 sm:pt-14 lg:pt-20">
             <div className="shell grid items-start gap-6 lg:grid-cols-12 lg:gap-8">
               <div className="animate-rise min-w-0 lg:col-span-5">
-                <p className="eyebrow">
+                <Breadcrumb
+                  trail={[{ name: "Tools", href: "/tools" }, { name: "TikTok Downloader" }]}
+                />
+
+                <p className="eyebrow mt-6">
                   <span aria-hidden="true" className="eyebrow-dot" />
                   Free · No app required · No watermark
                 </p>
