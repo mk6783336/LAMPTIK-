@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 import { GUIDE_LIST } from "@/lib/content/guides";
 import { SUB_TOOLS } from "@/lib/content/sub-tools";
 import { LOCALE_CODES } from "@/lib/i18n/types";
-import { siteConfig, siteUrl } from "@/lib/site";
+import { LANDING_LANGUAGES, siteConfig, siteUrl } from "@/lib/site";
 
 /**
  * XML sitemap. Only routes that actually exist are listed — a sitemap full of
@@ -77,22 +77,26 @@ export default function sitemap(): MetadataRoute.Sitemap {
    * Regional landings. Each declared with its `alternates.languages` cluster,
    * which is the signal that ties /ar /es /de /pt to the English tool pages
    * instead of letting them compete as unrelated duplicates.
+   *
+   * The cluster is the same `LANDING_LANGUAGES` object the pages emit in their
+   * <head>, only absolutised. This used to be a second, hand-written map that
+   * still said `pt` after the HTML moved to `pt-BR`, so the sitemap and the
+   * page disagreed about the language of /pt — exactly the mismatch the
+   * Localization audit reports.
    */
+  const landingLanguages = Object.fromEntries(
+    Object.entries(LANDING_LANGUAGES).map(([code, path]) => [
+      code,
+      path === "/" ? siteUrl : `${siteUrl}${path}`,
+    ]),
+  );
+
   const languages: MetadataRoute.Sitemap = LOCALE_CODES.map((code) => ({
     url: `${siteUrl}/${code}`,
     lastModified: updated,
     changeFrequency: "weekly" as const,
     priority: 0.8,
-    alternates: {
-      languages: {
-        en: siteUrl,
-        ar: `${siteUrl}/ar`,
-        es: `${siteUrl}/es`,
-        de: `${siteUrl}/de`,
-        pt: `${siteUrl}/pt`,
-        "x-default": siteUrl,
-      },
-    },
+    alternates: { languages: landingLanguages },
   }));
 
   const guides: MetadataRoute.Sitemap = [
