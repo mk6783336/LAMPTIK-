@@ -18,6 +18,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { getGuide } from "@/lib/content/guides";
 import { getSubTool } from "@/lib/content/sub-tools";
+import { toolLabel } from "@/lib/content/sub-tools/groups";
 import type { SubTool } from "@/lib/content/sub-tool-types";
 import { PLATFORMS } from "@/lib/platforms";
 import { siteUrl } from "@/lib/site";
@@ -32,6 +33,8 @@ import { siteUrl } from "@/lib/site";
 export function SubToolPage({ tool }: { tool: SubTool }) {
   const pageUrl = `${siteUrl}/${tool.slug}`;
   const platform = PLATFORMS[tool.platform];
+  /** Same label the /tools hub prints on this page's card. */
+  const label = toolLabel(tool);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -52,10 +55,13 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
         anchor: "how",
       }),
       faqPageNode(`${pageUrl}/#faq`, tool.faqs, pageUrl),
+      // Mirrors the visible trail in the hero exactly: Home → Tools → this
+      // tool. The middle hop is the hub, which is where a reader arriving
+      // from search can find the other fifteen without going back to home.
       breadcrumbNode(`${pageUrl}/#breadcrumb`, [
         { name: "Home", url: siteUrl },
-        { name: platform.name, url: `${siteUrl}${platform.path}` },
-        { name: tool.h1Accent, url: pageUrl },
+        { name: "Tools", url: `${siteUrl}/tools` },
+        { name: label, url: pageUrl },
       ]),
     ],
   };
@@ -83,7 +89,31 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
           <section className="pb-12 pt-10 sm:pb-16 sm:pt-14 lg:pt-20">
             <div className="shell grid items-start gap-6 lg:grid-cols-12 lg:gap-8">
               <div className="animate-rise min-w-0 lg:col-span-5">
-                <p className="eyebrow">
+                <nav
+                  aria-label="Breadcrumb"
+                  className="micro flex flex-wrap items-center gap-2"
+                >
+                  <Link href="/" className="text-[var(--text-3)] transition-colors hover:text-[var(--text-2)]">
+                    Home
+                  </Link>
+                  <span aria-hidden="true" className="text-[var(--text-3)]">
+                    /
+                  </span>
+                  <Link
+                    href="/tools"
+                    className="text-[var(--text-3)] transition-colors hover:text-[var(--text-2)]"
+                  >
+                    Tools
+                  </Link>
+                  <span aria-hidden="true" className="text-[var(--text-3)]">
+                    /
+                  </span>
+                  <span aria-current="page" className="min-w-0 text-[var(--text-2)]">
+                    {label}
+                  </span>
+                </nav>
+
+                <p className="eyebrow mt-6">
                   <PlatformIcon platform={tool.platform} className="size-3.5" />
                   {tool.eyebrow}
                 </p>
