@@ -30,13 +30,20 @@ export async function resolveShortLink(parsed: ParsedTikTokUrl): Promise<ParsedT
     await response.body?.cancel();
 
     if (finalUrl && finalUrl !== parsed.url) {
-      const reparsed = parseTikTokUrl(finalUrl);
-      if (reparsed?.videoId) return reparsed;
+      const resolvedTarget = (value: string) => {
+        const next = parseTikTokUrl(value);
+        // Photo-mode posts have a post id but no video id; both are valid
+        // redirect targets now that the photo page exists.
+        return next?.videoId || next?.photoId ? next : null;
+      };
+
+      const reparsed = resolvedTarget(finalUrl);
+      if (reparsed) return reparsed;
 
       const embedded = extractTikTokUrl(finalUrl);
       if (embedded) {
-        const fallback = parseTikTokUrl(embedded);
-        if (fallback?.videoId) return fallback;
+        const fallback = resolvedTarget(embedded);
+        if (fallback) return fallback;
       }
     }
   } catch {

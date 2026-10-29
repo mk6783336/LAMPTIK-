@@ -3,7 +3,7 @@ import type { SubTool } from "@/lib/content/sub-tool-types";
 import { SUB_TOOL_MAP } from "./index";
 
 /**
- * The sixteen sub-tools, arranged by the task a visitor arrives with.
+ * The nineteen sub-tools, arranged by the task a visitor arrives with.
  *
  * Alphabetical or platform-ordered lists make sense to the person who built
  * the site; a visitor searching "youtube mp3" does not care that Story
@@ -39,6 +39,13 @@ export const TOOL_GROUPS: readonly ToolGroup[] = [
     ],
   },
   {
+    id: "photos",
+    title: "Save a photo post",
+    intent:
+      "TikTok photo mode has no video stream at all. This page reads the slides instead and saves each image at the resolution TikTok serves.",
+    slugs: ["tiktok-photo-downloader"],
+  },
+  {
     id: "audio",
     title: "Save the sound",
     intent:
@@ -48,7 +55,15 @@ export const TOOL_GROUPS: readonly ToolGroup[] = [
       "youtube-shorts-to-mp3",
       "youtube-music-to-mp3",
       "tiktok-mp3-downloader",
+      "instagram-reels-audio",
     ],
+  },
+  {
+    id: "playlists",
+    title: "Work through a playlist",
+    intent:
+      "A playlist is a list, not a file. This page lists the videos in order and opens each one in the same single-video downloader.",
+    slugs: ["youtube-playlist-downloader"],
   },
   {
     id: "stories",

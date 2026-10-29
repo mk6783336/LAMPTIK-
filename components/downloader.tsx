@@ -311,16 +311,22 @@ function LoadingConsole({ elapsedMs, platform }: { elapsedMs: number; platform: 
 interface DownloaderProps {
   /** Which platform page this shell lives on — default accent + copy. */
   platform?: Platform;
+  /**
+   * Link to show in the field on first paint (the playlist browser hands a
+   * chosen video here). Prefilled only — the visitor still presses the
+   * Download button, so the ad gate and resolve flow stay untouched.
+   */
+  initialUrl?: string;
 }
 
-export function Downloader({ platform = "tiktok" }: DownloaderProps) {
+export function Downloader({ platform = "tiktok", initialUrl }: DownloaderProps) {
   const [status, setStatus] = useState<Status>("idle");
   const [video, setVideo] = useState<VideoInfo | null>(null);
   const [media, setMedia] = useState<MediaPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
-  const [seed, setSeed] = useState({ value: "", nonce: 0 });
+  const [seed, setSeed] = useState({ value: initialUrl?.trim() ?? "", nonce: 0 });
   /** Incremented on every resolve / reset so the ad slots re-auction for a
       fresh impression (see AdSlot's throttled `refreshKey`). */
   const [adRefreshKey, setAdRefreshKey] = useState(0);

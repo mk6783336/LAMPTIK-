@@ -19,6 +19,8 @@ export interface ParsedTikTokUrl {
   /** Canonical desktop URL when a video id is known, otherwise the input URL. */
   url: string;
   videoId: string | null;
+  /** Photo-mode post id (`/@user/photo/…`) — there is no videoId for these. */
+  photoId: string | null;
   username: string | null;
   isShort: boolean;
   isPhoto: boolean;
@@ -61,26 +63,34 @@ export function parseTikTokUrl(raw: string): ParsedTikTokUrl | null {
   const userMatch = path.match(/^\/@([^/]+)/);
 
   const videoId = videoMatch?.[1] ?? null;
+  const photoId = photoMatch?.[1] ?? null;
   const username = userMatch ? decodeURIComponent(userMatch[1]) : null;
 
-  // A non-short link must point at a specific video. Search pages, profiles,
-  // and the "for you" feed are not downloadable.
-  if (!videoId && !isShort) return null;
+  // A non-short link must point at a specific post. Search pages, profiles,
+  // and the "for you" feed are not downloadable. Photo-mode links are a real
+  // input shape: the photo page needs them, even though the video resolver
+  // rejects them immediately.
+  if (!videoId && !photoId && !isShort) return null;
 
   const normalizedOrigin = "https://www.tiktok.com";
   const url =
     videoId && username
       ? `${normalizedOrigin}/@${encodeURIComponent(username)}/video/${videoId}`
-      : videoId
-        ? `${normalizedOrigin}/video/${videoId}`
-        : candidate;
+      : photoId && username
+        ? `${normalizedOrigin}/@${encodeURIComponent(username)}/photo/${photoId}`
+        : videoId
+          ? `${normalizedOrigin}/video/${videoId}`
+          : photoId
+            ? `${normalizedOrigin}/photo/${photoId}`
+            : candidate;
 
   return {
     input,
     url,
     videoId,
+    photoId,
     username,
     isShort,
-    isPhoto: Boolean(photoMatch),
+    isPhoto: Boolean(photoId),
   };
 }

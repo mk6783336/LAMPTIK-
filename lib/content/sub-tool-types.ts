@@ -38,6 +38,12 @@ export interface SubTool {
   slug: string;
   /** Which resolver/downloader engine the page mounts. */
   platform: SubToolPlatform;
+  /**
+   * Tool surface the page mounts. Defaults to the platform's video
+   * downloader; `photo` and `playlist` replace it with the specialised panel
+   * because neither input shape is a playable video stream.
+   */
+  toolKind?: "photo" | "playlist";
   /** `<title>` — keyword first, ≤ 60 characters. */
   title: string;
   /** Social-card title, may be longer than `title`. */

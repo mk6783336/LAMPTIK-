@@ -6,6 +6,8 @@ import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
 import { Downloader } from "@/components/downloader";
+import { PhotoDownloader } from "@/components/photo-downloader";
+import { PlaylistBrowser } from "@/components/playlist-browser";
 import { PlatformIcon } from "@/components/platform-icons";
 import { Breadcrumb } from "@/components/seo/breadcrumb";
 import {
@@ -134,7 +136,13 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
               </div>
 
               <div className="animate-rise min-w-0 lg:col-span-7 [animation-delay:80ms]">
-                <Downloader platform={tool.platform} />
+                {tool.toolKind === "photo" ? (
+                  <PhotoDownloader />
+                ) : tool.toolKind === "playlist" ? (
+                  <PlaylistBrowser />
+                ) : (
+                  <Downloader platform={tool.platform} />
+                )}
               </div>
             </div>
 
@@ -194,8 +202,10 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
                 <span aria-hidden="true" className="eyebrow-dot" />
                 How it works
               </p>
+              {/* Neutral heading: accents like "Every slide, saved." read as a
+                  broken sentence when the template appends "in two steps". */}
               <h2 className="balance mt-4 text-4xl font-semibold leading-tight tracking-headline">
-                {tool.h1Accent} in two steps
+                Two steps, start to finish.
               </h2>
               <ol className="mt-6 space-y-3">
                 {tool.steps.map((step, index) => (
@@ -220,7 +230,7 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
               </ol>
 
               <h2 id="faq" className="mt-10 scroll-mt-24 text-2xl font-semibold tracking-headline">
-                {tool.h1Accent} FAQ
+                Frequently asked questions
               </h2>
               <div className="mt-4 space-y-3">
                 {tool.faqs.map((faq) => (

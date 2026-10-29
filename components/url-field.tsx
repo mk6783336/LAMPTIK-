@@ -56,7 +56,9 @@ export function UrlField({
   onRetry,
   onNotify,
 }: UrlFieldProps) {
-  const [input, setInput] = useState("");
+  // A page can arrive with a link already chosen (the playlist browser) —
+  // it is shown, not submitted: the visitor keeps the final click.
+  const [input, setInput] = useState(seed.value);
   const [isPasting, setIsPasting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);

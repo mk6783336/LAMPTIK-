@@ -89,7 +89,26 @@ const FAQS = [
   },
 ];
 
-export default function YouTubeDownloaderPage() {
+/**
+ * A playlist item links here with `?url=` so the chosen video is already in
+ * the field. Only an 11-character YouTube id survives: the parameter can
+ * never smuggle another platform or an arbitrary URL into the resolver.
+ */
+function prefilledVideoUrl(value: string | string[] | undefined): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const match = value.match(
+    /^https:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})(?:[&?#].*)?$/,
+  );
+  return match ? `https://www.youtube.com/watch?v=${match[1]}` : undefined;
+}
+
+export default async function YouTubeDownloaderPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const initialUrl = prefilledVideoUrl(params.url);
   const pageUrl = `${siteUrl}/youtube-downloader`;
 
   const jsonLd = {
@@ -184,7 +203,7 @@ export default function YouTubeDownloaderPage() {
               </div>
 
               <div className="animate-rise min-w-0 lg:col-span-7 [animation-delay:80ms]">
-                <Downloader platform="youtube" />
+                <Downloader platform="youtube" initialUrl={initialUrl} />
               </div>
             </div>
 
