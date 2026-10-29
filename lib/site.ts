@@ -25,13 +25,18 @@ export function pageAlternates(path: string) {
  * page, which told Google that `/youtube-downloader` was translated into
  * Arabic at `/ar` — a different tool on a different page. Alternates now
  * live only on the pages that really are translations of each other.
+ *
+ * Each key is the exact `html lang` its target serves (`lib/i18n/*.ts`): the
+ * Brazilian landing is written in pt-BR and ships `<html lang="pt-BR">`, so
+ * its hreflang has to say pt-BR too. A bare `pt` against a `pt-BR` document
+ * is the same "hreflang and HTML lang mismatch" the audit reports.
  */
 export const LANDING_LANGUAGES = {
   en: "/",
   ar: "/ar",
   es: "/es",
   de: "/de",
-  pt: "/pt",
+  "pt-BR": "/pt",
   "x-default": "/",
 } as const;
 
