@@ -8,6 +8,7 @@ import { ConsentBar } from "@/components/consent-bar";
 import { Downloader } from "@/components/downloader";
 import { PlatformBento } from "@/components/platform-bento";
 import { PlatformIcon } from "@/components/platform-icons";
+import { Breadcrumb } from "@/components/seo/breadcrumb";
 import {
   breadcrumbNode,
   faqPageNode,
@@ -27,6 +28,8 @@ const PAGE_CONTENT: Record<
   Exclude<Platform, "youtube">,
   {
     eyebrow: string;
+    /** Breadcrumb label — the page name, not the marketing headline. */
+    crumb: string;
     headlineLead: string;
     headlineAccent: string;
     lede: string;
@@ -37,6 +40,7 @@ const PAGE_CONTENT: Record<
 > = {
   tiktok: {
     eyebrow: "TikTok downloader",
+    crumb: "TikTok Downloader",
     headlineLead: "TikTok video downloader,",
     headlineAccent: "without the watermark.",
     lede: "Download TikTok videos in HD MP4 — up to Full HD 1080p, no logo, no app — or convert to MP3 with the original sound. Paste any tiktok.com or vt/vm short link and the clean file saves straight to your device.",
@@ -56,6 +60,7 @@ const PAGE_CONTENT: Record<
   },
   instagram: {
     eyebrow: "Instagram Reels",
+    crumb: "Instagram Reels Downloader",
     headlineLead: "Instagram Reels",
     headlineAccent: "downloader, in original HD.",
     lede: "Save any public Reel as the exact 1080p MP4 Instagram's own player streams — no watermark, no login, no app. Paste a /reel/, /p/, /tv/ or instagr.am link and the clean file lands straight in your iPhone or Android gallery.",
@@ -75,6 +80,7 @@ const PAGE_CONTENT: Record<
   },
   facebook: {
     eyebrow: "Facebook HD video",
+    crumb: "Facebook Video Downloader",
     headlineLead: "Facebook video",
     headlineAccent: "downloader, in full HD.",
     lede: "Save Watch videos, page uploads, and Reels at native HD — even long 1GB+ files. fb.watch and /share/v/ share links resolve instantly. No watermark, no app, no login: paste a link, keep the MP4.",
@@ -138,9 +144,11 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
         anchor: "how",
       }),
       faqPageNode(`${pageUrl}/#faq`, seo.faqs, pageUrl),
+      // Same three hops the hero prints: Home → the /tools hub → this page.
       breadcrumbNode(`${pageUrl}/#breadcrumb`, [
         { name: "Home", url: siteUrl },
-        { name: PLATFORMS[platform].switcherLabel, url: pageUrl },
+        { name: "Tools", url: `${siteUrl}/tools` },
+        { name: content.crumb, url: pageUrl },
       ]),
     ],
   };
@@ -158,7 +166,15 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
           <section className="pb-12 pt-10 sm:pb-16 sm:pt-14 lg:pt-20">
             <div className="hero-stage shell grid items-start gap-6 lg:grid-cols-12 lg:gap-8">
               <div className="animate-rise hero-copy min-w-0 lg:col-span-5">
-                <p className="eyebrow">
+                <Breadcrumb
+                  trail={[
+                    { name: "Home", href: "/" },
+                    { name: "Tools", href: "/tools" },
+                    { name: content.crumb },
+                  ]}
+                />
+
+                <p className="eyebrow mt-6">
                   <PlatformIcon
                     platform={platform}
                     className="size-3.5 text-[var(--accent-text)]"

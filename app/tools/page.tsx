@@ -7,6 +7,7 @@ import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
 import { PlatformIcon } from "@/components/platform-icons";
+import { Breadcrumb } from "@/components/seo/breadcrumb";
 import { breadcrumbNode, JsonLd } from "@/components/seo/JsonLd";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -105,16 +106,7 @@ export default function ToolsPage() {
         <main className="flex-1">
           <section className="pb-12 pt-10 sm:pb-14 sm:pt-14 lg:pt-20">
             <div className="shell">
-              <nav
-                aria-label="Breadcrumb"
-                className="micro flex items-center gap-2 text-[var(--text-3)]"
-              >
-                <Link href="/" className="transition-colors hover:text-[var(--text-2)]">
-                  Home
-                </Link>
-                <span aria-hidden="true">/</span>
-                <span className="text-[var(--text-2)]">Tools</span>
-              </nav>
+              <Breadcrumb trail={[{ name: "Home", href: "/" }, { name: "Tools" }]} />
 
               <p className="eyebrow mt-6">
                 <span aria-hidden="true" className="eyebrow-dot" />

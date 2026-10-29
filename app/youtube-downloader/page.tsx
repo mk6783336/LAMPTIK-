@@ -6,6 +6,7 @@ import { AdSlot } from "@/components/ads/AdSlot";
 import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
+import { Breadcrumb } from "@/components/seo/breadcrumb";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import {
@@ -118,8 +119,10 @@ export default function YouTubeDownloaderPage() {
         anchor: "how",
       }),
       faqPageNode(`${pageUrl}/#faq`, FAQS, pageUrl),
+      // Mirrors the visible trail in the hero: Home → /tools → this page.
       breadcrumbNode(`${pageUrl}/#breadcrumb`, [
         { name: "Home", url: siteUrl },
+        { name: "Tools", url: `${siteUrl}/tools` },
         { name: "YouTube Downloader", url: pageUrl },
       ]),
     ],
@@ -138,7 +141,15 @@ export default function YouTubeDownloaderPage() {
           <section className="pb-12 pt-10 sm:pb-16 sm:pt-14 lg:pt-20">
             <div className="hero-stage shell grid items-start gap-6 lg:grid-cols-12 lg:gap-8">
               <div className="animate-rise hero-copy min-w-0 lg:col-span-5">
-                <p className="eyebrow">
+                <Breadcrumb
+                  trail={[
+                    { name: "Home", href: "/" },
+                    { name: "Tools", href: "/tools" },
+                    { name: "YouTube Downloader" },
+                  ]}
+                />
+
+                <p className="eyebrow mt-6">
                   <Youtube className="size-3.5 text-[#ff5c7a]" />
                   YouTube · Free · No app required
                 </p>

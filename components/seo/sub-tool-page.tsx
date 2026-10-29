@@ -7,6 +7,7 @@ import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
 import { Downloader } from "@/components/downloader";
 import { PlatformIcon } from "@/components/platform-icons";
+import { Breadcrumb } from "@/components/seo/breadcrumb";
 import {
   breadcrumbNode,
   faqPageNode,
@@ -89,29 +90,13 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
           <section className="pb-12 pt-10 sm:pb-16 sm:pt-14 lg:pt-20">
             <div className="shell grid items-start gap-6 lg:grid-cols-12 lg:gap-8">
               <div className="animate-rise min-w-0 lg:col-span-5">
-                <nav
-                  aria-label="Breadcrumb"
-                  className="micro flex flex-wrap items-center gap-2"
-                >
-                  <Link href="/" className="text-[var(--text-3)] transition-colors hover:text-[var(--text-2)]">
-                    Home
-                  </Link>
-                  <span aria-hidden="true" className="text-[var(--text-3)]">
-                    /
-                  </span>
-                  <Link
-                    href="/tools"
-                    className="text-[var(--text-3)] transition-colors hover:text-[var(--text-2)]"
-                  >
-                    Tools
-                  </Link>
-                  <span aria-hidden="true" className="text-[var(--text-3)]">
-                    /
-                  </span>
-                  <span aria-current="page" className="min-w-0 text-[var(--text-2)]">
-                    {label}
-                  </span>
-                </nav>
+                <Breadcrumb
+                  trail={[
+                    { name: "Home", href: "/" },
+                    { name: "Tools", href: "/tools" },
+                    { name: label },
+                  ]}
+                />
 
                 <p className="eyebrow mt-6">
                   <PlatformIcon platform={tool.platform} className="size-3.5" />
