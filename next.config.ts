@@ -30,6 +30,11 @@ const nextConfig: NextConfig = {
   // Performance & optimization
   experimental: {
     optimizePackageImports: ["lucide-react", "framer-motion"],
+    // Required by `app/global-not-found.tsx`: the app has two root layouts
+    // ((site) and (i18n)/[lang]), so an unmatched URL has no layout to give
+    // it a document, and Next's built-in bare 404 would replace the branded
+    // page that the single-root-layout build used to serve.
+    globalNotFound: true,
   },
   /**
    * Tool-shaped URLs that visitors and old backlinks use. The TikTok downloader

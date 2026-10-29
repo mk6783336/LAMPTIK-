@@ -25,8 +25,13 @@ const SUGGESTIONS = [
   },
 ] as const;
 
-/** On-brand 404: explain what happened, then get the visitor back to work. */
-export default function NotFound() {
+/**
+ * On-brand 404 content: explain what happened, then get the visitor back to
+ * work. Rendered by two boundaries — the `(site)` group's `not-found.tsx`,
+ * which gets the layout's document, and `app/global-not-found.tsx`, which
+ * documents itself because an unmatched URL belongs to no root layout.
+ */
+export function NotFoundView() {
   return (
     <>
       <AmbientBackground />
@@ -60,10 +65,7 @@ export default function NotFound() {
                   <SearchX className="size-4" />
                   Open the downloader
                 </Link>
-                <Link
-                  href="/guides"
-                  className="btn btn-ghost h-11 gap-2 px-4 text-sm"
-                >
+                <Link href="/guides" className="btn btn-ghost h-11 gap-2 px-4 text-sm">
                   <Compass className="size-4" />
                   Browse the guides
                 </Link>
