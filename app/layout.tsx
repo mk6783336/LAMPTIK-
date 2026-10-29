@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 
 import { AdScripts } from "@/components/ads/AdScripts";
+import { AhrefsAnalytics } from "@/components/ahrefs-analytics";
 import { DesktopSideRails } from "@/components/ads/DesktopSideRails";
 import { ConsentModeScript } from "@/components/consent-mode";
 import { GoogleAnalytics } from "@/components/google-analytics";
@@ -146,6 +147,9 @@ export default function RootLayout({
             Mode defaults above: the container must never load a tag before
             storage is denied. */}
         <GoogleTagManager />
+        {/* Ahrefs Web Analytics: cookieless page counts, verified by the
+            data-key attribute on this tag. Loaded once per document. */}
+        <AhrefsAnalytics />
       </head>
       <body className="min-h-dvh">
         {/* GTM's no-JavaScript fallback, first element in <body> as Google

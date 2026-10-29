@@ -53,6 +53,17 @@ export const gtmContainerId =
   process.env.NEXT_PUBLIC_GTM_ID?.trim() || "GTM-PF5KDMW4";
 
 /**
+ * Ahrefs Web Analytics site key. The script is cookieless and stores no
+ * personal data, so it is not gated behind the consent bar the way GA4 and
+ * the ad tags are — there is nothing to consent to. Same override shape as
+ * the tags above: `NEXT_PUBLIC_AHREFS_ANALYTICS_KEY` replaces it, and an
+ * unset value would silently disable the install only if this fallback were
+ * removed.
+ */
+export const ahrefsAnalyticsKey =
+  process.env.NEXT_PUBLIC_AHREFS_ANALYTICS_KEY?.trim() || "bvFt4FqjILDAl/TYJk2XAA";
+
+/**
  * Structured parameters for a download click. The visible label cannot carry
  * this: "Server 02" is either the SD rendition or the alternate CDN, and the
  * audio button says "M4A" while the bridge's is a real MP3.

@@ -65,7 +65,7 @@ export default function PrivacyPage() {
               Privacy policy
             </h1>
             <p className="mt-3 text-sm text-[var(--text-3)]">
-              Last updated: October 28, 2026
+              Last updated: October 29, 2026
             </p>
 
             <div className="mt-10 space-y-9 text-base leading-relaxed text-[var(--text-2)]">
@@ -120,8 +120,10 @@ export default function PrivacyPage() {
                       <strong className="text-[var(--text)]">Aggregate page views.</strong>{" "}
                       Google Analytics 4 (measurement IDs G-TLNZNDJD4J and G-8YQHV877RV) records
                       which pages are visited, the referring site, approximate
-                      location and device type. It never receives the video
-                      links you paste, and never receives a file you download.
+                      location and device type. Ahrefs Web Analytics counts
+                      page views alongside it, without cookies and without
+                      storing personal data. Neither service receives the video
+                      links you paste, and neither receives a file you download.
                     </span>
                   </li>
                 </ul>
