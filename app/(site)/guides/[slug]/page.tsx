@@ -69,8 +69,12 @@ export default async function GuidePage({
         "@type": "Article",
         headline: guide.title,
         description: guide.description,
-        datePublished: guide.updatedAt,
-        dateModified: guide.updatedAt,
+        // Full ISO-8601 with a timezone, not the bare `YYYY-MM-DD` the guide
+        // stores: Google's validator reads a date-only value as an invalid
+        // datetime and warns that the timezone is missing. Midnight UTC is
+        // the publication date, asserted honestly rather than invented.
+        datePublished: new Date(`${guide.updatedAt}T00:00:00Z`).toISOString(),
+        dateModified: new Date(`${guide.updatedAt}T00:00:00Z`).toISOString(),
         inLanguage: "en",
         // `image` is REQUIRED for Google's article rich result, and leaving it
         // off was the one field every guide failed on. These are the real
@@ -82,7 +86,11 @@ export default async function GuidePage({
           width: 1200,
           height: 630,
         },
-        author: { "@type": "Organization", name: "LAMP TIK Editorial Team" },
+        author: {
+          "@type": "Organization",
+          name: "LAMP TIK Editorial Team",
+          url: `${siteUrl}/about`,
+        },
         // Google also requires publisher.logo, and it must be a raster image,
         // so this points at the generated PNG icon rather than the SVG mark.
         publisher: {
