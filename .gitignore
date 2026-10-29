@@ -38,6 +38,10 @@ yarn-error.log*
 # from git (a 23 MB binary per build would bloat history for no gain)
 /public/downloads/*.apk
 
+# IndexNow content hashes — restored between workflow runs by actions/cache,
+# never a source file (a stale committed copy would suppress real submissions)
+.indexnow-state.json
+
 # freebuff tooling metadata
 .freebuff/
 

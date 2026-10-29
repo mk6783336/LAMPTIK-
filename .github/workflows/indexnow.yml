@@ -1,0 +1,56 @@
+name: IndexNow
+
+# Announce changed pages to IndexNow (Bing, Yandex, Seznam, Naver) after each
+# production deploy. This is separate from Vercel's own build on purpose: the
+# script waits for /api/version to report this commit, so submissions land on
+# the new HTML rather than racing the deploy.
+#
+# Everything the script needs is public (the key is served at the site root),
+# so this workflow requires no repository secrets.
+
+on:
+  push:
+    branches: [main]
+    # Site content only. App, extension and bridge changes do not alter a page.
+    paths-ignore:
+      - "mobile-app/**"
+      - "android-app/**"
+      - "bridge/**"
+      - "extension/**"
+      - "scripts/bridge-*"
+      - "**.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer push supersedes the older submission; the new run sees the newer state.
+concurrency:
+  group: indexnow
+  cancel-in-progress: true
+
+jobs:
+  submit:
+    name: Submit changed URLs
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Restores the last known content hashes so only genuinely changed pages
+      # are submitted. The per-run key makes the cache always writable.
+      - uses: actions/cache@v4
+        with:
+          path: .indexnow-state.json
+          key: indexnow-state-${{ github.run_id }}
+          restore-keys: |
+            indexnow-state-
+
+      - name: Submit changed URLs
+        env:
+          TARGET_SHA: ${{ github.sha }}
+        run: node scripts/indexnow.mjs
