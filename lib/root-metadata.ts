@@ -4,6 +4,7 @@ import { googleSiteVerification } from "@/lib/ads";
 import { ahrefsSiteVerification } from "@/lib/analytics";
 import { monetagVerification } from "@/lib/monetization";
 import { siteConfig, siteUrl } from "@/lib/site";
+import { bingSiteVerification } from "@/lib/verification";
 
 /**
  * Metadata shared by both root layouts.
@@ -65,6 +66,9 @@ export const rootMetadata: Metadata = {
     // token is configured. Both must survive together.
     other: {
       "ahrefs-site-verification": ahrefsSiteVerification,
+      // Bing's HTML-tag method. Same `other` map for the same reason: a second
+      // `other` key would replace this one and drop the Ahrefs tag.
+      ...(bingSiteVerification ? { "msvalidate.01": bingSiteVerification } : {}),
       ...(monetagVerification ? { monetag: monetagVerification } : {}),
     },
   },
