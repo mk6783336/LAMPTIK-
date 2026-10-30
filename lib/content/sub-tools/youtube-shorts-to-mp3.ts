@@ -82,7 +82,7 @@ export const entry: SubTool = {
   related: ["youtube-to-mp3", "youtube-shorts-downloader", "youtube-music-to-mp3"],
   guides: [
     { slug: "tiktok-audio-bitrate-and-sound-quality", anchor: "Audio bitrate and sound quality" },
-    { slug: "repurpose-short-videos-across-tiktok-reels-shorts" },
+    { slug: "repurpose-tiktok-videos-for-youtube-shorts-instagram-reels" },
     { slug: "is-downloading-tiktok-videos-legal", anchor: "Is downloading videos legal?" },
   ],
 };

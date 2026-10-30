@@ -46,6 +46,16 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: "/tiktok-downloader", destination: "/", permanent: true },
+      // Two guides covered the same repurposing query with near-identical copy,
+      // so Google had to pick one and the other competed with it. The weaker
+      // duplicate was retired and folded into the survivor: a 301 keeps every
+      // existing backlink and hover-preview pointing at a live page instead of
+      // handing crawlers a 404.
+      {
+        source: "/guides/repurpose-short-videos-across-tiktok-reels-shorts",
+        destination: "/guides/repurpose-tiktok-videos-for-youtube-shorts-instagram-reels",
+        permanent: true,
+      },
     ];
   },
   // Security headers + cache policy

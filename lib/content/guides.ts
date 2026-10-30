@@ -269,45 +269,82 @@ export const GUIDES: Guide[] = [
     title: "Is Downloading TikTok Videos Legal? What You Should Know",
     metaTitle: "Is Downloading TikTok Videos Legal?",
     description:
-      "The honest answer on copyright, TikTok's terms, fair use, and personal vs. commercial downloads — plus how to download responsibly.",
-    updatedAt: "2026-10-18",
+      "The honest answer on copyright, TikTok's terms, fair use and fair dealing, personal vs. commercial use, and how takedowns actually work — plus how to download responsibly.",
+    updatedAt: "2026-10-30",
     shortAnswer:
-      "Downloading a public TikTok video for personal, offline viewing is a gray area that TikTok's terms technically restrict but rarely enforce. Re-publishing someone else's work, stripping credits, or using it commercially without permission can absolutely infringe copyright.",
+      "Downloading a public TikTok video for personal, offline viewing sits in a gray area: TikTok's terms restrict it, copyright law is what actually decides, and enforcement targets republishers and commercial reuse rather than someone watching on a plane. Re-uploading someone else's video, stripping credit, or using it in anything monetized can infringe copyright outright.",
     sections: [
       {
-        heading: "Copyright sits with the creator",
+        heading: "Copyright belongs to the creator, not to TikTok",
         paragraphs: [
-          "Under copyright law in most jurisdictions, the moment a creator films and uploads a video, they hold copyright in it. Uploading to TikTok grants the platform a license to host and distribute the video — it does not transfer ownership, and it does not give other viewers redistribution rights.",
-          "That means a downloaded copy is, legally speaking, someone else's copyrighted work in your possession. Personal, private viewing is tolerated nearly everywhere; what crosses the line is republishing, monetizing, or stripping attribution.",
+          "The moment a creator records and uploads a video, copyright in that footage belongs to them — automatically, in virtually every country that signed the Berne Convention, with no registration required. Uploading grants TikTok a broad licence to host, transcode, and display the work. That licence is between the creator and the platform. It does not extend to you, and it does not turn a public post into public property.",
+          "This is the part most \"is it legal?\" answers skip: the question is not whether the video is visible, it is whether you have permission to make a copy. Visibility governs access. Copyright governs copies. A public video is easy to reach and still fully protected.",
         ],
       },
       {
-        heading: "What TikTok's terms say",
+        heading: "What TikTok's Terms of Service actually say",
         paragraphs: [
-          "TikTok's terms prohibit downloading content outside the app's own save and share features, except where the platform offers it or you have permission. In practice, enforcement targets mass-reposters and commercial reuse far more than individuals saving a video to watch offline. \"Not enforced\" is not \"permitted\" — it's a risk judgment, not a legal guarantee.",
+          "TikTok's terms grant users a personal, non-commercial licence to view content inside the app, and separately prohibit copying, reproducing, or downloading content except where the platform itself offers that feature or you have the rights holder's permission. Re-uploading a video you downloaded — with or without a credit — means representing someone else's work as your own or redistributing it without a licence, which the terms forbid and copyright law treats as infringement.",
+          "Worth being precise about the distinction: breaching a platform's terms is a contractual matter between you and TikTok, and the usual consequence is an account action. Infringing copyright is a legal matter between you and the creator, and the consequences can be a takedown, a strike, a demonetisation, or in the worst cases a claim. Saving a video for yourself and re-uploading it are separated by that gap, and it is a wide one.",
         ],
       },
       {
-        heading: "Fair use is narrow",
+        heading: "Fair use and fair dealing: narrower than people assume",
         paragraphs: [
-          "Fair use (or fair dealing) may protect short clips used for commentary, criticism, news, teaching, or parody. It generally does not protect downloading a full video to re-upload elsewhere, even with credit. If your use transforms the material substantially and you only take what you need to make your point, you may be on solid ground; if you're re-hosting the video, you're not.",
+          "In the United States, fair use is a four-factor balancing test: the purpose and character of your use (commentary, criticism, teaching, parody and other transformative uses fare best), the nature of the work, how much of it you took, and whether your use undercuts the market for the original. The UK, Canada, Australia and the EU use variants called fair dealing, which enumerate specific purposes rather than balancing openly.",
+          "Applied honestly, the test rarely protects what downloaders actually do. Quoting eight seconds of a video in a review you narrate is a very different act from re-uploading the whole clip to your own account, and the second does not become lawful because a caption credits the creator. Attribution is an ethical norm and a courtesy; it is not a licence. The factor that sinks most cases is the fourth: if your upload substitutes for the original, you have taken the market value, not merely the footage.",
         ],
       },
       {
-        heading: "How to download responsibly",
+        heading: "Personal use versus commercial use: where the line falls",
+        paragraphs: [
+          "There is no worldwide statute that says \"personal downloading is legal\". What exists is a patchwork: private-copying exceptions in some EU member states funded by levies on blank media, a private-study defence in the UK that was struck down in 2015, and no general private-copying right at all in the US, where the practical tolerance comes from enforcement priorities rather than from permission.",
+          "What is consistent across jurisdictions is the direction of risk. Saving a clip to watch offline, to show a friend, or to keep a reference of your own work carries the least exposure. Using it in anything that earns money, gets published, or forms part of a product carries the most — and advertising, brand content, courses, stock libraries and monetised repost accounts all sit firmly in that second category, whether or not the video is watermarked.",
+        ],
+      },
+      {
+        heading: "What enforcement actually looks like",
+        paragraphs: [
+          "Creators and rights holders rarely sue individual viewers; the cost makes no sense. What they use instead is the takedown machinery, and it is fast. A copyright complaint to TikTok removes the infringing post and counts against the account; repeated strikes end accounts. On YouTube, Content ID matches uploaded audio and video against registered works automatically, and the practical result is that a monetised channel's revenue is redirected to the rights holder before anyone speaks to a lawyer. Meta runs an equivalent system for Reels and Facebook video.",
+          "That machinery explains the pattern people observe. Downloading is not what triggers action, because a private copy is invisible to a platform. Publishing is what triggers action, because that is the moment the copy becomes visible, matchable, and rivalrous with the original.",
+        ],
+      },
+      {
+        heading: "Downloading responsibly: a checklist that holds up",
         list: [
-          "Download only what you have a reason to keep — offline viewing, personal archive, quoting in a project you own.",
-          "Never strip a creator's credit or re-upload a video as your own content.",
-          "Ask permission before using someone's video or sound in anything public or monetized.",
-          "Respect takedowns: if a creator asks you to remove their content, do it.",
+          "Download what you have a concrete reason to keep — offline viewing, a personal archive of your own posts, a reference copy for a project you own.",
+          "Never re-upload someone else's video as your own, with or without a caption credit, and never strip a creator's handle or watermark to obscure the source.",
+          "Ask before publishing: a short message asking permission is free, usually answered, and settles the question permanently.",
+          "Treat music separately from video: a licensed track inside a TikTok clip is licensed for TikTok, not for your channel or your ad.",
+          "Honour takedowns immediately. A creator asking you to remove their content is exercising a right, not making a request.",
+          "Keep the source: note where a clip came from while you still remember, so you can credit, license, or delete it later.",
         ],
         paragraphs: [],
+      },
+      {
+        heading: "What LAMP TIK does — and deliberately does not do",
+        list: [
+          "Resolves media that is already public. There is no login, no cookie injection, and no attempt to reach friends-only or private posts.",
+          "Does not bypass DRM, paywalls, or region locks. If the platform will not serve a rendition to an anonymous request, the tool reports that instead of working around it.",
+          "Does not keep your files. Downloads are streamed from the platform's CDN to your device; nothing you save is stored on our servers.",
+          "Does not decide whether your use is lawful. That depends on your jurisdiction and what you do with the file, and no downloader can make that judgement for you.",
+        ],
+        paragraphs: [
+          "This page is general information, not legal advice. If a specific use matters commercially, ask a lawyer qualified in your country — the answer changes with jurisdiction and with what you intend to publish.",
+        ],
+      },
+      {
+        heading: "If you are the creator: protecting your own work",
+        paragraphs: [
+          "The same rules run in your favour. You own your uploads, which means you can authorise reuse, and you can also withdraw it — most platforms let you file a copyright complaint against an account that reposted your video, and doing so is routine rather than aggressive. Registering your work with a collection society or a content-matching service extends the same protection to platforms you do not post on, because those systems match the file, not the account.",
+          "The practical corollary: putting your own video through a downloader to move it between your own accounts is your right as the rights holder, and it is the single most common legitimate use of a tool like this.",
+        ],
       },
     ],
     related: [
       "download-tiktok-video-without-watermark",
+      "browser-vs-app-tiktok-downloaders-safety",
       "download-tiktok-audio-as-mp3",
-      "download-tiktok-without-logo-iphone-android",
     ],
   },
   {
@@ -660,139 +697,108 @@ export const GUIDES: Guide[] = [
     title: "How to Download Facebook Videos, Reels & fb.watch Links in 1080p HD (Including Long Videos)",
     metaTitle: "Download Facebook Videos & Reels in 1080p",
     description:
-      "Download Facebook Watch videos, shared Reels and fb.watch short links in Full HD 1080p or SD MP4 — including long videos. No account, no app.",
-    updatedAt: "2026-10-19",
+      "Download Facebook Watch videos, page uploads, Reels and fb.watch links in 1080p HD or SD — including files over 1 GB. No account, no app, no watermark.",
+    updatedAt: "2026-10-30",
     shortAnswer:
-      "Paste a Facebook video link (Watch, Reel, or fb.watch) into LAMP TIK and tap Download. Long videos (1GB+) resolve directly. Short links expand server-side, following every Facebook redirect.",
+      "Copy the video's link — Watch, a page upload, a Reel, or an fb.watch/share link — paste it into LAMP TIK, and pick Download HD MP4. Facebook publishes a ladder of renditions for every public video; the tool reads that ladder and offers the highest one the uploader actually published, with the file size shown before you commit.",
     sections: [
       {
-        heading: "Long Facebook HD videos (1GB+)",
+        heading: "The five Facebook link shapes — and which ones resolve",
         paragraphs: [
-          "Facebook Watch pages and page uploads can exceed 1 GB. The tool resolves these natively — there is no arbitrary file-size cap. The result panel shows the file size before you download, which is the quickest honest signal of quality.",
-          "The trick: Facebook serves long-form at native HD quality only when the full upload is requested. Short-form Reels may be SD; long-form Watch pages are HD.",
+          "Facebook does not have one video URL format. A video lives at a different address depending on where you found it, and each shape reaches the same media object through a different route. Recognising yours saves the five minutes people usually spend pasting the wrong thing.",
         ],
-      },
-      {
-        heading: "Instant fb.watch & share resolver",
-        paragraphs: [
-          "fb.watch and facebook.com/share/v/ short links are expanded server-side, following every redirect inside Facebook's own hosts. No manual expansion needed.",
-        ],
-      },
-      {
-        heading: "On iPhone and iOS",
         list: [
-          "In Facebook, tap Share on the video → Copy link.",
-          "Open LAMP TIK in Safari and paste the link — the tool fetches automatically.",
-          "Tap Download HD MP4 (No Watermark). Safari saves the file to the Files app under Downloads.",
-          "In Files, long-press the video → Share → Save to Video to add it to Photos.",
-        ],
-        paragraphs: [
-          "Safari may ask for permission to download large files — allow it for the tool's domain.",
+          "facebook.com/watch/?v=1234567890 — Watch. Long-form video, usually a page or creator upload, and the format most likely to carry a real 1080p rendition.",
+          "facebook.com/<page-or-profile>/videos/<id> — a video on a page's or profile's own timeline. Same media object as Watch, different wrapper.",
+          "facebook.com/reel/<id> — Reels. Vertical, short, and re-encoded more aggressively than Watch uploads.",
+          "fb.watch/<code> — the short link Facebook's Share sheet hands you. It is a redirect, not a file; the tool follows it server-side to the canonical Watch page.",
+          "facebook.com/share/v/<code> — the newer share format, especially from mobile. Also a redirect, and also expanded automatically.",
         ],
       },
       {
-        heading: "On Android",
+        heading: "Why the same video sometimes arrives in SD",
+        paragraphs: [
+          "When someone uploads to Facebook, the video is transcoded into a ladder of renditions — several resolutions at several bitrates — and the player picks one based on your connection. A downloader does not get to invent a rung: it can only request one that exists. If the uploader's source was 720p, or Facebook's HD transcode never finished, the HD entry is simply absent and the highest available rendition is SD.",
+          "The honest test is file size, and the result panel shows it before you download. A three-minute 1080p clip typically lands between roughly 40 and 120 MB depending on motion and bitrate; the same clip at 15 MB is SD, whatever the button promises. Compare two downloads of the same video and you can see the difference immediately.",
+          "Three cases where SD is genuinely all that exists: live replays that were broadcast at a low bitrate, older page uploads from before Facebook's HD pipeline, and Reels that were themselves re-uploaded from another platform and arrived compressed.",
+        ],
+      },
+      {
+        heading: "Videos over 1 GB: why size is not the obstacle people expect",
+        paragraphs: [
+          "A long Watch upload — a lecture, a full match, a stream replay — can run past 1 GB, and most downloader sites refuse those outright because they design around buffering the file on their own server first. That design is the limit, not Facebook. LAMP TIK resolves the media URL and hands it to your browser, so the bytes travel from Facebook's CDN straight to your disk. Nothing is copied through our infrastructure, which is also why no file you download is ever stored on it.",
+          "What actually governs success at that size is your connection and your device. Stay on Wi-Fi rather than mobile data, keep the tab in the foreground until the transfer starts, and leave the phone awake — a screen lock can suspend the browser's download in the background on some Android builds. Chrome and Safari both resume a dropped transfer rather than restarting from zero, so a brief interruption costs time, not the file.",
+        ],
+      },
+      {
+        heading: "Desktop: Chrome, Edge, Firefox, Safari",
         list: [
-          "In Facebook, tap Share on the video → Copy link.",
-          "Paste the link into LAMP TIK in Chrome, Samsung Internet, or Firefox.",
-          "Tap Download HD MP4 (No Watermark) — the file saves to your Downloads folder and appears in Gallery automatically.",
-          "Long videos (1GB+) are saved as a single file; smaller clips finish faster.",
-        ],
-        paragraphs: [
-          "Android shows a download notification. Large files take longer — this is normal.",
-        ],
-      },
-      {
-        heading: "Quality and format summary",
-        paragraphs: [
-          "Long Facebook Watch pages: HD 1080p MP4 with audio (native quality).",
-          "Facebook Reels: SD or HD depending on the original upload, typically up to 1080p.",
-          "fb.watch short links: resolved server-side to the canonical Watch page before extraction.",
-        ],
-      },
-    ],
-    related: [
-      "download-tiktok-video-without-watermark",
-      "download-tiktok-without-logo-iphone-android",
-      "download-tiktok-audio-as-mp3",
-    ],
-  },
-  {
-    slug: "repurpose-short-videos-across-tiktok-reels-shorts",
-    title: "Creator Guide: How to Repurpose Videos Across TikTok, Instagram Reels & YouTube Shorts Without Watermarks",
-    metaTitle: "Repurpose Videos Across TikTok, Reels & Shorts",
-    description:
-      "Move your own video across TikTok, Instagram Reels and YouTube Shorts in full quality: watermark fixes, export specs, and an upload checklist.",
-    updatedAt: "2026-10-19",
-    shortAnswer:
-      "Download your own video from TikTok in original watermark-free quality, trim it to each platform's length limit (60s for Shorts, 90s for Reels), and re-upload the clean MP4. A watermark-free master survives each platform's re-encode with visibly less blur than a watermarked screen recording.",
-    sections: [
-      {
-        heading: "Repurpose your own work — the right way",
-        paragraphs: [
-          "If you created the video, you own the copyright: moving it to YouTube Shorts or Instagram Reels is your right, and cross-posting is how most creators grow. The mistake is not the repost itself — it's the source file most people use. Downloading through TikTok's share menu gives you a re-compressed copy with a burned-in animated watermark, and that file becomes the master for every other platform.",
-          "The right master is the original stream: the same MP4 the TikTok app plays before the share-menu export adds its overlay. A downloader like LAMP TIK resolves that source stream, so your Shorts and Reels start from clean pixels instead of a copy-of-a-copy.",
-        ],
-      },
-      {
-        heading: "Why the TikTok watermark hurts you on Shorts and Reels",
-        list: [
-          "Visual noise: the bouncing username overlay competes with your captions, thumbnails, and on-screen text in the first two seconds — the window that decides retention.",
-          "Platform signaling: both YouTube Shorts and Instagram Reels can detect the TikTok watermark, and watermarked uploads historically get less distribution because they read as recycled content.",
-          "Double compression: the watermark is baked in before upload, so each platform re-encodes the overlay pixels too — edges around the animated logo turn to mush faster than the rest of the frame.",
-          "Framing damage: the watermark occupies corners where safe-area UI (subscribe buttons, description text) will later sit, so important pixels get covered twice.",
+          "Open the video on Facebook and copy the address bar URL — on a Watch page that is the full /watch/?v= form, which is the most reliable shape to paste.",
+          "Paste it into the field at the top of this page. The tool detects Facebook and fetches without you pressing anything else.",
+          "Check the result panel: title, duration, resolution and file size. If only one MP4 is offered, that is the highest rendition Facebook published, not a failure.",
+          "Tap Download HD MP4. The browser's own download manager takes over — you can close the tab once the transfer appears in it.",
         ],
         paragraphs: [],
       },
       {
-        heading: "Step by step: build a clean master file",
+        heading: "iPhone and iPad",
         list: [
-          "Copy the link of your own video inside TikTok (Share → Copy link).",
-          "Paste it into LAMP TIK and let it resolve the original HD stream.",
-          "Tap Download HD MP4 (No Watermark) and save the file — it lands as lamptik-<id>.mp4 in your downloads folder.",
-          "Trim in your editor: Shorts allows up to 60 seconds, Reels up to 90. Cut the TikTok intro/outro beats that don't serve the new audience.",
-          "Export once, at the highest quality (1080×1920, H.264, 10–16 Mbps). Upload that single export to each platform — never re-export between uploads.",
+          "In the Facebook app, tap Share on the video, then Copy link. In Safari on the mobile site, the same option lives under the ⋯ menu.",
+          "Open LAMP TIK in Safari and paste the link — the short fb.watch or /share/v/ form is fine, it gets expanded for you.",
+          "Tap Download HD MP4. Safari asks for permission to download; allow it, then the file lands in the Files app under Downloads → On My iPhone.",
+          "In Files, long-press the video → Share → Save to Photo Library. Downloads opened from within Facebook's in-app browser cannot reach the Files app, so switch to Safari first — this is the single most common iOS failure.",
         ],
+        paragraphs: [],
+      },
+      {
+        heading: "Android",
+        list: [
+          "In Facebook, tap Share → Copy link.",
+          "Paste into Chrome, Samsung Internet, or Firefox. If the link opens inside Facebook's in-app browser, use the ⋮ menu → Open in browser instead.",
+          "Tap Download HD MP4; a download notification appears in the status bar and the file is written to Internal storage → Download.",
+          "The gallery picks the video up on its next media scan, usually within a minute. If it does not, reboot or use a file manager to move it into Movies.",
+        ],
+        paragraphs: [],
+      },
+      {
+        heading: "Audio only: pulling the MP3",
         paragraphs: [
-          "One clean master, three platforms. Every extra export-generation is another round of quality loss, so keep the pipeline to: source stream → one edit → one export → upload everywhere.",
+          "Not every Facebook video is worth a video file. Talks, music page uploads, interviews and voice notes are often wanted as audio for a commute or a podcast edit. The same resolved media can be exported as MP3, which keeps the soundtrack and drops the picture — useful when the frame is a static slide or a talking head you do not need to watch.",
+          "Facebook delivers audio as AAC at roughly 128 kbps, so that is the ceiling. An MP3 export preserves what the platform serves rather than inflating it: converting a 128 kbps source to a 320 kbps file adds bytes, not detail. Treat it as a good listening copy, not a mastering source.",
         ],
       },
       {
-        heading: "Specs each platform rewards",
+        heading: "What cannot be downloaded, and why no tool changes that",
+        list: [
+          "Friends-only and private videos: the media URL is served only to an authenticated session with permission, so there is nothing public to resolve.",
+          "Group posts that require membership: same reason — the video is gated behind the group's access check.",
+          "Deleted videos: the post can survive in a share link while the media object behind it is gone.",
+          "Region-locked content: rights holders restrict some Watch content by country, and the rendition list comes back empty outside the permitted region.",
+          "Currently live broadcasts: a stream that has not been processed into a replay has no fixed media file yet. Wait for the replay.",
+        ],
         paragraphs: [
-          "All three platforms want vertical 9:16 video at 1080×1920 or higher, H.264 (or HEVC) with AAC audio. TikTok itself re-encodes almost everything to roughly 1080p at a moderate bitrate; YouTube Shorts preserves quality best and accepts up to 4K; Instagram Reels is the most aggressive re-compressor, so feed it the highest-bitrate master you have. Keep frame rate at the rate you shot (30 or 60 fps) — matching the source avoids judder from frame blending.",
+          "Anything that asks you to log in to Facebook to complete a download is not a workaround — it is a credential harvest. LAMP TIK never asks for a Facebook password, and no legitimate downloader needs one.",
         ],
       },
       {
-        heading: "Upload checklist before you cross-post",
+        heading: "Troubleshooting checklist",
         list: [
-          "No watermark anywhere in the frame (check corner motion at 0:02).",
-          "Captions are burned in or use the native caption tools of each platform — don't rely on TikTok's sticker captions surviving the transfer.",
-          "Audio levels: normalize to about −14 LUFS so Reels doesn't crush your mix against louder neighbors.",
-          "Cover/thumbnail set per platform: Shorts pulls from your frame selection, Reels from its own picker — choose deliberately.",
-          "Write a fresh title and hook per platform; identical copy across three apps reads as spam and underperforms.",
+          "\"Could not resolve\": open the link in a private window. If it does not play there either, the video is restricted or gone — the link is the problem, not the tool.",
+          "Link shortens to a photo post: /share/p/ links point at images, not video. Copy the link from the video itself.",
+          "Download starts then stalls: a VPN or corporate proxy is usually throttling the CDN connection. Try again without it.",
+          "File plays with no sound: the rendition was published as video-only by the uploader's tooling; retry once — a fresh resolve often returns the muxed version.",
+          "Gallery does not show the file: it exists in Downloads, but Android's media scanner has not indexed it yet. Open it once from a file manager.",
+          "Everything fails on one network only: some ISPs block Facebook's CDN hosts outright. Mobile data is the quickest confirmation.",
         ],
         paragraphs: [],
       },
     ],
     related: [
-      "download-tiktok-video-without-watermark",
-      "why-tiktok-video-quality-drops-after-upload",
       "is-downloading-tiktok-videos-legal",
+      "browser-vs-app-tiktok-downloaders-safety",
     ],
   },
 ];
-
-// Direct URL mapping for canonical / permanent routes
-const GUIDE_DIRECT_URLS: Record<string, string> = {
-  "how-to-download-instagram-reels-in-hd": "/instagram-reels-downloader",
-  "how-to-download-large-facebook-videos-in-1080p-hd": "/facebook-video-downloader",
-  "repurpose-short-videos-across-tiktok-reels-shorts": "/guides/repurpose-tiktok-videos-for-youtube-shorts-instagram-reels",
-} as const;
-
-export function getGuideDirectUrl(slug: string): string | undefined {
-  return GUIDE_DIRECT_URLS[slug];
-}
 
 export function getGuide(slug: string): Guide | null {
   return GUIDES.find((guide) => guide.slug === slug) ?? null;

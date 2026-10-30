@@ -83,7 +83,7 @@ export const entry: SubTool = {
   related: ["youtube-to-mp3", "youtube-shorts-downloader", "youtube-video-download-iphone"],
   guides: [
     { slug: "why-tiktok-video-quality-drops-after-upload", anchor: "Why video quality drops after upload" },
-    { slug: "repurpose-short-videos-across-tiktok-reels-shorts" },
+    { slug: "repurpose-tiktok-videos-for-youtube-shorts-instagram-reels" },
     { slug: "is-downloading-tiktok-videos-legal", anchor: "Is downloading videos legal?" },
   ],
 };

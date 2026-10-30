@@ -36,7 +36,7 @@
 - [Browser vs app downloader safety](https://www.lamptik.online/guides/browser-vs-app-tiktok-downloaders-safety)
 - [How to download Instagram Reels in HD](https://www.lamptik.online/guides/how-to-download-instagram-reels-in-hd)
 - [How to download large Facebook videos in 1080p HD](https://www.lamptik.online/guides/how-to-download-large-facebook-videos-in-1080p-hd)
-- [Repurpose short videos across TikTok/Reels/Shorts](https://www.lamptik.online/guides/repurpose-short-videos-across-tiktok-reels-shorts)
+- [Repurpose short videos across TikTok/Reels/Shorts](https://www.lamptik.online/guides/repurpose-tiktok-videos-for-youtube-shorts-instagram-reels)
 
 ## API health & trust
 - Health: `GET https://www.lamptik.online/api/health` (200 OK JSON)

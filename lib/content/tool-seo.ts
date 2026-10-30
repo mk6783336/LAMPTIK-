@@ -285,7 +285,7 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
         note: "Device-by-device instructions and quality notes.",
       },
       {
-        href: "/guides/repurpose-short-videos-across-tiktok-reels-shorts",
+        href: "/guides/repurpose-tiktok-videos-for-youtube-shorts-instagram-reels",
         anchor: "Repurpose videos across TikTok, Reels and Shorts",
         note: "Export specs that survive every re-encode.",
       },

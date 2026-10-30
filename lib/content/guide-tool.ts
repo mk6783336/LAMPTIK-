@@ -117,14 +117,6 @@ export const GUIDE_TOOL: Record<string, GuideToolLink> = {
     body: "Public Watch pages, page uploads and Reels resolve; long files stream straight to disk.",
     cta: "Open the Facebook downloader",
   },
-  "repurpose-short-videos-across-tiktok-reels-shorts": {
-    ...TIKTOK,
-    anchor: "download a watermark-free master",
-    inline: "Every cross-post starts with one clean source file — get that first.",
-    heading: "Get the master before you re-post",
-    body: "Download the original stream once, then trim and upload per platform instead of re-recording each time.",
-    cta: "Download the master",
-  },
 };
 
 export function guideTool(slug: string): GuideToolLink {

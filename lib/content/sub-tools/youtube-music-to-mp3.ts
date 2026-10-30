@@ -84,6 +84,6 @@ export const entry: SubTool = {
   guides: [
     { slug: "tiktok-audio-bitrate-and-sound-quality", anchor: "What audio compression really costs" },
     { slug: "is-downloading-tiktok-videos-legal", anchor: "Copyright and personal use" },
-    { slug: "repurpose-short-videos-across-tiktok-reels-shorts" },
+    { slug: "repurpose-tiktok-videos-for-youtube-shorts-instagram-reels" },
   ],
 };

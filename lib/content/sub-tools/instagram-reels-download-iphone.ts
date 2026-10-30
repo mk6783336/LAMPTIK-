@@ -86,7 +86,7 @@ export const entry: SubTool = {
   ],
   guides: [
     { slug: "how-to-download-instagram-reels-in-hd", anchor: "Instagram Reels in full HD" },
-    { slug: "repurpose-short-videos-across-tiktok-reels-shorts" },
+    { slug: "repurpose-tiktok-videos-for-youtube-shorts-instagram-reels" },
     { slug: "is-downloading-tiktok-videos-legal", anchor: "Is downloading videos legal?" },
   ],
 };
