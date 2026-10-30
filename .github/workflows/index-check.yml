@@ -49,7 +49,11 @@ jobs:
       # makes the cache always writable; restore-keys picks up the newest prior.
       - uses: actions/cache@v4
         with:
-          path: .index-check-state.json
+          # Index history and the submission ledger share one cache so both
+          # survive between weekly runs.
+          path: |
+            .index-check-state.json
+            .bing-submit-state.json
           key: index-check-state-${{ github.run_id }}
           restore-keys: |
             index-check-state-
@@ -65,3 +69,14 @@ jobs:
           # Bing Webmaster Tools → Settings → API access.
           BING_WEBMASTER_API_KEY: ${{ secrets.BING_WEBMASTER_API_KEY }}
         run: node scripts/index-check.mjs
+
+      # Pushes only URLs Bing has never been told about. A blanket re-submit of
+      # all 51 every week would spend the 200/month quota in four weeks and
+      # train Bing to ignore the signal, so `--new-only` is what keeps this
+      # sustainable; the staleness window re-nudges pages Bing accepted and then
+      # ignored. Skipped entirely when the key is absent.
+      - name: Submit new URLs to Bing
+        env:
+          INDEX_CHECK_ORIGIN: https://www.lamptik.online
+          BING_WEBMASTER_API_KEY: ${{ secrets.BING_WEBMASTER_API_KEY }}
+        run: node scripts/bing-submit.mjs --new-only --stale-after-days 30 --skip-if-unconfigured

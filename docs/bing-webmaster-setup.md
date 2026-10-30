@@ -159,6 +159,32 @@ every week, and adds Bing/DuckDuckGo page counts **only when the control domain
 proves the engine is answering honestly**. An `unmeasurable` line means exactly
 that — never that the site has no pages indexed.
 
+## Automatic submission of new pages
+
+The weekly workflow also runs `scripts/bing-submit.mjs`, which pushes URLs into
+Bing's crawl queue with `SubmitUrlBatch`. It runs **after** the index check, so
+the report always describes the state before that week's nudge.
+
+It is deliberately not a blanket resubmit. This site's allowance is **100/day and
+200/month**, so re-sending all 51 URLs every week would spend 204 a month —
+exhausting the quota and teaching Bing to treat the submissions as noise.
+
+| Rule | Effect |
+|---|---|
+| `--new-only` | Only URLs absent from `.bing-submit-state.json` are sent |
+| `--stale-after-days 30` | A URL Bing accepted but ignored is re-nudged monthly |
+| Quota read first | The batch is trimmed to what the remaining daily allowance allows, minus a 5-unit margin |
+| Recorded after acceptance | A failed call never marks URLs as sent |
+| No key configured | Skips with a notice instead of failing the job |
+
+To push everything by hand — after a big content change, say:
+
+```bash
+BING_WEBMASTER_API_KEY=… node scripts/bing-submit.mjs
+```
+
+Add `BING_SUBMIT_DRY=1` to see the selection without sending anything.
+
 ## The authoritative count: Webmaster API key
 
 Scraping cannot answer "how many pages are indexed" — no search endpoint will

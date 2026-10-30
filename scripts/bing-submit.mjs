@@ -1,37 +1,64 @@
 #!/usr/bin/env node
 /**
- * Push every sitemap URL into Bing's crawl queue via `SubmitUrlBatch`.
+ * Push sitemap URLs into Bing's crawl queue via `SubmitUrlBatch`.
  *
- * Why this exists: the weekly index check found 40 URLs "discovered but never
- * crawled" — Bing had read the sitemap and recorded the URLs, but had not
- * fetched a single page. A submitted sitemap is a passive signal; an explicit
- * submission is the API's way of saying "these are live, fetch them now".
+ * Why this exists: the index check found 40 URLs "discovered but never
+ * crawled" — Bing had read the sitemap and recorded the URLs, but had fetched
+ * none of them. A sitemap is a passive signal; an explicit submission is the
+ * API's way of saying "these are live, fetch them now".
+ *
+ * WHY IT IS SELECTIVE BY DEFAULT
+ * ------------------------------
+ * Bing allows 100 submissions/day and 200/month for this site. Re-submitting
+ * all 51 URLs every week would spend 204 a month — exhausting the quota and
+ * turning a useful signal into noise Bing learns to ignore. So the weekly run
+ * uses `--new-only`, which submits only URLs that have never been submitted
+ * (plus optionally ones that have gone stale), and records what it sent in
+ * `.bing-submit-state.json`.
+ *
+ * Anyone can still push everything with a bare `node scripts/bing-submit.mjs`.
  *
  * It is rate-limit aware in both directions:
  *   - Bing throttles per host (`ErrorCode 5 / ThrottleHost`), so throttled
  *     calls back off and retry rather than being counted as failures.
- *   - Bing caps submissions per day and per month, so the quota is read *first*
- *     and the run aborts with the remaining allowance rather than half
- *     submitting a batch and burning the rest.
- *
- * Nothing is submitted unless the site is confirmed in the account, which is
- * also what proves the key is valid.
+ *   - Bing caps submissions, so the quota is read *first* and the run aborts
+ *     with the remaining allowance rather than half submitting a batch.
  *
  * Env:
- *   BING_WEBMASTER_API_KEY  required
+ *   BING_WEBMASTER_API_KEY  required unless --skip-if-unconfigured
  *   INDEX_CHECK_ORIGIN      default https://www.lamptik.online
+ *   BING_SUBMIT_STATE       default .bing-submit-state.json
  *   BING_SUBMIT_DRY         "1" = resolve everything, submit nothing
  *
- * Exit codes: 0 = submitted (or nothing to submit), 1 = failure.
+ * Flags:
+ *   --new-only                 submit only URLs absent from the state file
+ *   --stale-after-days N       (with --new-only) also re-push URLs last sent
+ *                              more than N days ago
+ *   --skip-if-unconfigured     exit 0 with a notice when no key is set
+ *
+ * Exit codes: 0 = submitted, nothing to do, or intentionally skipped;
+ * 1 = failure.
  */
 
 const ORIGIN = (process.env.INDEX_CHECK_ORIGIN ?? "https://www.lamptik.online").replace(/\/+$/, "");
 const KEY = (process.env.BING_WEBMASTER_API_KEY ?? "").trim();
 const DRY = process.env.BING_SUBMIT_DRY === "1";
+const STATE_PATH = process.env.BING_SUBMIT_STATE ?? ".bing-submit-state.json";
 const BASE = "https://ssl.bing.com/webmaster/api.svc/json";
 
 const MAX_RETRIES = 3;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Headroom left unused so a retry or a manual submission cannot hit the cap. */
+const QUOTA_MARGIN = Number(process.env.BING_SUBMIT_MARGIN ?? 5);
+
+const argv = process.argv.slice(2);
+const NEW_ONLY = argv.includes("--new-only");
+const SKIP_IF_UNCONFIGURED = argv.includes("--skip-if-unconfigured");
+const staleIndex = argv.indexOf("--stale-after-days");
+const STALE_DAYS = staleIndex >= 0 ? Number(argv[staleIndex + 1]) : 0;
+
+const { readFile, writeFile } = await import("node:fs/promises");
 
 /** Compare site URLs ignoring scheme, `www.` and a trailing slash. */
 function siteKeyOf(value) {
@@ -91,14 +118,63 @@ async function sitemapUrls() {
   return [...xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/g)].map((match) => match[1]);
 }
 
+async function loadState() {
+  try {
+    const parsed = JSON.parse(await readFile(STATE_PATH, "utf8"));
+    if (parsed && typeof parsed.submitted === "object") return parsed;
+  } catch {
+    /* first run */
+  }
+  return { submitted: {} };
+}
+
+/**
+ * A URL is due when it has never been sent, or when it was sent longer ago than
+ * the caller's staleness window. Without the window, a page that Bing accepted
+ * and then ignored would never be nudged again.
+ */
+function selectDue(urls, state) {
+  const now = Date.now();
+  const due = [];
+  let skipped = 0;
+  for (const url of urls) {
+    const last = state.submitted[url];
+    if (!last) {
+      due.push(url);
+      continue;
+    }
+    const ageDays = (now - Date.parse(last)) / 86_400_000;
+    if (STALE_DAYS > 0 && Number.isFinite(ageDays) && ageDays >= STALE_DAYS) {
+      due.push(url);
+    } else {
+      skipped += 1;
+    }
+  }
+  return { due, skipped };
+}
+
 async function main() {
   if (!KEY) {
+    if (SKIP_IF_UNCONFIGURED) {
+      console.log("skipped — BING_WEBMASTER_API_KEY is not configured");
+      return;
+    }
     console.error("BING_WEBMASTER_API_KEY is not set");
     process.exit(1);
   }
 
-  const urls = await sitemapUrls();
-  console.log(`sitemap: ${urls.length} URL(s) from ${ORIGIN}/sitemap.xml`);
+  const allUrls = await sitemapUrls();
+  console.log(`sitemap: ${allUrls.length} URL(s) from ${ORIGIN}/sitemap.xml`);
+
+  const state = await loadState();
+  const { due, skipped } = NEW_ONLY ? selectDue(allUrls, state) : { due: allUrls, skipped: 0 };
+  if (NEW_ONLY) {
+    console.log(`new-only: ${due.length} due, ${skipped} already submitted`);
+  }
+  if (due.length === 0) {
+    console.log("nothing new to submit");
+    return;
+  }
 
   const sites = await apiWithRetry("GetUserSites");
   if (sites.error) {
@@ -120,19 +196,30 @@ async function main() {
   const remaining = quota.json?.d?.DailyQuota;
   console.log(`quota: ${remaining ?? "?"} submission(s) left today`);
 
-  if (typeof remaining === "number" && urls.length > remaining) {
-    console.error(
-      `refusing to submit: ${urls.length} URLs exceeds the ${remaining} left today. Nothing was sent.`,
-    );
-    process.exit(1);
+  // Send what the quota allows rather than nothing at all. Aborting on a full
+  // batch means a first run against a 200-URL sitemap can never make progress;
+  // a short batch just leaves the remainder for next week, because only the
+  // URLs actually sent are recorded in the state file.
+  let batch = due;
+  if (typeof remaining === "number") {
+    const allowance = Math.max(0, remaining - QUOTA_MARGIN);
+    if (allowance === 0) {
+      console.log(`no submission quota left today (${remaining}) — leaving all ${due.length} for the next run`);
+      return;
+    }
+    if (due.length > allowance) {
+      batch = due.slice(0, allowance);
+      console.log(`quota allows ${allowance}; submitting ${batch.length} of ${due.length} (rest next run)`);
+    }
   }
 
   if (DRY) {
-    console.log(`dry run — would submit ${urls.length} URL(s), nothing sent`);
+    console.log(`dry run — would submit ${batch.length} URL(s), nothing sent`);
+    for (const url of batch) console.log(`  ${url}`);
     return;
   }
 
-  const result = await apiWithRetry("SubmitUrlBatch", { siteUrl: site.Url, urlList: urls }, { post: true });
+  const result = await apiWithRetry("SubmitUrlBatch", { siteUrl: site.Url, urlList: batch }, { post: true });
   if (result.error) {
     console.error(`SubmitUrlBatch failed — ${result.error}`);
     process.exit(1);
@@ -142,8 +229,14 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`submitted ${urls.length} URL(s) — HTTP ${result.status}`);
-  for (const url of urls) console.log(`  ${url}`);
+  console.log(`submitted ${batch.length} URL(s) — HTTP ${result.status}`);
+
+  // Recorded only after Bing accepts the batch, so a failed run does not mark
+  // URLs as sent and silently never retry them.
+  const stamp = new Date().toISOString();
+  for (const url of batch) state.submitted[url] = stamp;
+  await writeFile(STATE_PATH, `${JSON.stringify(state, null, 2)}\n`);
+  console.log(`state: ${STATE_PATH} now tracks ${Object.keys(state.submitted).length} URL(s)`);
 }
 
 main().catch((error) => {

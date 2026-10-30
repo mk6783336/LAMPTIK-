@@ -55,3 +55,4 @@ yarn-error.log*
 __pycache__/
 *.pyc
 .index-check-state.json
+.bing-submit-state.json
