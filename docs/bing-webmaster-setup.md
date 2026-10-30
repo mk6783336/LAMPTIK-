@@ -159,7 +159,68 @@ every week, and adds Bing/DuckDuckGo page counts **only when the control domain
 proves the engine is answering honestly**. An `unmeasurable` line means exactly
 that — never that the site has no pages indexed.
 
-Once the property is verified, get the real number from the API instead of
-scraping: **Settings → API Access → API Key**, then store it as the
-`BING_WEBMASTER_API_KEY` repository secret. That is the only source that returns
-true index and traffic data for a verified site.
+## The authoritative count: Webmaster API key
+
+Scraping cannot answer "how many pages are indexed" — no search endpoint will
+tell a bot. The Webmaster API will, for a site you have verified.
+
+**Generate the key** (requires the verified property from above):
+
+1. Bing Webmaster Tools → **Settings** → **API access**.
+2. Accept the terms, click **API key** → **Generate**.
+3. Copy it.
+
+**Store it** where the workflow can read it:
+
+```bash
+# Repository secret, never in the codebase
+gh secret set BING_WEBMASTER_API_KEY
+```
+
+Or via the UI: repository → **Settings** → **Secrets and variables** → **Actions**
+→ **New repository secret**, name `BING_WEBMASTER_API_KEY`.
+
+With the secret present, `scripts/index-check.mjs` switches from scraping to the
+API and the weekly report gains a real row:
+
+```
+| Bing (Webmaster API) | **12** of 51 checked | +3 |
+| — crawled (has a crawl date) | 9 | — |
+```
+
+### What it measures, precisely
+
+The API has **no aggregate "indexed pages" endpoint** — there is no field that
+returns a site-wide total. What it does have is `GetUrlInfo(siteUrl, url)`, which
+returns Bing's index record for one URL (`HttpStatus`, `LastCrawledDate`,
+`IsPage`, `DocumentSize`), or `null` when Bing does not know that URL.
+
+So the check walks **our own 51 sitemap URLs** and counts the non-null answers.
+That is a real, reproducible measurement — and more actionable than a total,
+because the report lists the exact URLs Bing has not picked up yet.
+
+Endpoints used:
+
+| Method | Purpose |
+|---|---|
+| `GetUserSites` | Validates the key and confirms the site is in the account |
+| `GetUrlInfo` | Index record for one URL, `null` if unknown |
+
+Both are JSON GETs:
+
+```
+https://ssl.bing.com/webmaster/api.svc/json/GetUserSites?apikey=KEY
+https://ssl.bing.com/webmaster/api.svc/json/GetUrlInfo?apikey=KEY&siteUrl=SITE&url=URL
+```
+
+The service answers `HTTP 400` with `{"ErrorCode":3,"Message":"ERROR!!! InvalidApiKey"}`
+for a bad key — verified live on 31 Oct 2026, so the legacy JSON route still
+responds despite the August 2026 SOAP/POX retirement. If it is ever withdrawn,
+the script reports the failure in the weekly summary and falls back to the
+validated scrape rather than failing the job.
+
+A failed key is surfaced verbatim in the report:
+
+```
+> Bing Webmaster API was configured but failed: GetUserSites failed — API error 3: ERROR!!! InvalidApiKey
+```

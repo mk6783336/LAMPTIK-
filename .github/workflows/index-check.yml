@@ -10,7 +10,9 @@ name: Index Check
 # against a control domain, because Bing serves unrelated filler results to
 # automated clients and a naive scrape reads that as "0 indexed".
 #
-# Nothing here needs a secret: every query hits a public endpoint.
+# Optional secret: BING_WEBMASTER_API_KEY. Without it the job still reports
+# sitemap, robots and verification status; the index count just stays
+# unmeasurable, because no public endpoint will answer that question.
 #
 # The report lands in the run's Summary tab. Scheduled workflows are disabled by
 # GitHub after 60 days without repository activity — if this goes quiet for two
@@ -55,4 +57,11 @@ jobs:
       - name: Measure Bing and DuckDuckGo
         env:
           INDEX_CHECK_ORIGIN: https://www.lamptik.online
+          # Optional. When present, Bing is measured through the Webmaster API
+          # against our own sitemap URLs — the only authoritative source. When
+          # absent the job still runs and reports everything else; it simply
+          # cannot produce a Bing index count. Add it under
+          # Settings → Secrets → Actions after generating a key in
+          # Bing Webmaster Tools → Settings → API access.
+          BING_WEBMASTER_API_KEY: ${{ secrets.BING_WEBMASTER_API_KEY }}
         run: node scripts/index-check.mjs
