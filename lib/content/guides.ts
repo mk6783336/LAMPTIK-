@@ -154,29 +154,66 @@ export const GUIDES: Guide[] = [
     title: "Download TikTok Audio as MP3 (Original Sound or Music)",
     metaTitle: "Download TikTok Audio as MP3 (Original Sound)",
     description:
-      "How to extract just the audio from any public TikTok video as an MP3 file — original sounds vs. commercial tracks, expected quality, and legal limits.",
-    updatedAt: "2026-10-18",
+      "How to extract just the audio from any public TikTok video — original sounds vs. licensed music, M4A vs. true MP3, expected quality, and legal limits.",
+    updatedAt: "2026-10-30",
     shortAnswer:
-      "Paste the video's link into LAMP TIK and tap Download Audio Only (MP3). The tool fetches the video's audio track directly from TikTok's CDN as an MP3 — typically 128 kbps — without downloading any video data.",
+      "Paste the video's link into LAMP TIK, then choose Download Audio for TikTok's original track (M4A/AAC when that is what the platform serves) or Download Audio (MP3) for a true MP3 encoded on our bridge. Either way you get sound only, roughly the bitrate TikTok published, with no video track attached.",
     sections: [
       {
         heading: "Sound-only downloads, explained",
         paragraphs: [
-          "Every TikTok video carries two audio possibilities: an original sound recorded by the creator, or a commercial track from TikTok's licensed music library. Both are delivered to your device as a separate audio stream alongside the video stream — a downloader can request that audio stream on its own.",
-          "The result is a plain MP3 file: no video track, no watermark, no TikTok player attached. It works for ringtones, samples, podcast clips, or archiving a sound you've created.",
+          "Every TikTok video carries two audio possibilities: an original sound recorded by the creator, or a licensed track from TikTok's music library. Both are delivered as an audio stream alongside the video stream, which means a downloader can request that stream on its own instead of pulling the whole MP4 and stripping the sound afterwards.",
+          "The result is a plain audio file with no video track and no watermark. It works for ringtones, samples, podcast clips, offline listening, or archiving a sound you created yourself.",
         ],
+      },
+      {
+        heading: "Original sound vs. licensed music",
+        paragraphs: [
+          "TikTok labels the audio on every post. In the result panel you will see either an \"original sound - username\" credit, which means the creator recorded or uploaded that audio, or an official track name with an artist, which means the sound comes from TikTok's licensed catalogue and may be region-restricted.",
+          "That label matters for how you can use the file. An original sound belongs to its creator; a licensed track belongs to the rights holders and TikTok's licence. Downloading either one does not transfer ownership. If you only need the sound for personal listening, neither distinction changes the download — but it changes what you may legally do with it afterwards.",
+        ],
+      },
+      {
+        heading: "M4A or MP3 — which button should you press?",
+        paragraphs: [
+          "TikTok commonly serves audio as AAC inside an M4A container at around 128 kbps. That is the original track: downloading it does not add a second lossy generation, and it is the best copy the platform will give you.",
+          "Some players and older devices do not open M4A cleanly, so the result also offers Download Audio (MP3). That button asks our bridge to decode the same source track and encode a real MP3 with ffmpeg. It is a genuine MP3, not an M4A file renamed — but it is still a second lossy encode, so it cannot sound better than the AAC source. Nothing is upscaled to a fake 320 kbps: the bitrate you get is tied to the bitrate TikTok published.",
+          "Choose M4A when compatibility is not a problem and you want the least-processed copy. Choose MP3 when you need a file that opens in an old car stereo, a sample pack, or a player that refuses AAC.",
+        ],
+      },
+      {
+        heading: "Step by step on phone and desktop",
+        list: [
+          "In TikTok, tap Share → Copy link on the public video. On desktop, copy the URL from the address bar.",
+          "Paste it into the field on this page and let the tool resolve the post.",
+          "In the result panel, choose Download Audio for the original M4A/AAC track, or Download Audio (MP3) for a true MP3.",
+          "On iPhone the file lands in Files → Downloads; move it into Music or share it to another app from there. On Android it saves to Downloads and is picked up by most music players.",
+          "On desktop it goes to your normal downloads folder. Rename it if you are keeping several sounds — the default name follows the video title.",
+        ],
+        paragraphs: [],
       },
       {
         heading: "Quality to expect",
         paragraphs: [
-          "TikTok serves audio at roughly 128 kbps in most regions — good enough for phone playback, podcasts, and casual listening, but not studio-master quality. If a creator uploaded a quiet or compressed original sound, that quality is what you get back; a downloader can't add detail that isn't in the source.",
-          "The result panel shows the music title (for example, \"original sound - username\" or the official track name and artist) so you know exactly what you're saving before you tap download.",
+          "TikTok's audio is compressed for streaming, commonly around 128 kbps and sometimes lower for older or re-uploaded posts. That is good enough for phone playback, podcasts, and casual listening, but it is not a studio master. A downloader cannot add detail that the platform already discarded; any tool promising a fixed 320 kbps from a 128 kbps source is padding the file, not improving it.",
+          "The result panel shows the music title and the size of the file you are about to save, so you can judge what you got before committing. If you need broadcast-quality audio, license the track from its rights holder rather than trying to repair a compressed copy.",
         ],
+      },
+      {
+        heading: "When the audio is silent or missing",
+        list: [
+          "Photo posts and slideshows have no audio stream at all; the page will say so instead of handing you an empty file.",
+          "A muted video has no audio track to extract. Check that the post actually plays sound in TikTok before blaming the downloader.",
+          "Region-locked licensed music may be stripped or unavailable outside the country where the post was published.",
+          "If the MP3 encoder is temporarily unavailable, the original M4A track is still offered — the audio itself is never lost just because the bridge is busy.",
+          "A download that stops at the last few percent is usually a browser or connection issue, not a bad file; retry once before assuming the sound is gone.",
+        ],
+        paragraphs: [],
       },
       {
         heading: "Legal and ethical limits",
         paragraphs: [
-          "Downloading for personal listening, offline playback, or quoting short clips is generally fine. Re-publishing someone else's original sound as your own, or using commercial music in monetized content, is not — TikTok's licensing covers playback inside the app, not redistribution. When in doubt, credit the creator and keep it personal.",
+          "Downloading for personal listening, offline playback, or quoting a short clip is generally tolerated. Re-publishing someone else's original sound as your own, or using licensed music in monetized content outside TikTok, is not covered by TikTok's licence. Credit the creator when you share the sound, keep commercial use to tracks you have licensed, and respect a takedown if one arrives.",
         ],
       },
     ],
@@ -343,34 +380,76 @@ export const GUIDES: Guide[] = [
     metaTitle: "Why TikTok Videos Look Blurry (and How to Fix)",
     description:
       "Why crisp footage looks blurry after upload: TikTok's re-encode pipeline, the export settings that survive it (1080p, 60fps, bitrate), and how to verify.",
-    updatedAt: "2026-10-19",
+    updatedAt: "2026-10-30",
     shortAnswer:
-      "TikTok re-encodes every upload to its own bitrate ladder. If your file arrives low-bitrate, heavily compressed, or at an awkward resolution, the re-encode has nothing clean to work with and the result looks blurry. Export 1080×1920, H.264, 30 or 60 fps, at 10–16 Mbps with a high-quality source, and most uploads stay sharp.",
+      "TikTok re-encodes every upload to its own delivery ladder. If your file arrives low-bitrate, heavily compressed, or at an awkward resolution, the second encode has nothing clean to work with and the result looks soft. Export 1080×1920, H.264, 30 or 60 fps, at 10–16 Mbps with a high-quality source, and most uploads stay sharp.",
     sections: [
       {
         heading: "TikTok re-encodes everything — your export is the input",
         paragraphs: [
-          "Nothing you upload survives untouched. TikTok transcodes every video into its own delivery formats: roughly 1080p at a few Mbps, plus lower ladders for slow connections. Re-encoding is lossy, and lossy-on-lossy compounds: details that were already smeared by a low-bitrate first encode get smeared again by the second. This is why a video that looked perfect in your camera roll turns to porridge after posting.",
-          "The fix is not to fight the re-encode — it's to give it a clean master. Detail, contrast, and a healthy bitrate are what the encoder preserves; noise, banding, and thin compressed edges are what it destroys.",
+          "Nothing you upload survives untouched. TikTok transcodes every video into several delivery renditions, commonly led by a 1080p stream at a few Mbps, with 720p, 540p and lower versions behind it for weak connections. Re-encoding is lossy, and lossy-on-lossy compounds: detail that was already smeared by a low-bitrate first encode gets smeared again by the second. This is why a video that looked perfect in your camera roll can look soft after posting.",
+          "The fix is not to fight the re-encode. It is to give the encoder a clean master: stable detail, controlled noise, and a healthy bitrate. Those are the things a second encode can preserve. Banding, crushed shadows, and thin compressed edges are what it destroys first.",
+        ],
+      },
+      {
+        heading: "The delivery ladder: why your 4K upload still looks 1080p",
+        paragraphs: [
+          "TikTok does not publish the exact bitrate ladder, and it changes with device, region, and traffic. In practice, a 1080×1920 upload is usually delivered near 1080p at roughly 2–4 Mbps, while 720p and 540p renditions sit below that. The player chooses a rendition from your connection speed, so two viewers can watch the same post at visibly different quality.",
+          "Uploading 4K does not guarantee a 4K playback path. For most accounts TikTok normalises vertical video to 1080p, and a heavy 4K file that gets downscaled can look worse than a clean 1080p export because the encoder has less bitrate headroom to spend. Export the resolution you want delivered, at a high bitrate, rather than treating 4K as a quality guarantee.",
         ],
       },
       {
         heading: "Best export settings for TikTok",
         list: [
-          "Resolution: 1080×1920 (full HD vertical). TikTok accepts 4K but usually delivers 1080p anyway — export 1080p with a high bitrate rather than trusting a downscale.",
-          "Frame rate: match what you shot — 30 fps for talking head, 60 fps for motion and gameplay. Don't convert 30 to 60 by duplicating frames.",
-          "Codec: H.264 (High profile) for maximum compatibility. HEVC uploads work but can trigger extra transcoding on some devices.",
-          "Bitrate: 10–16 Mbps for 1080p30, 16–24 Mbps for 1080p60. Higher is fine — TikTok will compress down; you can't add detail back.",
+          "Resolution: 1080×1920 (full HD vertical). Export 1080p with a high bitrate instead of trusting TikTok to downscale a 4K file well.",
+          "Frame rate: match what you shot — 30 fps for talking head, 60 fps for motion and gameplay. Do not convert 30 fps to 60 fps by duplicating frames; that adds no motion and makes the encode harder.",
+          "Codec: H.264 (High profile) for maximum compatibility. HEVC uploads work but can trigger an extra transcode on some Android devices.",
+          "Bitrate: 10–16 Mbps for 1080p30, 16–24 Mbps for 1080p60. Higher is fine — TikTok compresses down, but you cannot add detail back after the fact.",
+          "Keyframes: every 1–2 seconds (roughly 2× your frame rate). Very long GOPs make scrubbing and rendition switching harder and can smear fast motion.",
+          "Audio: AAC, 48 kHz, 128–256 kbps stereo. TikTok re-encodes audio too, so leave headroom rather than exporting a clipped master.",
         ],
         paragraphs: [
-          "Keyframe",
+          "The keyframe point is the one most creators miss. A keyframe is a complete frame the encoder can start from; the frames between keyframes describe only what changed. If you set a keyframe every ten seconds, the encoder has to guess its way through fast motion for ten seconds at a time, and the artefacts survive TikTok's second encode. A one-to-two-second interval gives it frequent clean anchors.",
         ],
+      },
+      {
+        heading: "Why the first two seconds look worst",
+        paragraphs: [
+          "Short-form video opens on movement: a face entering frame, a hand waving, a cut from a bright scene to a dark one. Those are exactly the moments a low-bitrate encoder handles badly, and they land in the first two seconds — the window that decides whether a viewer stays. If your hook is soft, the rest of the video rarely gets watched, even when the middle is sharp.",
+          "Give the opening shot more bitrate than the rest of the timeline if your editor supports it. Avoid heavy film grain, fog, and rapid flicker in the first second; those patterns are expensive to encode and turn to blocky mush first. A clean, high-contrast opening frame survives compression far better than a noisy one.",
+        ],
+      },
+      {
+        heading: "How to verify the damage before you upload",
+        list: [
+          "Compare file size, not just resolution. A one-minute 1080p clip at 10–16 Mbps should be roughly 75–120 MB; a 15 MB file at the same length is heavily compressed before TikTok ever touches it.",
+          "Inspect a single frame at 100% in your editor. If edges are already smeared and shadows are blocky in the export, the upload will make both worse.",
+          "Play the export on a phone, not only on your monitor. Phone screens are denser; compression artefacts that disappear on a desktop preview are obvious there.",
+          "Download your own post afterwards with a tool that returns the source stream, then compare it with the original export. If the downloaded file is much smaller, the platform served you a lower rendition — the app may still have played the better one on a fast connection.",
+        ],
+        paragraphs: [],
+      },
+      {
+        heading: "What a downloader can and cannot fix",
+        paragraphs: [
+          "A downloader returns the stream TikTok serves; it cannot recover detail the platform already discarded. If your original export was soft, the downloaded file will be soft too. What a good downloader can do is avoid adding another generation of loss: LAMP TIK requests the highest H.264 rendition available for the post and hands it over without re-encoding, so the file you inspect is the platform's own output, not a screen recording of it.",
+          "That makes downloading your own post a useful diagnostic. If the app looks sharp but the downloaded file looks soft, you received a lower rendition and can retry on a better connection. If both look soft, the problem happened at upload and the fix belongs in your export settings.",
+        ],
+      },
+      {
+        heading: "Final checklist",
+        list: [
+          "1080×1920 vertical, H.264 High profile, 30 or 60 fps matching the source.",
+          "10–16 Mbps for 30 fps, 16–24 Mbps for 60 fps, keyframe every 1–2 seconds.",
+          "AAC audio at 48 kHz, 128–256 kbps, peaks below 0 dBFS.",
+          "Clean the first two seconds: strong contrast, stable motion, no heavy grain.",
+          "Watch the exported file on a phone before publishing, not only on the timeline.",
+        ],
+        paragraphs: [],
       },
     ],
     related: [
       "download-tiktok-video-without-watermark",
-      // Was its own slug: the page rendered a link to itself, and the audit
-      // counted this guide as reachable from one page only.
       "repurpose-tiktok-videos-for-youtube-shorts-instagram-reels",
       "is-downloading-tiktok-videos-legal",
     ],
@@ -493,27 +572,34 @@ export const GUIDES: Guide[] = [
     metaTitle: "Download Instagram Reels in HD MP4",
     description:
       "Save watermark-free Instagram Reels in Full HD 1080p MP4 with audio — free, no login, no app. Works on iPhone and Android in seconds.",
-    updatedAt: "2026-10-19",
+    updatedAt: "2026-10-30",
     shortAnswer:
-      "Paste the video's link into LAMP TIK and tap Download HD MP4 (No Watermark). On iPhone, save to the Files app. On Android it saves to your Downloads or Gallery. No login, no app, no watermark.",
+      "Paste the Reel link into LAMP TIK and choose Download HD MP4. On iPhone the file saves to Files, then you move it into Photos; on Android it lands in Downloads and appears in Gallery. No login, no app, no watermark.",
     sections: [
       {
-        heading: "What original HD actually means",
+        heading: "What “Full HD” means for a Reel",
         paragraphs: [
-          "Instagram Reels are stored as the exact MP4 the platform's own player streams — original resolution, zero re-encoding, nothing burned into the frame.",
-          "The watermark-free original is separate from the share-menu export, which adds a logo and recompresses. LAMP TIK fetches the source stream directly, the same file Instagram's player uses.",
+          "A Reel is a vertical MP4, usually 1080×1920 when the creator uploaded at that size. Instagram also keeps smaller renditions for weak connections, and older or re-uploaded Reels may only exist at 720×1280. The player quietly switches between them; a downloader that returns the highest progressive file gives you the best copy the platform still has.",
+          "The file itself carries no watermark. The logo you see in the app is interface, not pixels. What does add a mark is the share-menu export or a screen recording — both re-render the video and bake in overlays. Fetching the source MP4 avoids that entire path.",
+        ],
+      },
+      {
+        heading: "Why some downloads are only 720p",
+        paragraphs: [
+          "Resolution follows the upload, not the request. If the creator posted a 720p master, no tool can produce a real 1080p file from it; upscaling would only make the file bigger, not sharper. Instagram also re-encodes uploads and may keep a lower-resolution progressive version for older posts.",
+          "The result panel shows the dimensions and file size before you save. A 30-second 1080p Reel is typically 8–20 MB; the same clip at 720p is often under 8 MB. Treat the size as the honest signal, not the word “HD” on a button.",
         ],
       },
       {
         heading: "On iPhone and iOS",
         list: [
-          "In Instagram, tap the three dots on a Reel → Copy link.",
-          "Open LAMP TIK in Safari and paste the link — the tool fetches automatically.",
-          "Tap Download HD MP4 (No Watermark). Safari saves the file to the Files app under Downloads.",
+          "In Instagram, tap the three dots on a Reel → Copy link. A /reel/, /reels/, /p/ or /tv/ link all work.",
+          "Open LAMP TIK in Safari and paste the link — the tool resolves it automatically.",
+          "Tap Download HD MP4. Safari writes the file to Files → On My iPhone → Downloads.",
           "In Files, long-press the video → Share → Save to Video to add it to Photos.",
         ],
         paragraphs: [
-          "Android and iOS save paths are different — iOS uses Files, Android uses Downloads/Gallery. Both are watermark-free.",
+          "Safari may ask for permission to download a file the first time. Allow it for this site; nothing is installed and no Instagram account is connected.",
         ],
       },
       {
@@ -521,24 +607,52 @@ export const GUIDES: Guide[] = [
         list: [
           "In Instagram, tap the three dots on a Reel → Copy link.",
           "Paste the link into LAMP TIK in Chrome, Samsung Internet, or Firefox.",
-          "Tap Download HD MP4 (No Watermark) — the file saves to your Downloads folder and appears in Gallery automatically.",
-          "On a slow connection, use Download Fast MP4 (SD) for a smaller file of the same video.",
+          "Tap Download HD MP4 — the file saves to Downloads and Gallery picks it up automatically.",
+          "On mobile data, use Download Fast MP4 (SD) for a smaller file of the same Reel.",
         ],
         paragraphs: [
-          "Android shows a download notification the moment the file lands. If your browser blocks multiple downloads from one site, allow files for that tab once.",
+          "Android shows a download notification when the file lands. If your browser blocks multiple downloads from one site, allow files for this tab once and retry.",
         ],
       },
       {
-        heading: "Why the audio stays in sync",
+        heading: "Audio: where the sound actually lives",
         paragraphs: [
-          "Instagram delivers the audio stream separate from the video, muxed at play time. Extracting it alone gives you the original soundtrack — no re-encode generation loss.",
+          "Instagram does not publish a separate audio-only stream for Reels. The soundtrack is muxed into the MP4 as an AAC track, which is why the saved file plays with sound everywhere and why there is no honest one-click “Reels MP3” button. Extracting audio is a local conversion from the MP4 you already saved, or a server-side transcode — not a stream Instagram exposes.",
+          "Because the track stays in its original container, lip-sync and music timing survive. Nothing is decoded and re-encoded on the way to your device, so the audio you hear offline is the audio the creator published.",
         ],
+      },
+      {
+        heading: "Photo posts, carousels and stories",
+        list: [
+          "A photo-only post or a carousel with still images has no video stream; the tool says so instead of writing a 0-byte MP4.",
+          "A video inside a carousel downloads as its own MP4 through the post link.",
+          "Stories and highlights use a different link shape and expire after 24 hours unless saved to a highlight; the Instagram Story page handles those.",
+          "IGTV and /tv/ links resolve like a normal video post.",
+        ],
+        paragraphs: [],
+      },
+      {
+        heading: "When a Reel won't resolve",
+        paragraphs: [
+          "Private accounts and age-restricted posts have no public stream to fetch — no downloader can read them without a logged-in session, and this one deliberately never asks for yours. Region-locked music can also cause a post to fail in one country but work in another. A login wall inside Instagram's own browser is usually just a client-side prompt; the public post data may still resolve here.",
+          "If a link fails, open it in Instagram first. If it does not play there, the problem is the post, not the downloader. If it plays but this page fails, wait a minute and retry — Instagram rate-limits anonymous requests during traffic spikes.",
+        ],
+      },
+      {
+        heading: "How to verify you got the original",
+        list: [
+          "Check the result panel for resolution and size before downloading; a 1080×1920 Reel should not report 720×1280.",
+          "On iPhone, open the saved video in Photos and swipe up to see its details; on Android, use the file's Properties or a player like VLC.",
+          "Play it full-screen on the phone. A screen recording shows UI edges or a soft, re-compressed image; the source MP4 looks like the original post.",
+          "If the file is much smaller than expected, the post likely only had a lower rendition — retrying will not invent a sharper one.",
+        ],
+        paragraphs: [],
       },
     ],
     related: [
-      "download-tiktok-video-without-watermark",
-      "download-tiktok-without-logo-iphone-android",
-      "download-tiktok-audio-as-mp3",
+      "instagram-reels-download-without-login",
+      "instagram-reels-audio",
+      "instagram-story-downloader",
     ],
   },
   {

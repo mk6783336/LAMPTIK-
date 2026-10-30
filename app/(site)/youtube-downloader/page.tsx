@@ -61,8 +61,12 @@ const STEPS = [
     body: "Copy the video in the YouTube app (Share → Copy link) and paste it above. Nothing to install and no account: youtube.com/watch, youtu.be, /shorts/, /embed/ and 1-hour+ videos all resolve through the multi-engine waterfall.",
   },
   {
-    title: "Pick 1080p, 720p, 360p or MP3 and save",
-    body: "Streams proxy through the Edge CDN with Range resume support, so even 500MB+ files download reliably with under 15MB of server memory.",
+    title: "Pick the rendition that exists",
+    body: "The result lists every format the upload actually exposes: 1080p, 720p, 360p, or audio only. If the creator only published 720p, the panel says so instead of quietly labelling a smaller file as HD.",
+  },
+  {
+    title: "Save with resume support",
+    body: "Streams proxy through the Edge CDN with Range resume support, so even 500MB+ files download reliably with under 15MB of server memory. The file saves under the video's title, not a random hash.",
   },
 ] as const;
 
@@ -85,7 +89,27 @@ const FAQS = [
   {
     question: "What quality do I get?",
     answer:
-      "Up to Full HD 1080p MP4 when the mirror exposes it, plus 720p HD, 360p fast MP4, and highest-bitrate M4A/MP3 audio — all watermark-free by nature.",
+      "Up to Full HD 1080p MP4 when the upload exposes it, plus 720p HD, 360p fast MP4, and the highest-bitrate audio track — all watermark-free by nature. The result panel shows the exact resolution, codec and size before you save.",
+  },
+  {
+    question: "Why is 1080p missing on some videos?",
+    answer:
+      "Because the creator never uploaded 1080p, or YouTube only exposes it as a split video-only stream that would arrive without sound. The resolver prefers a muxed H.264/AAC file it can verify, so a 720p MP4 with audio is offered instead of a 1080p file that plays silently. Retry after a freshly uploaded video finishes processing; if the source is protected or split, the bridge tier can mux the highest verified pair.",
+  },
+  {
+    question: "Does it work with YouTube Music and playlists?",
+    answer:
+      "Yes for public music tracks and playlists. A music.youtube.com watch link resolves like any other video, and the playlist page lists the first 50 public entries so you can open each one in this downloader. Private or region-locked playlists cannot be read anonymously.",
+  },
+  {
+    question: "Why did the download stop near the end?",
+    answer:
+      "Long files can lose a connection on mobile data or when a browser suspends a background tab. The proxy supports Range resume, so retrying continues from the last byte instead of starting over. If the browser still refuses, use the direct stream link in the result panel — it comes from a real click, so no activation restriction blocks it.",
+  },
+  {
+    question: "Is downloading YouTube videos legal?",
+    answer:
+      "For your own uploads, or content you have permission to use, yes. For other people's videos, YouTube's terms restrict downloading outside the app, and copyright stays with the creator. Keep personal copies personal, never re-upload someone else's video, and check the licence before using a clip commercially.",
   },
 ];
 
@@ -228,6 +252,165 @@ export default async function YouTubeDownloaderPage({
                   </div>
                 ))}
               </dl>
+            </div>
+          </section>
+
+          {/* Formats and limits. This is the part a generic "downloader" page
+              never explains: YouTube publishes several renditions per upload,
+              and some of them are video-only. Naming that honestly is what
+              makes the page different from a doorway. */}
+          <section className="section-pad border-t border-[var(--line)]">
+            <div className="shell max-w-3xl">
+              <p className="eyebrow">
+                <span aria-hidden="true" className="eyebrow-dot" />
+                Formats &amp; limits
+              </p>
+              <h2 className="balance mt-4 text-4xl font-semibold leading-tight tracking-headline">
+                What the file actually is.
+              </h2>
+              <p className="pretty mt-4 text-base leading-relaxed text-[var(--text-2)]">
+                YouTube never stores one universal video file. Every upload is a
+                set of renditions — different resolutions, codecs and bitrates —
+                and some high-resolution renditions are published as video-only
+                streams with the audio in a separate file. A downloader that
+                grabs a video-only stream gives you a silent MP4. This page
+                requests a muxed H.264 file with AAC audio first, then falls back
+                to the highest verified pair the bridge can combine.
+              </p>
+
+              <div className="mt-7 overflow-x-auto rounded-2xl border border-[var(--glass-border)]">
+                <table className="w-full min-w-[560px] border-collapse text-left text-sm">
+                  <thead className="bg-[var(--field)] text-[var(--text-2)]">
+                    <tr>
+                      <th scope="col" className="px-4 py-3 font-medium">Format</th>
+                      <th scope="col" className="px-4 py-3 font-medium">Container</th>
+                      <th scope="col" className="px-4 py-3 font-medium">Best for</th>
+                      <th scope="col" className="px-4 py-3 font-medium">What to expect</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      [
+                        "1080p MP4",
+                        "MP4 · H.264 + AAC",
+                        "Full-screen playback, editing",
+                        "Offered when the upload has it. Typically 2–6 Mbps; a 10-minute clip is roughly 150–450 MB.",
+                      ],
+                      [
+                        "720p MP4",
+                        "MP4 · H.264 + AAC",
+                        "Phones, slower connections",
+                        "Still HD, roughly half the size of 1080p. The safe choice when the 1080p rendition is missing.",
+                      ],
+                      [
+                        "360p MP4",
+                        "MP4 · H.264 + AAC",
+                        "Quick previews, low data",
+                        "Smallest video rendition. Useful for messaging or checking a clip before saving the HD file.",
+                      ],
+                      [
+                        "M4A / MP3",
+                        "AAC in M4A; true MP3 via bridge",
+                        "Music, podcasts, samples",
+                        "The original audio track first; an optional ffmpeg MP3 for players that cannot open AAC. No fake 320 kbps upscale.",
+                      ],
+                    ].map(([format, container, bestFor, expect]) => (
+                      <tr key={format} className="border-t border-[var(--glass-border)] align-top">
+                        <td className="px-4 py-3 font-medium text-[var(--text)]">{format}</td>
+                        <td className="px-4 py-3 text-[var(--text-2)]">{container}</td>
+                        <td className="px-4 py-3 text-[var(--text-2)]">{bestFor}</td>
+                        <td className="px-4 py-3 text-[var(--text-2)]">{expect}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <h3 className="mt-9 text-xl font-semibold tracking-tight">
+                Why 1080p is sometimes missing
+              </h3>
+              <p className="pretty mt-2 text-sm leading-relaxed text-[var(--text-2)]">
+                Three things cause it. The creator may have uploaded at 720p, so
+                no 1080p rendition exists to fetch. YouTube may expose 1080p only
+                as VP9 or AV1 video without audio, which is not a file you can
+                save and play as-is. Or the video was published minutes ago and
+                the higher renditions are still processing. The resolver will
+                not label a 720p file as 1080p to make the page look better; it
+                tells you which rendition it actually found.
+              </p>
+
+              <h3 className="mt-7 text-xl font-semibold tracking-tight">
+                Long videos, Shorts and live streams
+              </h3>
+              <p className="pretty mt-2 text-sm leading-relaxed text-[var(--text-2)]">
+                Shorts are vertical uploads and resolve like any watch link. Long
+                videos stream through the proxy with Range requests, so a
+                dropped connection resumes from the last byte instead of
+                restarting the file. A live stream is different: until the
+                broadcast ends and YouTube finishes processing it, there is no
+                fixed file to save.
+              </p>
+            </div>
+          </section>
+
+          {/* More YouTube tools: every link is a real page with its own copy,
+              and it keeps a visitor who wanted MP3 or a playlist from bouncing
+              back to Google. */}
+          <section className="section-pad border-t border-[var(--line)]">
+            <div className="shell">
+              <p className="eyebrow">
+                <span aria-hidden="true" className="eyebrow-dot" />
+                More YouTube tools
+              </p>
+              <h2 className="balance mt-4 text-4xl font-semibold leading-tight tracking-headline">
+                One video, every format.
+              </h2>
+              <div className="mt-8 grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+                {[
+                  [
+                    "/youtube-to-mp3",
+                    "YouTube to MP3",
+                    "Highest-bitrate audio without a video download.",
+                  ],
+                  [
+                    "/youtube-playlist-downloader",
+                    "Playlist downloader",
+                    "List a public playlist in order, then save each video.",
+                  ],
+                  [
+                    "/youtube-shorts-downloader",
+                    "Shorts downloader",
+                    "Vertical Shorts saved as the original MP4.",
+                  ],
+                  [
+                    "/youtube-music-to-mp3",
+                    "YouTube Music to MP3",
+                    "Public music tracks and long DJ sets to audio.",
+                  ],
+                  [
+                    "/youtube-to-mp4-1080p",
+                    "1080p MP4 guide",
+                    "What 1080p really means and when YouTube serves it.",
+                  ],
+                  [
+                    "/youtube-shorts-to-mp3",
+                    "Shorts to MP3",
+                    "Just the audio from a vertical Short.",
+                  ],
+                ].map(([href, title, note]) => (
+                  <Link key={href} href={href} className="bento-card group flex items-start gap-3">
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="text-base font-semibold tracking-tight">{title}</span>
+                        <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
+                      </span>
+                      <span className="pretty mt-1.5 block text-sm leading-relaxed text-[var(--text-2)]">
+                        {note}
+                      </span>
+                    </span>
+                  </Link>
+                ))}
+              </div>
             </div>
           </section>
 
