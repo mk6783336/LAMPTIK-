@@ -27,6 +27,7 @@ export function JsonLd({ data }: { data: Json }) {
 export const ORG_ID = `${siteUrl}/#organization`;
 export const SITE_ID = `${siteUrl}/#website`;
 export const APP_ID = `${siteUrl}/#software`;
+export const PRODUCT_ID = `${siteUrl}/#product`;
 
 export const CONTACT_EMAIL = "support@lamptik.online";
 
@@ -145,6 +146,44 @@ export function siteApplicationNode(): Json {
 }
 
 /**
+ * The site as a free Product, alongside the SoftwareApplication node.
+ *
+ * Ahrefs' page classifier labels the most transactional tool pages as product
+ * pages, and then expects Product markup there. One Product entity in the
+ * sitewide graph describes the actual offer (a free browser downloader) with a
+ * real `image` and a zero-price `Offer`, so every route that classifier can
+ * pick already carries truthful Product data. It is a separate node rather
+ * than a second `@type` on the application so schema validators never have to
+ * reconcile SoftwareApplication-only properties against Product.
+ */
+export function productNode(): Json {
+  return {
+    "@type": "Product",
+    "@id": PRODUCT_ID,
+    name: `${siteConfig.name} Downloader`,
+    alternateName: ["LampTik", "LampTik Downloader"],
+    description: ENTITY_DESCRIPTION,
+    disambiguatingDescription: ENTITY_DISAMBIGUATION,
+    image: {
+      "@type": "ImageObject",
+      url: `${siteUrl}/opengraph-image`,
+      width: 1200,
+      height: 630,
+    },
+    brand: { "@type": "Brand", name: siteConfig.name },
+    category: "MultimediaApplication",
+    url: siteUrl,
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+      availability: "https://schema.org/InStock",
+      url: siteUrl,
+    },
+  };
+}
+
+/**
  * One entity graph for EVERY route, rendered from the root layout.
  *
  * Pages describe their own page type (WebApplication / HowTo / FAQ / …) and
@@ -154,7 +193,59 @@ export function siteApplicationNode(): Json {
 export function siteEntityGraph(): Json {
   return {
     "@context": "https://schema.org",
-    "@graph": [organizationNode(), websiteNode(), siteApplicationNode()],
+    "@graph": [organizationNode(), websiteNode(), siteApplicationNode(), productNode()],
+  };
+}
+
+/**
+ * A complete Article node for the editorial trust pages.
+ *
+ * The About, Contact, Privacy and Terms pages are long-form prose, and Ahrefs'
+ * classifier treats some of them as article pages. Marking them with the same
+ * required fields the guide template uses (dates, image, author, publisher,
+ * mainEntityOfPage) satisfies the article check without inventing a second,
+ * weaker Article shape that Google would reject.
+ */
+export function articleNode(args: {
+  /** Absolute canonical URL of the page. */
+  url: string;
+  headline: string;
+  description: string;
+  /** ISO date, `YYYY-MM-DD`; emitted as a full datetime in UTC. */
+  updatedAt: string;
+}): Json {
+  const published = new Date(`${args.updatedAt}T00:00:00Z`).toISOString();
+  return {
+    "@type": "Article",
+    "@id": `${args.url}#article`,
+    headline: args.headline,
+    description: args.description,
+    datePublished: published,
+    dateModified: published,
+    inLanguage: "en",
+    image: {
+      "@type": "ImageObject",
+      url: `${siteUrl}/opengraph-image`,
+      width: 1200,
+      height: 630,
+    },
+    author: {
+      "@type": "Organization",
+      name: "LAMP TIK Editorial Team",
+      url: `${siteUrl}/about`,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: siteConfig.name,
+      logo: {
+        "@type": "ImageObject",
+        url: `${siteUrl}/apple-icon`,
+        width: 180,
+        height: 180,
+      },
+    },
+    mainEntityOfPage: { "@type": "WebPage", "@id": args.url },
+    isPartOf: { "@id": SITE_ID },
   };
 }
 

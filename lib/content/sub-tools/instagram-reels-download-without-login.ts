@@ -79,7 +79,13 @@ export const entry: SubTool = {
     "Never requests Instagram credentials",
     "Free, unlimited, no app",
   ],
-  related: ["instagram-reels-download-iphone", "instagram-story-downloader", "facebook-reels-downloader"],
+  related: [
+    "instagram-reels-download-iphone",
+    // The audio page is the natural next question after "no login": it saves
+    // the same public Reel and explains where the sound actually lives.
+    "instagram-reels-audio",
+    "instagram-story-downloader",
+  ],
   guides: [
     { slug: "how-to-download-instagram-reels-in-hd" },
     { slug: "browser-vs-app-tiktok-downloaders-safety", anchor: "Why browser tools are safer" },

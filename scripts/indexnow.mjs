@@ -37,6 +37,13 @@ const STATE_PATH = process.env.INDEXNOW_STATE ?? ".indexnow-state.json";
 const TARGET_SHA = (process.env.TARGET_SHA ?? "").trim();
 const WAIT_SECONDS = Number(process.env.INDEXNOW_WAIT_SECONDS ?? 480);
 const DRY_RUN = process.argv.includes("--dry");
+/**
+ * Announce every sitemap URL, not just the ones whose hash moved. Used after a
+ * layout/schema change that alters all 46 pages at once — the hash diff is
+ * still kept, but a sitewide edit should not be silently narrowed to the four
+ * routes whose visible copy happens to differ.
+ */
+const SUBMIT_ALL = process.env.INDEXNOW_ALL === "1" || process.argv.includes("--all");
 const ENDPOINT = "https://api.indexnow.org/indexnow";
 
 const HOST = new URL(ORIGIN).host;
@@ -182,13 +189,18 @@ async function main() {
 
   if (!deployed) log("WARNING: submitting even though the deployment was not confirmed live");
 
-  if (changed.length === 0) {
+  // IndexNow accepts up to 10,000 URLs per request; the sitemap is far below
+  // that. A blank/partial sitemap is never force-submitted.
+  const submission = SUBMIT_ALL && urls.length > 0 && unreadable === 0 ? urls : changed;
+
+  if (submission.length === 0) {
     await writeFile(STATE_PATH, JSON.stringify({ pages: next }, null, 2));
     log("nothing to submit");
     return;
   }
 
-  for (const url of changed) log(`changed: ${url}`);
+  if (SUBMIT_ALL) log(`all pages requested (${submission.length} URLs)`);
+  for (const url of submission) log(`changed: ${url}`);
 
   if (DRY_RUN) {
     log("--dry: not submitting");
@@ -202,7 +214,7 @@ async function main() {
       host: HOST,
       key: KEY,
       keyLocation: `${ORIGIN}/${KEY}.txt`,
-      urlList: changed,
+      urlList: submission,
     }),
     signal: AbortSignal.timeout(30_000),
   });
@@ -215,7 +227,7 @@ async function main() {
   }
 
   await writeFile(STATE_PATH, JSON.stringify({ pages: next }, null, 2));
-  log(`submitted ${changed.length} URL(s): HTTP ${response.status} ${responseBody}`.trim());
+  log(`submitted ${submission.length} URL(s): HTTP ${response.status} ${responseBody}`.trim());
 }
 
 main().catch((error) => {

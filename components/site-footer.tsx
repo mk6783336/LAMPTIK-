@@ -24,6 +24,7 @@ const FOOTER_LINKS = {
     { href: "/youtube-playlist-downloader", label: "YouTube Playlist" },
     { href: "/tiktok-story-downloader", label: "TikTok Story" },
     { href: "/instagram-story-downloader", label: "Instagram Story" },
+    { href: "/instagram-reels-audio", label: "Reels Audio" },
     { href: "/facebook-reels-downloader", label: "Facebook Reels" },
     { href: "/youtube-shorts-downloader", label: "YouTube Shorts" },
   ],

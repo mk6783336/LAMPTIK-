@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { AmbientBackground } from "@/components/ambient-background";
+import { articleNode } from "@/components/seo/JsonLd";
 import { ContactForm } from "@/components/contact-form";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -27,12 +28,19 @@ export default function ContactPage() {
     "@context": "https://schema.org",
     "@graph": [
       {
-    "@type": "ContactPage",
-    name: "Contact LAMP TIK",
-    url: `${siteUrl}/contact`,
-    dateModified: "2026-10-19",
-    mainEntity: { "@id": `${siteUrl}/#organization` },
+        "@type": "ContactPage",
+        name: "Contact LAMP TIK",
+        url: `${siteUrl}/contact`,
+        dateModified: "2026-10-19",
+        mainEntity: { "@id": `${siteUrl}/#organization` },
       },
+      articleNode({
+        url: `${siteUrl}/contact`,
+        headline: "Contact LAMP TIK and submit a DMCA notice",
+        description:
+          "How to reach LAMP TIK for support, privacy questions and copyright takedowns, including the six details a valid DMCA notice needs.",
+        updatedAt: "2026-10-19",
+      }),
     ],
   };
 

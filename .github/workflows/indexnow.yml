@@ -20,6 +20,11 @@ on:
       - "scripts/bridge-*"
       - "**.md"
   workflow_dispatch:
+    inputs:
+      all:
+        description: "Submit every sitemap URL, not only the pages whose content changed"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -53,4 +58,8 @@ jobs:
       - name: Submit changed URLs
         env:
           TARGET_SHA: ${{ github.sha }}
-        run: node scripts/indexnow.mjs
+          # A sitewide layout/schema edit changes every page at once; the
+          # manual "all" run is how that gets announced without waiting for
+          # each hash to diverge individually.
+          INDEXNOW_ALL: ${{ inputs.all && '1' || '' }}
+        run: node scripts/indexnow.mjs ${{ inputs.all && '--all' || '' }}

@@ -29,6 +29,9 @@ import {
 
 const VAST_FETCH_TIMEOUT_MS = 8_000;
 const MAX_WRAPPER_HOPS = 3;
+/** A parsed creative is reusable for this long; long enough for a paste, short
+ *  enough that a paused campaign cannot keep serving a stale media URL. */
+const VAST_CACHE_MS = 90_000;
 
 interface VastCreative {
   mediaUrl: string;
@@ -190,6 +193,41 @@ async function loadVast(url: string, signal: AbortSignal): Promise<VastCreative>
   throw new Error("VAST wrapper chain is too deep.");
 }
 
+interface VastCacheEntry {
+  at: number;
+  promise: Promise<VastCreative>;
+}
+
+/** One in-memory creative per page, shared by the prefetch and the gate. */
+let vastCache: VastCacheEntry | null = null;
+
+/** Fetch + parse with its own timeout, independent of any component mount. */
+function requestVast(): Promise<VastCreative> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), VAST_FETCH_TIMEOUT_MS);
+  return loadVast(hilltopVastUrl, controller.signal).finally(() => window.clearTimeout(timeout));
+}
+
+/**
+ * Warm the VAST request on the first real interaction.
+ *
+ * The gate used to start its request only after Submit, so the visitor watched
+ * "Loading sponsored video…" for the network round trip. Prefetching on the
+ * first tap or keypress moves that round trip into the time the visitor is
+ * already spending pasting a link. Parsing is side-effect free: impressions,
+ * quartiles and clicks are still fired only by the actual playback in the
+ * gate, so no impression is counted twice.
+ */
+export function prefetchVideoAd(): void {
+  if (typeof window === "undefined") return;
+  if (vastCache && Date.now() - vastCache.at < VAST_CACHE_MS) return;
+  const entry: VastCacheEntry = { at: Date.now(), promise: requestVast() };
+  vastCache = entry;
+  void entry.promise.catch(() => {
+    if (vastCache === entry) vastCache = null;
+  });
+}
+
 /** Ad pixels are fire-and-forget; CORS never blocks a no-cors GET. */
 function firePixel(url: string): void {
   try {
@@ -280,33 +318,51 @@ export function VideoAdGate({ open, onComplete }: VideoAdGateProps) {
     if (!open) setCountdownStarted(false);
   }, [open]);
 
-  // Fetch + parse the tag. Any failure (ad-blocker, 404, empty, wrapper loop)
-  // paints the house sponsor card; the countdown above is untouched.
+  // Fetch + parse the tag, reusing the interaction-time prefetch when it is
+  // still fresh. Any failure (ad-blocker, 404, empty, wrapper loop) paints the
+  // house sponsor card; the countdown above is untouched.
   useEffect(() => {
     if (!open) return;
-    const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), VAST_FETCH_TIMEOUT_MS);
     let cancelled = false;
 
-    void (async () => {
-      try {
-        const found = await loadVast(hilltopVastUrl, controller.signal);
+    let entry = vastCache && Date.now() - vastCache.at < VAST_CACHE_MS ? vastCache : null;
+    if (!entry) {
+      entry = { at: Date.now(), promise: requestVast() };
+      const created = entry;
+      vastCache = created;
+      void created.promise.catch(() => {
+        if (vastCache === created) vastCache = null;
+      });
+    }
+
+    void entry.promise.then(
+      (found) => {
         if (cancelled) return;
         setCreative(found);
         setPhase("ready");
-      } catch {
+      },
+      () => {
         if (!cancelled) setPhase("fallback");
-      } finally {
-        window.clearTimeout(timeout);
-      }
-    })();
+      },
+    );
 
     return () => {
       cancelled = true;
-      window.clearTimeout(timeout);
-      controller.abort();
     };
   }, [open]);
+
+  // Warm one creative per page on the first real interaction. The listener is
+  // removed after it fires, so a long visit never refetches the tag.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const warm = () => prefetchVideoAd();
+    window.addEventListener("pointerdown", warm, { once: true, passive: true });
+    window.addEventListener("keydown", warm, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", warm);
+      window.removeEventListener("keydown", warm);
+    };
+  }, []);
 
   useEffect(() => {
     if (phase !== "ready" || videoFailed) return;

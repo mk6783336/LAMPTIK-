@@ -81,8 +81,8 @@ export const entry: SubTool = {
   ],
   related: [
     "instagram-reels-download-without-login",
+    "instagram-reels-audio",
     "instagram-story-downloader",
-    "youtube-shorts-downloader",
   ],
   guides: [
     { slug: "how-to-download-instagram-reels-in-hd", anchor: "Instagram Reels in full HD" },

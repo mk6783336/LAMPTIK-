@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { AmbientBackground } from "@/components/ambient-background";
+import { articleNode } from "@/components/seo/JsonLd";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { siteConfig, siteUrl } from "@/lib/site";
@@ -26,12 +27,21 @@ export default function AboutPage() {
     "@context": "https://schema.org",
     "@graph": [
       {
-    "@type": "AboutPage",
-    name: "About LAMP TIK",
-    url: `${siteUrl}/about`,
-    dateModified: "2026-10-19",
-    about: { "@id": `${siteUrl}/#organization` },
+        "@type": "AboutPage",
+        name: "About LAMP TIK",
+        url: `${siteUrl}/about`,
+        dateModified: "2026-10-19",
+        about: { "@id": `${siteUrl}/#organization` },
       },
+      // The page is also a long-form story, which Ahrefs' classifier reads as
+      // an article. The Article node uses the same complete shape as a guide.
+      articleNode({
+        url: `${siteUrl}/about`,
+        headline: "About LAMP TIK — a free downloader, not a store",
+        description:
+          "What LampTik is, what it explicitly is not, how the resolver works, and why the site stores nothing about your downloads.",
+        updatedAt: "2026-10-19",
+      }),
     ],
   };
 

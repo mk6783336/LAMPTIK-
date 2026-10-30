@@ -124,7 +124,10 @@ export function AdSlot({
     // refreshKey is the only trigger; the ref above dedupes re-renders.
   }, [refreshKey]);
 
-  // Eager slots load now; everything else pre-warms within 600px of the fold.
+  // Eager slots load now; everything else pre-warms within 900px of the fold.
+  // 600px was roughly one phone screen: by the time a reader scrolled to a
+  // slot it had only just started its auction, so the creative arrived late.
+  // 900px starts the request while the slot is still one scroll away.
   useEffect(() => {
     if (!key || eager) return;
     const node = hostRef.current;
@@ -132,7 +135,7 @@ export function AdSlot({
 
     if (typeof window !== "undefined") {
       const rect = node.getBoundingClientRect();
-      if (rect.top <= window.innerHeight + 600) {
+      if (rect.top <= window.innerHeight + 900) {
         setVisible(true);
         return;
       }
@@ -150,7 +153,7 @@ export function AdSlot({
           observer.disconnect();
         }
       },
-      { rootMargin: "600px 0px" },
+      { rootMargin: "900px 0px" },
     );
     observer.observe(node);
     return () => observer.disconnect();

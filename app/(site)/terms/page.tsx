@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { AmbientBackground } from "@/components/ambient-background";
+import { articleNode } from "@/components/seo/JsonLd";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { siteUrl } from "@/lib/site";
@@ -33,11 +34,21 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "WebPage",
-    name: "Terms of Service — LAMP TIK",
-    url: `${siteUrl}/terms`,
-    dateModified: "2026-10-20",
-    isPartOf: { "@type": "WebSite", name: "LAMP TIK", url: siteUrl },
+    "@graph": [
+      {
+        "@type": "WebPage",
+        name: "Terms of Service — LAMP TIK",
+        url: `${siteUrl}/terms`,
+        dateModified: "2026-10-20",
+        isPartOf: { "@type": "WebSite", name: "LAMP TIK", url: siteUrl },
+      },
+      articleNode({
+        url: `${siteUrl}/terms`,
+        headline: "LAMP TIK terms of service",
+        description: DESCRIPTION,
+        updatedAt: "2026-10-20",
+      }),
+    ],
   };
 
   return (

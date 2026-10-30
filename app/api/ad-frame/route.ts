@@ -2,7 +2,11 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { adsterraBannerUrl } from "@/lib/monetization";
 
-export const runtime = "nodejs";
+// Edge, not Node: this route only assembles a static HTML document around the
+// network's tag. A Node function pays a cold start on the first ad request of
+// a traffic spike (the exact moment fill matters), while an edge isolate is
+// already warm in every region and returns this response in well under 100ms.
+export const runtime = "edge";
 
 /**
  * Isolated ad frame.

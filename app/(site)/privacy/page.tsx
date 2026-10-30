@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { AmbientBackground } from "@/components/ambient-background";
+import { articleNode } from "@/components/seo/JsonLd";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { siteUrl } from "@/lib/site";
@@ -30,10 +31,23 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "WebPage",
-    name: "Privacy Policy — LAMP TIK",
-    url: `${siteUrl}/privacy`,
-    dateModified: "2026-10-19",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        name: "Privacy Policy — LAMP TIK",
+        url: `${siteUrl}/privacy`,
+        dateModified: "2026-10-29",
+      },
+      // Legal pages are long-form documents; Ahrefs' article classifier can
+      // treat them as articles, so they carry a complete Article node too.
+      articleNode({
+        url: `${siteUrl}/privacy`,
+        headline: "LAMP TIK privacy policy",
+        description:
+          "What LAMP TIK processes, why it stores almost nothing, how analytics and advertising consent work, and the rights EEA and UK visitors have.",
+        updatedAt: "2026-10-29",
+      }),
+    ],
   };
 
   return (
