@@ -29,6 +29,9 @@ const FOOTER_LINKS = {
     { href: "/youtube-shorts-downloader", label: "YouTube Shorts" },
   ],
   Languages: [
+    // Indonesian first: it is the largest market in this category, so it is
+    // the locale most likely to convert a visitor who does not read English.
+    { href: "/id", label: "Bahasa Indonesia" },
     { href: "/ar", label: "العربية" },
     { href: "/es", label: "Español" },
     { href: "/de", label: "Deutsch" },

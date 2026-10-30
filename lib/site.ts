@@ -37,6 +37,10 @@ export const LANDING_LANGUAGES = {
   es: "/es",
   de: "/de",
   "pt-BR": "/pt",
+  // Indonesian is the largest single market for this category (Indonesia is
+  // the top country for both Snaptik and SSSTik), and the incumbents answer it
+  // mostly with English pages — so /id is the one locale with a real opening.
+  id: "/id",
   "x-default": "/",
 } as const;
 

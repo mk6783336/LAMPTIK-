@@ -3,6 +3,7 @@ import type { LandingCopy, LocaleCode } from "@/lib/i18n/types";
 import { ar } from "./ar";
 import { de } from "./de";
 import { es } from "./es";
+import { id } from "./id";
 import { pt } from "./pt";
 
 /**
@@ -12,7 +13,7 @@ import { pt } from "./pt";
  * copy file is a compile error rather than a page that silently renders
  * English under a Spanish hreflang.
  */
-export const LANDINGS: Record<LocaleCode, LandingCopy> = { ar, es, de, pt };
+export const LANDINGS: Record<LocaleCode, LandingCopy> = { ar, es, de, pt, id };
 
 export function getLanding(code: LocaleCode): LandingCopy {
   return LANDINGS[code];
