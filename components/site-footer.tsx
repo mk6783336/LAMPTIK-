@@ -32,6 +32,8 @@ const FOOTER_LINKS = {
     // Indonesian first: it is the largest market in this category, so it is
     // the locale most likely to convert a visitor who does not read English.
     { href: "/id", label: "Bahasa Indonesia" },
+    { href: "/hi", label: "हिन्दी" },
+    { href: "/vi", label: "Tiếng Việt" },
     { href: "/ar", label: "العربية" },
     { href: "/es", label: "Español" },
     { href: "/de", label: "Deutsch" },

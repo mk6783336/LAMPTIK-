@@ -41,6 +41,10 @@ export const LANDING_LANGUAGES = {
   // the top country for both Snaptik and SSSTik), and the incumbents answer it
   // mostly with English pages — so /id is the one locale with a real opening.
   id: "/id",
+  // India and Vietnam are the next two volume markets where the incumbents
+  // serve English pages and a local-language page can actually compete.
+  hi: "/hi",
+  vi: "/vi",
   "x-default": "/",
 } as const;
 
