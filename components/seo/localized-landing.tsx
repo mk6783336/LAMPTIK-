@@ -35,6 +35,8 @@ const LANGUAGE_LABELS: Record<string, string> = {
   id: "Bahasa Indonesia",
   hi: "हिन्दी",
   vi: "Tiếng Việt",
+  th: "ไทย",
+  tl: "Filipino",
 };
 
 /**

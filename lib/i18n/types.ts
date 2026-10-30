@@ -8,7 +8,7 @@ import type { SubToolFaq, SubToolStep } from "@/lib/content/sub-tool-types";
  * language is a data change — never a component change — and an untranslated
  * key cannot silently fall back to English on an RTL page.
  */
-export type LocaleCode = "ar" | "es" | "de" | "pt" | "id" | "hi" | "vi";
+export type LocaleCode = "ar" | "es" | "de" | "pt" | "id" | "hi" | "vi" | "th" | "tl";
 
 export interface LandingCopy {
   /** Route segment, also used for `hreflang`. */
@@ -44,7 +44,17 @@ export interface LandingCopy {
   footerNote: string;
 }
 
-export const LOCALE_CODES: readonly LocaleCode[] = ["ar", "es", "de", "pt", "id", "hi", "vi"];
+export const LOCALE_CODES: readonly LocaleCode[] = [
+  "ar",
+  "es",
+  "de",
+  "pt",
+  "id",
+  "hi",
+  "vi",
+  "th",
+  "tl",
+];
 
 export function isLocaleCode(value: string): value is LocaleCode {
   return (LOCALE_CODES as readonly string[]).includes(value);

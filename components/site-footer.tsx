@@ -34,6 +34,8 @@ const FOOTER_LINKS = {
     { href: "/id", label: "Bahasa Indonesia" },
     { href: "/hi", label: "हिन्दी" },
     { href: "/vi", label: "Tiếng Việt" },
+    { href: "/th", label: "ไทย" },
+    { href: "/tl", label: "Filipino" },
     { href: "/ar", label: "العربية" },
     { href: "/es", label: "Español" },
     { href: "/de", label: "Deutsch" },

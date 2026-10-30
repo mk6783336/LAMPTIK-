@@ -45,6 +45,10 @@ export const LANDING_LANGUAGES = {
   // serve English pages and a local-language page can actually compete.
   hi: "/hi",
   vi: "/vi",
+  // Thailand and the Philippines complete the Southeast Asian set: the two
+  // remaining volume markets where the incumbents rank with English pages.
+  th: "/th",
+  tl: "/tl",
   "x-default": "/",
 } as const;
 
