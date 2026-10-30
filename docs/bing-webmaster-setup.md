@@ -13,21 +13,45 @@ Measured state on 31 Oct 2026, before verification:
 
 | Check | Result |
 |---|---|
-| `site:lamptik.online` on Bing | **0 results** ("There are no results") |
-| Same query on DuckDuckGo (Bing index) | **0 results** |
 | URLs in sitemap | 51 |
 | Bingbot → `/` | `200`, no challenge |
 | Bingbot → `/robots.txt` | `200`, `Allow: /` |
 | Bingbot → `/sitemap.xml` | `200`, 51 `<loc>` |
 | IndexNow → `www.bing.com/indexnow` | `200` (accepted) |
 | IndexNow → `api.indexnow.org` | `200` (accepted) |
+| `site:lamptik.online` on Bing | **not measurable** — see below |
+| `site:lamptik.online` on DuckDuckGo | **not measurable** — see below |
 
-The site is fully crawlable and IndexNow is accepting submissions — yet nothing
-is indexed. That gap is the signature of an **unverified property**: submissions
-are queued but carry no crawl priority, and there is no sitemap attached
-because Bing only accepts sitemaps from a verified site.
+### Why the index count is unknown, not zero
 
-Verification is the unlock. There is no code-only fix.
+An earlier version of this document reported "0 of 51 indexed" from a `site:`
+query. That reading was wrong, and the way it was wrong matters:
+
+Bing serves a **degraded page to automated clients**. The query comes back
+`200` with ten result blocks, but the blocks are unrelated filler. The control
+test is decisive:
+
+```bash
+curl -s -A "Mozilla/5.0 (compatible; bingbot/2.0)" \
+  "https://www.bing.com/search?q=site%3Awikipedia.org" \
+  | grep -oE 'https?://[a-z0-9.-]+' | sort -u | head
+# → reddit.com, go.microsoft.com, support.microsoft.com … no wikipedia.org
+```
+
+A `site:` query that cannot find **Wikipedia** is not reporting on this site
+at all. DuckDuckGo is worse: its HTML endpoint answers `202` with an
+anti-automation page. So the honest state is *unknown* — neither engine will
+tell a bot how much it has indexed.
+
+What *is* certain: the site is crawlable, the sitemap is valid and served, and
+IndexNow accepts every submission. Verification is still the unlock — an
+unverified property has no sitemap attached and no crawl priority — but it has
+never been demonstrated that Bing refuses to index this site.
+
+`scripts/index-check.mjs` encodes this lesson: it validates every `site:` query
+against a control domain and reports `unmeasurable` rather than `0` when the
+engine refuses to answer. The only authoritative count is the Webmaster API,
+available once the property exists.
 
 ## Fastest method — import from Google Search Console
 
@@ -122,15 +146,20 @@ The honest expectation for a site this age: Bing will index a subset, rank it
 for niche and long-tail queries, and send a slow trickle of traffic. It is a
 second channel alongside Google, not a cure for the authority problem.
 
-## Re-measuring without an account
+## Re-measuring
+
+Run the check by hand, or wait for the weekly workflow (`.github/workflows/index-check.yml`):
 
 ```bash
-# Pages Bing has indexed (0 = not in the index at all)
-curl -s -A "Mozilla/5.0 (compatible; bingbot/2.0)" \
-  "https://www.bing.com/search?q=site%3Alamptik.online" \
-  | grep -c 'There are no results'
+node scripts/index-check.mjs
 ```
 
-`1` means zero indexed; `0` means Bing has something. DuckDuckGo's HTML endpoint
-`https://html.duckduckgo.com/html/?q=site%3Alamptik.online` is an independent
-read of the same index and is worth checking alongside it.
+It reports sitemap size, robots.txt admission, and verification status
+every week, and adds Bing/DuckDuckGo page counts **only when the control domain
+proves the engine is answering honestly**. An `unmeasurable` line means exactly
+that — never that the site has no pages indexed.
+
+Once the property is verified, get the real number from the API instead of
+scraping: **Settings → API Access → API Key**, then store it as the
+`BING_WEBMASTER_API_KEY` repository secret. That is the only source that returns
+true index and traffic data for a verified site.
