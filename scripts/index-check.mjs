@@ -52,7 +52,28 @@ const BING_API_BASE = "https://ssl.bing.com/webmaster/api.svc/json";
  * killed job produces nothing.
  */
 const URL_LIMIT = Number(process.env.INDEX_CHECK_URL_LIMIT ?? 60);
-const API_BUDGET_MS = Number(process.env.INDEX_CHECK_API_BUDGET_MS ?? 240_000);
+const API_BUDGET_MS = Number(process.env.INDEX_CHECK_API_BUDGET_MS ?? 300_000);
+
+/**
+ * Bing throttles per host aggressively (`ErrorCode: 5, "ERROR!!! ThrottleHost"`)
+ * and starts rejecting after roughly ten rapid calls. Spacing requests is what
+ * keeps a 51-URL sweep inside the limit; the retry handles the remainder.
+ */
+const PACE_MS = Number(process.env.INDEX_CHECK_PACE_MS ?? 1_400);
+const MAX_RETRIES = 2;
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Bing serialises dates as `/Date(-62135596800000)/` — .NET's `DateTime.MinValue`
+ * (0001-01-01). Every field of an uncrawled URL is that sentinel, so treating a
+ * non-empty string as a real date reports pages as "crawled" when they have
+ * never been fetched.
+ */
+function isRealDate(value) {
+  const match = /\/Date\((-?\d+)\)\//.exec(String(value ?? ""));
+  return Boolean(match) && Number(match[1]) > 0;
+}
 
 /** A domain with an enormous, unquestionably-indexed page set. */
 const CONTROL_HOST = "wikipedia.org";
@@ -140,11 +161,12 @@ async function measureBingApi(sitemapUrls) {
   if (match.IsVerified === false) return { error: `${match.Url} is in the account but not verified` };
 
   const startedAt = Date.now();
-  const known = [];
-  const crawled = [];
+  const indexed = [];
+  const discovered = [];
   const notKnown = [];
   const statuses = new Map();
   let checked = 0;
+  let unchecked = 0;
   let stoppedEarly = null;
 
   for (const url of sitemapUrls.slice(0, URL_LIMIT)) {
@@ -153,35 +175,51 @@ async function measureBingApi(sitemapUrls) {
       break;
     }
 
-    const result = await bingApi("GetUrlInfo", { siteUrl: match.Url, url });
-    checked += 1;
-
-    if (result.status === 429) {
-      stoppedEarly = "API rate limit (HTTP 429)";
-      break;
+    let result = await bingApi("GetUrlInfo", { siteUrl: match.Url, url });
+    // Throttling is a "did not ask", never a "not in the index". Back off and
+    // retry; anything still failing is counted as unchecked, not as missing.
+    for (let attempt = 1; result.error && /ThrottleHost|HTTP 429/i.test(result.error) && attempt <= MAX_RETRIES; attempt += 1) {
+      await sleep(2_500 * attempt);
+      result = await bingApi("GetUrlInfo", { siteUrl: match.Url, url });
     }
-    // A lookup failure is not evidence of absence — record it as unchecked.
-    if (result.error) continue;
+
+    checked += 1;
+    if (result.status === 429 || /ThrottleHost/i.test(result.error ?? "")) {
+      unchecked += 1;
+      continue;
+    }
+    if (result.error) {
+      unchecked += 1;
+      continue;
+    }
 
     if (!result.data) {
       notKnown.push(url);
       continue;
     }
 
-    known.push(url);
-    if (result.data.LastCrawledDate) crawled.push(url);
-    const code = result.data.HttpStatus ?? "unknown";
-    statuses.set(String(code), (statuses.get(String(code)) ?? 0) + 1);
+    const code = Number(result.data.HttpStatus ?? 0);
+    // Bing returns a skeleton record (HttpStatus 0, zero-size, MinValue dates)
+    // for a URL it has discovered but never fetched. That is not an index entry.
+    if (isRealDate(result.data.LastCrawledDate) && code >= 200 && code < 400) {
+      indexed.push(url);
+      statuses.set(String(code), (statuses.get(String(code)) ?? 0) + 1);
+    } else {
+      discovered.push(url);
+    }
+
+    await sleep(PACE_MS);
   }
 
   return {
     error: null,
     siteUrl: match.Url,
-    known,
-    crawled,
+    indexed,
+    discovered,
     notKnown,
     statuses: Object.fromEntries([...statuses.entries()].sort()),
     checked,
+    unchecked,
     total: sitemapUrls.length,
     stoppedEarly,
   };
@@ -353,8 +391,10 @@ function buildSummary({ bing, bingApi, ddg, sitemap, verification, robots, previ
 
   if (bingApi && !bingApi.error) {
     lines.push(
-      `| Bing (Webmaster API) | **${bingApi.known.length}** of ${bingApi.checked} checked | ${delta(bingApi.known.length, prev.bing)} |`,
-      `| — crawled (has a crawl date) | ${bingApi.crawled.length} | — |`,
+      `| Bing — indexed (crawled, 2xx/3xx) | **${bingApi.indexed.length}** | ${delta(bingApi.indexed.length, prev.bing)} |`,
+      `| Bing — discovered, never crawled | ${bingApi.discovered.length} | — |`,
+      `| Bing — not known at all | ${bingApi.notKnown.length} | — |`,
+      `| Bing — unchecked (throttled) | ${bingApi.unchecked} | — |`,
     );
   } else {
     lines.push(`| Bing | ${bing.count === null ? "unmeasurable" : bing.count} | ${delta(bing.count, prev.bing)} |`);
@@ -366,13 +406,32 @@ function buildSummary({ bing, bingApi, ddg, sitemap, verification, robots, previ
       .map(([code, count]) => `${code}: ${count}`)
       .join(", ");
     lines.push(
-      `Bing knows **${bingApi.known.length}** of the ${bingApi.checked} sitemap URLs checked` +
-        (bingApi.total > bingApi.checked ? ` (of ${bingApi.total} in the sitemap)` : "") +
-        `.`,
+      `Of the ${bingApi.checked} sitemap URLs checked` +
+        (bingApi.total > bingApi.checked ? ` (of ${bingApi.total})` : "") +
+        `, **${bingApi.indexed.length}** are indexed, **${bingApi.discovered.length}** are discovered but never crawled, ` +
+        `and **${bingApi.notKnown.length}** are unknown to Bing.`,
       "",
     );
-    if (codes) lines.push(`HTTP status of known URLs — ${codes}`, "");
+    if (codes) lines.push(`HTTP status of indexed URLs — ${codes}`, "");
     if (bingApi.stoppedEarly) lines.push(`> Partial result: ${bingApi.stoppedEarly}.`, "");
+    if (bingApi.unchecked > 0) {
+      lines.push(
+        `> [!NOTE]`,
+        `> ${bingApi.unchecked} lookup(s) were throttled by Bing and are excluded from every count above —`,
+        `> they are unknown, not missing. The totals are a lower bound.`,
+        "",
+      );
+    }
+    if (bingApi.discovered.length > 0) {
+      lines.push(
+        `<details><summary>${bingApi.discovered.length} URL(s) discovered but never crawled</summary>`,
+        "",
+        ...bingApi.discovered.map((url) => `- ${url}`),
+        "",
+        "</details>",
+        "",
+      );
+    }
     if (bingApi.notKnown.length > 0) {
       lines.push(
         `<details><summary>${bingApi.notKnown.length} URL(s) Bing does not know yet</summary>`,
@@ -400,12 +459,19 @@ function buildSummary({ bing, bingApi, ddg, sitemap, verification, robots, previ
       "",
       "> [!IMPORTANT]",
       "> `unmeasurable` says nothing about whether the site is indexed — it means the engine refused to answer a bot.",
-      "> Set the `BING_WEBMASTER_API_KEY` secret for an authoritative Bing count; see `docs/bing-webmaster-setup.md`.",
+      ...(BING_API_KEY
+        ? []
+        : ["> Set the `BING_WEBMASTER_API_KEY` secret for an authoritative Bing count; see `docs/bing-webmaster-setup.md`."]),
       "",
     );
   }
 
-  if (!verification.metaTag && !verification.xmlFile) {
+  // The meta tag and XML file are only two of Bing's verification methods; a
+  // site verified by DNS or imported from Search Console leaves neither on the
+  // page. The API answering for the property is proof enough, so the warning
+  // is only honest when the API did not confirm it.
+  const apiConfirmsVerification = Boolean(bingApi && !bingApi.error);
+  if (!verification.metaTag && !verification.xmlFile && !apiConfirmsVerification) {
     lines.push(
       "> [!WARNING]",
       "> Bing Webmaster Tools verification is **not configured**. Until it is, Bing has no sitemap attached and no crawl priority.",
@@ -444,7 +510,7 @@ async function main() {
 
   let bing;
   if (bingApi && !bingApi.error) {
-    bing = { name: "Bing", key: "bing", count: bingApi.known.length, urls: bingApi.known, reason: null };
+    bing = { name: "Bing", key: "bing", count: bingApi.indexed.length, urls: bingApi.indexed, reason: null };
   } else {
     // Scrape whenever the API did not produce an answer — no key at all, or a
     // key that was rejected. A cookie from the Bing front page is what a
@@ -474,7 +540,10 @@ async function main() {
   log(`robots.txt   bingbot=${robots.allowsBingbot ? "allowed" : "BLOCKED"} sitemap=${robots.sitemap ? "listed" : "missing"}`);
   log(`verification meta=${verification.metaTag ? "yes" : "no"} xml=${verification.xmlFile ? "yes" : "no"}`);
   if (bingApi && !bingApi.error) {
-    log(`bing         ${bingApi.known.length}/${bingApi.checked} known, ${bingApi.crawled.length} crawled`);
+    log(
+      `bing         ${bingApi.indexed.length} indexed, ${bingApi.discovered.length} discovered-not-crawled, ` +
+        `${bingApi.notKnown.length} unknown, ${bingApi.unchecked} unchecked`,
+    );
   } else {
     log(`bing         ${bing.count === null ? `unmeasurable (${bing.reason})` : `${bing.count} page(s)`}`);
   }
@@ -492,7 +561,9 @@ async function main() {
     {
       at: new Date().toISOString(),
       sitemap: sitemap.count,
-      bing: bing.count,
+      // A throttled sweep is a lower bound; storing it would make next week's
+      // delta look like a drop that did not happen.
+      bing: bingApi && !bingApi.error && bingApi.unchecked > 0 ? null : bing.count,
       ddg: ddg.count,
       verified: verification.metaTag || verification.xmlFile,
       urls: currentUrls.sort(),
