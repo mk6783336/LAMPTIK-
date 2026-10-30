@@ -41,6 +41,9 @@ const FOOTER_LINKS = {
     { href: "/api/health", label: "API status" },
   ],
   Company: [
+    // Commercial page first: it is the only link in this column that can turn
+    // a visitor into income, so it should not sit under the legal entries.
+    { href: "/services", label: "Build services" },
     { href: "/about", label: "About" },
     { href: "/apps", label: "App & Extension" },
     { href: "/contact", label: "Contact & DMCA" },

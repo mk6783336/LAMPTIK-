@@ -116,6 +116,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const company: MetadataRoute.Sitemap = [
     {
+      // The commercial page: the only route whose job is revenue rather than a
+      // download, so it outranks About and Contact in the sitemap even though
+      // it is a "company" page.
+      url: `${siteUrl}/services`,
+      lastModified: updated,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
       // Distribution hub for the off-store clients — a real page with its own
       // install steps, so it belongs in the index next to About and Contact.
       url: `${siteUrl}/apps`,
