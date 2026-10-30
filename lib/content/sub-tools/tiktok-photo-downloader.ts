@@ -88,7 +88,7 @@ export const entry: SubTool = {
   ],
   related: [
     "tiktok-mp3-downloader",
-    "tiktok-story-downloader",
+    "vt-tiktok-com-downloader",
     "tiktok-video-download-iphone",
   ],
   guides: [

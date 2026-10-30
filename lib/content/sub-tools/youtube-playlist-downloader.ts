@@ -88,7 +88,7 @@ export const entry: SubTool = {
   ],
   related: [
     "youtube-to-mp4-1080p",
-    "youtube-to-mp3",
+    "youtube-video-download-iphone",
     "youtube-shorts-downloader",
   ],
 };
