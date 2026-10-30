@@ -20,12 +20,21 @@ import { PLATFORMS } from "@/lib/platforms";
 import { siteUrl } from "@/lib/site";
 
 /** Language switcher labels stay in their own language, never translated. */
+/**
+ * Switcher labels. Every code in `LOCALE_CODES` must appear here — the list is
+ * derived from that array, so a locale added without a label used to render an
+ * empty chip on every other localized page. The render site falls back to the
+ * uppercased code as a second guard.
+ */
 const LANGUAGE_LABELS: Record<string, string> = {
   en: "English",
   ar: "العربية",
   es: "Español",
   de: "Deutsch",
   pt: "Português",
+  id: "Bahasa Indonesia",
+  hi: "हिन्दी",
+  vi: "Tiếng Việt",
 };
 
 /**
@@ -137,7 +146,7 @@ export function LocalizedLanding({ copy }: { copy: LandingCopy }) {
                       hrefLang={code}
                       className="rounded-full border border-[var(--glass-border)] px-2 py-0.5 transition-colors duration-200 hover:border-[var(--glass-border-hover)] hover:text-[var(--text)]"
                     >
-                      {LANGUAGE_LABELS[code]}
+                      {LANGUAGE_LABELS[code] ?? code.toUpperCase()}
                     </Link>
                   ))}
                 </div>
