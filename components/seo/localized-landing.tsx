@@ -18,6 +18,7 @@ import type { LandingCopy, LocaleCode } from "@/lib/i18n/types";
 import { LOCALE_CODES } from "@/lib/i18n/types";
 import { platformPath } from "@/lib/i18n/platform-landings";
 import { languageLabel } from "@/lib/i18n/language-labels";
+import { platformBlurb } from "@/lib/i18n/platform-blurbs";
 import { PLATFORMS, type Platform } from "@/lib/platforms";
 import { siteUrl } from "@/lib/site";
 
@@ -271,7 +272,7 @@ export function LocalizedLanding({
                         <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                       </span>
                       <span className="pretty mt-1.5 block text-sm leading-relaxed text-[var(--text-2)]">
-                        {PLATFORMS[id].blurb}
+                        {platformBlurb(copy.code, id)}
                       </span>
                     </span>
                   </Link>
