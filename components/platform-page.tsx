@@ -9,6 +9,7 @@ import { Downloader } from "@/components/downloader";
 import { PlatformBento } from "@/components/platform-bento";
 import { PlatformIcon } from "@/components/platform-icons";
 import { Breadcrumb } from "@/components/seo/breadcrumb";
+import { PlatformLanguages } from "@/components/seo/language-links";
 import {
   breadcrumbNode,
   faqPageNode,
@@ -301,6 +302,12 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
               </div>
             </div>
           </section>
+
+          {/* The same page in the nine languages that carry it. Real links, not
+              only hreflang: they are how the localized pages get crawled.
+              TikTok is the exception — its localized versions are the locale
+              roots (`/es`, `/de`, …), already linked from the footer. */}
+          {platform === "tiktok" ? null : <PlatformLanguages platform={platform} />}
 
           <ToolSeoContent platform={platform} />
         </main>

@@ -9,6 +9,7 @@ import { ConsentBar } from "@/components/consent-bar";
 import { PlatformIcon } from "@/components/platform-icons";
 import { Breadcrumb } from "@/components/seo/breadcrumb";
 import { breadcrumbNode, JsonLd } from "@/components/seo/JsonLd";
+import { HubLanguages } from "@/components/seo/language-links";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import {
@@ -126,6 +127,7 @@ export default function ToolsPage() {
                 {[
                   `${GROUPED_TOOL_COUNT} tools`,
                   "4 platforms",
+                  "9 languages",
                   "No account",
                   "No watermark",
                 ].map((chip) => (
@@ -281,6 +283,9 @@ export default function ToolsPage() {
               </p>
             </div>
           </section>
+
+          {/* The 27 non-English platform landings, indexed by language. */}
+          <HubLanguages />
         </main>
 
         <SiteFooter />

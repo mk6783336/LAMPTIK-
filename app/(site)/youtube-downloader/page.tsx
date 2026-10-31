@@ -7,6 +7,7 @@ import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
 import { Breadcrumb } from "@/components/seo/breadcrumb";
+import { PlatformLanguages } from "@/components/seo/language-links";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import {
@@ -453,6 +454,9 @@ export default async function YouTubeDownloaderPage({
               </div>
             </div>
           </section>
+
+          {/* The same page in the nine languages that carry it. */}
+          <PlatformLanguages platform="youtube" />
 
           {/* How + FAQ (mirrors the JSON-LD) */}
           <section id="how" className="seo-section section-pad scroll-mt-24 border-t border-[var(--line)]">
