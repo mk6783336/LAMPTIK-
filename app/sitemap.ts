@@ -2,6 +2,12 @@ import type { MetadataRoute } from "next";
 
 import { GUIDE_LIST } from "@/lib/content/guides";
 import { SUB_TOOLS } from "@/lib/content/sub-tools";
+import {
+  LOCALIZED_PLATFORM_SLUGS,
+  LOCALIZED_PLATFORMS,
+  PLATFORM_LOCALES,
+  platformLanguageAlternates,
+} from "@/lib/i18n/platform-landings";
 import { LOCALE_CODES } from "@/lib/i18n/types";
 import { LANDING_LANGUAGES, siteConfig, siteUrl } from "@/lib/site";
 
@@ -161,11 +167,29 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
+  /**
+   * Platform landings outside English: six URLs, each the same-platform sibling
+   * of the English tool page rather than a translation of the locale root. They
+   * carry their own hreflang cluster so Google pairs /es/youtube-downloader with
+   * /youtube-downloader and /ar/youtube-downloader — not with the TikTok
+   * landing that happens to share the language.
+   */
+  const localizedPlatforms: MetadataRoute.Sitemap = PLATFORM_LOCALES.flatMap((code) =>
+    LOCALIZED_PLATFORMS.map((platform) => ({
+      url: `${siteUrl}/${code}/${LOCALIZED_PLATFORM_SLUGS[platform]}`,
+      lastModified: updated,
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+      alternates: { languages: platformLanguageAlternates(platform) },
+    })),
+  );
+
   return [
     ...tools,
     ...hubs,
     ...subTools,
     ...languages,
+    ...localizedPlatforms,
     ...guides,
     ...company,
     ...legal,

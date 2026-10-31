@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 
 import { PlatformPage } from "@/components/platform-page";
-import { pageAlternates, siteConfig, siteUrl } from "@/lib/site";
+import { platformLanguageAlternates } from "@/lib/i18n/platform-landings";
+import { siteConfig, siteUrl } from "@/lib/site";
 
 /** ≤60 chars, keyword first. */
 const TITLE = "Facebook Video Downloader HD — Download Videos to MP4";
@@ -21,7 +22,11 @@ export const metadata: Metadata = {
     "save Facebook video online free",
     "download long Facebook video 1080p",
   ],
-  alternates: pageAlternates("/facebook-video-downloader"),
+  // Only the languages that actually carry this page — see the Reels page.
+  alternates: {
+    canonical: "/facebook-video-downloader",
+    languages: platformLanguageAlternates("facebook"),
+  },
   openGraph: {
     type: "website",
     url: `${siteUrl}/facebook-video-downloader`,

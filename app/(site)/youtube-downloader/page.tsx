@@ -18,7 +18,8 @@ import {
 } from "@/components/seo/JsonLd";
 import { Downloader } from "@/components/downloader";
 import { PLATFORMS } from "@/lib/platforms";
-import { pageAlternates, siteUrl } from "@/lib/site";
+import { platformLanguageAlternates } from "@/lib/i18n/platform-landings";
+import { siteUrl } from "@/lib/site";
 
 /** ≤60 chars, keyword first. */
 const TITLE = "YouTube Video Downloader 1080p HD — Shorts & MP3";
@@ -37,7 +38,11 @@ export const metadata: Metadata = {
     "youtu.be downloader online",
     "download long YouTube video",
   ],
-  alternates: pageAlternates("/youtube-downloader"),
+  // Only the languages that actually carry this page — see the Reels page.
+  alternates: {
+    canonical: "/youtube-downloader",
+    languages: platformLanguageAlternates("youtube"),
+  },
   openGraph: {
     type: "website",
     url: `${siteUrl}/youtube-downloader`,

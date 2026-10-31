@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 
 import { PlatformPage } from "@/components/platform-page";
-import { pageAlternates, siteConfig, siteUrl } from "@/lib/site";
+import { platformLanguageAlternates } from "@/lib/i18n/platform-landings";
+import { siteConfig, siteUrl } from "@/lib/site";
 
 /** ≤60 chars, keyword first. */
 const TITLE = "Instagram Reels Downloader — Save Reels & Videos in HD";
@@ -21,7 +22,13 @@ export const metadata: Metadata = {
     "Instagram Reels MP4 1080p",
     "download Instagram video no login",
   ],
-  alternates: pageAlternates("/instagram-reels-downloader"),
+  // The languages that actually carry this page, not the whole site: declaring
+  // `de` here would tell Google the Reels page is translated at /de, which is
+  // a TikTok landing.
+  alternates: {
+    canonical: "/instagram-reels-downloader",
+    languages: platformLanguageAlternates("instagram"),
+  },
   openGraph: {
     type: "website",
     url: `${siteUrl}/instagram-reels-downloader`,

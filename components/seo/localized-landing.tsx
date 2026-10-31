@@ -14,9 +14,10 @@ import {
 } from "@/components/seo/JsonLd";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import type { LandingCopy } from "@/lib/i18n/types";
+import type { LandingCopy, LocaleCode } from "@/lib/i18n/types";
 import { LOCALE_CODES } from "@/lib/i18n/types";
-import { PLATFORMS } from "@/lib/platforms";
+import { platformPath } from "@/lib/i18n/platform-landings";
+import { PLATFORMS, type Platform } from "@/lib/platforms";
 import { siteUrl } from "@/lib/site";
 
 /** Language switcher labels stay in their own language, never translated. */
@@ -39,6 +40,18 @@ const LANGUAGE_LABELS: Record<string, string> = {
   tl: "Filipino",
 };
 
+/** Breadcrumb root, written in the page's own language. */
+const HOME_LABELS: Partial<Record<LocaleCode, string>> = {
+  es: "Inicio",
+  ar: "الرئيسية",
+  de: "Startseite",
+  pt: "Início",
+  id: "Beranda",
+  hi: "होम",
+  vi: "Trang chủ",
+  th: "หน้าแรก",
+};
+
 /**
  * A regional landing page: localized hero, steps and FAQ around the same
  * resolver the English tool pages use.
@@ -47,9 +60,19 @@ const LANGUAGE_LABELS: Record<string, string> = {
  * mirrors the layout, the icon order and the card gutters — an Arabic page
  * that keeps LTR text alignment reads as a machine translation.
  */
-export function LocalizedLanding({ copy }: { copy: LandingCopy }) {
-  const pageUrl = `${siteUrl}/${copy.code}`;
-  const tiktok = PLATFORMS.tiktok;
+export function LocalizedLanding({
+  copy,
+  platform = "tiktok",
+  path,
+}: {
+  copy: LandingCopy;
+  /** Which resolver the page mounts. Defaults to the TikTok landing. */
+  platform?: Platform;
+  /** Canonical path, when it is not simply `/{code}` (platform sub-pages). */
+  path?: string;
+}) {
+  const pageUrl = `${siteUrl}${path ?? `/${copy.code}`}`;
+  const theme = PLATFORMS[platform];
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -83,15 +106,33 @@ export function LocalizedLanding({ copy }: { copy: LandingCopy }) {
       }),
       faqPageNode(`${pageUrl}/#faq`, copy.faqs, pageUrl),
       breadcrumbNode(`${pageUrl}/#breadcrumb`, [
-        { name: "Home", url: siteUrl },
+        { name: HOME_LABELS[copy.code] ?? "Home", url: siteUrl },
         { name: copy.title, url: pageUrl },
       ]),
     ],
   };
 
-  const otherLanguages = (["en", ...LOCALE_CODES] as const).filter(
-    (code) => code !== copy.code,
-  );
+  /**
+   * The language switcher follows the topic, not just the locale: on an
+   * Instagram page "Español" must land on the Spanish Instagram page, never on
+   * the Spanish TikTok landing. Only languages that really have this page are
+   * offered, which is why the platform pages list three and the TikTok landing
+   * lists all ten.
+   */
+  const languageLinks: { code: string; href: string }[] = [];
+  for (const code of ["en", ...LOCALE_CODES] as const) {
+    if (code === copy.code) continue;
+    if (platform === "tiktok") {
+      languageLinks.push({ code, href: code === "en" ? "/" : `/${code}` });
+    } else {
+      const href = platformPath(code, platform);
+      if (href) languageLinks.push({ code, href });
+    }
+  }
+
+  /** Localized page for a platform when one exists, else the English tool. */
+  const toolHref = (id: Platform) =>
+    id === "tiktok" ? `/${copy.code}` : platformPath(copy.code, id) ?? PLATFORMS[id].path;
 
   return (
     <>
@@ -102,7 +143,7 @@ export function LocalizedLanding({ copy }: { copy: LandingCopy }) {
       <div
         dir={copy.dir}
         lang={copy.htmlLang}
-        data-platform-theme={tiktok.id}
+        data-platform-theme={theme.id}
         className="flex min-h-dvh flex-col"
       >
         <SiteHeader />
@@ -141,10 +182,10 @@ export function LocalizedLanding({ copy }: { copy: LandingCopy }) {
 
                 <div className="mt-7 flex flex-wrap items-center gap-1.5 text-xs text-[var(--text-3)]">
                   <Globe className="size-3.5" aria-hidden="true" />
-                  {otherLanguages.map((code) => (
+                  {languageLinks.map(({ code, href }) => (
                     <Link
                       key={code}
-                      href={code === "en" ? "/" : `/${code}`}
+                      href={href}
                       hrefLang={code}
                       className="rounded-full border border-[var(--glass-border)] px-2 py-0.5 transition-colors duration-200 hover:border-[var(--glass-border-hover)] hover:text-[var(--text)]"
                     >
@@ -159,7 +200,7 @@ export function LocalizedLanding({ copy }: { copy: LandingCopy }) {
                   <p className="text-sm font-semibold tracking-tight">{copy.tool.heading}</p>
                   <p className="text-xs text-[var(--text-3)]">{copy.tool.note}</p>
                 </div>
-                <Downloader platform="tiktok" />
+                <Downloader platform={platform} />
               </div>
             </div>
 
@@ -242,7 +283,7 @@ export function LocalizedLanding({ copy }: { copy: LandingCopy }) {
               <h2 className="balance text-2xl font-semibold tracking-headline">{copy.otherToolsHeading}</h2>
               <div className="mt-6 grid gap-3.5 sm:grid-cols-2">
                 {(["tiktok", "instagram", "facebook", "youtube"] as const).map((id) => (
-                  <Link key={id} href={PLATFORMS[id].path} className="bento-card group flex items-start gap-3">
+                  <Link key={id} href={toolHref(id)} className="bento-card group flex items-start gap-3">
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center justify-between gap-2 text-base font-semibold tracking-tight">
                         {PLATFORMS[id].name}
