@@ -17,6 +17,7 @@ import { SiteHeader } from "@/components/site-header";
 import type { LandingCopy, LocaleCode } from "@/lib/i18n/types";
 import { LOCALE_CODES } from "@/lib/i18n/types";
 import { platformPath } from "@/lib/i18n/platform-landings";
+import { FOOTER_COPY } from "@/lib/i18n/footer-copy";
 import { languageLabel } from "@/lib/i18n/language-labels";
 import { platformBlurb, TOOLS_HUB_CARD } from "@/lib/i18n/platform-blurbs";
 import { PLATFORM_LIST, PLATFORMS, type Platform } from "@/lib/platforms";
@@ -310,7 +311,7 @@ export function LocalizedLanding({
           </section>
         </main>
 
-        <SiteFooter />
+        <SiteFooter copy={FOOTER_COPY[copy.code]} />
       </div>
     </>
   );
