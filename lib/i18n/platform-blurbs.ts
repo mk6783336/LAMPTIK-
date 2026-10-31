@@ -7,7 +7,8 @@ import type { Platform } from "@/lib/platforms";
  * These are the one-line blurbs under the "more tools" cards on every localized
  * page. The English originals live on `PLATFORMS` and stay there for the English
  * site; this map is what a German or Hindi reader gets instead of a sentence in
- * a language they did not come for.
+ * a language they did not come for. `TOOLS_HUB_CARD` at the end of the file is
+ * the fourth card in the same grid, written per language too.
  *
  * Written per locale rather than translated word-for-word: the German blurb
  * names `vt-/vm-Kurzlinks`, the Vietnamese one keeps "không logo" (what people
@@ -106,6 +107,52 @@ export const PLATFORM_BLURBS: Record<LocaleCode, Record<Platform, string>> = {
       "Mahahabang Watch video (1 GB pataas), upload ng page, at fb.watch link na agad bumubukas.",
     youtube:
       "MP4 sa 1080p o 720p, Shorts, at MP3 audio mula sa anumang watch o youtu.be link — libre, walang app.",
+  },
+};
+
+/**
+ * The fourth card in the "more tools" grid: the /tools hub.
+ *
+ * It takes the slot of the card for the page the reader is already on — a
+ * platform page used to link to itself — so the grid stays four cards deep and
+ * every card goes somewhere new.
+ */
+export const TOOLS_HUB_CARD: Record<LocaleCode, { label: string; blurb: string }> = {
+  es: {
+    label: "Todas las herramientas",
+    blurb: "El índice completo: por formato, por red y por idioma, en una sola página.",
+  },
+  ar: {
+    label: "كل الأدوات",
+    blurb: "الفهرس الكامل: تنزيل حسب الصيغة أو الشبكة أو اللغة في صفحة واحدة.",
+  },
+  de: {
+    label: "Alle Werkzeuge",
+    blurb: "Der komplette Index: Downloads nach Format, Netzwerk und Sprache auf einer Seite.",
+  },
+  pt: {
+    label: "Todas as ferramentas",
+    blurb: "O índice completo: downloads por formato, por rede e por idioma numa só página.",
+  },
+  id: {
+    label: "Semua alat",
+    blurb: "Indeks lengkap: unduhan menurut format, jaringan, dan bahasa dalam satu halaman.",
+  },
+  hi: {
+    label: "सभी टूल्स",
+    blurb: "पूरा इंडेक्स: फ़ॉर्मैट, प्लेटफ़ॉर्म और भाषा के हिसाब से डाउनलोड, एक ही पेज पर।",
+  },
+  vi: {
+    label: "Tất cả công cụ",
+    blurb: "Danh mục đầy đủ: tải theo định dạng, nền tảng và ngôn ngữ trong một trang.",
+  },
+  th: {
+    label: "เครื่องมือทั้งหมด",
+    blurb: "รวมทุกเครื่องมือ แยกตามไฟล์ แพลตฟอร์ม และภาษา ไว้ในหน้าเดียว",
+  },
+  tl: {
+    label: "Lahat ng tool",
+    blurb: "Ang buong listahan: download ayon sa format, platform, at wika sa isang pahina.",
   },
 };
 

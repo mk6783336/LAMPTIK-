@@ -18,8 +18,8 @@ import type { LandingCopy, LocaleCode } from "@/lib/i18n/types";
 import { LOCALE_CODES } from "@/lib/i18n/types";
 import { platformPath } from "@/lib/i18n/platform-landings";
 import { languageLabel } from "@/lib/i18n/language-labels";
-import { platformBlurb } from "@/lib/i18n/platform-blurbs";
-import { PLATFORMS, type Platform } from "@/lib/platforms";
+import { platformBlurb, TOOLS_HUB_CARD } from "@/lib/i18n/platform-blurbs";
+import { PLATFORM_LIST, PLATFORMS, type Platform } from "@/lib/platforms";
 import { siteUrl } from "@/lib/site";
 
 /** Breadcrumb root, written in the page's own language. */
@@ -264,7 +264,11 @@ export function LocalizedLanding({
             <div className="shell">
               <h2 className="balance text-2xl font-semibold tracking-headline">{copy.otherToolsHeading}</h2>
               <div className="mt-6 grid gap-3.5 sm:grid-cols-2">
-                {(["tiktok", "instagram", "facebook", "youtube"] as const).map((id) => (
+                {/* The three other networks, then the /tools hub in place of
+                    this page's own card: a card that links to the page you are
+                    already reading is a dead end, and the hub is the one link
+                    that leads to all fifteen tools. */}
+                {PLATFORM_LIST.filter((id) => id !== platform).map((id) => (
                   <Link key={id} href={toolHref(id)} className="bento-card group flex items-start gap-3">
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center justify-between gap-2 text-base font-semibold tracking-tight">
@@ -277,6 +281,17 @@ export function LocalizedLanding({
                     </span>
                   </Link>
                 ))}
+                <Link href="/tools" className="bento-card group flex items-start gap-3">
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center justify-between gap-2 text-base font-semibold tracking-tight">
+                      {TOOLS_HUB_CARD[copy.code].label}
+                      <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                    </span>
+                    <span className="pretty mt-1.5 block text-sm leading-relaxed text-[var(--text-2)]">
+                      {TOOLS_HUB_CARD[copy.code].blurb}
+                    </span>
+                  </span>
+                </Link>
               </div>
 
               <div className="panel mt-8 flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
