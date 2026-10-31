@@ -16,6 +16,7 @@
  *   sub-tools[].guides[].slug → must be a guide slug
  *   groups[].slugs[]          → must be a sub-tool slug
  *   sub-tools[].slug          → must have an app/(site)/<slug>/page.tsx
+ *   tool-seo links[].href     → must be a route that exists on disk
  *
  * The last one is the invariant the registry comments promise: an entry without
  * a route file would 404 from the sitemap, and a route without an entry would be
@@ -37,6 +38,7 @@ const root = process.cwd();
 const guidesPath = path.join(root, "lib/content/guides.ts");
 const subtoolsPath = path.join(root, "lib/content/sub-tools");
 const groupsPath = path.join(root, "lib/content/sub-tools/groups.ts");
+const toolSeoPath = path.join(root, "lib/content/tool-seo.ts");
 const sitePath = path.join(root, "app/(site)");
 
 const rel = (absolute) => path.relative(root, absolute).split(path.sep).join("/");
@@ -82,7 +84,13 @@ function arrayBodies(source, key) {
       }
     }
 
-    bodies.push({ start: match.index, body: source.slice(match.index + match[0].length, index) });
+    // `bodyStart` lets a caller report the line of a specific literal inside
+    // the array; `start` reports the line of the key itself.
+    bodies.push({
+      start: match.index,
+      bodyStart: match.index + match[0].length,
+      body: source.slice(match.index + match[0].length, index),
+    });
   }
 
   return bodies;
@@ -94,7 +102,14 @@ const literals = (body) => [...body.matchAll(/"([^"]+)"/g)].map((match) => match
 const slugLiterals = (body) => [...body.matchAll(/\bslug:\s*"([^"]+)"/g)].map((match) => match[1]);
 
 const failures = [];
-const counts = { guideToGuide: 0, toolToTool: 0, toolToGuide: 0, groupToTool: 0, routes: 0 };
+const counts = {
+  guideToGuide: 0,
+  toolToTool: 0,
+  toolToGuide: 0,
+  groupToTool: 0,
+  routes: 0,
+  linkTarget: 0,
+};
 
 function fail(file, source, index, message) {
   failures.push({ file, line: index >= 0 ? lineAt(source, index) : null, message });
@@ -204,6 +219,72 @@ for (const { start, body } of arrayBodies(groupsSource, "slugs")) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Platform pages: every content link must point at a route that exists
+// ---------------------------------------------------------------------------
+
+/**
+ * Discovered from the filesystem rather than a hand-kept list, so adding or
+ * retiring a page can never leave this asserting yesterday's sitemap.
+ */
+async function discoverRoutes() {
+  const routes = new Set();
+  const add = (href) => routes.add(href.length > 1 ? href.replace(/\/+$/, "") : "/");
+
+  try {
+    await stat(path.join(sitePath, "page.tsx"));
+    add("/");
+  } catch {
+    // no root page
+  }
+
+  for (const entry of await readdir(sitePath, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const segment = entry.name;
+    // Route groups never appear in a URL, and a dynamic segment's valid values
+    // come from content rather than from the directory name.
+    if (segment.startsWith("(") || segment.startsWith("[")) continue;
+    try {
+      await stat(path.join(sitePath, segment, "page.tsx"));
+      add(`/${segment}`);
+    } catch {
+      // a directory without a page is not a route
+    }
+  }
+
+  try {
+    await stat(path.join(sitePath, "guides/[slug]/page.tsx"));
+    for (const slug of guideSlugs) add(`/guides/${slug}`);
+  } catch {
+    // guides are not dynamic in this build
+  }
+
+  return routes;
+}
+
+const routes = await discoverRoutes();
+const toolSeoSource = await readFile(toolSeoPath, "utf8");
+
+for (const { bodyStart, body } of arrayBodies(toolSeoSource, "links")) {
+  for (const match of body.matchAll(/\bhref:\s*"([^"]+)"/g)) {
+    const href = match[1];
+    counts.linkTarget += 1;
+    // Absolute URLs are somebody else's uptime; only an internal path can be
+    // verified from here without touching the network.
+    if (!href.startsWith("/")) continue;
+
+    const target = href.split(/[?#]/)[0].replace(/\/+$/, "") || "/";
+    if (!routes.has(target)) {
+      fail(
+        rel(toolSeoPath),
+        toolSeoSource,
+        bodyStart + match.index,
+        `a platform page links to "${href}", which matches no route in app/(site)`,
+      );
+    }
+  }
+}
+
 const ungrouped = [...toolSlugs].filter((slug) => !grouped.has(slug));
 
 // ---------------------------------------------------------------------------
@@ -237,7 +318,7 @@ console.log(
   `content links: ${total} reference(s) resolve — ` +
     `${counts.guideToGuide} guide→guide, ${counts.toolToTool} tool→tool, ` +
     `${counts.toolToGuide} tool→guide, ${counts.groupToTool} group→tool, ` +
-    `${counts.routes} tool route(s)`,
+    `${counts.linkTarget} link target(s), ${counts.routes} tool route(s)`,
 );
 
 if (ungrouped.length > 0) process.exit(0);
