@@ -12,7 +12,8 @@ import { siteUrl } from "@/lib/site";
 
 /**
  * Platform landings per language: `/es/instagram-reels-downloader`,
- * `/ar/youtube-downloader`, and the four siblings.
+ * `/ar/youtube-downloader`, `/de/facebook-video-downloader` and the rest —
+ * three networks across nine languages.
  *
  * The locale roots stay TikTok pages. A query that names one network deserves
  * a page about that network, in the language it was searched in — which is the

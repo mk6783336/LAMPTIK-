@@ -1,7 +1,19 @@
 import type { LandingCopy, LocaleCode } from "@/lib/i18n/types";
 
+import { de } from "./platform/de";
+import { hi } from "./platform/hi";
+import { id } from "./platform/id";
+import { pt } from "./platform/pt";
+import { th } from "./platform/th";
+import { tl } from "./platform/tl";
+import { vi } from "./platform/vi";
+
 /**
- * Platform-specific landings in Spanish and Arabic.
+ * Platform-specific landings, one per network per language.
+ *
+ * Spanish and Arabic are written inline below; the other seven live in
+ * `lib/i18n/platform/<code>.ts` so each language stays a navigable file rather
+ * than a 2,000-line table.
  *
  * The locale roots (`/es`, `/ar`) are TikTok pages that mention the other three
  * networks in passing. That is the wrong page to rank for «descargar reels de
@@ -26,8 +38,11 @@ export type LocalizedPlatform = keyof typeof LOCALIZED_PLATFORM_SLUGS;
 
 export const LOCALIZED_PLATFORMS = Object.keys(LOCALIZED_PLATFORM_SLUGS) as LocalizedPlatform[];
 
-/** Only these locales have platform pages; the rest keep their single landing. */
-export const PLATFORM_LOCALES = ["es", "ar"] as const;
+/**
+ * Every locale carries all three platform pages. The locale roots (`/de`,
+ * `/pt`, …) remain TikTok pages; these are their per-network siblings.
+ */
+export const PLATFORM_LOCALES = ["es", "ar", "de", "pt", "id", "hi", "vi", "th", "tl"] as const;
 export type PlatformLocale = (typeof PLATFORM_LOCALES)[number];
 
 export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform, LandingCopy>> = {
@@ -535,6 +550,17 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
       footerNote: "الفيديوهات الخاصة وفيديوهات المجموعات المغلقة مستبعدة بحكم التصميم: لا يوجد ملف عام لتنزيله.",
     },
   },
+
+  // ------------------------------------------- German, Portuguese, Indonesian
+  de,
+  pt,
+  id,
+
+  // ------------------------------------------ Hindi, Vietnamese, Thai, Tagalog
+  hi,
+  vi,
+  th,
+  tl,
 };
 
 /** Locales that carry platform pages at all (every one of them does all three). */
@@ -555,13 +581,25 @@ export function platformPath(
   return hasPlatformLanding(locale) ? `/${locale}/${slug}` : null;
 }
 
-/** The hreflang cluster for one platform: English plus every localized page. */
+/**
+ * The hreflang cluster for one platform: English plus every localized page.
+ *
+ * Keys are the exact `html lang` each target serves — `pt-BR`, not `pt`, for
+ * the Brazilian page — so the cluster never disagrees with the document.
+ */
 export function platformLanguageAlternates(platform: LocalizedPlatform) {
   const slug = LOCALIZED_PLATFORM_SLUGS[platform];
   return {
     en: `/${slug}`,
     es: `/es/${slug}`,
     ar: `/ar/${slug}`,
+    de: `/de/${slug}`,
+    "pt-BR": `/pt/${slug}`,
+    id: `/id/${slug}`,
+    hi: `/hi/${slug}`,
+    vi: `/vi/${slug}`,
+    th: `/th/${slug}`,
+    tl: `/tl/${slug}`,
     "x-default": `/${slug}`,
   } as const;
 }

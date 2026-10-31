@@ -116,8 +116,8 @@ export function LocalizedLanding({
    * The language switcher follows the topic, not just the locale: on an
    * Instagram page "Español" must land on the Spanish Instagram page, never on
    * the Spanish TikTok landing. Only languages that really have this page are
-   * offered, which is why the platform pages list three and the TikTok landing
-   * lists all ten.
+   * offered; every locale now carries all three platform pages, so the two
+   * lists are the same length.
    */
   const languageLinks: { code: string; href: string }[] = [];
   for (const code of ["en", ...LOCALE_CODES] as const) {
