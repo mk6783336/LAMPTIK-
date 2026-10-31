@@ -8,6 +8,7 @@ import {
   PLATFORM_LANDINGS,
   PLATFORM_LOCALES,
   type LocalizedPlatform,
+  type PlatformLocale,
 } from "@/lib/i18n/platform-landings";
 import { PLATFORMS } from "@/lib/platforms";
 
@@ -30,7 +31,7 @@ function anchorText(title: string): string {
   return title.split(" — ")[0]?.trim() || title;
 }
 
-function hrefFor(code: string, platform: LocalizedPlatform): string {
+function hrefFor(code: PlatformLocale, platform: LocalizedPlatform): string {
   return `/${code}/${LOCALIZED_PLATFORM_SLUGS[platform]}`;
 }
 
@@ -45,7 +46,9 @@ function hrefFor(code: string, platform: LocalizedPlatform): string {
  *
  * Each link carries `hrefLang` and `lang` for its target, so a crawler reads the
  * pair (this page is English, that page is German) twice over — once from the
- * `<head>` alternates and once from the anchor itself.
+ * `<head>` alternates and once from the anchor itself. The anchors also take the
+ * target's `dir`: an Arabic row mirrors, so its icon leads from the right and the
+ * sentence starts against it instead of hanging off the left of an LTR row.
  */
 export function PlatformLanguages({ platform }: { platform: LocalizedPlatform }) {
   const english = PLATFORMS[platform];
@@ -75,6 +78,7 @@ export function PlatformLanguages({ platform }: { platform: LocalizedPlatform })
                   href={hrefFor(code, platform)}
                   hrefLang={copy.htmlLang}
                   lang={copy.htmlLang}
+                  dir={copy.dir}
                   className="bento-card group flex w-full items-center justify-between gap-3 py-3.5"
                 >
                   <span className="min-w-0">
@@ -98,6 +102,49 @@ export function PlatformLanguages({ platform }: { platform: LocalizedPlatform })
         </p>
       </div>
     </section>
+  );
+}
+
+/** One language's three network pages, for the /tools hub grid. */
+function HubLanguageCard({ code }: { code: PlatformLocale }) {
+  // `pt` ships as `pt-BR`, so the header uses the same BCP-47 tag its links do
+  // rather than the bare route segment.
+  const cardLang = PLATFORM_LANDINGS[code].instagram.htmlLang;
+
+  return (
+    <div className="bento-card flex flex-col">
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 className="text-base font-semibold tracking-tight" lang={cardLang}>
+          {LANGUAGE_LABELS[code]}
+        </h3>
+        <span className="micro text-xs tabular-nums text-[var(--text-3)]">/{code}</span>
+      </div>
+
+      <ul className="mt-3 space-y-1">
+        {NETWORKS.map((platform) => {
+          const copy = PLATFORM_LANDINGS[code][platform];
+          return (
+            <li key={platform}>
+              <Link
+                href={hrefFor(code, platform)}
+                hrefLang={copy.htmlLang}
+                lang={copy.htmlLang}
+                dir={copy.dir}
+                title={copy.title}
+                className="group flex items-center gap-2 rounded-lg py-1.5 pl-1 pr-1.5 text-sm text-[var(--text-2)] transition-colors duration-200 hover:bg-[var(--field)] hover:text-[var(--text)]"
+              >
+                <PlatformIcon
+                  platform={platform}
+                  className="size-3.5 shrink-0 text-[var(--text-3)]"
+                />
+                <span className="pretty min-w-0 flex-1">{anchorText(copy.title)}</span>
+                <ArrowUpRight className="size-3 shrink-0 text-[var(--text-3)] transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 
@@ -126,38 +173,7 @@ export function HubLanguages() {
 
         <div className="mt-8 grid gap-3.5 md:grid-cols-2 lg:grid-cols-3">
           {PLATFORM_LOCALES.map((code) => (
-            <div key={code} className="bento-card flex flex-col">
-              <div className="flex items-baseline justify-between gap-3">
-                <h3 className="text-base font-semibold tracking-tight">
-                  {LANGUAGE_LABELS[code]}
-                </h3>
-                <span className="micro text-xs tabular-nums text-[var(--text-3)]">/{code}</span>
-              </div>
-
-              <ul className="mt-3 space-y-1">
-                {NETWORKS.map((platform) => {
-                  const copy = PLATFORM_LANDINGS[code][platform];
-                  return (
-                    <li key={platform}>
-                      <Link
-                        href={hrefFor(code, platform)}
-                        hrefLang={copy.htmlLang}
-                        lang={copy.htmlLang}
-                        title={copy.title}
-                        className="group flex items-center gap-2 rounded-lg py-1.5 pl-1 pr-1.5 text-sm text-[var(--text-2)] transition-colors duration-200 hover:bg-[var(--field)] hover:text-[var(--text)]"
-                      >
-                        <PlatformIcon
-                          platform={platform}
-                          className="size-3.5 shrink-0 text-[var(--text-3)]"
-                        />
-                        <span className="pretty min-w-0 flex-1">{anchorText(copy.title)}</span>
-                        <ArrowUpRight className="size-3 shrink-0 text-[var(--text-3)] transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+            <HubLanguageCard key={code} code={code} />
           ))}
         </div>
 
