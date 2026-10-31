@@ -60,7 +60,7 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
       faqPageNode(`${pageUrl}/#faq`, tool.faqs, pageUrl),
       // Mirrors the visible trail in the hero exactly: Home → Tools → this
       // tool. The middle hop is the hub, which is where a reader arriving
-      // from search can find the other fifteen without going back to home.
+      // from search can find the other fourteen without going back to home.
       breadcrumbNode(`${pageUrl}/#breadcrumb`, [
         { name: "Home", url: siteUrl },
         { name: "Tools", url: `${siteUrl}/tools` },

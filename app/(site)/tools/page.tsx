@@ -22,18 +22,18 @@ import { pageAlternates, siteUrl } from "@/lib/site";
 /**
  * /tools — the index for every programmatic sub-tool.
  *
- * Two jobs. For a visitor, it answers "which of these nineteen pages do I
+ * Two jobs. For a visitor, it answers "which of these fifteen pages do I
  * actually want?" by grouping them by task instead of by platform. For a
- * crawler, it turns nineteen leaf pages into one hop from the home page, which
+ * crawler, it turns fifteen leaf pages into one hop from the home page, which
  * is the difference between pages that get discovered and pages that sit in
  * the sitemap waiting.
  *
  * Content comes from `GROUPED_TOOLS`, so a tool added to the sub-tool index
  * appears here — and in the schema's ItemList — without touching this file.
  */
-const TITLE = "All 19 Download Tools — Video, Audio & Photos";
+const TITLE = "All 15 Download Tools — Video, Audio & Photos";
 const DESCRIPTION =
-  "All nineteen LAMP TIK downloaders in one place: YouTube MP4, MP3 and playlists, TikTok photos and Stories, Instagram Reels audio and Facebook HD.";
+  "All fifteen LAMP TIK downloaders in one place: YouTube MP4, MP3 and playlists, TikTok photos and Stories, Instagram Reels audio and Facebook HD.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
@@ -59,7 +59,7 @@ export const metadata: Metadata = {
 export default function ToolsPage() {
   const pageUrl = `${siteUrl}/tools`;
 
-  // One ItemList in group order: the same nineteen links the page renders, so
+  // One ItemList in group order: the same fifteen links the page renders, so
   // the structured data can never advertise a tool the visitor cannot click.
   const jsonLd = {
     "@context": "https://schema.org",
@@ -140,7 +140,7 @@ export default function ToolsPage() {
               </div>
 
               {/* Jump links: four anchors, so the page is navigable without
-                  scrolling through all nineteen cards first. */}
+                  scrolling through all fifteen cards first. */}
               <nav aria-label="Tool categories" className="mt-7 flex flex-wrap gap-2">
                 {GROUPED_TOOLS.map((group) => (
                   <a

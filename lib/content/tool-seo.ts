@@ -230,6 +230,16 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
         answer:
           "Yes. On iPhone, Safari saves to Files (long-press the file to move it into Photos). On Android, it lands in Downloads or Gallery. No app, no shortcut, no extension — just the browser you already have.",
       },
+      {
+        question: "Where does an Instagram Reel download to on iPhone?",
+        answer:
+          "To Files → On My iPhone → Downloads. Safari cannot write into the camera roll on its own, so the second step is Open Files → long-press the MP4 → Share → Save Video. It then plays from Photos like any recorded clip, with the original audio.",
+      },
+      {
+        question: "Why do other Reels downloaders ask me to log in?",
+        answer:
+          "Because they read Instagram through your session, or ask for your cookies to get past rate limits — which hands an unrelated site access to your account. This one requests the public post server-side, so a login is never needed and no session of yours exists to leak.",
+      },
     ],
     comparison: [
       {
@@ -353,6 +363,11 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
         question: "Do I need an account or an app to download Facebook videos?",
         answer:
           "Neither. LAMP TIK works in any modern browser on iPhone, Android, Windows and macOS with no login. Nothing is installed and no Facebook credentials are ever requested.",
+      },
+      {
+        question: "What if the fb.watch link no longer opens?",
+        answer:
+          "fb.watch is a shortener, so the link points at the post rather than at the video itself, and a shortener can expire or stop resolving once the original post is deleted. Open the video in Facebook and share it again for a fresh link — a full /videos/ URL pasted from the address bar works too.",
       },
     ],
     comparison: [

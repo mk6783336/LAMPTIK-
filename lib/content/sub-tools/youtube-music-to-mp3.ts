@@ -5,27 +5,34 @@ import type { SubTool } from "@/lib/content/sub-tool-types";
  * URLs carry the same video ID, so the honest answer is that the song resolves
  * like a watch link — but playlists and albums do not, because there is no
  * single audio stream behind them.
+ *
+ * The friction this page has to remove is not "what is a downloader" but "the
+ * YouTube Music app gave me a share sheet, now what" — so the first step and
+ * the first FAQ both start from the phone app, which is where the query
+ * usually begins.
  */
 export const entry: SubTool = {
   slug: "youtube-music-to-mp3",
   platform: "youtube",
-  title: "YouTube Music to MP3 - Save Songs at Source Quality",
+  title: "YouTube Music to MP3 - Download Songs at Source Quality",
   socialTitle: "YouTube Music to MP3 - One Song, Its Own Audio Track, No Re-encode",
   description:
-    "Paste a music.youtube.com or YouTube song link and save its audio as M4A or MP3. One track at a time, no re-encode from a video, no sign-up.",
+    "Turn a YouTube Music song into an MP3 or M4A: copy the track link from the app, paste it here, and download the audio it was published with. No app, no sign-up.",
   keywords: [
     "youtube music to mp3",
     "youtube music downloader",
+    "how to download songs from youtube music",
     "download youtube music",
     "music.youtube.com mp3",
     "youtube song download mp3",
     "yt music to mp3",
+    "youtube music to mp3 converter",
   ],
-  eyebrow: "YouTube Music to MP3 - songs, not screen recordings",
+  eyebrow: "YouTube Music to MP3 — songs, not screen recordings",
   h1Lead: "YouTube Music.",
   h1Accent: "Songs, at the rate they were published.",
   lede:
-    "A song on YouTube Music is the same video you would open on youtube.com, with the same audio track behind it. Paste the track link and this page writes that track out once, without recording the player or stacking a second compression pass on top.",
+    "Copy the track's link in YouTube Music (••• → Share → Copy link), paste it above, and take the song as M4A — the untouched published audio — or as a real MP3 encode. A song on YouTube Music is the same video you would open on youtube.com, with the same audio track behind it, so nothing is recorded from the player and no second compression pass is stacked on top.",
   chips: ["music.youtube.com links", "M4A or MP3", "No re-encode"],
   facts: [
     ["Accepts", "music.youtube.com"],
@@ -37,15 +44,20 @@ export const entry: SubTool = {
     {
       title: "Copy the song link, not the playlist",
       body:
-        "Open the track in YouTube Music, tap the three dots and choose Share, then Copy link. A URL that contains a playlist parameter still resolves to the song in it; a link that only points at a playlist or an album has no single audio stream and is rejected with that explanation.",
+        "Open the track in YouTube Music, tap the three dots and choose Share, then Copy link. On iPhone the share sheet offers Copy — that is the same URL. A link that contains a playlist parameter still resolves to the song inside it; a link that only points at a playlist or an album has no single audio stream and is rejected with that explanation.",
     },
     {
       title: "Take the track's own audio",
       body:
-        "The resolver reads the audio stream YouTube published for that song and writes it out once. There is no decode from the video and no second lossy generation, so the file sounds like the stream the app plays rather than a copy of a copy.",
+        "The resolver reads the audio stream YouTube published for that song and writes it out once. Choose M4A to keep the original AAC track bit-for-bit, or MP3 if a player in your chain cannot read AAC — that one is a genuine encode, so it is the only path where a second lossy pass happens, and the panel says which you received.",
     },
   ],
   faqs: [
+    {
+      question: "How do I download a song from YouTube Music?",
+      answer:
+        "Open the song, tap ••• → Share → Copy link, then paste that link on this page and choose M4A or MP3. The audio YouTube published for that track is written out once — it is not a recording of the player, and it does not need YouTube Music or a subscription installed.",
+    },
     {
       question: "Do music.youtube.com links work?",
       answer:
@@ -59,7 +71,7 @@ export const entry: SubTool = {
     {
       question: "Why does the MP3 not say 320 kbps?",
       answer:
-        "Because the source is usually 128 to 256 kbps AAC, and the tool reports what it actually produced. Re-encoding that to 320 kbps would make the file bigger and slightly worse, not better — there is no hidden detail to recover.",
+        "Because the source is usually 128 to 256 kbps AAC, and the tool reports what it actually produced. Re-encoding that to 320 kbps would make the file bigger and slightly worse, not better — there is no hidden detail to recover. If you want the best copy available, take the M4A instead: it is the published track with nothing added.",
     },
     {
       question: "Does it work for songs that need a subscription?",
@@ -69,14 +81,20 @@ export const entry: SubTool = {
     {
       question: "Do I need YouTube Music installed?",
       answer:
-        "No. The link is all that matters, and the download runs in the browser on any phone or computer.",
+        "No. The link is all that matters, and the download runs in the browser on any phone or computer. If you copied the link from the app, paste it into your normal browser — the app will not open the download itself.",
+    },
+    {
+      question: "Is the downloaded file tagged with the artist and title?",
+      answer:
+        "The file is named after the video's title, which for music uploads is usually \"Artist - Song\", and it carries the source's own metadata where YouTube provides it. Explicit ID3 editing is not performed, so expect the title line rather than a fully populated library entry.",
     },
   ],
   appName: "LAMP TIK YouTube Music to MP3 Converter",
   features: [
     "Accepts music.youtube.com and youtube.com song links",
+    "M4A keeps the published AAC track untouched",
+    "MP3 as a real encode for players without AAC support",
     "Keeps the published audio rate, no fake 320 kbps",
-    "M4A source track or MP3 encode",
     "No app, account or extension required",
     "Free and unlimited",
   ],

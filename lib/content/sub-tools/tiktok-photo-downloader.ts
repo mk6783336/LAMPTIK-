@@ -4,29 +4,35 @@ import type { SubTool } from "@/lib/content/sub-tool-types";
  * Photo-mode intent. A TikTok slideshow is not a video: it has no playable
  * stream, which is why the video resolver deliberately rejects it. The copy
  * here explains that mechanic instead of pretending the video flow covers it.
+ *
+ * The query is usually phrased as a how-to — "how do I save a TikTok
+ * slideshow" — so both the H1 and the first FAQ answer the procedure, and the
+ * WebP question (the one that surprises people after the save) is answered
+ * before they hit it.
  */
 export const entry: SubTool = {
   slug: "tiktok-photo-downloader",
   platform: "tiktok",
   toolKind: "photo",
-  title: "TikTok Photo & Slideshow Downloader - Every Slide",
+  title: "TikTok Photo Downloader - Save Every Slideshow Image",
   socialTitle:
     "TikTok Photo Downloader - Save Every Slide of a Slideshow in Original Quality",
   description:
-    "Save every photo in a TikTok slideshow at the resolution TikTok serves. Paste the post link, tap a slide, get a clean image. No app, login or watermark.",
+    "Download every photo in a TikTok slideshow at the resolution TikTok serves. Paste the post link, tap a slide, get a clean JPG or WebP. No app, login or watermark.",
   keywords: [
-    "TikTok photo downloader",
-    "TikTok slideshow downloader",
-    "download TikTok slideshow images",
-    "TikTok photo mode download",
-    "save TikTok carousel photos",
-    "TikTok images without watermark",
+    "tiktok photo downloader",
+    "tiktok slideshow downloader",
+    "how to save tiktok photos",
+    "download tiktok slideshow images",
+    "tiktok photo mode download",
+    "save tiktok carousel photos",
+    "tiktok images without watermark",
   ],
-  eyebrow: "TikTok photo mode - every slide, one at a time",
+  eyebrow: "TikTok photo mode — every slide, one at a time",
   h1Lead: "TikTok slideshows.",
   h1Accent: "Every slide, saved.",
   lede:
-    "A photo post is not a video with the sound turned off: TikTok publishes an ordered set of images and no MP4 at all, which is exactly why video downloaders refuse these links. This page reads that image set and gives every slide its own clean file - no screenshot, no crop, no recompression.",
+    "Paste the photo post's link, then tap each slide to save it at the resolution TikTok serves — no screenshot, no crop, no recompression. A photo post is not a video with the sound turned off: TikTok publishes an ordered set of images and no MP4 at all, which is exactly why the video downloader refuses these links.",
   chips: ["No watermark", "Original image format", "Up to 35 slides"],
   facts: [
     ["Source", "Photo-mode post"],
@@ -47,6 +53,11 @@ export const entry: SubTool = {
     },
   ],
   faqs: [
+    {
+      question: "How do I save a TikTok slideshow to my phone?",
+      answer:
+        "Tap Share → Copy link on the post, paste it above, then tap each slide in the grid. Every tap saves that image to your usual downloads folder — Files on iPhone, Downloads or Gallery on Android. There is no ZIP and no batch button, because each slide is written at its own original resolution.",
+    },
     {
       question: "Why does the normal TikTok downloader reject this link?",
       answer:

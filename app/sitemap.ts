@@ -45,7 +45,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ];
 
   /**
-   * The tool hub. One hop from the home page, one hop to each of the nineteen
+   * The tool hub. One hop from the home page, one hop to each of the fifteen
    * leaf pages below — it is the crawl path that keeps them from being found
    * only through the sitemap.
    *

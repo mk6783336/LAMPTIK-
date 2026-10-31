@@ -3,7 +3,7 @@ import type { SubTool } from "@/lib/content/sub-tool-types";
 import { SUB_TOOL_MAP } from "./index";
 
 /**
- * The nineteen sub-tools, arranged by the task a visitor arrives with.
+ * The fifteen sub-tools, arranged by the task a visitor arrives with.
  *
  * Alphabetical or platform-ordered lists make sense to the person who built
  * the site; a visitor searching "youtube mp3" does not care that Story
@@ -34,8 +34,6 @@ export const TOOL_GROUPS: readonly ToolGroup[] = [
       "youtube-to-mp4-1080p",
       "youtube-shorts-downloader",
       "facebook-reels-downloader",
-      "facebook-video-download-without-app",
-      "fb-watch-downloader",
     ],
   },
   {
@@ -74,14 +72,12 @@ export const TOOL_GROUPS: readonly ToolGroup[] = [
   },
   {
     id: "access",
-    title: "iPhone, short links and login walls",
+    title: "iPhone and short links",
     intent:
-      "The three things that actually block a download: the device you are on, the shape of the URL, and a prompt asking you to sign in.",
+      "The two things that actually block a download: the device you are on, and the shape of the URL. Login walls and \"without an app\" variants belong on the platform pages themselves.",
     slugs: [
       "youtube-video-download-iphone",
       "tiktok-video-download-iphone",
-      "instagram-reels-download-iphone",
-      "instagram-reels-download-without-login",
       "vt-tiktok-com-downloader",
     ],
   },

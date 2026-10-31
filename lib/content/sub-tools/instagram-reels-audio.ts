@@ -89,9 +89,9 @@ export const entry: SubTool = {
     "Clear, offline route from the saved MP4 to MP3",
   ],
   related: [
-    "instagram-reels-download-without-login",
-    "instagram-reels-download-iphone",
     "instagram-story-downloader",
+    "tiktok-mp3-downloader",
+    "youtube-music-to-mp3",
   ],
   guides: [{ slug: "how-to-download-instagram-reels-in-hd" }],
 };

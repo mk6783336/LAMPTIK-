@@ -56,6 +56,31 @@ const nextConfig: NextConfig = {
         destination: "/guides/repurpose-tiktok-videos-for-youtube-shorts-instagram-reels",
         permanent: true,
       },
+      // Four sub-tool pages restated a platform page with a modifier attached.
+      // At DR 0 every one of those URLs split the internal links and the crawl
+      // budget of the page it duplicated, and none of them could outrank it.
+      // Each question worth keeping moved onto the survivor, so these are 301s
+      // rather than 404s: the links still land somewhere that answers.
+      {
+        source: "/instagram-reels-download-iphone",
+        destination: "/instagram-reels-downloader",
+        permanent: true,
+      },
+      {
+        source: "/instagram-reels-download-without-login",
+        destination: "/instagram-reels-downloader",
+        permanent: true,
+      },
+      {
+        source: "/facebook-video-download-without-app",
+        destination: "/facebook-video-downloader",
+        permanent: true,
+      },
+      {
+        source: "/fb-watch-downloader",
+        destination: "/facebook-video-downloader",
+        permanent: true,
+      },
     ];
   },
   // Security headers + cache policy

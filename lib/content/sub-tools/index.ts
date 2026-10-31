@@ -1,11 +1,7 @@
 import type { SubTool } from "@/lib/content/sub-tool-types";
 
 import { entry as facebookReels } from "./facebook-reels-downloader";
-import { entry as facebookVideoNoApp } from "./facebook-video-download-without-app";
-import { entry as fbWatch } from "./fb-watch-downloader";
 import { entry as instagramReelsAudio } from "./instagram-reels-audio";
-import { entry as instagramReelsIphone } from "./instagram-reels-download-iphone";
-import { entry as instagramReelsNoLogin } from "./instagram-reels-download-without-login";
 import { entry as instagramStory } from "./instagram-story-downloader";
 import { entry as tiktokMp3 } from "./tiktok-mp3-downloader";
 import { entry as tiktokPhoto } from "./tiktok-photo-downloader";
@@ -28,9 +24,16 @@ import { entry as youtubeVideoIphone } from "./youtube-video-download-iphone";
  * shape, or a login concern — and each one links back to the related tools
  * and to the guides that explain its mechanics.
  *
- * This array is the single source for the nineteen routes, the sitemap entries
+ * This array is the single source for the fifteen routes, the sitemap entries
  * and the cross-links — a page that exists but is not listed here would be an
  * orphan, and an entry here without a route file would 404 in the sitemap.
+ *
+ * Four entries used to sit here that were the same topic as a platform page
+ * with a modifier bolted on — "Instagram Reels on iPhone", "Reels without
+ * login", "Facebook without an app", "fb.watch". Each split the internal links
+ * and the crawl budget of the page it duplicated, so they were retired in
+ * favour of the platform pages, with the questions worth keeping moved onto
+ * them. See the redirects in next.config.ts.
  */
 export const SUB_TOOLS: readonly SubTool[] = [
   tiktokMp3,
@@ -45,10 +48,6 @@ export const SUB_TOOLS: readonly SubTool[] = [
   youtubeVideoIphone,
   tiktokVideoIphone,
   vtTiktok,
-  instagramReelsNoLogin,
-  instagramReelsIphone,
-  facebookVideoNoApp,
-  fbWatch,
   // Batch three: two new surfaces (photo mode, playlist listing) and the
   // Reels-audio answer. The photo and playlist pages mount dedicated panels;
   // their `toolKind` keeps the video downloader out of an input shape it

@@ -687,9 +687,9 @@ export const GUIDES: Guide[] = [
       },
     ],
     related: [
-      "instagram-reels-download-without-login",
-      "instagram-reels-audio",
-      "instagram-story-downloader",
+      "repurpose-tiktok-videos-for-youtube-shorts-instagram-reels",
+      "is-downloading-tiktok-videos-legal",
+      "why-tiktok-video-quality-drops-after-upload",
     ],
   },
   {
