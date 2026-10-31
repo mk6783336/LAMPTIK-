@@ -14,6 +14,11 @@ name: Index Check
 # sitemap, robots and verification status; the index count just stays
 # unmeasurable, because no public endpoint will answer that question.
 #
+# Google's half of the same question is measured by scripts/gsc-check.mjs, gated
+# on the optional GSC_SERVICE_ACCOUNT_JSON secret: per-URL indexing verdicts and
+# the last 28 days of clicks land in the same Summary tab as the Bing numbers.
+# See docs/google-search-console-setup.md.
+#
 # The report lands in the run's Summary tab. Scheduled workflows are disabled by
 # GitHub after 60 days without repository activity — if this goes quiet for two
 # months, re-enable it from the Actions tab.
@@ -54,6 +59,7 @@ jobs:
           path: |
             .index-check-state.json
             .bing-submit-state.json
+            .gsc-check-state.json
           key: index-check-state-${{ github.run_id }}
           restore-keys: |
             index-check-state-
@@ -69,6 +75,26 @@ jobs:
           # Bing Webmaster Tools → Settings → API access.
           BING_WEBMASTER_API_KEY: ${{ secrets.BING_WEBMASTER_API_KEY }}
         run: node scripts/index-check.mjs
+
+      # Google's side of the same question, appended to the same Summary tab:
+      # per-URL indexing verdicts from the URL Inspection API plus clicks and
+      # impressions from Search Analytics. Bing tells us what Bing knows; this
+      # tells us what Google knows, and the clicks are the number that pays.
+      #
+      # Optional. Without GSC_SERVICE_ACCOUNT_JSON the step prints that it is
+      # unconfigured and exits 0 — a missing optional secret must not fail a
+      # scheduled job. The service account's client email has to be added as a
+      # user on the Search Console property; see
+      # docs/google-search-console-setup.md.
+      - name: Measure Google Search Console
+        env:
+          INDEX_CHECK_ORIGIN: https://www.lamptik.online
+          GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+          # Optional repository variable, when the property is a URL-prefix
+          # property rather than the usual sc-domain: one. Left empty, the
+          # script picks whichever property the service account can see.
+          GSC_PROPERTY: ${{ vars.GSC_PROPERTY }}
+        run: node scripts/gsc-check.mjs --skip-if-unconfigured
 
       # Pushes only URLs Bing has never been told about. A blanket re-submit of
       # all 51 every week would spend the 200/month quota in four weeks and
