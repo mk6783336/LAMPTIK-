@@ -599,7 +599,7 @@ export const GUIDES: Guide[] = [
     ],
     related: [
       "download-tiktok-video-without-watermark",
-      "fix-tiktok-video-not-available-errors",
+      "download-tiktok-without-logo-iphone-android",
       "is-downloading-tiktok-videos-legal",
     ],
   },
