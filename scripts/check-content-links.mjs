@@ -17,6 +17,7 @@
  *   groups[].slugs[]          → must be a sub-tool slug
  *   sub-tools[].slug          → must have an app/(site)/<slug>/page.tsx
  *   tool-seo links[].href     → must be a route that exists on disk
+ *   app/sitemap.ts            → must agree with the routes on disk, both ways
  *
  * The last one is the invariant the registry comments promise: an entry without
  * a route file would 404 from the sitemap, and a route without an entry would be
@@ -39,6 +40,7 @@ const guidesPath = path.join(root, "lib/content/guides.ts");
 const subtoolsPath = path.join(root, "lib/content/sub-tools");
 const groupsPath = path.join(root, "lib/content/sub-tools/groups.ts");
 const toolSeoPath = path.join(root, "lib/content/tool-seo.ts");
+const sitemapPath = path.join(root, "app/sitemap.ts");
 const sitePath = path.join(root, "app/(site)");
 
 const rel = (absolute) => path.relative(root, absolute).split(path.sep).join("/");
@@ -109,6 +111,7 @@ const counts = {
   groupToTool: 0,
   routes: 0,
   linkTarget: 0,
+  sitemap: 0,
 };
 
 function fail(file, source, index, message) {
@@ -285,6 +288,87 @@ for (const { bodyStart, body } of arrayBodies(toolSeoSource, "links")) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Sitemap parity: the sitemap and the routes on disk must agree
+// ---------------------------------------------------------------------------
+
+/**
+ * The sitemap is generated code, not flat data, so its URLs are read from the
+ * two shapes it uses: a literal path after `${siteUrl}`, and the arrays it
+ * spreads. Anything built from a variable (the `/${code}` locale landing) is
+ * skipped here — those live under app/(i18n), outside the tree compared below.
+ *
+ * The generated halves are only credited when the sitemap actually spreads
+ * them, so deleting `...subTools` from the return value is caught rather than
+ * silently assumed to be there.
+ */
+const sitemapSource = await readFile(sitemapPath, "utf8");
+const spreads = (name) => new RegExp(`\\.\\.\\.\\s*${name}\\b`).test(sitemapSource);
+
+const declared = new Set([""]);
+for (const match of sitemapSource.matchAll(/url:\s*`\$\{siteUrl\}([^`]*)`/g)) {
+  const path_ = match[1];
+  if (path_.includes("${")) continue;
+  declared.add(path_.replace(/\/+$/, ""));
+}
+if (/url:\s*siteUrl\b/.test(sitemapSource)) declared.add("");
+if (spreads("subTools")) for (const slug of toolSlugs) declared.add(`/${slug}`);
+if (spreads("guides") && /GUIDE_LIST\.map/.test(sitemapSource)) {
+  for (const slug of guideSlugs) declared.add(`/guides/${slug}`);
+}
+
+/**
+ * Locale landings are emitted from a variable (`/${code}`), so they never appear
+ * as literals. They are counted from LOCALE_CODES and checked against the one
+ * dynamic route that serves all of them; without this the sitemap would look
+ * nine URLs shorter than it is.
+ */
+const localeCodes = [
+  ...((await readFile(path.join(root, "lib/i18n/types.ts"), "utf8")).match(
+    /export const LOCALE_CODES[^=]*=\s*\[([\s\S]*?)\]/,
+  )?.[1] ?? "").matchAll(/"([^"]+)"/g),
+].map((match) => match[1]);
+const declaresLocales = /\$\{siteUrl\}\/\$\{code\}/.test(sitemapSource);
+
+const declaredRoutes = new Set([...declared].map((path_) => (path_ === "" ? "/" : path_)));
+
+for (const path_ of declaredRoutes) {
+  counts.sitemap += 1;
+  if (!routes.has(path_)) {
+    fail(
+      rel(sitemapPath),
+      sitemapSource,
+      sitemapSource.indexOf(path_ === "/" ? "url: siteUrl" : path_),
+      `the sitemap lists "${path_}", which no route serves — crawlers get a 404`,
+    );
+  }
+}
+
+for (const path_ of routes) {
+  if (!declaredRoutes.has(path_)) {
+    fail(
+      rel(sitemapPath),
+      sitemapSource,
+      sitemapSource.lastIndexOf("return ["),
+      `the route "${path_}" exists but is missing from the sitemap`,
+    );
+  }
+}
+
+if (declaresLocales) {
+  counts.sitemap += localeCodes.length;
+  try {
+    await stat(path.join(root, "app/(i18n)/[lang]/page.tsx"));
+  } catch {
+    fail(
+      rel(sitemapPath),
+      sitemapSource,
+      sitemapSource.indexOf("${code}"),
+      `the sitemap lists ${localeCodes.length} locale landing(s) but app/(i18n)/[lang]/page.tsx does not exist`,
+    );
+  }
+}
+
 const ungrouped = [...toolSlugs].filter((slug) => !grouped.has(slug));
 
 // ---------------------------------------------------------------------------
@@ -318,7 +402,8 @@ console.log(
   `content links: ${total} reference(s) resolve — ` +
     `${counts.guideToGuide} guide→guide, ${counts.toolToTool} tool→tool, ` +
     `${counts.toolToGuide} tool→guide, ${counts.groupToTool} group→tool, ` +
-    `${counts.linkTarget} link target(s), ${counts.routes} tool route(s)`,
+    `${counts.linkTarget} link target(s), ${counts.routes} tool route(s), ` +
+    `${counts.sitemap} sitemap URL(s)`,
 );
 
 if (ungrouped.length > 0) process.exit(0);
