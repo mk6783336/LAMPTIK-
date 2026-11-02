@@ -225,7 +225,15 @@ export function AdSlot({
     const node = hostRef.current;
     if (!node) return;
 
-    if (eager && typeof window !== "undefined") {
+    // No layout box means a display:none ancestor: the desktop rails under xl
+    // and the platform hero column under lg. Such a node reports a rect of
+    // 0,0,0,0, which the pre-warm test below reads as "at the top of the
+    // viewport" — so those hidden slots used to request a creative on phones
+    // and bid against the same zone as the slots people can see. Only the
+    // observer may reveal them, and only once they actually lay out.
+    const laidOut = node.getClientRects().length > 0;
+
+    if (eager && laidOut && typeof window !== "undefined") {
       return scheduleReveal(key, reveal);
     }
 
@@ -234,7 +242,7 @@ export function AdSlot({
       cancel = scheduleReveal(key, reveal);
     };
 
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && laidOut) {
       const rect = node.getBoundingClientRect();
       if (rect.top <= window.innerHeight + 900) {
         start();

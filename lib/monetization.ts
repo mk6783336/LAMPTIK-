@@ -169,6 +169,21 @@ interface AdSlotZone {
   format: AdFormat;
   /** The placement's own zone key, when one is configured. */
   zone?: string;
+  /**
+   * The 300×250 zone to use when the mobile swap turns this `leaderboard`
+   * into a rectangle.
+   *
+   * Without it the slot falls back to the shared rectangle key — so on a phone
+   * every leaderboard placement, the real rectangles and the modal all bid
+   * against one zone for one impression. With it, each phone-visible
+   * placement has its own auction.
+   *
+   * Only placements that actually lay out below 640px need one: the desktop
+   * rails (`xl`), the platform hero column (`lg`) and its banner are
+   * display:none there, and AdSlot does not request a creative for a slot with
+   * no layout box.
+   */
+  mobileZone?: string;
 }
 
 /**
@@ -184,6 +199,7 @@ const AD_SLOT_ZONES: Record<AdSlotId, AdSlotZone> = {
   "tool-bar": {
     format: "leaderboard",
     zone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_TOOL_BAR?.trim() || undefined,
+    mobileZone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_TOOL_BAR_MOBILE?.trim() || undefined,
   },
   hero: {
     format: "rectangle",
@@ -196,6 +212,7 @@ const AD_SLOT_ZONES: Record<AdSlotId, AdSlotZone> = {
   "under-tool": {
     format: "leaderboard",
     zone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_UNDER_TOOL?.trim() || undefined,
+    mobileZone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_UNDER_TOOL_MOBILE?.trim() || undefined,
   },
   "result-top": {
     format: "rectangle",
@@ -224,6 +241,7 @@ const AD_SLOT_ZONES: Record<AdSlotId, AdSlotZone> = {
   article: {
     format: "leaderboard",
     zone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_ARTICLE?.trim() || undefined,
+    mobileZone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_ARTICLE_MOBILE?.trim() || undefined,
   },
 };
 
@@ -235,14 +253,20 @@ export function adSlotFormat(slot: AdSlotId): AdFormat {
 /**
  * Resolve the zone key for a placement at the size it is actually rendering.
  *
- * A placement's own key is honoured only at its native size: the mobile swap
- * turns a `leaderboard` into a 300×250, and a 728×90 zone asked for 300×250
- * cannot fill. Everything else falls back to the shared per-format key.
+ * A placement's own key is honoured at its native size. The one way it renders
+ * at another size is the mobile leaderboard→rectangle swap, and a 728×90 zone
+ * asked for 300×250 cannot fill — so that size uses the placement's own
+ * `mobileZone` when configured, and the shared rectangle key only as a last
+ * resort.
  */
 export function adZoneKey(slot: AdSlotId | undefined, format: AdFormat): string {
   if (slot) {
     const entry = AD_SLOT_ZONES[slot];
-    if (entry.format === format && entry.zone) return entry.zone;
+    if (entry.format === format) {
+      if (entry.zone) return entry.zone;
+    } else if (format === "rectangle" && entry.mobileZone) {
+      return entry.mobileZone;
+    }
   }
   return format === "rectangle" ? adsterraRectangleKey : adsterraBannerKey;
 }

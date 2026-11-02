@@ -700,22 +700,6 @@ export function ResultPanel({
             </button>
           ) : null}
 
-          {/* SnapTik sandwich — BOTTOM slice, immediately under the audio
-              buttons (before the reset), so the three save actions sit
-              between two creatives. Reserved for the same reason as the top
-              slice: the download buttons above it must never be pushed. */}
-          <div className="mt-1">
-            <AdSlot
-              slot="result-bottom"
-              format="rectangle"
-              eager
-              alwaysReserve
-              refreshKey={refreshKey}
-              label="Sponsored — keeps LAMP TIK free"
-              sponsoredLabel={t.sponsored}
-            />
-          </div>
-
           {/* Optional high-CPM partner link, env-gated (`NEXT_PUBLIC_SMARTLINK_URL`).
               Rendered as a clearly sponsored anchor, not as a second download
               button: it opens someone else's offer in a new tab, and labelling
@@ -744,6 +728,23 @@ export function ResultPanel({
               <ArrowUpRight aria-hidden="true" className="size-4 shrink-0 text-[var(--text-3)]" />
             </a>
           ) : null}
+
+          {/* SnapTik sandwich — BOTTOM slice. Deliberately AFTER the partner
+              link: the mirror CTA is a continuation of the save options, and
+              a 300×250 between the buttons and that link pushed it below the
+              fold of the card on a phone. Reserved exactly like the top
+              slice, so a late creative never moves the buttons above it. */}
+          <div className="mt-1">
+            <AdSlot
+              slot="result-bottom"
+              format="rectangle"
+              eager
+              alwaysReserve
+              refreshKey={refreshKey}
+              label="Sponsored — keeps LAMP TIK free"
+              sponsoredLabel={t.sponsored}
+            />
+          </div>
 
           {/* Reset — instantly clears and re-focuses the link input. */}
           <button
