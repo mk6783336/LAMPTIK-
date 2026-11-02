@@ -20,33 +20,73 @@ import { LANDING_LANGUAGES, siteConfig, siteUrl } from "@/lib/site";
  * pages we want ranked, guides are the supporting cluster, legal pages are
  * noise to a crawler and are declared as such.
  */
+/**
+ * Absolute hrefs for an hreflang cluster.
+ *
+ * Sitemap `<xhtml:link href>` must be a full URL — Google rejects a relative
+ * one, and each rejected annotation counts as a sitemap error. The head
+ * metadata can use relative paths because Next resolves them against
+ * `metadataBase`; `sitemap.ts` writes the XML itself, so nothing does that for
+ * us here.
+ */
+function absoluteLanguages(languages: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(languages).map(([code, path]) => [
+      code,
+      path === "/" ? siteUrl : `${siteUrl}${path}`,
+    ]),
+  );
+}
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const updated = new Date(siteConfig.lastModified);
 
+  /**
+   * hreflang clusters per platform page, keyed by slug. Used on BOTH the
+   * English tool page and its localized siblings: an annotation is only valid
+   * when it is reciprocal, so listing the translations on one side only is the
+   * same as declaring none, with extra errors.
+   */
+  const platformLanguages: Record<string, Record<string, string>> = Object.fromEntries(
+    LOCALIZED_PLATFORMS.map((platform) => [
+      LOCALIZED_PLATFORM_SLUGS[platform],
+      absoluteLanguages(platformLanguageAlternates(platform)),
+    ]),
+  );
+
+  const landingLanguages = absoluteLanguages(LANDING_LANGUAGES);
+
   const tools: MetadataRoute.Sitemap = [
     {
+      // The English TikTok landing is also the `en` and `x-default` member of
+      // the locale cluster, so it has to declare that cluster; without it the
+      // eleven locale roots pointed at a page that never pointed back.
       url: siteUrl,
       lastModified: updated,
       changeFrequency: "daily",
       priority: 1,
+      alternates: { languages: landingLanguages },
     },
     {
       url: `${siteUrl}/instagram-reels-downloader`,
       lastModified: updated,
       changeFrequency: "daily",
       priority: 1,
+      alternates: { languages: platformLanguages["instagram-reels-downloader"] },
     },
     {
       url: `${siteUrl}/facebook-video-downloader`,
       lastModified: updated,
       changeFrequency: "daily",
       priority: 1,
+      alternates: { languages: platformLanguages["facebook-video-downloader"] },
     },
     {
       url: `${siteUrl}/youtube-downloader`,
       lastModified: updated,
       changeFrequency: "daily",
       priority: 1,
+      alternates: { languages: platformLanguages["youtube-downloader"] },
     },
   ];
 
@@ -90,13 +130,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
    * page disagreed about the language of /pt — exactly the mismatch the
    * Localization audit reports.
    */
-  const landingLanguages = Object.fromEntries(
-    Object.entries(LANDING_LANGUAGES).map(([code, path]) => [
-      code,
-      path === "/" ? siteUrl : `${siteUrl}${path}`,
-    ]),
-  );
-
   const languages: MetadataRoute.Sitemap = LOCALE_CODES.map((code) => ({
     url: `${siteUrl}/${code}`,
     lastModified: updated,
@@ -183,7 +216,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: updated,
       changeFrequency: "weekly" as const,
       priority: 0.8,
-      alternates: { languages: platformLanguageAlternates(platform) },
+      alternates: { languages: platformLanguages[LOCALIZED_PLATFORM_SLUGS[platform]] },
     })),
   );
 
