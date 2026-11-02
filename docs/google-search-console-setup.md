@@ -70,6 +70,10 @@ Repository → **Settings → Secrets and variables → Actions → New reposito
 |---|---|
 | `GSC_SERVICE_ACCOUNT_JSON` | The **entire** JSON key file. Base64 also works. |
 
+The daily ad-fill report reads the same service account, so a repo that stores
+its key as `GA4_SERVICE_ACCOUNT_JSON` needs no second copy: `gsc-check.mjs`
+falls back to that name, and `index-check.yml` passes both.
+
 Optional repository **variable** (Settings → Secrets and variables → Actions →
 **Variables**), only needed when the property is a URL-prefix property:
 
