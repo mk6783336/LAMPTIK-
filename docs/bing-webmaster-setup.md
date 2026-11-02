@@ -22,6 +22,56 @@ Measured state on 31 Oct 2026, before verification:
 | `site:lamptik.online` on Bing | **not measurable** — see below |
 | `site:lamptik.online` on DuckDuckGo | **not measurable** — see below |
 
+### Resolved on 2 Nov 2026 — the host was wrong
+
+The measurement above hid the actual blocker, because every signal it checks
+was already green. The problem was **which host owned the property**:
+
+| Fact | Before | Now |
+|---|---|---|
+| Property in Bing | `https://lamptik.online/` (apex, verified) | `https://www.lamptik.online/` (verified) |
+| Apex behaviour | `308 → https://www.lamptik.online/` | unchanged |
+| Sitemap attached to the host that serves | **none** (`GetFeeds` → `[]`) | 76 URLs, `Status: Pending` |
+| Verification meta / XML on www | `404` / absent | `200` both |
+
+A verified apex property that redirects is not the site Bing indexes. Every
+sitemap URL, canonical and hreflang pointed at `www`, so all 76 URLs sat outside
+the property that owned the crawl budget: Bing reported 50 URLs *discovered but
+never crawled* and zero indexed, week after week, while the checks said
+"crawlable, sitemap valid, IndexNow accepted".
+
+`AddSite` for the www host returns the verification token in
+`AuthenticationCode`, and `VerifySite` completes verification once the token is
+served — no UI click needed:
+
+```bash
+K=…  # Webmaster API key
+
+curl -s -X POST "https://ssl.bing.com/webmaster/api.svc/json/AddSite?apikey=$K" \
+  -H 'Content-Type: application/json' \
+  -d '{"siteUrl":"https://www.lamptik.online/"}'
+# → GetUserSites now lists it with IsVerified:false and its AuthenticationCode
+
+curl -s -X POST "https://ssl.bing.com/webmaster/api.svc/json/VerifySite?apikey=$K" \
+  -H 'Content-Type: application/json' \
+  -d '{"siteUrl":"https://www.lamptik.online/"}'
+# → {"d":true}, and IsVerified flips to true
+
+curl -s -X POST "https://ssl.bing.com/webmaster/api.svc/json/SubmitFeed?apikey=$K" \
+  -H 'Content-Type: application/json' \
+  -d '{"siteUrl":"https://www.lamptik.online/","feedUrl":"https://www.lamptik.online/sitemap.xml"}'
+```
+
+`VerifySite` is undocumented in the JSON API reference but answers `200` with
+`{"d":true}`; `VerifyUserSite` and `Verify` are both `404`. The token itself is
+public — it is served in every page's `<head>` — so it ships as the default in
+`lib/verification.ts` rather than depending on a Vercel variable being present
+in all three environments.
+
+After verification the submission queue was flushed once: 76 URLs via
+`SubmitUrlBatch` (quota 98/day → 22 left that day) and 76 more via
+`node scripts/indexnow.mjs --all`. Bing's own crawl is the remaining wait.
+
 ### Why the index count is unknown, not zero
 
 An earlier version of this document reported "0 of 51 indexed" from a `site:`
@@ -73,21 +123,23 @@ Skip to [After verification](#after-verification) once the property appears.
    `https://www.lamptik.online` → choose **HTML meta tag**.
 2. Copy the `content` value — it looks like
    `<meta name="msvalidate.01" content="A1B2C3D4E5F6..." />`.
-3. Set it in Vercel → Project `lamp-tik` → Settings → Environment Variables, for
-   **Production, Preview and Development**:
+3. The token for `www` is already the default in `lib/verification.ts`
+   (`BING_WWW_VERIFICATION_TOKEN`), so nothing has to be configured. An
+   environment variable still wins, which is what a re-issued token needs:
 
    ```
    NEXT_PUBLIC_BING_SITE_VERIFICATION=A1B2C3D4E5F6...
    ```
 
-4. Redeploy, then confirm the tag is in the served HTML:
+4. Confirm the tag is in the served HTML:
 
    ```bash
    curl -s https://www.lamptik.online/ | grep -o 'msvalidate\.01[^>]*'
    ```
 
-5. Click **Verify** in Bing. The value is unique to the account and the site, so
-   rotating it in Bing requires updating the variable and redeploying.
+5. Verify with the API (`VerifySite`, above) or the **Verify** button. The value
+   is unique to the account and the site, so a rotated token means updating the
+   constant and redeploying.
 
 ## Method 3 — XML file
 
