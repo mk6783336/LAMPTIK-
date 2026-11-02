@@ -131,3 +131,118 @@ export const AD_RESERVED: Record<AdFormat, { width: number; height: number; minP
   leaderboard: { width: 728, height: 90, minPx: 90 },
   rectangle: { width: 300, height: 250, minPx: 250 },
 };
+
+/**
+ * Every placement that can own its own Adsterra zone.
+ *
+ * One zone is one auction. Five 300×250 slots that all resolve to the same
+ * key are five bids on a single impression: the network fills one, blanks the
+ * rest, and reads the repeats as duplicate traffic — which is exactly the
+ * "pending" state the fill observer kept timing out on. A placement with its
+ * own zone auctions in parallel instead of queueing behind the others.
+ *
+ * Keys are optional. An unset placement falls back to the shared per-format
+ * key (the pre-slot behaviour), and AdSlot's per-key stagger still keeps the
+ * shared ones out of the same tick, so the site works with one zone or with
+ * eleven.
+ */
+export type AdSlotId =
+  | "loader" // resolve console — in flow while the CDN link is prepared
+  | "tool-bar" // between the URL field and the result zone
+  | "hero" // platform hero column, 300×250 beside the tool
+  | "hero-bar" // platform hero column, 728×90 beneath the rectangle
+  | "under-tool" // single unit under the downloader card
+  | "result-top" // sandwich top: preview header → primary download
+  | "theater" // download hand-off theater
+  | "result-bottom" // sandwich bottom: under the audio buttons
+  | "modal" // post-download dialog
+  | "rail-left" // desktop left rail
+  | "rail-right" // desktop right rail
+  | "article"; // in-page banner on content and guide pages
+
+interface AdSlotZone {
+  /**
+   * Native size of the placement. An Adsterra key is bound to one size, so
+   * this is also the guard that stops a 728×90 zone being requested at
+   * 300×250 on the mobile leaderboard→rectangle swap.
+   */
+  format: AdFormat;
+  /** The placement's own zone key, when one is configured. */
+  zone?: string;
+}
+
+/**
+ * Placement → zone key. Every read is a static `NEXT_PUBLIC_*` member
+ * expression so Next.js inlines them at build time; the values live in Vercel
+ * (and `.env.example`), never in this file.
+ */
+const AD_SLOT_ZONES: Record<AdSlotId, AdSlotZone> = {
+  loader: {
+    format: "rectangle",
+    zone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_LOADER?.trim() || undefined,
+  },
+  "tool-bar": {
+    format: "leaderboard",
+    zone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_TOOL_BAR?.trim() || undefined,
+  },
+  hero: {
+    format: "rectangle",
+    zone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_HERO?.trim() || undefined,
+  },
+  "hero-bar": {
+    format: "leaderboard",
+    zone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_HERO_BAR?.trim() || undefined,
+  },
+  "under-tool": {
+    format: "leaderboard",
+    zone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_UNDER_TOOL?.trim() || undefined,
+  },
+  "result-top": {
+    format: "rectangle",
+    zone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_RESULT_TOP?.trim() || undefined,
+  },
+  theater: {
+    format: "rectangle",
+    zone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_THEATER?.trim() || undefined,
+  },
+  "result-bottom": {
+    format: "rectangle",
+    zone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_RESULT_BOTTOM?.trim() || undefined,
+  },
+  modal: {
+    format: "rectangle",
+    zone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_MODAL?.trim() || undefined,
+  },
+  "rail-left": {
+    format: "leaderboard",
+    zone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_RAIL_LEFT?.trim() || undefined,
+  },
+  "rail-right": {
+    format: "leaderboard",
+    zone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_RAIL_RIGHT?.trim() || undefined,
+  },
+  article: {
+    format: "leaderboard",
+    zone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_ARTICLE?.trim() || undefined,
+  },
+};
+
+/** Native size of a placement — used when `<AdSlot>` is given only a slot. */
+export function adSlotFormat(slot: AdSlotId): AdFormat {
+  return AD_SLOT_ZONES[slot].format;
+}
+
+/**
+ * Resolve the zone key for a placement at the size it is actually rendering.
+ *
+ * A placement's own key is honoured only at its native size: the mobile swap
+ * turns a `leaderboard` into a 300×250, and a 728×90 zone asked for 300×250
+ * cannot fill. Everything else falls back to the shared per-format key.
+ */
+export function adZoneKey(slot: AdSlotId | undefined, format: AdFormat): string {
+  if (slot) {
+    const entry = AD_SLOT_ZONES[slot];
+    if (entry.format === format && entry.zone) return entry.zone;
+  }
+  return format === "rectangle" ? adsterraRectangleKey : adsterraBannerKey;
+}

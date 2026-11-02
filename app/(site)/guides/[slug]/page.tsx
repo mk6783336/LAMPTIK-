@@ -190,7 +190,7 @@ export default async function GuidePage({
 
               {/* In-article leaderboard — below the intro, above the body. */}
               <div className="mt-8">
-                <AdSlot format="leaderboard" eager label="Advertisement" />
+                <AdSlot slot="article" format="leaderboard" eager label="Advertisement" />
               </div>
 
               <div className="mt-11 space-y-11">

@@ -152,6 +152,7 @@ export function DownloadStartedModal({
 
         <div className="mt-3 flex justify-center">
           <AdSlot
+            slot="modal"
             format="rectangle"
             eager
             alwaysReserve

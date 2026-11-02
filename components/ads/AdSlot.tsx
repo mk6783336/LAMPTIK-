@@ -2,18 +2,32 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { reportAdOutcome, type AdOutcome } from "@/lib/ad-telemetry";
 import { cn } from "@/lib/cn";
 import {
   AD_RESERVED,
-  adsterraBannerKey,
-  adsterraRectangleKey,
+  adSlotFormat,
+  adZoneKey,
   directLinkUrl,
   type AdFormat,
+  type AdSlotId,
 } from "@/lib/monetization";
 interface AdSlotProps {
-  /** Adsterra zone key. Falls back to NEXT_PUBLIC_ADSTERRA_BANNER_KEY / RECT_KEY. */
+  /**
+   * Which placement this is. It decides the zone key, so two rectangles on
+   * one page can auction in separate Adsterra zones instead of bidding five
+   * times for one impression (see AD_SLOT_ZONES).
+   */
+  slot?: AdSlotId;
+  /**
+   * Hard override of the zone key — beats `slot`. `null` disables the slot
+   * deliberately (renders nothing), which `slot` alone can never express.
+   */
   zoneId?: string | null;
-  /** leaderboard = 728×90 (300×250 on mobile), rectangle = 300×250. */
+  /**
+   * leaderboard = 728×90 (300×250 on mobile), rectangle = 300×250.
+   * Defaults to the placement's native size when `slot` is given.
+   */
   format?: AdFormat;
   className?: string;
   /** Accessible label shown when a creative or house banner is visible. */
@@ -108,7 +122,8 @@ const MOBILE_RECT_QUERY = "(max-width: 639px)";
  */
 export function AdSlot({
   zoneId,
-  format = "leaderboard",
+  slot,
+  format,
   className,
   label,
   sponsoredLabel = "Sponsored",
@@ -116,7 +131,9 @@ export function AdSlot({
   refreshKey,
   alwaysReserve,
 }: AdSlotProps) {
-  const defaultKey = format === "rectangle" ? adsterraRectangleKey : adsterraBannerKey;
+  // `slot` implies the size; an explicit `format` still wins, so every call
+  // site stays literal and a zone-table edit can never silently resize a slot.
+  const baseFormat: AdFormat = format ?? (slot ? adSlotFormat(slot) : "leaderboard");
 
   const [visible, setVisible] = useState(false);
   const reveal = useCallback(() => setVisible(true), []);
@@ -129,6 +146,8 @@ export function AdSlot({
 
   const hostRef = useRef<HTMLDivElement | null>(null);
   const frameRef = useRef<HTMLIFrameElement | null>(null);
+  /** Clock for the in-flight auction; null when no frame is mounted. */
+  const attemptRef = useRef<{ startedAt: number; reported: boolean } | null>(null);
 
   // Mobile rectangle swap — matchMedia only, so SSR and the first paint keep
   // the desktop shape and hydration fixes it with zero flash of content.
@@ -141,12 +160,36 @@ export function AdSlot({
     return () => mq.removeEventListener("change", apply);
   }, []);
 
-  const mobileSwap = isMobile && format === "leaderboard";
-  const effectiveFormat: AdFormat = mobileSwap ? "rectangle" : format;
+  const mobileSwap = isMobile && baseFormat === "leaderboard";
+  const effectiveFormat: AdFormat = mobileSwap ? "rectangle" : baseFormat;
   const { width, height } = AD_RESERVED[effectiveFormat];
-  const key = (mobileSwap ? adsterraRectangleKey : (zoneId === undefined ? defaultKey ?? "" : zoneId ?? "")).trim();
+  // Precedence: explicit `zoneId` (null disables) → the placement's own zone
+  // at its native size → the shared per-format key.
+  const key = (zoneId !== undefined ? (zoneId ?? "") : adZoneKey(slot, effectiveFormat)).trim();
   const slotIdentity = `${key}:${effectiveFormat}`;
   const creativeState = creative?.identity === slotIdentity ? creative.state : "pending";
+
+  /**
+   * One attempt, one record. The ref is replaced whenever a new frame is
+   * mounted (first reveal, mobile swap, refresh), so a refreshed slot reports
+   * every auction instead of only its first, and a late timer from a previous
+   * attempt can never report against the new one.
+   */
+  const reportOutcome = useCallback(
+    (outcome: AdOutcome) => {
+      const attempt = attemptRef.current;
+      if (!attempt || attempt.reported) return;
+      attempt.reported = true;
+      reportAdOutcome({
+        slot,
+        zoneKey: key,
+        format: effectiveFormat,
+        outcome,
+        waitedMs: Date.now() - attempt.startedAt,
+      });
+    },
+    [effectiveFormat, key, slot],
+  );
 
   const prevRefreshRef = useRef<number | undefined>(undefined);
 
@@ -247,36 +290,65 @@ export function AdSlot({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, visible, creativeState, width, height, reloadToken]);
 
+  // The auction clock starts when this iframe is committed — that is the
+  // moment the request leaves the browser. `reloadToken` is in the deps even
+  // though it does not change the URL string: a refresh remounts the frame
+  // (new impression), and its clock must start over or the new auction would
+  // inherit the previous one's wait time.
   useEffect(() => {
-    if (!key || !visible || creativeState !== "pending") return;
+    if (!frameSrc) {
+      attemptRef.current = null;
+      return;
+    }
+    attemptRef.current = { startedAt: Date.now(), reported: false };
+  }, [frameSrc, reloadToken]);
+
+  // Attached as soon as the zone key is known, deliberately NOT gated on
+  // `visible`: a tag that fails to load can error within a millisecond of the
+  // iframe being inserted, and a signal posted before this listener exists is
+  // lost — the slot would then report `timeout` and read as a dead zone. The
+  // frame repeats its signal for the same reason; this is the other half.
+  useEffect(() => {
+    if (!key) return;
 
     const onMessage = (event: MessageEvent<unknown>) => {
       if (event.origin !== window.location.origin || event.source !== frameRef.current?.contentWindow) return;
       if (!event.data || typeof event.data !== "object") return;
       const data = event.data as { type?: unknown; key?: unknown };
-      if (data.type === "lamptik-ad-fill" && data.key === key) {
+      if (data.key !== key) return;
+      if (data.type === "lamptik-ad-fill") {
+        reportOutcome("filled");
         setCreative({ identity: slotIdentity, state: "filled" });
+      } else if (data.type === "lamptik-ad-blocked") {
+        // The network's tag script errored, so no creative can arrive: that is
+        // an ad-blocker, not an empty auction. Collapse now instead of
+        // holding a dead box for the full timeout.
+        reportOutcome("blocked");
+        setCreative({ identity: slotIdentity, state: "fallback" });
       }
     };
 
     window.addEventListener("message", onMessage);
-    // CREATIVE_TIMEOUT_MS (20s, was 8s): over mobile data Adsterra's RTB
-    // creative often needs more than a few seconds to win the auction and
-    // paint. The frame reports its own fill until then; this is only the point
-    // where an empty slot stops pretending it might still fill.
-    const timeout = window.setTimeout(
-      () => setCreative({ identity: slotIdentity, state: "fallback" }),
-      CREATIVE_TIMEOUT_MS,
-    );
-    return () => {
-      window.removeEventListener("message", onMessage);
-      window.clearTimeout(timeout);
-    };
-  }, [key, slotIdentity, visible, creativeState]);
+    return () => window.removeEventListener("message", onMessage);
+  }, [key, slotIdentity, reportOutcome]);
+
+  // Only the deadline belongs to the visible/pending window.
+  // CREATIVE_TIMEOUT_MS (20s, was 8s): over mobile data Adsterra's RTB
+  // creative often needs more than a few seconds to win the auction and
+  // paint. The frame reports its own fill until then; this is only the point
+  // where an empty slot stops pretending it might still fill.
+  useEffect(() => {
+    if (!key || !visible || creativeState !== "pending") return;
+    const timeout = window.setTimeout(() => {
+      reportOutcome("timeout");
+      setCreative({ identity: slotIdentity, state: "fallback" });
+    }, CREATIVE_TIMEOUT_MS);
+    return () => window.clearTimeout(timeout);
+  }, [key, slotIdentity, visible, creativeState, reportOutcome]);
 
   if (!key) return null;
 
-  const isLeaderboard = format === "leaderboard" && !mobileSwap;
+  const isLeaderboard = effectiveFormat === "leaderboard";
   const scaled = { width: width * scale, height: height * scale };
   // alwaysReserve: pending/filled both hold the full creative box so the
   // slot is on stage immediately; fallback collapses to the compact card.
@@ -357,6 +429,7 @@ export function AdSlot({
                   creativeFrame?.getAttribute("width") === String(width) &&
                   creativeFrame.getAttribute("height") === String(height)
                 ) {
+                  reportOutcome("filled");
                   setCreative({ identity: slotIdentity, state: "filled" });
                 }
               }}

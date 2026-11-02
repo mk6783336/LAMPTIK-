@@ -227,8 +227,8 @@ export default async function YouTubeDownloaderPage({
                 {/* Result mode only (lg+): fills the column beside the result
                     card with the sponsor showcase instead of empty space. */}
                 <div className="hero-ads mt-8 space-y-3">
-                  <AdSlot format="rectangle" label="Sponsored — keeps LAMP TIK free" />
-                  <AdSlot format="leaderboard" label="Sponsored — keeps LAMP TIK free" />
+                  <AdSlot slot="hero" format="rectangle" label="Sponsored — keeps LAMP TIK free" />
+                  <AdSlot slot="hero-bar" format="leaderboard" label="Sponsored — keeps LAMP TIK free" />
                 </div>
               </div>
 
@@ -461,7 +461,7 @@ export default async function YouTubeDownloaderPage({
           {/* How + FAQ (mirrors the JSON-LD) */}
           <section id="how" className="seo-section section-pad scroll-mt-24 border-t border-[var(--line)]">
             <div className="shell mb-10">
-              <AdSlot format="leaderboard" label="Advertisement" />
+              <AdSlot slot="article" format="leaderboard" label="Advertisement" />
             </div>
             <div className="shell max-w-3xl">
               <p className="eyebrow">

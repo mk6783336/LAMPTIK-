@@ -216,8 +216,8 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
                     column, so the tall result card is never stranded beside an
                     empty dark void. One slot, never a stack. */}
                 <div className="hero-ads mt-8 space-y-3">
-                  <AdSlot format="rectangle" label="Sponsored — keeps LAMP TIK free" />
-                  <AdSlot format="leaderboard" label="Sponsored — keeps LAMP TIK free" />
+                  <AdSlot slot="hero" format="rectangle" label="Sponsored — keeps LAMP TIK free" />
+                  <AdSlot slot="hero-bar" format="leaderboard" label="Sponsored — keeps LAMP TIK free" />
                 </div>
               </div>
 

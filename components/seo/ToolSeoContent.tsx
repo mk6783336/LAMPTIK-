@@ -177,7 +177,7 @@ export function ToolSeoContent({ platform }: { platform: ToolId }) {
           back-to-back banners. */}
       <section className="border-t border-[var(--line)] py-10 sm:py-12">
         <div className="shell">
-          <AdSlot format="leaderboard" label="Advertisement" />
+          <AdSlot slot="article" format="leaderboard" label="Advertisement" />
         </div>
       </section>
 

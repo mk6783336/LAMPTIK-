@@ -432,10 +432,11 @@ export function ResultPanel({
           primary button down under the thumb that is already moving — the
           measured CLS on this exact panel. Reserving first means the creative
           paints INTO space that already exists and nothing below moves. A
-          blocked auction still collapses to the 56px sponsor line at 8 s. */}
+          blocked auction still collapses to the 56px sponsor line at 20 s. */}
       {!theater ? (
         <div className="mt-4">
           <AdSlot
+            slot="result-top"
             format="rectangle"
             eager
             alwaysReserve
@@ -488,11 +489,12 @@ export function ResultPanel({
             <div className="mt-3 flex justify-center">
               <AdSlot
                 key={theater.attemptId}
+                slot="theater"
                 format="rectangle"
                 eager
                 alwaysReserve
                 label="Sponsored — keeps LAMP TIK free"
-            sponsoredLabel={t.sponsored}
+                sponsoredLabel={t.sponsored}
               />
             </div>
           )}
@@ -704,12 +706,13 @@ export function ResultPanel({
               slice: the download buttons above it must never be pushed. */}
           <div className="mt-1">
             <AdSlot
+              slot="result-bottom"
               format="rectangle"
               eager
               alwaysReserve
               refreshKey={refreshKey}
               label="Sponsored — keeps LAMP TIK free"
-            sponsoredLabel={t.sponsored}
+              sponsoredLabel={t.sponsored}
             />
           </div>
 

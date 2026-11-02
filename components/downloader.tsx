@@ -311,7 +311,13 @@ function LoadingConsole({
           CDN link is being prepared. Clickable, never an overlay, and it
           unmounts with the console the moment the resolve finishes. */}
       <div className="mt-4">
-        <AdSlot format="rectangle" eager alwaysReserve label="Sponsored — keeps LAMP TIK free" />
+        <AdSlot
+          slot="loader"
+          format="rectangle"
+          eager
+          alwaysReserve
+          label="Sponsored — keeps LAMP TIK free"
+        />
       </div>
     </div>
   );
@@ -981,6 +987,7 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
             new video so the banner re-auctions instead of going stale. */}
         <div className="mt-4 flex justify-center">
           <AdSlot
+            slot="tool-bar"
             format="leaderboard"
             eager
             refreshKey={adRefreshKey}

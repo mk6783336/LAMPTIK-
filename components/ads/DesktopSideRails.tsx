@@ -28,7 +28,11 @@ function Rail({ side }: { side: "left" | "right" }) {
       {/* Full banner: only where the rail is wide enough for a readable
           creative. AdSlot CSS-scales the 728x90 frame to the rail width. */}
       <div className="hidden min-[1500px]:block">
-        <AdSlot format="leaderboard" label={`Sponsored rail ${side}`} />
+        <AdSlot
+          slot={side === "left" ? "rail-left" : "rail-right"}
+          format="leaderboard"
+          label={`Sponsored rail ${side}`}
+        />
       </div>
 
       {/* SmartLink card: fills the rail at any width. */}

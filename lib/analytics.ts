@@ -100,8 +100,12 @@ export interface DownloadEventMeta {
 }
 
 /** The custom events this site sends, kept as a union so a typo is a build
- *  error instead of a stray row in GA4. */
-export type AnalyticsEvent = "download_start" | "platform_switch";
+ *  error instead of a stray row in GA4.
+ *
+ * `ad_slot_result` is emitted by `lib/ad-telemetry.ts` once per ad auction
+ * (filled / blocked / timeout) with the zone key and the wait time, so a dead
+ * zone is distinguishable from a slow one. */
+export type AnalyticsEvent = "download_start" | "platform_switch" | "ad_slot_result";
 
 /**
  * Send one GA4 event.

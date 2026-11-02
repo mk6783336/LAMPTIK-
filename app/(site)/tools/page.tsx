@@ -222,7 +222,7 @@ export default function ToolsPage() {
                     it never sits over a card or a CTA. */}
                 {groupIndex === 1 ? (
                   <div className="mt-10">
-                    <AdSlot format="leaderboard" label="Advertisement" />
+                    <AdSlot slot="article" format="leaderboard" label="Advertisement" />
                   </div>
                 ) : null}
               </div>

@@ -195,7 +195,7 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
 
           <section id="how" className="seo-section section-pad scroll-mt-24 border-t border-[var(--line)]">
             <div className="shell mb-10">
-              <AdSlot format="leaderboard" label="Advertisement" />
+              <AdSlot slot="article" format="leaderboard" label="Advertisement" />
             </div>
             <div className="shell max-w-3xl">
               <p className="eyebrow">

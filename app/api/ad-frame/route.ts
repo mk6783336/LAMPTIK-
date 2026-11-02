@@ -50,7 +50,15 @@ export function GET(request: NextRequest) {
 <style>html,body{margin:0;padding:0;background:#07080d;color:#fff;overflow:hidden;color-scheme:dark}body{display:flex;align-items:center;justify-content:center;min-height:100vh}</style>
 </head><body style="background:#07080d;margin:0;padding:0;display:flex;align-items:center;justify-content:center;">
 <script type="text/javascript">atOptions={"key":${JSON.stringify(key)},"format":"iframe","height":${size.height},"width":${size.width},"params":{}};</script>
-<script type="text/javascript" src="${tag}"></script>
+<!-- The script's onerror is the only reliable signal that the network tag was
+     never fetched: an ad-blocker (or a DNS/CSP failure) fires it, a genuine
+     no-bid does not. The parent logs that as "blocked" and collapses the slot
+     immediately, so ad-blocked traffic is never counted as missing demand.
+     The signal is repeated four times because the failure can beat the
+     parent's React effect: a refused connection errors in about a
+     millisecond, while the listener attaches after the commit. The parent
+     ignores duplicates, and the frame is unmounted as soon as one lands. -->
+<script type="text/javascript" src="${tag}" onerror='(function(){function s(){parent.postMessage({type:"lamptik-ad-blocked",key:${JSON.stringify(key)}},location.origin)}s();setTimeout(s,400);setTimeout(s,1500);setTimeout(s,4000)})()'></script>
 <script type="text/javascript">
 (function(){
   var sent=false;

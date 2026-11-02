@@ -1,15 +1,21 @@
 # Google Tag Manager — `GTM-PF5KDMW4`
 
-The site pushes two custom events onto `dataLayer` (see `lib/analytics.ts`):
+The site pushes three custom events onto `dataLayer` (see `lib/analytics.ts`):
 
 | Event | Parameters |
 | --- | --- |
 | `download_start` | `platform`, `format` (`mp4` / `m4a` / `mp3` / `audio`), `delivery` (`proxy` / `direct` / `bridge`), `quality` (`hd` / `sd`, video only) |
 | `platform_switch` | `from`, `to` |
+| `ad_slot_result` | `slot`, `zone_key`, `format`, `outcome` (`filled` / `blocked` / `timeout`), `wait_ms`, `page_path` |
 
 `GTM-PF5KDMW4-events.json` is an importable container file that creates the
-Data Layer variables and Custom Event triggers for those two events. **It
-contains no tags on purpose.**
+Data Layer variables and Custom Event triggers for the two *conversion*
+events. **It contains no tags on purpose.**
+
+`ad_slot_result` is deliberately left out of that file: GA4 already receives
+it through `gtag()` (`lib/ad-telemetry.ts`), so the container only needs it if
+ad telemetry should reach a destination that GA4 does not cover — add a
+`CE - ad_slot_result` trigger yourself in that case.
 
 ## Why no tags
 

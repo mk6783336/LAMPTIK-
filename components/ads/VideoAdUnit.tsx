@@ -16,5 +16,5 @@ import { AdSlot } from "@/components/ads/AdSlot";
  * disclosure badge, no stacked fallbacks.
  */
 export function VideoAdUnit() {
-  return <AdSlot format="leaderboard" label="Sponsored" />;
+  return <AdSlot slot="under-tool" format="leaderboard" label="Sponsored" />;
 }
