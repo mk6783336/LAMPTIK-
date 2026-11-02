@@ -1,0 +1,115 @@
+name: Ad Fill Health
+
+# Daily read of the ad auction telemetry in GA4, per zone.
+#
+# Every auction on the site emits `ad_slot_result` (lib/ad-telemetry.ts) with
+# its zone key and one of three outcomes. A zone that stops bidding throws no
+# error and breaks no page — it simply fills nothing, and the only symptom is
+# the money that never arrives. This job turns those events into each zone's
+# fill rate and compares it with that zone's own baseline, so the drop is
+# found by the schedule instead of by noticing the revenue graph weeks later.
+#
+# Setup only the property owner can do (docs/ga4-ad-health-setup.md):
+#   * register `zone_key`, `slot`, `outcome` and `wait_ms` as custom dimensions
+#     in GA4, or the Data API has no dimension to group by, and
+#   * add the service account as a Viewer on the property, then store its key
+#     in GA4_SERVICE_ACCOUNT_JSON (GSC_SERVICE_ACCOUNT_JSON is accepted as a
+#     fallback so one key can serve Search Console and GA4) and the numeric
+#     property id in the GA4_PROPERTY_ID repository variable.
+#
+# A regression opens or updates an issue labelled `ads-health` and fails the
+# run — the failed scheduled run is what makes GitHub email the owner. The
+# issue closes itself on the first run that measures every zone back inside
+# the thresholds.
+
+on:
+  schedule:
+    # 06:20 UTC daily. GA4 finalises a day up to 48h behind the calendar, and
+    # the script's default window already ends two days ago for that reason.
+    - cron: "20 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: ads-health
+  cancel-in-progress: false
+
+jobs:
+  report:
+    name: Report ad fill by zone
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # continue-on-error keeps a configuration failure from skipping the
+      # steps below; the guard right after turns it into an explicit red run
+      # rather than a green one that silently measured nothing.
+      - name: Measure GA4 ad fill
+        id: health
+        continue-on-error: true
+        env:
+          GA4_SERVICE_ACCOUNT_JSON: ${{ secrets.GA4_SERVICE_ACCOUNT_JSON }}
+          # Fallback for the key already in use by scripts/gsc-check.mjs: the
+          # same service account can read both APIs once it is a Viewer on the
+          # GA4 property.
+          GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+          GA4_PROPERTY_ID: ${{ vars.GA4_PROPERTY_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          # Optional tuning, as repository variables. Empty values fall back to
+          # the documented defaults (3 days vs 14, 40 auctions, 20 points).
+          GA4_RECENT_DAYS: ${{ vars.GA4_RECENT_DAYS }}
+          GA4_BASELINE_DAYS: ${{ vars.GA4_BASELINE_DAYS }}
+          GA4_MIN_AUCTIONS: ${{ vars.GA4_MIN_AUCTIONS }}
+          GA4_DROP_POINTS: ${{ vars.GA4_DROP_POINTS }}
+        run: node scripts/ads-health.mjs
+
+      - name: Fail on a measurement error
+        if: steps.health.outcome == 'failure'
+        run: exit 1
+
+      # One rolling issue, not one per zone per day: the alert is a place to
+      # look, and an inbox with fourteen duplicates is not. A repeat
+      # regression becomes a comment on the same issue.
+      - name: Open or update the alert issue
+        if: steps.health.outputs.alerts == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh label create ads-health --color B60205 \
+            --description "Ad zone fill-rate regression" 2>/dev/null || true
+          EXISTING="$(gh issue list --label ads-health --state open --limit 1 \
+            --json number --jq '.[0].number // empty')"
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body-file ads-health-alerts.md
+          else
+            gh issue create --title "[ads] Fill rate regression" \
+              --body-file ads-health-alerts.md --label ads-health
+          fi
+
+      # Only a run that actually measured every zone may close the issue —
+      # `measured` guards against reading "no data yet" as "recovered".
+      - name: Close the issue after recovery
+        if: steps.health.outputs.alerts != 'true' && steps.health.outputs.measured == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          EXISTING="$(gh issue list --label ads-health --state open --limit 1 \
+            --json number --jq '.[0].number // empty')"
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "Recovered: every zone is back within the alert thresholds in this run."
+            gh issue close "$EXISTING"
+          fi
+
+      - name: Fail the run when a zone regressed
+        if: steps.health.outputs.alerts == 'true'
+        run: exit 1
