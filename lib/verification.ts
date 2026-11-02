@@ -8,11 +8,16 @@
  * crawl priority attached, which is why a site can submit every URL for weeks
  * and stay at zero pages in the index.
  *
- * Both tokens are issued per account *and* per site, so they cannot be
- * hardcoded — they are read from the environment and every consumer degrades to
- * "render nothing" when they are absent. That keeps an unconfigured preview
- * clean instead of emitting an empty `content=""` tag that fails verification
- * silently.
+ * The token below was issued by Bing for `https://www.lamptik.online/` and is
+ * public by construction: it is served in every page's `<head>`. Hardcoding it
+ * is what makes verification work on the deployed site without depending on a
+ * Vercel environment variable being present in all three environments — the
+ * failure mode that kept this property unverified, with a sitemap detached and
+ * 50 URLs discovered but never crawled. An env var still overrides it, which is
+ * what a re-issued token needs.
+ *
+ * An empty `content=""` tag would fail verification silently, so the fallback
+ * is a real value rather than an empty string.
  *
  * Two methods are supported because Bing offers both and they verify
  * independently:
@@ -28,9 +33,18 @@
  * token at all. See `docs/bing-webmaster-setup.md`.
  */
 
+/**
+ * The code Bing Webmaster Tools issued for `https://www.lamptik.online/`.
+ *
+ * Note the host: the verified property in Bing is the apex `lamptik.online`,
+ * which 308-redirects to `www` — so every sitemap URL sat outside the property
+ * that owned the crawl budget. This token is for the host that actually serves.
+ */
+const BING_WWW_VERIFICATION_TOKEN = "CC944CC51BCD8597DE36DD247DE3DD26";
+
 /** `<meta name="msvalidate.01">` content. */
 export const bingSiteVerification =
-  process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION?.trim() || null;
+  process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION?.trim() || BING_WWW_VERIFICATION_TOKEN;
 
 /**
  * The `<user>` UUID inside `BingSiteAuth.xml`.
@@ -41,7 +55,9 @@ export const bingSiteVerification =
  * elements into a file crawlers parse.
  */
 export const bingSiteAuthUuid = (() => {
-  const raw = process.env.BING_SITE_AUTH_UUID?.trim();
+  const raw = (process.env.BING_SITE_AUTH_UUID ?? BING_WWW_VERIFICATION_TOKEN).trim();
   if (!raw) return null;
+  // Still shape-checked: this value is interpolated into XML, and an override
+  // must not become a way to inject elements into a file crawlers parse.
   return /^[A-Za-z0-9-]{8,64}$/.test(raw) ? raw : null;
 })();
