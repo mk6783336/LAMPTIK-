@@ -33,6 +33,8 @@ const HOME_LABELS: Partial<Record<LocaleCode, string>> = {
   hi: "होम",
   vi: "Trang chủ",
   th: "หน้าแรก",
+  tr: "Ana sayfa",
+  fr: "Accueil",
 };
 
 /**
@@ -183,7 +185,7 @@ export function LocalizedLanding({
                   <p className="text-sm font-semibold tracking-tight">{copy.tool.heading}</p>
                   <p className="text-xs text-[var(--text-3)]">{copy.tool.note}</p>
                 </div>
-                <Downloader platform={platform} />
+                <Downloader platform={platform} locale={copy.code} />
               </div>
             </div>
 

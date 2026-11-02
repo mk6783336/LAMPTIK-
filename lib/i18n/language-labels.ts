@@ -20,6 +20,8 @@ export const LANGUAGE_LABELS: Record<LocaleCode | "en", string> = {
   vi: "Tiếng Việt",
   th: "ไทย",
   tl: "Filipino",
+  tr: "Türkçe",
+  fr: "Français",
 };
 
 /** The label for a language code, falling back to the code itself. */

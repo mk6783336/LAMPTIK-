@@ -49,6 +49,11 @@ export const LANDING_LANGUAGES = {
   // remaining volume markets where the incumbents rank with English pages.
   th: "/th",
   tl: "/tl",
+  // Turkish and French are the two non-English markets where the incumbents
+  // rank with English pages and a native page still has room: Türkiye is a
+  // top-five TikTok market, and French covers France plus francophone Africa.
+  tr: "/tr",
+  fr: "/fr",
   "x-default": "/",
 } as const;
 

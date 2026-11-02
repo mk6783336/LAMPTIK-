@@ -14,8 +14,12 @@ a download that died or a page that froze on a phone.
 
 ## 1. The ad never blocks the tool
 
-- The Download CTA is always reachable with a plain tap. No full-screen layer,
-  no `backdrop-blur` bar, no fixed footer, no modal may sit over the tool.
+- The Download CTA is always reachable with a plain tap while the visitor is
+  working. No full-screen layer, no `backdrop-blur` bar, no fixed footer, no
+  ad-network modal. The single exception is the post-download dialog
+  (`components/ads/DownloadStartedModal.tsx`): it may only open from a download
+  click, after the file hand-off, once per resolved video, and every exit
+  (Escape, ✕, backdrop, CTA) must work without waiting on a creative.
 - **The Monetag Vignette script and the Adsterra Social Bar are banned.** Both
   inject invisible `position: fixed; inset: 0; z-index: 2147483647` layers whose
   tap-through depends on a remote creative rendering; when it hangs, the layer
@@ -24,10 +28,11 @@ a download that died or a page that froze on a phone.
   do not add any other script that paints a viewport-covering layer.
 - The only sanctioned monetization surfaces are: in-flow `AdSlot` banners (the
   SnapTik ad-sandwich: one slot between the URL input and the result zone, one
-  dedicated 300×250 under the download buttons, the Stage-A unit inside the
-  resolve/loading console, and the countdown theater's center-stage unit), the
-  click-triggered Direct Link (`triggerDownloadDirectLink`), and the inline
-  10-second download theater in `result-panel.tsx`.
+  between the result header and the Download buttons, one immediately under the
+  audio buttons, the Stage-A unit inside the resolve/loading console, and the
+  countdown theater's center-stage unit), the click-triggered Direct Link
+  (`triggerDownloadDirectLink`), the inline 10-second download theater in
+  `result-panel.tsx`, and the post-download dialog above.
 - Ads are visible DURING the two natural waits — CDN resolving (`LoadingConsole`,
   `downloader.tsx`) and the 10-second countdown (`result-panel.tsx`) — but the
   file hand-off is never gated, awaited or delayed by any of them.
@@ -38,7 +43,11 @@ a download that died or a page that froze on a phone.
 
 - One `AdSlot` per section, inside `role="complementary"` with a single
   `Sponsored` disclosure. Never two unspaced slots in the same container, never
-  a duplicate "Sponsored" pill.
+  a duplicate "Sponsored" pill. The result panel's two sandwiches are separated
+  by the whole button stack, so they are two sections, not one.
+- Only one 300×250 is ever live at a time: while the post-download dialog is
+  open the theater's center-stage unit stays unmounted, and the dialog mounts
+  none. Never serve a creative behind an opaque backdrop.
 - Reserve space, don't shift it: the slot keeps `height` from `AD_RESERVED` /
   the filled creative and shrinks to one compact sponsor line on fallback
   (`max-h-[72px]`), never a giant empty black card.

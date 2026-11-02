@@ -3,11 +3,13 @@ import type { LandingCopy, LocaleCode } from "@/lib/i18n/types";
 import { ar } from "./ar";
 import { de } from "./de";
 import { es } from "./es";
+import { fr } from "./fr";
 import { hi } from "./hi";
 import { id } from "./id";
 import { pt } from "./pt";
 import { th } from "./th";
 import { tl } from "./tl";
+import { tr } from "./tr";
 import { vi } from "./vi";
 
 /**
@@ -27,6 +29,8 @@ export const LANDINGS: Record<LocaleCode, LandingCopy> = {
   vi,
   th,
   tl,
+  tr,
+  fr,
 };
 
 export function getLanding(code: LocaleCode): LandingCopy {

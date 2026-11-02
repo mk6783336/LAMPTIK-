@@ -34,6 +34,17 @@ export function GET(request: NextRequest) {
 <html style="background:#07080d;color:#fff;margin:0;padding:0;overflow:hidden;"><head><meta charset="utf-8">
 <meta name="color-scheme" content="dark">
 <meta name="referrer" content="no-referrer-when-downgrade">
+<!-- Click target. An anchor without a target would otherwise navigate THIS
+     frame, trapping the visitor inside a 300x250 box on our page. _blank sends
+     the click to a real tab while the parent page stays put; the sandbox
+     grants allow-popups and allow-popups-to-escape-sandbox for it.
+     Deliberately NOT _top: the parent sandbox omits allow-top-navigation so
+     no creative can ever move or replace lamptik.online — the anti-hijack lock
+     a top target would defeat.
+     The network already receives document context: document.referrer inside
+     this frame is the full page URL that embedded it, and the outbound request
+     carries the lamptik.online origin. -->
+<base target="_blank">
 <link rel="preconnect" href="https://bellnewyork.org" crossorigin>
 <link rel="dns-prefetch" href="https://bellnewyork.org">
 <style>html,body{margin:0;padding:0;background:#07080d;color:#fff;overflow:hidden;color-scheme:dark}body{display:flex;align-items:center;justify-content:center;min-height:100vh}</style>
@@ -60,7 +71,9 @@ export function GET(request: NextRequest) {
   var observer=new MutationObserver(signalFill);
   observer.observe(document.body,{childList:true,subtree:true});
   setTimeout(signalFill,120);
-  setTimeout(function(){observer.disconnect()},8000);
+  // Matches AdSlot's CREATIVE_TIMEOUT_MS: a creative that wins its auction at
+  // 12s must still be able to report the fill back to the parent.
+  setTimeout(function(){observer.disconnect()},20000);
 })();
 </script>
 </body></html>`;

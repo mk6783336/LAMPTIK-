@@ -36,7 +36,7 @@ export default function PrivacyPage() {
         "@type": "WebPage",
         name: "Privacy Policy — LAMP TIK",
         url: `${siteUrl}/privacy`,
-        dateModified: "2026-10-29",
+        dateModified: "2026-11-02",
       },
       // Legal pages are long-form documents; Ahrefs' article classifier can
       // treat them as articles, so they carry a complete Article node too.
@@ -45,7 +45,7 @@ export default function PrivacyPage() {
         headline: "LAMP TIK privacy policy",
         description:
           "What LAMP TIK processes, why it stores almost nothing, how analytics and advertising consent work, and the rights EEA and UK visitors have.",
-        updatedAt: "2026-10-29",
+        updatedAt: "2026-11-02",
       }),
     ],
   };
@@ -79,7 +79,7 @@ export default function PrivacyPage() {
               Privacy policy
             </h1>
             <p className="mt-3 text-sm text-[var(--text-3)]">
-              Last updated: October 29, 2026
+              Last updated: November 2, 2026
             </p>
 
             <div className="mt-10 space-y-9 text-base leading-relaxed text-[var(--text-2)]">
@@ -136,8 +136,11 @@ export default function PrivacyPage() {
                       which pages are visited, the referring site, approximate
                       location and device type. Ahrefs Web Analytics counts
                       page views alongside it, without cookies and without
-                      storing personal data. Neither service receives the video
-                      links you paste, and neither receives a file you download.
+                      storing personal data. If heatmaps are enabled, Microsoft
+                      Clarity records which parts of a page get clicked and
+                      scrolled, only after you press Accept. None of these
+                      services receives the video links you paste, and none
+                      receives a file you download.
                     </span>
                   </li>
                 </ul>
@@ -248,8 +251,11 @@ export default function PrivacyPage() {
                       Consent Mode with storage denied: no cookie is set and the
                       hit carries no identifier that could tie it to a returning
                       device. Declining keeps that cookieless mode permanently.
-                      There is no fingerprinting and no tracking pixel beyond the
-                      Google tag and the optional ad units.
+                      Microsoft Clarity, when enabled, sets the{" "}
+                      <code className="text-[var(--text)]">_clck</code> and{" "}
+                      <code className="text-[var(--text)]">_clsk</code> cookies
+                      under that same Accept, and is not loaded at all before it. There is no fingerprinting and no tracking
+                      pixel beyond these tags and the optional ad units.
                     </span>
                   </li>
                 </ul>

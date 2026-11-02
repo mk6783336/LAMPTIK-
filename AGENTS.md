@@ -51,8 +51,10 @@ npm run verify         # typecheck + lint + build: run this before every commit
   already exist — extend them.
 - Downloads are handed to the browser's own download manager. Do not
   reintroduce in-page `fetch()`/Blob/IndexedDB buffering of media bytes.
-- Monetization is overlay-free. The Monetag Vignette script and the Adsterra
-  Social Bar are banned: both paint invisible `position: fixed; inset: 0`
-  layers that freeze taps/scrolls on mobile when their creative hangs. Only
-  in-flow banners and the click-triggered Direct Link are allowed.
+- Monetization never covers the tool while it is being used. The Monetag
+  Vignette script and the Adsterra Social Bar are banned: both paint invisible
+  `position: fixed; inset: 0` layers that freeze taps/scrolls on mobile when
+  their creative hangs. Allowed: in-flow banners, the click-triggered Direct
+  Link, and one post-download dialog that opens only after a file hand-off and
+  closes on Escape, backdrop click, ✕ or its CTA without waiting on a creative.
 - Never commit `.env*`, `.next/` or `.scratch/`.

@@ -101,7 +101,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     url: `${siteUrl}/${code}`,
     lastModified: updated,
     changeFrequency: "weekly" as const,
-    priority: 0.8,
+    // 0.9, level with the programmatic sub-tools: a localized root is a
+    // monetizable landing page in its own market, not a secondary mirror of
+    // the English home page.
+    priority: 0.9,
     alternates: { languages: landingLanguages },
   }));
 

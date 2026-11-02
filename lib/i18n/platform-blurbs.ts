@@ -108,6 +108,26 @@ export const PLATFORM_BLURBS: Record<LocaleCode, Record<Platform, string>> = {
     youtube:
       "MP4 sa 1080p o 720p, Shorts, at MP3 audio mula sa anumang watch o youtu.be link — libre, walang app.",
   },
+  tr: {
+    tiktok:
+      "TikTok videoları filigransız HD MP4 ve orijinal ses MP3 olarak — vt/vm kısa bağlantıları dahil.",
+    instagram:
+      "Reels, gönderi videoları ve IGTV gerçek 1080p kalitede — filigransız, giriş yapmadan.",
+    facebook:
+      "Uzun Watch videoları (1 GB üzeri), sayfa yüklemeleri ve fb.watch bağlantıları anında açılır.",
+    youtube:
+      "Her watch veya youtu.be bağlantısından 1080p/720p MP4, Shorts ve MP3 ses — ücretsiz, uygulamasız.",
+  },
+  fr: {
+    tiktok:
+      "Vidéos TikTok sans filigrane en MP4 HD et le son d'origine en MP3 — liens courts vt/vm compris.",
+    instagram:
+      "Reels, vidéos de publications et IGTV en vraie qualité 1080p — sans filigrane, sans connexion.",
+    facebook:
+      "Vidéos Watch longues (plus de 1 Go), uploads de pages et liens fb.watch ouverts instantanément.",
+    youtube:
+      "MP4 en 1080p ou 720p, Shorts et audio MP3 depuis n'importe quel lien watch ou youtu.be — gratuit, sans application.",
+  },
 };
 
 /**
@@ -153,6 +173,14 @@ export const TOOLS_HUB_CARD: Record<LocaleCode, { label: string; blurb: string }
   tl: {
     label: "Lahat ng tool",
     blurb: "Ang buong listahan: download ayon sa format, platform, at wika sa isang pahina.",
+  },
+  tr: {
+    label: "Tüm araçlar",
+    blurb: "Tam dizin: biçime, platforma ve dile göre indirmeler tek sayfada.",
+  },
+  fr: {
+    label: "Tous les outils",
+    blurb: "L'index complet : téléchargements par format, par réseau et par langue sur une seule page.",
   },
 };
 

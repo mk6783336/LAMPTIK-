@@ -17,6 +17,7 @@ import { PlatformIcon } from "@/components/platform-icons";
 import { cn } from "@/lib/cn";
 import { detectLink, extractLinkText, type DetectedLink } from "@/lib/detect";
 import { PLATFORMS, type Platform } from "@/lib/platforms";
+import { ENGLISH_DOWNLOADER_COPY, type DownloaderCopy } from "@/lib/i18n/ui";
 
 interface UrlFieldProps {
   /** Owned by the parent (focus management) but the state lives HERE. */
@@ -34,6 +35,9 @@ interface UrlFieldProps {
   /** Inline recovery after a failed resolve (skips the ad gate). */
   onRetry?: () => void;
   onNotify: (toast: Omit<ToastItem, "id">) => void;
+  /** Localized control labels. Omitted on English pages, which keep their
+   *  per-platform placeholder and the copy they already had. */
+  copy?: DownloaderCopy;
 }
 
 /**
@@ -55,7 +59,9 @@ export function UrlField({
   onSubmitUrl,
   onRetry,
   onNotify,
+  copy,
 }: UrlFieldProps) {
+  const t = copy ?? ENGLISH_DOWNLOADER_COPY;
   // A page can arrive with a link already chosen (the playlist browser) —
   // it is shown, not submitted: the visitor keeps the final click.
   const [input, setInput] = useState(seed.value);
@@ -231,7 +237,7 @@ export function UrlField({
   return (
     <form onSubmit={handleFormSubmit} noValidate data-accent={accent}>
       <label htmlFor="video-url" className="sr-only">
-        Video link
+        {t.inputLabel}
       </label>
 
       <div
@@ -267,7 +273,7 @@ export function UrlField({
           onChange={(event) => handleInputChange(event.target.value)}
           onKeyDown={handleInputKeyDown}
           onPaste={handleInputPaste}
-          placeholder={accentConfig.placeholder}
+          placeholder={copy?.placeholder ?? accentConfig.placeholder}
           aria-invalid={Boolean(displayError)}
           aria-describedby="url-status"
           className="h-11 min-w-0 flex-1 bg-transparent text-base font-medium outline-none placeholder:font-normal placeholder:text-[var(--text-3)] disabled:cursor-not-allowed disabled:opacity-50"
@@ -291,8 +297,8 @@ export function UrlField({
           type="button"
           onClick={handlePasteFromClipboard}
           disabled={isPasting || busy}
-          aria-label="Paste video link from clipboard"
-          title="Paste from clipboard"
+          aria-label={t.pasteHint}
+          title={t.pasteHint}
           className="btn btn-ghost h-9 shrink-0 gap-1.5 px-2.5 text-sm sm:h-10"
         >
           {isPasting ? (
@@ -300,7 +306,7 @@ export function UrlField({
           ) : (
             <ClipboardPaste className="size-3.5" />
           )}
-          <span className="hidden sm:inline">Paste</span>
+          <span className="hidden sm:inline">{t.paste}</span>
         </button>
       </div>
 
@@ -331,7 +337,7 @@ export function UrlField({
             <>
               {/* Phones get a short, never-truncated prompt; the full four
                   platform list only renders where it fits. */}
-              <span className="sm:hidden">Paste a link to start</span>
+              <span className="sm:hidden">{t.idleHint}</span>
               <span className="hidden sm:inline">{statusDetail}</span>
             </>
           )}
@@ -381,7 +387,7 @@ export function UrlField({
         {busy ? (
           <>
             <Loader2 className="size-4 animate-spin" />
-            Analyzing stream…
+            {t.analyzing}
           </>
         ) : (
           <>
@@ -389,8 +395,8 @@ export function UrlField({
               <Zap className="size-3.5" fill="currentColor" strokeWidth={0} />
             </span>
             <span className="whitespace-nowrap">
-              <span className="sm:hidden">Download</span>
-              <span className="hidden sm:inline">Download Without Watermark</span>
+              <span className="sm:hidden">{t.submitShort}</span>
+              <span className="hidden sm:inline">{t.submit}</span>
             </span>
             <ArrowRight className="size-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
           </>

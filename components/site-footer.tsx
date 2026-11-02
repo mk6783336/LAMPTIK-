@@ -5,6 +5,36 @@ import { ArrowUpRight, ShieldCheck } from "lucide-react";
 
 import { Logo } from "@/components/logo";
 import type { FooterCopy, FooterGroupId, FooterLinkId } from "@/lib/i18n/footer-copy";
+import { languageLabel } from "@/lib/i18n/language-labels";
+import type { LocaleCode } from "@/lib/i18n/types";
+
+/**
+ * The Languages column, derived from one ordered roster instead of hand-written
+ * links. It used to be a second copy of the locale list, so a language added to
+ * `LOCALE_CODES` was missing here until someone remembered — and this column is
+ * the crawl path Googlebot follows to discover the translated pages.
+ *
+ * Indonesian is first on purpose: it is the largest market in this category, so
+ * it is the locale most likely to convert a visitor who does not read English.
+ */
+const LANGUAGE_ORDER: LocaleCode[] = [
+  "id",
+  "hi",
+  "vi",
+  "th",
+  "tl",
+  "ar",
+  "es",
+  "de",
+  "pt",
+  "tr",
+  "fr",
+];
+
+const LANGUAGE_LINKS: FooterLink[] = LANGUAGE_ORDER.map((code) => ({
+  href: `/${code}`,
+  label: languageLabel(code),
+}));
 
 interface FooterLink {
   href: string;
@@ -55,19 +85,7 @@ const FOOTER_GROUPS: Array<{ id: FooterGroupId; label: string; links: FooterLink
   {
     id: "languages",
     label: "Languages",
-    // Indonesian first: it is the largest market in this category, so it is
-    // the locale most likely to convert a visitor who does not read English.
-    links: [
-      { href: "/id", label: "Bahasa Indonesia" },
-      { href: "/hi", label: "हिन्दी" },
-      { href: "/vi", label: "Tiếng Việt" },
-      { href: "/th", label: "ไทย" },
-      { href: "/tl", label: "Filipino" },
-      { href: "/ar", label: "العربية" },
-      { href: "/es", label: "Español" },
-      { href: "/de", label: "Deutsch" },
-      { href: "/pt", label: "Português" },
-    ],
+    links: LANGUAGE_LINKS,
   },
   {
     id: "product",

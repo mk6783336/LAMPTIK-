@@ -53,6 +53,16 @@ export const gtmContainerId =
   process.env.NEXT_PUBLIC_GTM_ID?.trim() || "GTM-PF5KDMW4";
 
 /**
+ * Microsoft Clarity project id (`NEXT_PUBLIC_CLARITY_ID`).
+ *
+ * Optional: an empty value keeps the tag out of the bundle entirely, so this
+ * is safe to leave unset on a preview. Clarity writes cookies and records
+ * sessions, so `components/microsoft-clarity.tsx` only injects it after the
+ * visitor has pressed Accept — it has no Consent Mode equivalent of its own.
+ */
+export const clarityProjectId = process.env.NEXT_PUBLIC_CLARITY_ID?.trim() || "";
+
+/**
  * Ahrefs Web Analytics site key. The script is cookieless and stores no
  * personal data, so it is not gated behind the consent bar the way GA4 and
  * the ad tags are — there is nothing to consent to. Same override shape as

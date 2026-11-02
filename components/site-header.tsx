@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { Logo } from "@/components/logo";
 import { PlatformIcon } from "@/components/platform-icons";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -64,7 +65,11 @@ export function SiteHeader() {
         className="header-scrim pointer-events-none absolute inset-x-0 top-0 -z-10 h-[calc(100%+0.5rem)]"
       />
       <div className="mx-auto w-full max-w-6xl px-3 sm:px-6">
-        <div className="glass overflow-hidden rounded-2xl shadow-[0_24px_60px_-48px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
+        {/* No `overflow-hidden` here: the language menu opens below the bar
+            and would be clipped at the bar's edge. The only child that could
+            spill is the mobile nav strip, which sets `overflow-x: auto` and
+            therefore clips itself. */}
+        <div className="glass rounded-2xl shadow-[0_24px_60px_-48px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
           <div className="flex h-14 items-center justify-between gap-2 pl-3 pr-2 sm:pl-4 sm:pr-2.5">
             <Logo />
 
@@ -103,6 +108,10 @@ export function SiteHeader() {
             </nav>
 
             <div className="flex shrink-0 items-center gap-2">
+              {/* Language is a first-class destination, not a footer secret:
+                  the switcher opens all eleven roots from every page, and its
+                  links are in the server HTML so a crawl finds them. */}
+              <LanguageSwitcher />
               {/* Corner badge for the off-store clients. It lives beside the
                   theme toggle instead of inside NAV: a sixth full-size nav
                   item pushed the desktop row past 1152px, and this is a

@@ -1,16 +1,28 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { AlertTriangle, Clock3, Download, Music2, RefreshCw, ShieldCheck } from "lucide-react";
-import { useEffect, useState } from "react";
+import {
+  AlertTriangle,
+  ArrowUpRight,
+  Clock3,
+  Download,
+  Music2,
+  RefreshCw,
+  ShieldCheck,
+  Zap,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 import { trackEvent, type DownloadEventMeta } from "@/lib/analytics";
 import { formatBytes, formatDuration } from "@/lib/format";
 import type { ToastItem } from "@/components/toast";
 import { AdSlot } from "@/components/ads/AdSlot";
+import { DownloadStartedModal } from "@/components/ads/DownloadStartedModal";
 import { PlatformIcon } from "@/components/platform-icons";
 import { cn } from "@/lib/cn";
 import { PLATFORMS } from "@/lib/platforms";
+import { directLinkUrl, smartlinkUrl } from "@/lib/monetization";
+import { ENGLISH_DOWNLOADER_COPY, type DownloaderCopy } from "@/lib/i18n/ui";
 
 import { isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
 import { SocialShare } from "@/components/social-share";
@@ -31,6 +43,8 @@ interface ResultPanelProps {
       canonical URL — shown on the theater's failure card so an expired
       signed CDN link re-signs itself without re-pasting. */
   onReresolve?: (url: string) => void;
+  /** Localized control labels; omitted on English pages. */
+  copy?: DownloaderCopy;
 }
 
 /** One click's worth of sponsor theater. */
@@ -67,9 +81,31 @@ interface DownloadTheater {
  *   through the datacenter proxy, whose IP the CDN rejects (the exact
  *   thing that produced `download.html` instead of an .mp4).
  */
-export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onReresolve }: ResultPanelProps) {
+export function ResultPanel({
+  media,
+  video,
+  onReset,
+  onNotify,
+  refreshKey,
+  onReresolve,
+  copy,
+}: ResultPanelProps) {
+  const t = copy ?? ENGLISH_DOWNLOADER_COPY;
+  /** The high-CPM partner card: an explicit Smartlink wins, otherwise the
+   *  HilltopAds Direct Link the rails already use — so the card is live on
+   *  mobile without any extra configuration. */
+  const sponsorUrl = smartlinkUrl || directLinkUrl;
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
   const [theater, setTheater] = useState<DownloadTheater | null>(null);
+  /**
+   * The post-download sponsor dialog. Session-once per resolved video: the
+   * first click on a card is the moment a visitor is watching the screen, so
+   * that is where the 300×250 is worth the most; the second click (often the
+   * audio of the same video) is left frictionless so one resolve can still
+   * produce both files.
+   */
+  const [startedModal, setStartedModal] = useState<{ attemptId: number } | null>(null);
+  const modalShownRef = useRef(false);
 
   const platform = media.platform;
   const platformConfig = PLATFORMS[platform];
@@ -277,6 +313,12 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
       href,
       fallbackUrl: fallbackUrl ?? rawUpstreamOf(href),
     });
+    // AFTER the hand-off, never before: the iframe above is already streaming
+    // into Chrome's download manager, so the dialog cannot delay the file.
+    if (!modalShownRef.current) {
+      modalShownRef.current = true;
+      setStartedModal({ attemptId: Date.now() });
+    }
     onNotify({
       kind: "success",
       title: "Download started",
@@ -317,6 +359,11 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
       href: directUrl,
       fallbackUrl: directUrl,
     });
+    // Same order as the proxy path: the anchor click has already happened.
+    if (!modalShownRef.current) {
+      modalShownRef.current = true;
+      setStartedModal({ attemptId: Date.now() });
+    }
     onNotify({
       kind: "success",
       title: "Download requested",
@@ -375,6 +422,30 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
         </div>
       </div>
 
+      {/* SnapTik sandwich — TOP slice. Between the thumbnail/title header and
+          the first Download button: the creative sits exactly on the line a
+          thumb travels between "is this my video?" and "save it", which is
+          the most-viewed band of the card.
+
+          `alwaysReserve` is not cosmetic. Without it the slot starts at 0px
+          and grows to 250px when the auction fills ~1–2 s later, shoving the
+          primary button down under the thumb that is already moving — the
+          measured CLS on this exact panel. Reserving first means the creative
+          paints INTO space that already exists and nothing below moves. A
+          blocked auction still collapses to the 56px sponsor line at 8 s. */}
+      {!theater ? (
+        <div className="mt-4">
+          <AdSlot
+            format="rectangle"
+            eager
+            alwaysReserve
+            refreshKey={refreshKey}
+            label="Sponsored — keeps LAMP TIK free"
+            sponsoredLabel={t.sponsored}
+          />
+        </div>
+      ) : null}
+
       {theater ? (
         /* ---------------- 10-second parallel download theater ----------------
             In normal document flow (never an overlay, taps stay free), the
@@ -408,16 +479,23 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
 
           {/* Center stage: fresh 300×250 on EVERY download attempt
               (`key` remounts the unit so each click earns a new impression),
-              plus the high-contrast sponsored partner CTA below it. */}
-          <div className="mt-3 flex justify-center">
-            <AdSlot
-              key={theater.attemptId}
-              format="rectangle"
-              eager
-              alwaysReserve
-              label="Sponsored — keeps LAMP TIK free"
-            />
-          </div>
+              plus the high-contrast sponsored partner CTA below it.
+              While the post-download dialog is open this unit stays unmounted:
+              the dialog's own 300×250 is the one being looked at, and a
+              second creative painting behind an opaque backdrop would only
+              count an impression nobody can see. It mounts on dismiss. */}
+          {startedModal ? null : (
+            <div className="mt-3 flex justify-center">
+              <AdSlot
+                key={theater.attemptId}
+                format="rectangle"
+                eager
+                alwaysReserve
+                label="Sponsored — keeps LAMP TIK free"
+            sponsoredLabel={t.sponsored}
+              />
+            </div>
+          )}
 
           {/* Never-stuck fallback: if Chrome's tray shows nothing, one click
               on the RAW CDN attachment URL still starts the file — handed
@@ -443,7 +521,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
                 className="btn btn-primary tool-cta group h-12 w-full gap-2 px-4 text-sm font-semibold"
               >
                 <RefreshCw className="size-4 shrink-0" />
-                Download Another Video
+                {t.another}
               </button>
 
               {onReresolve ? (
@@ -535,7 +613,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
           >
             <Download className="size-4 shrink-0" />
             <span className="flex min-w-0 flex-1 flex-col items-start">
-              <span>{video.quality === "hd" ? "Download HD Video" : "Download Video"}</span>
+              <span>{video.quality === "hd" ? t.downloadHd : t.downloadVideo}</span>
               <span className="text-xs font-normal text-white/75">
                 Server 01 — Fast{directUpstream ? " direct CDN" : ""}
               </span>
@@ -581,7 +659,9 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
             >
               <Music2 className="size-4 shrink-0" />
               <span className="flex min-w-0 flex-1 flex-col items-start">
-                <span>Download Audio ({audioFormatLabel})</span>
+                <span>
+                  {t.downloadAudio} ({audioFormatLabel})
+                </span>
                 <span className="text-xs font-normal text-[var(--text-3)]">Original sound track</span>
               </span>
             </button>
@@ -608,12 +688,58 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
             >
               <Music2 className="size-4 shrink-0" />
               <span className="flex min-w-0 flex-1 flex-col items-start">
-                <span>Download Audio (MP3)</span>
+                <span>
+                  {t.downloadAudio} (MP3)
+                </span>
                 <span className="text-xs font-normal text-[var(--text-3)]">
                   Encoded on our bridge — plays in any MP3 player
                 </span>
               </span>
             </button>
+          ) : null}
+
+          {/* SnapTik sandwich — BOTTOM slice, immediately under the audio
+              buttons (before the reset), so the three save actions sit
+              between two creatives. Reserved for the same reason as the top
+              slice: the download buttons above it must never be pushed. */}
+          <div className="mt-1">
+            <AdSlot
+              format="rectangle"
+              eager
+              alwaysReserve
+              refreshKey={refreshKey}
+              label="Sponsored — keeps LAMP TIK free"
+            sponsoredLabel={t.sponsored}
+            />
+          </div>
+
+          {/* Optional high-CPM partner link, env-gated (`NEXT_PUBLIC_SMARTLINK_URL`).
+              Rendered as a clearly sponsored anchor, not as a second download
+              button: it opens someone else's offer in a new tab, and labelling
+              that "mirror" would promise a file it cannot deliver — the exact
+              pattern that gets a downloader flagged as adware. The visitor's
+              file is already streaming from the buttons above. */}
+          {sponsorUrl ? (
+            <a
+              href={sponsorUrl}
+              target="_blank"
+              rel="sponsored nofollow noopener noreferrer"
+              className="mt-1 flex items-center gap-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.07] px-3 py-2.5 text-left transition-colors duration-200 hover:border-amber-400/45 hover:bg-amber-500/[0.11]"
+            >
+              <Zap aria-hidden="true" className="size-4 shrink-0 text-amber-300" />
+              <span className="min-w-0 flex-1">
+                <span className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-[var(--text)]">
+                  High-speed download partner
+                  <span className="rounded-full border border-amber-500/30 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-200/90">
+                    {t.sponsored}
+                  </span>
+                </span>
+                <span className="mt-0.5 block text-xs leading-relaxed text-[var(--text-3)]">
+                  Opens a partner offer in a new tab — your file above is already downloading.
+                </span>
+              </span>
+              <ArrowUpRight aria-hidden="true" className="size-4 shrink-0 text-[var(--text-3)]" />
+            </a>
           ) : null}
 
           {/* Reset — instantly clears and re-focuses the link input. */}
@@ -623,7 +749,7 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
             className="btn btn-ghost group h-11 w-full gap-2 px-4 text-sm"
           >
             <RefreshCw className="size-3.5 transition-transform duration-300 group-hover:rotate-180" />
-            Download Another Video
+            {t.another}
           </button>
         </div>
       )}
@@ -637,21 +763,6 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
         </p>
       ) : null}
 
-      {/* SnapTik "ad sandwich" — bottom slice: a dedicated 300×250 directly
-          under the download buttons, so they sit between two slots. Hidden
-          while the parallel theater is on stage: its center-stage 300×250
-          carries monetization for those 10 seconds, never both at once. */}
-      {!theater ? (
-        <div className="mt-4">
-          <AdSlot
-            format="rectangle"
-            eager
-            refreshKey={refreshKey}
-            label="Sponsored — keeps LAMP TIK free"
-          />
-        </div>
-      ) : null}
-
       <div className="mt-3">
         <SocialShare />
       </div>
@@ -663,6 +774,18 @@ export function ResultPanel({ media, video, onReset, onNotify, refreshKey, onRer
           servers and nothing is kept on this device by the site.
         </span>
       </p>
+
+      {/* Post-download sponsor dialog. Mounted by a download click only, after
+          the file hand-off, once per resolved video. */}
+      <DownloadStartedModal
+        open={startedModal !== null}
+        copy={t}
+        onClose={() => setStartedModal(null)}
+        onDownloadAnother={() => {
+          setStartedModal(null);
+          onReset();
+        }}
+      />
     </div>
   );
 }

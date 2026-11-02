@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowUpRight, Check, Loader2, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowUpRight, Check, Loader2, ShieldCheck, Sparkles, Zap } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 
@@ -16,6 +16,9 @@ import { ToastStack, type ToastItem } from "@/components/toast";
 import { UrlField } from "@/components/url-field";
 import { cn } from "@/lib/cn";
 import { PLATFORMS, type Platform } from "@/lib/platforms";
+import { downloaderCopy, type DownloaderCopy } from "@/lib/i18n/ui";
+import type { LocaleCode } from "@/lib/i18n/types";
+import { directLinkUrl } from "@/lib/monetization";
 import type { MediaPayload } from "@/lib/media";
 import type { ApiFailure, ApiSuccess, ApiResponse, VideoInfo } from "@/lib/tiktok/types";
 
@@ -217,7 +220,15 @@ const YT_STEPS = [
  * forward motion and a truthful duration — no frozen button, no mystery
  * spinner, no fake percentage.
  */
-function LoadingConsole({ elapsedMs, platform }: { elapsedMs: number; platform: Platform }) {
+function LoadingConsole({
+  elapsedMs,
+  platform,
+  copy,
+}: {
+  elapsedMs: number;
+  platform: Platform;
+  copy: DownloaderCopy;
+}) {
   const activeIndex = elapsedMs < 1_200 ? 0 : elapsedMs < 3_200 ? 1 : 2;
   const isYouTube = platform === "youtube";
   const steps = isYouTube ? YT_STEPS : STEPS;
@@ -241,9 +252,7 @@ function LoadingConsole({ elapsedMs, platform }: { elapsedMs: number; platform: 
             />
             <Loader2 className="relative size-3.5 animate-spin text-[var(--accent-text)]" />
           </span>
-          <span className="truncate text-sm font-medium">
-            {isYouTube ? "Resolving high-speed stream…" : "Analyzing stream…"}
-          </span>
+          <span className="truncate text-sm font-medium">{copy.analyzing}</span>
         </div>
         <span className="micro shrink-0 tabular-nums text-[var(--text-3)]">
           {(elapsedMs / 1000).toFixed(1)}s
@@ -311,6 +320,9 @@ function LoadingConsole({ elapsedMs, platform }: { elapsedMs: number; platform: 
 interface DownloaderProps {
   /** Which platform page this shell lives on — default accent + copy. */
   platform?: Platform;
+  /** Localized routes pass their code so the field, CTA and result panel
+   *  speak the same language as the page around them. */
+  locale?: LocaleCode;
   /**
    * Link to show in the field on first paint (the playlist browser hands a
    * chosen video here). Prefilled only — the visitor still presses the
@@ -319,7 +331,8 @@ interface DownloaderProps {
   initialUrl?: string;
 }
 
-export function Downloader({ platform = "tiktok", initialUrl }: DownloaderProps) {
+export function Downloader({ platform = "tiktok", initialUrl, locale }: DownloaderProps) {
+  const t = downloaderCopy(locale);
   const [status, setStatus] = useState<Status>("idle");
   const [video, setVideo] = useState<VideoInfo | null>(null);
   const [media, setMedia] = useState<MediaPayload | null>(null);
@@ -924,7 +937,7 @@ export function Downloader({ platform = "tiktok", initialUrl }: DownloaderProps)
               />
             </span>
             <span className="micro whitespace-nowrap">
-              {isLoading ? "Resolving" : status === "success" ? "Stream ready" : "Ready"}
+              {isLoading ? t.resolving : status === "success" ? t.streamReady : t.ready}
             </span>
           </div>
           <span className="micro hidden shrink-0 whitespace-nowrap sm:block">
@@ -943,19 +956,20 @@ export function Downloader({ platform = "tiktok", initialUrl }: DownloaderProps)
           onSubmitUrl={handleGateSubmit}
           onRetry={retryLastResolve}
           onNotify={notify}
+          copy={t}
         />
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-xs text-[var(--text-2)] sm:text-sm">
           <span className="inline-flex min-w-0 items-center gap-1.5">
             <ShieldCheck className="size-3.5 shrink-0 text-[var(--ok)]" />
-            <span>Server-side · nothing stored</span>
+            <span>{t.privacy}</span>
           </span>
           <button
             type="button"
             onClick={loadSample}
             className="group inline-flex shrink-0 items-center gap-1 underline-offset-4 transition-colors duration-200 hover:text-[var(--text-2)] hover:underline"
           >
-            Try a sample
+            {t.sample}
             <ArrowUpRight className="size-3 transition-transform duration-200 group-hover:-translate-y-px group-hover:translate-x-px" />
           </button>
         </div>
@@ -985,7 +999,7 @@ export function Downloader({ platform = "tiktok", initialUrl }: DownloaderProps)
               transition={expand}
               className="overflow-hidden"
             >
-              <LoadingConsole elapsedMs={elapsedMs} platform={platform} />
+              <LoadingConsole elapsedMs={elapsedMs} platform={platform} copy={t} />
               {backupNote ? (
                 <p
                   role="status"
@@ -1020,6 +1034,7 @@ export function Downloader({ platform = "tiktok", initialUrl }: DownloaderProps)
                 onNotify={notify}
                 refreshKey={adRefreshKey}
                 onReresolve={(url) => void submitRef.current(url, { force: true })}
+                copy={t}
               />
             </motion.div>
           ) : null}
@@ -1051,6 +1066,36 @@ export function Downloader({ platform = "tiktok", initialUrl }: DownloaderProps)
         </kbd>
         to clear
       </p>
+
+      {/* Mobile sponsor card. The High-Speed partner offer used to live only in
+          the desktop rails (`xl:` and up), which nine out of ten visitors never
+          see. In flow below the tool — never floating over a button, and never
+          disguised as a download: the label says partner and the click leaves
+          the site. */}
+      {directLinkUrl ? (
+        <a
+          href={directLinkUrl}
+          target="_blank"
+          rel="sponsored nofollow noopener"
+          className="mt-3 flex items-center gap-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.07] px-3 py-2.5 transition-colors duration-200 hover:border-amber-400/45 hover:bg-amber-500/[0.11] xl:hidden"
+        >
+          <span className="grid size-7 shrink-0 place-items-center rounded-full bg-amber-500/15 text-amber-300">
+            <Zap aria-hidden="true" className="size-3.5" fill="currentColor" strokeWidth={0} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-[var(--text)]">
+              High-speed download partner
+              <span className="rounded-full border border-amber-500/30 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-200/90">
+                {t.sponsored}
+              </span>
+            </span>
+            <span className="mt-0.5 block text-xs leading-relaxed text-[var(--text-3)]">
+              Bonus offer from our partner — opens in a new tab.
+            </span>
+          </span>
+          <ArrowUpRight aria-hidden="true" className="size-4 shrink-0 text-[var(--text-3)]" />
+        </a>
+      ) : null}
     </div>
   );
 }

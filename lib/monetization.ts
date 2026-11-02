@@ -42,6 +42,18 @@ export const adsterraBannerKey =
 export const adsterraRectangleKey =
   process.env.NEXT_PUBLIC_ADSTERRA_RECT_KEY?.trim() || "f0075be743457b9b238d0d701fbd9d8b";
 
+/**
+ * Optional high-CPM direct link shown as a sponsored card under the result
+ * panel's download buttons (`NEXT_PUBLIC_SMARTLINK_URL`).
+ *
+ * Empty by default: without it the card renders nothing and reserves no
+ * space, so the panel is unchanged until a link is set in Vercel. It is a
+ * real anchor with `rel="sponsored nofollow noopener"` — never a download
+ * button: a click opens the partner's offer in a new tab while the file the
+ * visitor asked for is already streaming from the button above.
+ */
+export const smartlinkUrl = process.env.NEXT_PUBLIC_SMARTLINK_URL?.trim() || "";
+
 /** Monetag domain-verification token, emitted as `<meta name="monetag">`. */
 export const monetagVerification = process.env.NEXT_PUBLIC_MONETAG_META?.trim() || null;
 

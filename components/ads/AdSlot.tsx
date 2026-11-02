@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { cn } from "@/lib/cn";
 import {
@@ -18,6 +18,9 @@ interface AdSlotProps {
   className?: string;
   /** Accessible label shown when a creative or house banner is visible. */
   label?: string;
+  /** Visible disclosure word. Localized pages pass their own ("Anzeige",
+   *  "Patrocinado"); English pages keep the default. */
+  sponsoredLabel?: string;
   /** Load immediately with zero IntersectionObserver delay (above-the-fold). */
   eager?: boolean;
   /**
@@ -41,6 +44,47 @@ interface AdSlotProps {
 /** Timestamp of the last global ad refresh across all slots on the page. */
 const REFRESH_THROTTLE_MS = 20_000;
 let lastGlobalAdRefreshAt = 0;
+
+/**
+ * How long a slot waits for a creative before collapsing to the house card.
+ *
+ * Raised from 8s: on mobile data Adsterra's auction regularly answers after
+ * 8–12s, and the old timer was killing live paid impressions mid-flight. The
+ * cost is that a genuinely unfilled slot shows its reserved box a little
+ * longer before collapsing; the benefit is every late fill that used to be
+ * thrown away.
+ */
+const CREATIVE_TIMEOUT_MS = 20_000;
+
+/**
+ * Minimum gap between two slots requesting the SAME zone key.
+ *
+ * Adsterra rate-limits identical zone calls from one page: four 300×250s fired
+ * in the same tick typically return one creative and three blanks. Staggering
+ * them gives each request its own auction window instead of one fill and three
+ * dead boxes.
+ */
+const SAME_ZONE_STAGGER_MS = 700;
+
+/** Reserved start time per zone key, so the stagger holds across components. */
+const nextStartByKey = new Map<string, number>();
+
+/**
+ * Reveal a slot now, or after its turn behind another slot on the same zone.
+ * Returns a cancel function for the unmount case.
+ */
+function scheduleReveal(key: string, reveal: () => void): () => void {
+  const now = Date.now();
+  const startAt = Math.max(now, (nextStartByKey.get(key) ?? 0) + SAME_ZONE_STAGGER_MS);
+  nextStartByKey.set(key, startAt);
+
+  if (startAt <= now) {
+    reveal();
+    return () => {};
+  }
+  const timer = window.setTimeout(reveal, startAt - now);
+  return () => window.clearTimeout(timer);
+}
 /** First mobile viewport band: 300×250 wins where a 728×90 cannot even fit. */
 const MOBILE_RECT_QUERY = "(max-width: 639px)";
 
@@ -67,13 +111,15 @@ export function AdSlot({
   format = "leaderboard",
   className,
   label,
+  sponsoredLabel = "Sponsored",
   eager,
   refreshKey,
   alwaysReserve,
 }: AdSlotProps) {
   const defaultKey = format === "rectangle" ? adsterraRectangleKey : adsterraBannerKey;
 
-  const [visible, setVisible] = useState<boolean>(() => Boolean(eager));
+  const [visible, setVisible] = useState(false);
+  const reveal = useCallback(() => setVisible(true), []);
   const [scale, setScale] = useState(1);
   const [reloadToken, setReloadToken] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
@@ -124,40 +170,55 @@ export function AdSlot({
     // refreshKey is the only trigger; the ref above dedupes re-renders.
   }, [refreshKey]);
 
-  // Eager slots load now; everything else pre-warms within 900px of the fold.
-  // 600px was roughly one phone screen: by the time a reader scrolled to a
-  // slot it had only just started its auction, so the creative arrived late.
-  // 900px starts the request while the slot is still one scroll away.
+  // Eager slots load on mount; everything else pre-warms within 900px of the
+  // fold. 600px was roughly one phone screen: by the time a reader scrolled to
+  // a slot it had only just started its auction, so the creative arrived late,
+  // and 900px starts the request while the slot is still one scroll away.
+  //
+  // Both paths go through `scheduleReveal`, so two slots sharing a zone key
+  // never fire in the same tick (see SAME_ZONE_STAGGER_MS).
   useEffect(() => {
-    if (!key || eager) return;
+    if (!key) return;
     const node = hostRef.current;
     if (!node) return;
+
+    if (eager && typeof window !== "undefined") {
+      return scheduleReveal(key, reveal);
+    }
+
+    let cancel: (() => void) | null = null;
+    const start = () => {
+      cancel = scheduleReveal(key, reveal);
+    };
 
     if (typeof window !== "undefined") {
       const rect = node.getBoundingClientRect();
       if (rect.top <= window.innerHeight + 900) {
-        setVisible(true);
-        return;
+        start();
+        return () => cancel?.();
       }
     }
 
     if (typeof IntersectionObserver === "undefined") {
-      setVisible(true);
-      return;
+      start();
+      return () => cancel?.();
     }
 
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) {
-          setVisible(true);
+          start();
           observer.disconnect();
         }
       },
       { rootMargin: "900px 0px" },
     );
     observer.observe(node);
-    return () => observer.disconnect();
-  }, [key, eager]);
+    return () => {
+      observer.disconnect();
+      cancel?.();
+    };
+  }, [key, eager, reveal]);
 
   // Scale the fixed creative to the available width.
   useEffect(() => {
@@ -199,10 +260,14 @@ export function AdSlot({
     };
 
     window.addEventListener("message", onMessage);
-    // 8s (was 4s): over mobile data Adsterra's RTB creative often needs more
-    // than a few seconds to win the auction and paint — falling back early
-    // was throwing away live paid impressions.
-    const timeout = window.setTimeout(() => setCreative({ identity: slotIdentity, state: "fallback" }), 8_000);
+    // CREATIVE_TIMEOUT_MS (20s, was 8s): over mobile data Adsterra's RTB
+    // creative often needs more than a few seconds to win the auction and
+    // paint. The frame reports its own fill until then; this is only the point
+    // where an empty slot stops pretending it might still fill.
+    const timeout = window.setTimeout(
+      () => setCreative({ identity: slotIdentity, state: "fallback" }),
+      CREATIVE_TIMEOUT_MS,
+    );
     return () => {
       window.removeEventListener("message", onMessage);
       window.clearTimeout(timeout);
@@ -231,7 +296,7 @@ export function AdSlot({
           stacked on top. */}
       {showSponsoredCaption ? (
         <p className="mb-1 text-center text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-3)]">
-          Sponsored
+          {sponsoredLabel}
         </p>
       ) : null}
 
@@ -316,7 +381,7 @@ export function AdSlot({
             className="absolute inset-x-0 top-0 box-border flex h-14 max-h-[72px] w-full max-w-full items-center justify-between gap-3 overflow-hidden rounded-xl border border-amber-500/20 bg-[#0b0c12] px-3 text-white transition-colors hover:border-amber-400/40"
           >
             <span className="min-w-0 truncate text-xs font-medium text-slate-300">
-              <span className="text-amber-300/90">Sponsored</span> · Recommended tools &amp; offers
+              <span className="text-amber-300/90">{sponsoredLabel}</span> · Recommended tools &amp; offers
             </span>
             <span className="shrink-0 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-200">
               Open ↗
