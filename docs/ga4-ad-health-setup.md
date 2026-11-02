@@ -43,7 +43,25 @@ carries the same table.
 - its fill rate falls by `GA4_DROP_POINTS` or more against the baseline, or
 - it fills nothing at all — the dead-zone case, which has no delta to trip.
 
-## One-time setup (about ten minutes)
+## Setup status
+
+The Google side is configured. The values below are the ones in force, so a
+future run that fails can be diagnosed instead of re-derived:
+
+| Item | Value |
+|---|---|
+| GA4 property | `561275135` (`hu dev`) — the stream `lamptik` carries this site's traffic |
+| Measurement id | `G-8YQHV877RV` (the second property, `G-TLNZNDJD4J`, also receives page views) |
+| Cloud project | `rich-atom-475012-v2` |
+| Service account | `lamptik-reporting@rich-atom-475012-v2.iam.gserviceaccount.com` |
+| APIs enabled | Google Analytics Data API, Google Search Console API |
+| GA4 access | the account is a **Viewer** on the property |
+| Search Console | the account is **Full** on `sc-domain:lamptik.online` |
+| Custom dimensions | all four, event-scoped (below) |
+
+The property id is also the script's default (`DEFAULT_PROPERTY` in
+`scripts/ads-health.mjs`), so the `GA4_PROPERTY_ID` repository variable is
+optional. The only outstanding item is the secret — see step 4.
 
 ### 1. Register the four custom dimensions
 
@@ -59,7 +77,11 @@ is registered as a custom dimension. Without this step the API answers
    | Ad zone key | `zone_key` |
    | Ad slot | `slot` |
    | Ad outcome | `outcome` |
-   | Ad wait (ms) | `wait_ms` |
+   | Ad wait ms | `wait_ms` |
+
+   GA4 rejects parentheses in a dimension name (`Ad wait (ms)` fails validation
+   with "must consist of letters, numbers, spaces, or underscores"), so the
+   display name drops them. Only the parameter name matters to the API.
 
 3. New dimensions can take up to 24–48 hours before they are queryable. If the
    first run reports the dimension error, wait a day and re-run — do not change
@@ -86,18 +108,24 @@ there instead of starting the clock then.
 3. This is the step people skip. Without it the API answers `403` and the
    message does not mention permissions at all.
 
-### 4. Store the secret and the property id
+### 4. Store the secret (the one step that needs the owner)
 
-Repository → **Settings → Secrets and variables → Actions**:
+Repository → **Settings → Secrets and variables → Actions → New repository
+secret**:
 
 | Kind | Name | Value |
 |---|---|---|
 | Secret | `GA4_SERVICE_ACCOUNT_JSON` | The entire key JSON (base64 also works) |
-| Variable | `GA4_PROPERTY_ID` | The **numeric** property id, e.g. `123456789` |
 
 `GSC_SERVICE_ACCOUNT_JSON` is accepted as a fallback for the secret, so one key
-can serve both Search Console and GA4. The property id is under GA4 →
-**Admin → Property settings**; it is a number, not the `G-…` measurement id.
+can serve both Search Console and GA4 — if that secret already exists, nothing
+else is needed.
+
+A repository **variable** `GA4_PROPERTY_ID` is optional: the script defaults to
+`561275135`. Set it only to point the report at a different property.
+
+Once the secret is saved, run the job: **Actions → Ad Fill Health → Run
+workflow**. A red run now means a real API problem, not missing configuration.
 
 ## Running it
 

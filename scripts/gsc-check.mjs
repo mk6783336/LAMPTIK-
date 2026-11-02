@@ -21,9 +21,12 @@
  * on the Search Console property before the API can see it; a property the
  * account was never granted answers 403, not an empty list.
  *
- * Without `GSC_SERVICE_ACCOUNT_JSON` the script reports that it is unconfigured,
- * writes that to the summary, and exits 0. An optional integration that was
- * never set up must not turn a scheduled job red.
+ * Auth accepts `GSC_SERVICE_ACCOUNT_JSON` or, as a fallback, the
+ * `GA4_SERVICE_ACCOUNT_JSON` secret the ad-fill report uses — both jobs read
+ * the same service account, and one stored key should not have to be pasted
+ * twice. Without either, the script reports that it is unconfigured, writes
+ * that to the summary, and exits 0: an optional integration that was never set
+ * up must not turn a scheduled job red.
  *
  * Exit codes: 0 = report produced (including "not configured"), 1 = the script
  * itself failed.
@@ -52,7 +55,11 @@ const PACE_MS = Number(process.env.GSC_PACE_MS ?? 400);
 const MAX_RETRIES = 2;
 
 const SKIP_IF_UNCONFIGURED = process.argv.includes("--skip-if-unconfigured");
-const KEY_RAW = (process.env.GSC_SERVICE_ACCOUNT_JSON ?? "").trim();
+const KEY_RAW = (
+  process.env.GSC_SERVICE_ACCOUNT_JSON ??
+  process.env.GA4_SERVICE_ACCOUNT_JSON ??
+  ""
+).trim();
 
 const log = (message) => console.log(message);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -88,7 +95,9 @@ function parseCredentials(raw) {
   try {
     json = JSON.parse(text);
   } catch {
-    throw new Error("GSC_SERVICE_ACCOUNT_JSON is neither JSON nor base64-encoded JSON");
+    throw new Error(
+      "the service-account key is neither JSON nor base64-encoded JSON",
+    );
   }
   if (!json.client_email || !json.private_key) {
     throw new Error("service account JSON is missing client_email or private_key");
@@ -492,7 +501,11 @@ async function main() {
   }
   const previous = state.runs.at(-1) ?? null;
 
-  const sites = (await googleFetch(`${ANALYTICS_ENDPOINT}?max-results=100`, token)).siteEntry ?? [];
+  // sites.list takes no `max-results` — that belongs to the v1 API. Sending it
+  // returns a 400 ("Unknown name \"max-results\""), which is what every run did
+  // before this line lost the parameter. It returns every verified property
+  // the account can see, so nothing needs capping here anyway.
+  const sites = (await googleFetch(ANALYTICS_ENDPOINT, token)).siteEntry ?? [];
   const property = pickProperty(sites);
   if (!property) {
     throw new Error(

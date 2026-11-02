@@ -81,15 +81,19 @@ jobs:
       # impressions from Search Analytics. Bing tells us what Bing knows; this
       # tells us what Google knows, and the clicks are the number that pays.
       #
-      # Optional. Without GSC_SERVICE_ACCOUNT_JSON the step prints that it is
+      # Optional. Without a service-account key the step prints that it is
       # unconfigured and exits 0 — a missing optional secret must not fail a
       # scheduled job. The service account's client email has to be added as a
       # user on the Search Console property; see
       # docs/google-search-console-setup.md.
+      #
+      # GA4_SERVICE_ACCOUNT_JSON is the fallback, because the Ad Fill Health job
+      # reads the same service account: one stored key serves both APIs.
       - name: Measure Google Search Console
         env:
           INDEX_CHECK_ORIGIN: https://www.lamptik.online
           GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+          GA4_SERVICE_ACCOUNT_JSON: ${{ secrets.GA4_SERVICE_ACCOUNT_JSON }}
           # Optional repository variable, when the property is a URL-prefix
           # property rather than the usual sc-domain: one. Left empty, the
           # script picks whichever property the service account can see.

@@ -40,7 +40,17 @@ const KEY_RAW = (
   process.env.GSC_SERVICE_ACCOUNT_JSON ??
   ""
 ).trim();
-const PROPERTY = (process.env.GA4_PROPERTY_ID ?? "").trim().replace(/^properties\//, "");
+/**
+ * The property this repository reports on, used when the repository variable
+ * is absent. Only one GA4 property receives this site's traffic, and an unset
+ * variable used to fail the run with "unconfigured" even though everything
+ * else was in place — a configuration trap, not a measurement problem.
+ * `GA4_PROPERTY_ID` still wins when set, so a second property stays possible.
+ */
+const DEFAULT_PROPERTY = "561275135";
+const PROPERTY = (process.env.GA4_PROPERTY_ID || DEFAULT_PROPERTY)
+  .trim()
+  .replace(/^properties\//, "");
 const SKIP_IF_UNCONFIGURED = process.argv.includes("--skip-if-unconfigured");
 const RUN_URL = (process.env.RUN_URL ?? "").trim();
 const ALERT_PATH = process.env.GA4_ALERT_PATH ?? "ads-health-alerts.md";
@@ -358,14 +368,13 @@ function printConsole(entries) {
 // ---------------------------------------------------------------------------
 
 async function main() {
-  if (!KEY_RAW || !PROPERTY) {
-    const missing = [
-      KEY_RAW ? null : "GA4_SERVICE_ACCOUNT_JSON (or GSC_SERVICE_ACCOUNT_JSON)",
-      PROPERTY ? null : "GA4_PROPERTY_ID",
-    ].filter(Boolean);
+  // The property id has a default, so a missing key is the only configuration
+  // failure left that this script can hit.
+  if (!KEY_RAW) {
     const message =
-      `ad fill health is unconfigured — missing ${missing.join(" and ")}. ` +
-      "Set them per docs/ga4-ad-health-setup.md; until then no zone can be watched.";
+      "ad fill health is unconfigured — missing GA4_SERVICE_ACCOUNT_JSON " +
+      "(or GSC_SERVICE_ACCOUNT_JSON). Set it per docs/ga4-ad-health-setup.md; " +
+      "until then no zone can be watched.";
     if (SKIP_IF_UNCONFIGURED) {
       warn(message);
       setOutput("configured", "false");
