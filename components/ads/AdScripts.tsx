@@ -1,8 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Script from "next/script";
 
-import { hilltopMultitagSrc, monetagInPageSrc } from "@/lib/monetization";
+import { hilltopMultitagSrc, monetagInPage } from "@/lib/monetization";
 
 /**
  * Global third-party ad surface — minimal, non-blocking, mobile-safe.
@@ -29,12 +30,14 @@ import { hilltopMultitagSrc, monetagInPageSrc } from "@/lib/monetization";
  * network), the invisible iframe stays over the whole page and swallows every
  * tap and scroll gesture — the "site frozen on mobile" production failure.
  *
- * The HilltopAds MultiTag (`hilltopMultitagSrc`) is the one added surface, and
- * it is the same shape as the sanctioned Monetag In-Page Push: the network
- * renders small cards in its own corner, never an `inset: 0` layer, so a slow
- * creative cannot swallow taps. Both push networks mount only when their tag
- * source resolves; if both are configured they compete for the same corner, so
- * configure one.
+ * The HilltopAds MultiTag (`hilltopMultitagSrc`) is mounted here, but only at
+ * ≥768px. Measured on a 390×844 phone its push card is a `position: fixed`
+ * node with `z-index: 2147483647` occupying 364×272px at y=520–792 — while the
+ * Download CTA sits at y=730–784. It covers the button. That is the same
+ * failure mode as the Vignette, so the tag is not injected below 768px at all:
+ * the mobile Download CTA outranks a corner card. If Hilltop ships a genuinely
+ * compact, corner-anchored unit, inch that breakpoint down with a measurement
+ * of the card's rect against `[data-ad-guard="result"]`, not by hope.
  *
  * What remains is the Service Worker registration at the domain root: the
  * Direct Link account's domain verification requires `/sw.js` to exist AND be
@@ -55,24 +58,36 @@ export function AdScripts() {
     hilltopMultitagSrc,
   )};s.async=true;s.referrerPolicy="no-referrer-when-downgrade";(d.head||d.body||d.documentElement).appendChild(s);}catch(e){}})();`;
 
+  // Push cards are mounted wide-screen only — see the rect measurement in the
+  // header. Resolved after mount so the server render never guesses a viewport.
+  const [pushAllowed, setPushAllowed] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 768px)");
+    const sync = () => setPushAllowed(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
   return (
     <>
       {/* Monetag In-Page Push — the account's highest-CPM format. Rendered
           only when the dashboard's tag URL is configured, so the site ships
           nothing it cannot fill. It is a corner card, not a full-viewport
           layer: the Vignette stays banned for the reason in AGENTS.md. */}
-      {monetagInPageSrc ? (
+      {monetagInPage ? (
         <Script
           id="monetag-inpage-push"
-          src={monetagInPageSrc}
+          src={monetagInPage.src}
           strategy="afterInteractive"
           data-cfasync="false"
+          data-zone={monetagInPage.zone || undefined}
         />
       ) : null}
-      {/* HilltopAds MultiTag — global in-page push, mounted once per document
-          on every route. Same corner-card shape as the Monetag push above; the
-          Vignette stays banned for the reason in AGENTS.md. */}
-      {hilltopMultitagSrc ? (
+      {/* HilltopAds MultiTag — global in-page push on tablet/desktop. Its card
+          is fixed-positioned and full-size on a phone, so it is not injected
+          under 768px where it would sit on the Download CTA. */}
+      {pushAllowed && hilltopMultitagSrc ? (
         <Script id="hilltopads-multitag" strategy="afterInteractive">
           {loadHilltopMultitag}
         </Script>

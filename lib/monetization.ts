@@ -73,7 +73,35 @@ export const monetagVerification = process.env.NEXT_PUBLIC_MONETAG_META?.trim() 
  * a small floating card that occupies its own corner and never covers the
  * tool, so it is allowed by the same rule that bans the Vignette.
  */
-export const monetagInPageSrc = process.env.NEXT_PUBLIC_MONETAG_INPAGE_SRC?.trim() || "";
+const MONETAG_INPAGE_RAW = process.env.NEXT_PUBLIC_MONETAG_INPAGE_SRC?.trim() || "";
+
+/**
+ * Monetag In-Page Push, parsed into the `<Script src … data-zone …>` pair the
+ * tag actually reads.
+ *
+ * The dashboard hands out an HTML snippet, not a URL:
+ *
+ *   <script>(function(s){s.dataset.zone='12181860',s.src='https:/nap5k.com/tag.min.js'})…</script>
+ *
+ * Pasting that into `NEXT_PUBLIC_MONETAG_INPAGE_SRC` is the obvious thing to do,
+ * and it used to be catastrophic in a quiet way: the whole snippet became the
+ * script's `src`, so every pageview requested
+ * `/%3Cscript%3E(function(s)%7B…%3C/script%3E` **from our own origin** and got a
+ * 404 — a wasted request on every visit and zero Monetag impressions. Both
+ * forms are accepted here (bare URL or snippet) and the zone is extracted from
+ * `data-zone` / `dataset.zone`, because the tag ignores everything else.
+ */
+export const monetagInPage = (() => {
+  const raw = MONETAG_INPAGE_RAW;
+  if (!raw) return null;
+  const zone = raw.match(/(?:data-zone|dataset\.zone)\s*[=:]\s*['"]?(\d{3,})/i)?.[1] ?? "";
+  // A snippet may spell the scheme as `https:/` (single slash); the URL parser
+  // normalises it, but Next would stringify the raw value into our own path.
+  const match = raw.match(/https?:\/{1,2}[^\s'"<>)]+\.js/i) ?? (/^\/\//.test(raw) ? [raw] : null);
+  const src = match ? match[0].replace(/^https?:\/*/i, "https://").replace(/^\/\//, "https://") : "";
+  if (!src) return null;
+  return { src, zone };
+})();
 
 /**
  * HilltopAds MultiTag / In-Page Push (`NEXT_PUBLIC_HILLTOP_MULTITAG_SRC`).
