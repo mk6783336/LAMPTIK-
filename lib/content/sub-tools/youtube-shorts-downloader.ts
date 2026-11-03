@@ -7,13 +7,16 @@ import type { SubTool } from "@/lib/content/sub-tool-types";
 export const entry: SubTool = {
   slug: "youtube-shorts-downloader",
   platform: "youtube",
-  title: "YouTube Shorts Downloader 1080p - Save Shorts as MP4",
+  title: "YouTube Shorts Downloader 1080p Free - Save Shorts MP4",
   socialTitle: "YouTube Shorts Downloader - Save Any Short in 1080p Vertical MP4",
   description:
-    "Download YouTube Shorts in full 1080x1920 MP4 with no watermark. Paste a /shorts/ link or a youtu.be link and save the vertical video in one tap, free.",
+    "Download YouTube Shorts free in full 1080x1920 MP4, no watermark. Paste a /shorts/ or youtu.be link and save the vertical video with its music.",
   keywords: [
     "YouTube Shorts downloader",
+    "YouTube Shorts download free",
     "download YouTube Shorts 1080p",
+    "YouTube Shorts download high quality",
+    "YouTube Shorts download with music",
     "YouTube Shorts to MP4",
     "save Shorts video online",
     "Shorts downloader no watermark",

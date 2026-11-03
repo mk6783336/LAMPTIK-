@@ -11,17 +11,19 @@ import type { SubTool } from "@/lib/content/sub-tool-types";
 export const entry: SubTool = {
   slug: "instagram-reels-audio",
   platform: "instagram",
-  title: "Instagram Reels Audio - Save the Original Sound",
+  title: "Instagram Reels Audio - Finder, Save & Extract Sound",
   socialTitle:
     "Instagram Reels Audio - Save the Reel With Its Original Sound (No Fake MP3)",
   description:
-    "Instagram has no separate audio file. Save the Reel with its original soundtrack intact, then reuse the sound on Instagram or extract MP3 from the MP4.",
+    "Instagram has no audio-only file: save the Reel with its original soundtrack intact, then extract MP3 from the saved MP4. No login, no fake MP3.",
   keywords: [
     "Instagram Reels audio",
+    "Instagram Reels audio finder",
+    "Instagram Reels audio extraction",
     "download Instagram Reel audio",
+    "download Reels audio copy paste",
     "Instagram original audio",
     "save Reel sound",
-    "Instagram Reels MP3",
     "Instagram audio download no login",
   ],
   eyebrow: "Instagram Reels - the original track, untouched",

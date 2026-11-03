@@ -11,17 +11,19 @@ import type { SubTool } from "@/lib/content/sub-tool-types";
 export const entry: SubTool = {
   slug: "tiktok-mp3-downloader",
   platform: "tiktok",
-  title: "TikTok to MP3 Converter - Original Sound, No Re-encode",
+  title: "TikTok MP3 Download Without Watermark - Original Sound",
   socialTitle: "TikTok to MP3 Converter - Extract the Original Sound at Full Quality",
   description:
-    "Convert TikTok videos to MP3 from the original audio track - up to 320 kbps, no video re-encode, no watermark, no sign-up. Paste a link and save the sound.",
+    "TikTok MP3 download without watermark - convert any TikTok to MP3 or M4A from the original audio track at up to 320 kbps. Free, no app, no sign-up.",
   keywords: [
-    "tiktok to mp3",
+    "tiktok mp3 download without watermark",
     "tiktok mp3 downloader",
+    "tiktok to mp3",
     "extract tiktok sound",
     "tiktok audio download",
     "download tiktok sound without video",
     "tiktok mp3 320kbps",
+    "tiktok mp3 converter online",
   ],
   eyebrow: "TikTok to MP3 - free, no app required",
   h1Lead: "TikTok sounds.",
