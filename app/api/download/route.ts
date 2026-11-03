@@ -80,6 +80,9 @@ const PLATFORM_PROFILES: Record<DownloadPlatform, PlatformProfile> = {
   instagram: { referer: "https://www.instagram.com/" },
   facebook: { referer: "https://www.facebook.com/" },
   youtube: { referer: "https://www.youtube.com/" },
+  // X serves its MP4 renditions to any request that does not look like a
+  // hotlink from a third-party site; x.com is the origin the player uses.
+  twitter: { referer: "https://x.com/" },
 };
 
 /** Response types that mean "this is an error page / playlist, not media". */

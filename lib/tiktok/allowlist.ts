@@ -29,6 +29,10 @@ const ALLOWED_HOST_SUFFIXES = [
   "fbcdn.net",
   "fbsbx.com",
   "facebook.com",
+  // X / Twitter — `video.twimg.com` MP4 renditions and `pbs.twimg.com`
+  // posters. Both are the platform's own CDNs, so the proxy may stream them
+  // exactly like the other four platforms' media hosts.
+  "twimg.com",
   // YouTube — googlevideo media shards + Piped/Invidious proxied mirrors.
   "googlevideo.com",
   "youtube.com",
@@ -80,7 +84,7 @@ export function safeFilenamePart(value: string | null, fallback: string): string
   return cleaned || fallback;
 }
 
-const SAFE_PLATFORMS = ["tiktok", "instagram", "facebook", "youtube"] as const;
+const SAFE_PLATFORMS = ["tiktok", "instagram", "facebook", "youtube", "twitter"] as const;
 export type DownloadPlatform = (typeof SAFE_PLATFORMS)[number];
 
 /** Whitelist-validate the `platform` filename segment (default: tiktok). */

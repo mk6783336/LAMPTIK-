@@ -59,6 +59,10 @@ const FOOTER_GROUPS: Array<{ id: FooterGroupId; label: string; links: FooterLink
       { href: "/", label: "TikTok Downloader", id: "tiktok" },
       { href: "/instagram-reels-downloader", label: "Instagram Reels", id: "instagram" },
       { href: "/facebook-video-downloader", label: "Facebook HD", id: "facebook" },
+      // No `id`: the localized footer copy predates this route, and a missing
+      // key would break the total record in footer-copy.ts. The English label
+      // is correct in every locale here — "Twitter / X" is a brand name.
+      { href: "/twitter-video-downloader", label: "Twitter / X video" },
       { href: "/youtube-downloader", label: "YouTube HD", id: "youtube" },
     ],
   },

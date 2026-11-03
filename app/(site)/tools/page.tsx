@@ -269,6 +269,31 @@ export default function ToolsPage() {
                     </Link>
                   );
                 })}
+
+                {/* The fifth surface. It is not in `PLATFORM_LIST` on purpose:
+                    that union drives the shared downloader, its detection badge
+                    and the per-platform hero copy, and X resolves through its
+                    own endpoint rather than the multi-platform one. */}
+                <Link
+                  href="/twitter-video-downloader"
+                  className="bento-card group flex flex-col"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="bento-icon">
+                      <span aria-hidden="true" className="text-sm font-semibold">
+                        X
+                      </span>
+                    </span>
+                    <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
+                  </div>
+                  <h3 className="mt-6 text-base font-semibold tracking-tight">
+                    Twitter / X
+                  </h3>
+                  <p className="pretty mt-2 text-sm leading-relaxed text-[var(--text-2)]">
+                    Videos and GIFs from any x.com or twitter.com post — up to 1080p MP4,
+                    no login.
+                  </p>
+                </Link>
               </div>
 
               <p className="mt-10 text-sm text-[var(--text-2)]">

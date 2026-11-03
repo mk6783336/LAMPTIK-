@@ -82,6 +82,21 @@ export default function sitemap(): MetadataRoute.Sitemap {
       alternates: { languages: platformLanguages["facebook-video-downloader"] },
     },
     {
+      // X/Twitter is a fifth surface with its own resolver, not a sub-tool of
+      // an existing platform page — so it is declared here, beside the four
+      // platform landings it sits next to in the footer.
+      url: `${siteUrl}/twitter-video-downloader`,
+      lastModified: updated,
+      changeFrequency: "daily",
+      priority: 0.95,
+      alternates: {
+        languages: absoluteLanguages({
+          en: "/twitter-video-downloader",
+          "x-default": "/twitter-video-downloader",
+        }),
+      },
+    },
+    {
       url: `${siteUrl}/youtube-downloader`,
       lastModified: updated,
       changeFrequency: "daily",
