@@ -76,6 +76,25 @@ export const monetagVerification = process.env.NEXT_PUBLIC_MONETAG_META?.trim() 
 export const monetagInPageSrc = process.env.NEXT_PUBLIC_MONETAG_INPAGE_SRC?.trim() || "";
 
 /**
+ * HilltopAds MultiTag / In-Page Push (`NEXT_PUBLIC_HILLTOP_MULTITAG_SRC`).
+ *
+ * The account was issued a MultiTag instead of a 300×250 zone, so this is the
+ * whole Hilltop banner surface: one loader, mounted once per document, that the
+ * network uses to place its own in-page push cards. It is a corner card like
+ * Monetag In-Page Push — not the `inset: 0` layer the Vignette painted — which
+ * is what keeps it inside the rule that bans viewport-covering scripts.
+ *
+ * The URL is account-specific and lives in the dashboard, so it is overridable
+ * from Vercel without a code change; the issued tag is the default so the
+ * placement ships live. Only one push network should normally be configured at
+ * a time (see the note in `components/ads/AdScripts.tsx`): two cards in the
+ * same corner is a layout and a policy problem, not extra revenue.
+ */
+export const hilltopMultitagSrc =
+  process.env.NEXT_PUBLIC_HILLTOP_MULTITAG_SRC?.trim() ||
+  "https://quarrelsomebitter.com/boX.VVsedOGFli0-Y/WGcP/jesmt9KuLZnUglvkNPqTwcJ1/OvTNEXygMtDUU/tLNozZUu5OMqTdINwfOsQB";
+
+/**
  * HilltopAds Direct Link — used ONLY as the href of an in-page sponsored card
  * (the side rail and the banner fallback), i.e. somewhere the visitor can see
  * what they are clicking. It is deliberately never opened programmatically

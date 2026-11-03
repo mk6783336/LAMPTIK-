@@ -2,7 +2,7 @@
 
 import Script from "next/script";
 
-import { monetagInPageSrc } from "@/lib/monetization";
+import { hilltopMultitagSrc, monetagInPageSrc } from "@/lib/monetization";
 
 /**
  * Global third-party ad surface — minimal, non-blocking, mobile-safe.
@@ -29,6 +29,13 @@ import { monetagInPageSrc } from "@/lib/monetization";
  * network), the invisible iframe stays over the whole page and swallows every
  * tap and scroll gesture — the "site frozen on mobile" production failure.
  *
+ * The HilltopAds MultiTag (`hilltopMultitagSrc`) is the one added surface, and
+ * it is the same shape as the sanctioned Monetag In-Page Push: the network
+ * renders small cards in its own corner, never an `inset: 0` layer, so a slow
+ * creative cannot swallow taps. Both push networks mount only when their tag
+ * source resolves; if both are configured they compete for the same corner, so
+ * configure one.
+ *
  * What remains is the Service Worker registration at the domain root: the
  * Direct Link account's domain verification requires `/sw.js` to exist AND be
  * registered. The worker itself renders nothing. Registration failures are
@@ -37,6 +44,16 @@ import { monetagInPageSrc } from "@/lib/monetization";
  */
 export function AdScripts() {
   const registerWorker = `(function(){try{if(!("serviceWorker" in navigator))return;var go=function(){navigator.serviceWorker.register("/sw.js").catch(function(){})};if(document.readyState==="complete"){go()}else{window.addEventListener("load",go,{once:true})}}catch(e){}})();`;
+
+  // The network's own loader resolves its insertion point with
+  // `document.currentScript`, which is null inside a React-rendered inline
+  // <script>, then falls back to "last script in the document" — which can be a
+  // tag that is not in the DOM yet. Appending to <head> is the same result
+  // without either assumption; the window flag stops React's dev double-mount
+  // and a client-side revisit from loading the tag twice.
+  const loadHilltopMultitag = `(function(){try{if(window.__lamptikHilltopTag)return;window.__lamptikHilltopTag=1;var d=document,s=d.createElement("script");s.settings={};s.src=${JSON.stringify(
+    hilltopMultitagSrc,
+  )};s.async=true;s.referrerPolicy="no-referrer-when-downgrade";(d.head||d.body||d.documentElement).appendChild(s);}catch(e){}})();`;
 
   return (
     <>
@@ -51,6 +68,14 @@ export function AdScripts() {
           strategy="afterInteractive"
           data-cfasync="false"
         />
+      ) : null}
+      {/* HilltopAds MultiTag — global in-page push, mounted once per document
+          on every route. Same corner-card shape as the Monetag push above; the
+          Vignette stays banned for the reason in AGENTS.md. */}
+      {hilltopMultitagSrc ? (
+        <Script id="hilltopads-multitag" strategy="afterInteractive">
+          {loadHilltopMultitag}
+        </Script>
       ) : null}
       <Script id="monetag-sw" strategy="afterInteractive">
         {registerWorker}
