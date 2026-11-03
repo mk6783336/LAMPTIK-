@@ -7,7 +7,7 @@ import { AmbientBackground } from "@/components/ambient-background";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { GUIDE_LIST } from "@/lib/content/guides";
-import { siteConfig } from "@/lib/site";
+import { siteConfig, siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Guides — TikTok downloads explained",
@@ -25,14 +25,23 @@ export const metadata: Metadata = {
 };
 
 export default function GuidesPage() {
+  const pageUrl = `${siteUrl}/guides`;
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "CollectionPage",
+        "@id": `${pageUrl}#collection`,
         name: "LAMP TIK Guides",
-        url: "/guides",
-        isPartOf: { "@type": "WebSite", name: siteConfig.name },
+        // Absolute, not `/guides`: a relative URL in structured data is
+        // reported as a validation error by both Google's Rich Results test
+        // and Ahrefs ("Structured data has Google rich results validation
+        // error", 1 page) — this hub was that page, with 13 relative values
+        // in its @graph.
+        url: pageUrl,
+        inLanguage: "en",
+        isPartOf: { "@id": `${siteUrl}/#website` },
+        about: { "@id": `${siteUrl}/#software` },
         // `WebPage`, not `Article`: these entries describe the guide pages
         // without being the articles themselves. Typing them Article made
         // Google's validator demand datePublished, author and image on a hub
@@ -43,14 +52,15 @@ export default function GuidesPage() {
           name: guide.title,
           description: guide.description,
           dateModified: guide.updatedAt,
-          url: `/guides/${guide.slug}`,
+          url: `${siteUrl}/guides/${guide.slug}`,
         })),
       },
       {
         "@type": "BreadcrumbList",
+        "@id": `${pageUrl}#breadcrumb`,
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Home", item: "/" },
-          { "@type": "ListItem", position: 2, name: "Guides" },
+          { "@type": "ListItem", position: 1, name: "Home", item: siteUrl },
+          { "@type": "ListItem", position: 2, name: "Guides", item: pageUrl },
         ],
       },
     ],

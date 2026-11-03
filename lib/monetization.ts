@@ -58,6 +58,24 @@ export const smartlinkUrl = process.env.NEXT_PUBLIC_SMARTLINK_URL?.trim() || "";
 export const monetagVerification = process.env.NEXT_PUBLIC_MONETAG_META?.trim() || null;
 
 /**
+ * Monetag In-Page Push tag source (`NEXT_PUBLIC_MONETAG_INPAGE_SRC`).
+ *
+ * Monetag is the one network actually paying this account (≈$1.23 CPM, and
+ * $4.52 on its best day, against $0.00 on 447 Adsterra impressions), so its
+ * tag belongs on the page rather than leaving the account idle. The mount is
+ * env-gated because only the dashboard owner has the tag URL: paste it into
+ * Vercel and the script loads on every page; leave it unset and nothing is
+ * rendered or reserved.
+ *
+ * In-Page Push is chosen over the Vignette deliberately. The Vignette paints
+ * `position: fixed; inset: 0` and, when its creative hangs, swallows every tap
+ * on a phone — the production freeze documented in AGENTS.md. In-Page Push is
+ * a small floating card that occupies its own corner and never covers the
+ * tool, so it is allowed by the same rule that bans the Vignette.
+ */
+export const monetagInPageSrc = process.env.NEXT_PUBLIC_MONETAG_INPAGE_SRC?.trim() || "";
+
+/**
  * HilltopAds Direct Link — used ONLY as the href of an in-page sponsored card
  * (the side rail and the banner fallback), i.e. somewhere the visitor can see
  * what they are clicking. It is deliberately never opened programmatically

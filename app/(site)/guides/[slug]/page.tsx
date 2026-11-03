@@ -67,7 +67,9 @@ export default async function GuidePage({
     "@graph": [
       {
         "@type": "Article",
+        "@id": `${guideUrl}#article`,
         headline: guide.title,
+        url: guideUrl,
         description: guide.description,
         // Full ISO-8601 with a timezone, not the bare `YYYY-MM-DD` the guide
         // stores: Google's validator reads a date-only value as an invalid
@@ -88,8 +90,8 @@ export default async function GuidePage({
         },
         author: {
           "@type": "Organization",
-          name: "LAMP TIK Editorial Team",
-          url: `${siteUrl}/about`,
+          name: siteConfig.name,
+          url: siteUrl,
         },
         // Google also requires publisher.logo, and it must be a raster image,
         // so this points at the generated PNG icon rather than the SVG mark.

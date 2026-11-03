@@ -269,7 +269,7 @@ export const GUIDES: Guide[] = [
     title: "Is Downloading TikTok Videos Legal? What You Should Know",
     metaTitle: "Is Downloading TikTok Videos Legal?",
     description:
-      "The honest answer on copyright, TikTok's terms, fair use and fair dealing, personal vs. commercial use, and how takedowns actually work — plus how to download responsibly.",
+      "The honest answer on copyright, TikTok's terms, fair use, personal vs. commercial use and how takedowns actually work — plus how to download responsibly.",
     updatedAt: "2026-10-30",
     shortAnswer:
       "Downloading a public TikTok video for personal, offline viewing sits in a gray area: TikTok's terms restrict it, copyright law is what actually decides, and enforcement targets republishers and commercial reuse rather than someone watching on a plane. Re-uploading someone else's video, stripping credit, or using it in anything monetized can infringe copyright outright.",

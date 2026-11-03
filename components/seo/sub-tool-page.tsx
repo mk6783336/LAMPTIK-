@@ -22,6 +22,7 @@ import { SiteHeader } from "@/components/site-header";
 import { getGuide } from "@/lib/content/guides";
 import { getSubTool } from "@/lib/content/sub-tools";
 import { toolLabel } from "@/lib/content/sub-tools/groups";
+import { SUB_TOOL_ANSWERS } from "@/lib/content/sub-tools/quick-answers";
 import type { SubTool } from "@/lib/content/sub-tool-types";
 import { PLATFORMS } from "@/lib/platforms";
 import { siteUrl } from "@/lib/site";
@@ -38,6 +39,8 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
   const platform = PLATFORMS[tool.platform];
   /** Same label the /tools hub prints on this page's card. */
   const label = toolLabel(tool);
+  /** Snippet block + comparison rows, keyed by slug (see quick-answers.ts). */
+  const answer = SUB_TOOL_ANSWERS[tool.slug];
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -109,6 +112,22 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
                   {tool.h1Lead}
                   <span className="text-gradient mt-1 block">{tool.h1Accent}</span>
                 </h1>
+
+                {/* Instant answer, immediately under the H1: the question as
+                    typed, then two sentences that answer it. This is the
+                    featured-snippet and AI-answer shape — the reader gets the
+                    answer before any scrolling, and the crawler gets one
+                    unambiguous claim to quote. */}
+                {answer ? (
+                  <div className="mt-4 rounded-2xl border border-[var(--glass-border)] border-l-2 border-l-[var(--accent)] bg-[var(--glass-bg)] px-4 py-3.5">
+                    <p className="text-sm font-semibold tracking-tight text-[var(--text)]">
+                      {answer.query}
+                    </p>
+                    <p className="pretty mt-1.5 text-sm leading-relaxed text-[var(--text-2)]">
+                      {answer.answer}
+                    </p>
+                  </div>
+                ) : null}
 
                 <p className="pretty mt-4 max-w-lg text-base leading-relaxed text-[var(--text-2)] sm:mt-5">
                   {tool.lede}
@@ -249,6 +268,49 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
               </div>
             </div>
           </section>
+
+          {/* Mechanism-by-mechanism comparison. Stacked cards, not a table:
+              three columns at 390px is horizontal overflow, which the site
+              does not ship. */}
+          {answer?.comparison.length ? (
+            <section className="section-pad border-t border-[var(--line)]">
+              <div className="shell max-w-3xl">
+                <p className="eyebrow">
+                  <span aria-hidden="true" className="eyebrow-dot" />
+                  Side by side
+                </p>
+                <h2 className="balance mt-4 text-4xl font-semibold leading-tight tracking-headline">
+                  How this differs from a typical downloader.
+                </h2>
+                <div className="mt-6 space-y-3">
+                  {answer.comparison.map((row) => (
+                    <div
+                      key={row.label}
+                      className="rounded-xl border border-[var(--glass-border)] bg-[var(--field)] p-4"
+                    >
+                      <p className="micro text-xs text-[var(--text-3)]">{row.label}</p>
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <p className="text-xs font-semibold text-[var(--accent-text)]">LAMP TIK</p>
+                          <p className="pretty mt-1 text-sm leading-relaxed text-[var(--text-2)]">
+                            {row.ours}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-[var(--text-3)]">
+                            Typical downloader
+                          </p>
+                          <p className="pretty mt-1 text-sm leading-relaxed text-[var(--text-2)]">
+                            {row.theirs}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          ) : null}
 
           {guideLinks.length > 0 ? (
             <section className="section-pad border-t border-[var(--line)]">

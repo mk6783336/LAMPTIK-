@@ -31,6 +31,14 @@ const ALLOWED_CRAWLERS = [
   "Applebot-Extended",
   "CCBot",
   "meta-externalagent",
+  // Added for Generative Engine Optimization: the assistants that actually
+  // cite tool pages. Every one of them is named explicitly rather than left
+  // to the wildcard, because a crawler that is only matched by `*` is the
+  // first thing a future policy change breaks silently.
+  "DeepSeekBot",
+  "MistralAI-User",
+  "cohere-ai",
+  "YouBot",
 ];
 
 export default function robots(): MetadataRoute.Robots {

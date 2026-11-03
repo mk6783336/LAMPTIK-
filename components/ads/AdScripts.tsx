@@ -2,6 +2,8 @@
 
 import Script from "next/script";
 
+import { monetagInPageSrc } from "@/lib/monetization";
+
 /**
  * Global third-party ad surface — minimal, non-blocking, mobile-safe.
  *
@@ -37,8 +39,22 @@ export function AdScripts() {
   const registerWorker = `(function(){try{if(!("serviceWorker" in navigator))return;var go=function(){navigator.serviceWorker.register("/sw.js").catch(function(){})};if(document.readyState==="complete"){go()}else{window.addEventListener("load",go,{once:true})}}catch(e){}})();`;
 
   return (
-    <Script id="monetag-sw" strategy="afterInteractive">
-      {registerWorker}
-    </Script>
+    <>
+      {/* Monetag In-Page Push — the account's highest-CPM format. Rendered
+          only when the dashboard's tag URL is configured, so the site ships
+          nothing it cannot fill. It is a corner card, not a full-viewport
+          layer: the Vignette stays banned for the reason in AGENTS.md. */}
+      {monetagInPageSrc ? (
+        <Script
+          id="monetag-inpage-push"
+          src={monetagInPageSrc}
+          strategy="afterInteractive"
+          data-cfasync="false"
+        />
+      ) : null}
+      <Script id="monetag-sw" strategy="afterInteractive">
+        {registerWorker}
+      </Script>
+    </>
   );
 }

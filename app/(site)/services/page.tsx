@@ -25,7 +25,7 @@ import { siteConfig, siteUrl } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Web & App Build Services — Next.js, APIs, Android",
   description:
-    "Custom Next.js web apps, media and downloader tools, Chrome extensions and Android apps — built by the developer behind LampTik. Fixed quote after a brief.",
+    "Custom Next.js web apps, media and downloader tools, Chrome extensions and Android apps — built by the developer behind LampTik. Fixed quote, no hourly drift.",
   alternates: { canonical: "/services" },
   keywords: [
     "hire next.js developer",

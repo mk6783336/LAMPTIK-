@@ -44,7 +44,7 @@ export function ConsentBar() {
           cookie-based personalisation; decline for contextual only. Stored on
           this device.{" "}
           <Link
-            href="/privacy/"
+            href="/privacy"
             className="text-[var(--accent-text)] underline decoration-[var(--accent-soft)] underline-offset-2"
           >
             Policy

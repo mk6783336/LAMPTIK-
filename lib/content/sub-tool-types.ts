@@ -59,6 +59,25 @@ export interface SubTool {
   h1Accent: string;
   /** Paragraph under the H1. */
   lede: string;
+  /**
+   * Instant answer for the query this page targets — rendered in a bordered
+   * block directly under the H1, phrased as the question people actually type.
+   * It is the snippet candidate: two sentences that answer without a scroll.
+   */
+  quickAnswer?: {
+    query: string;
+    answer: string;
+  };
+  /**
+   * Mechanism-by-mechanism comparison against a typical online downloader.
+   * Rendered as stacked cards, never a wide table: at 390px a three-column
+   * table is guaranteed horizontal overflow.
+   */
+  comparison?: Array<{
+    label: string;
+    ours: string;
+    theirs: string;
+  }>;
   chips: [string, string, string];
   /** Four `[term, value]` pairs for the spec grid. */
   facts: [string, string][];

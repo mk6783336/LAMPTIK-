@@ -219,6 +219,7 @@ export function articleNode(args: {
     "@type": "Article",
     "@id": `${args.url}#article`,
     headline: args.headline,
+    url: args.url,
     description: args.description,
     datePublished: published,
     dateModified: published,
@@ -229,10 +230,13 @@ export function articleNode(args: {
       width: 1200,
       height: 630,
     },
+    // The publisher brand itself, with the canonical origin — an author node
+    // whose name and url disagree with the publisher is one of the shapes
+    // Google's validator reports as an incomplete Article.
     author: {
       "@type": "Organization",
-      name: "LAMP TIK Editorial Team",
-      url: `${siteUrl}/about`,
+      name: siteConfig.name,
+      url: siteUrl,
     },
     publisher: {
       "@type": "Organization",

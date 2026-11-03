@@ -112,6 +112,7 @@ const counts = {
   routes: 0,
   linkTarget: 0,
   sitemap: 0,
+  hygiene: 0,
 };
 
 function fail(file, source, index, message) {
@@ -130,7 +131,11 @@ const guideNodes = [...guideSource.matchAll(/^ {4}slug: "([^"]+)"/gm)].map((matc
 const guideSlugs = new Set(guideNodes.map((node) => node.slug));
 
 const entries = (await readdir(subtoolsPath))
-  .filter((name) => name.endsWith(".ts") && !["index.ts", "groups.ts", "sub-tool-types.ts"].includes(name))
+  .filter(
+    (name) =>
+      name.endsWith(".ts") &&
+      !["index.ts", "groups.ts", "sub-tool-types.ts", "quick-answers.ts"].includes(name),
+  )
   .sort();
 
 const toolEntries = [];
@@ -369,6 +374,76 @@ if (declaresLocales) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Link hygiene: an internal href must never redirect
+// ---------------------------------------------------------------------------
+
+/**
+ * Ahrefs reported 3XX redirects, HTTP→HTTPS redirects and one redirect chain
+ * on internal URLs. Every one of those is a link we control pointing at a
+ * shape the server normalises: a trailing slash (`/privacy/` 308s to
+ * `/privacy`), a bare apex (`lamptik.online` 308s to `www`), or plain `http:`.
+ *
+ * A single such link is a wasted crawl hop; a chain of them is a crawl-budget
+ * leak. The fix is always the same — write the final destination — so the
+ * check lives here where a new page cannot reintroduce the class silently.
+ */
+const hygieneSources = [];
+async function collectSources(dir) {
+  let entries = [];
+  try {
+    entries = await readdir(dir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+  for (const entry of entries) {
+    if (["node_modules", ".next", ".git"].includes(entry.name)) continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) await collectSources(full);
+    else if (/\.(tsx?|mjs)$/.test(entry.name)) hygieneSources.push(full);
+  }
+}
+await collectSources(path.join(root, "app"));
+await collectSources(path.join(root, "components"));
+await collectSources(path.join(root, "lib"));
+
+for (const file of hygieneSources) {
+  const source = await readFile(file, "utf8");
+  const name = rel(file);
+
+  for (const match of source.matchAll(/href[:=]\s*["'\u0060](\/[^"'\u0060$]*)/g)) {
+    const href = match[1];
+    counts.hygiene += 1;
+    if (href.length > 1 && href.endsWith("/")) {
+      fail(
+        name,
+        source,
+        match.index,
+        `internal link "${href}" has a trailing slash — the server 308s it, so the crawler burns a redirect hop`,
+      );
+    }
+  }
+
+  for (const match of source.matchAll(/["'\u0060](https?:\/\/(?!www\.)[^"'\u0060\s]*lamptik\.online[^"'\u0060\s]*)/g)) {
+    counts.hygiene += 1;
+    fail(
+      name,
+      source,
+      match.index,
+      `absolute URL "${match[1]}" is not the canonical https://www. origin — it redirects`,
+    );
+  }
+
+  // `http://www.w3.org/...` is an XML namespace, not a navigable URL: it is
+  // never requested, so it can never redirect. Everything else is a link.
+  for (const match of source.matchAll(
+    /[\"'\u0060]http:\/\/(?!localhost|127\.0\.0\.1|www\.w3\.org)[^\"'\u0060\s]+/g,
+  )) {
+    counts.hygiene += 1;
+    fail(name, source, match.index, `plain-http URL "${match[0].slice(1)}" redirects on every request`);
+  }
+}
+
 const ungrouped = [...toolSlugs].filter((slug) => !grouped.has(slug));
 
 // ---------------------------------------------------------------------------
@@ -403,7 +478,7 @@ console.log(
     `${counts.guideToGuide} guide→guide, ${counts.toolToTool} tool→tool, ` +
     `${counts.toolToGuide} tool→guide, ${counts.groupToTool} group→tool, ` +
     `${counts.linkTarget} link target(s), ${counts.routes} tool route(s), ` +
-    `${counts.sitemap} sitemap URL(s)`,
+    `${counts.sitemap} sitemap URL(s), ${counts.hygiene} link-hygiene check(s)`,
 );
 
 if (ungrouped.length > 0) process.exit(0);
