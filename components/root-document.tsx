@@ -3,7 +3,6 @@ import { DesktopSideRails } from "@/components/ads/DesktopSideRails";
 import { AhrefsAnalytics } from "@/components/ahrefs-analytics";
 import { ConsentModeScript } from "@/components/consent-mode";
 import { GoogleAnalytics } from "@/components/google-analytics";
-import { MicrosoftClarity } from "@/components/microsoft-clarity";
 import {
   GoogleTagManager,
   GoogleTagManagerNoScript,
@@ -119,10 +118,6 @@ export function RootDocument({
             exists exactly once per document, after the Consent Mode defaults
             in <head>. */}
         <GoogleAnalytics />
-        {/* Optional heatmaps. Renders nothing unless NEXT_PUBLIC_CLARITY_ID is
-            set, and even then only after an explicit Accept — Clarity has no
-            consent-mode equivalent. */}
-        <MicrosoftClarity />
       </body>
     </html>
   );

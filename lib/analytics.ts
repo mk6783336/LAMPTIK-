@@ -53,14 +53,13 @@ export const gtmContainerId =
   process.env.NEXT_PUBLIC_GTM_ID?.trim() || "GTM-PF5KDMW4";
 
 /**
- * Microsoft Clarity project id (`NEXT_PUBLIC_CLARITY_ID`).
- *
- * Optional: an empty value keeps the tag out of the bundle entirely, so this
- * is safe to leave unset on a preview. Clarity writes cookies and records
- * sessions, so `components/microsoft-clarity.tsx` only injects it after the
- * visitor has pressed Accept — it has no Consent Mode equivalent of its own.
+ * Microsoft Clarity is installed in the GTM container (GTM-PF5KDMW4), tag
+ * `clarity.ms/tag/z54f4bht6y`, and fires on every session regardless of the
+ * consent bar. There is deliberately no second install path here: injecting
+ * `NEXT_PUBLIC_CLARITY_ID` as a direct tag would load Clarity twice and split
+ * one visitor's recording across two sessions. If Clarity ever moves out of
+ * GTM, add it here and delete the container tag in the same change.
  */
-export const clarityProjectId = process.env.NEXT_PUBLIC_CLARITY_ID?.trim() || "";
 
 /**
  * Ahrefs Web Analytics site key. The script is cookieless and stores no
