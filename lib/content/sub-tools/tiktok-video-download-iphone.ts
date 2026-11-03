@@ -15,7 +15,7 @@ export const entry: SubTool = {
   title: "How to Download a TikTok Video on iPhone - No Watermark",
   socialTitle: "How to Download a TikTok Video on iPhone - Clean MP4, Straight to Photos",
   description:
-    "Save a TikTok video on iPhone without the watermark: copy the link, paste it in Safari, tap Download, then Save Video from Files into Photos. No app, no Shortcut, no login.",
+    "Save a TikTok video on iPhone without a watermark: paste the link in Safari, tap Download, then Save Video from Photos. No app, no Shortcut, no login.",
   keywords: [
     "how to download tiktok video on iphone",
     "download tiktok video iphone",

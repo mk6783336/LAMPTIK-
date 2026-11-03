@@ -18,7 +18,7 @@ export const entry: SubTool = {
   socialTitle:
     "TikTok Photo Downloader - Save Every Slide of a Slideshow in Original Quality",
   description:
-    "Download every photo in a TikTok slideshow at the resolution TikTok serves. Paste the post link, tap a slide, get a clean JPG or WebP. No app, login or watermark.",
+    "Download every photo in a TikTok slideshow at full resolution. Paste the post link, tap a slide, get a clean JPG or WebP. No app, login or watermark.",
   keywords: [
     "tiktok photo downloader",
     "tiktok slideshow downloader",

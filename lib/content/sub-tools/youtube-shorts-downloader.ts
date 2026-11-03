@@ -10,7 +10,7 @@ export const entry: SubTool = {
   title: "YouTube Shorts Downloader 1080p - Save Shorts as MP4",
   socialTitle: "YouTube Shorts Downloader - Save Any Short in 1080p Vertical MP4",
   description:
-    "Download YouTube Shorts in full 1080x1920 MP4 with no watermark. Paste a /shorts/ link or a youtu.be share link and save the vertical video in one tap, free.",
+    "Download YouTube Shorts in full 1080x1920 MP4 with no watermark. Paste a /shorts/ link or a youtu.be link and save the vertical video in one tap, free.",
   keywords: [
     "YouTube Shorts downloader",
     "download YouTube Shorts 1080p",

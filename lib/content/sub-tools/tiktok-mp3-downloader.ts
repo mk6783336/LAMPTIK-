@@ -14,7 +14,7 @@ export const entry: SubTool = {
   title: "TikTok to MP3 Converter - Original Sound, No Re-encode",
   socialTitle: "TikTok to MP3 Converter - Extract the Original Sound at Full Quality",
   description:
-    "Convert TikTok videos to MP3 from the original audio track - up to 320 kbps, no video re-encode, no watermark and no sign-up. Paste a link and save the sound.",
+    "Convert TikTok videos to MP3 from the original audio track - up to 320 kbps, no video re-encode, no watermark, no sign-up. Paste a link and save the sound.",
   keywords: [
     "tiktok to mp3",
     "tiktok mp3 downloader",

@@ -13,7 +13,7 @@ export const de: LandingCopy = {
   dir: "ltr",
   title: "TikTok Downloader ohne Wasserzeichen – HD & MP3",
   description:
-    "TikTok, Instagram Reels, Facebook und YouTube in HD herunterladen – ohne Wasserzeichen, ohne App und ohne Anmeldung. Kostenlos, schnell und direkt im Browser.",
+    "TikTok, Instagram Reels, Facebook und YouTube in HD herunterladen – ohne Wasserzeichen, ohne App und ohne Anmeldung. Kostenlos, schnell, im Browser.",
   keywords: [
     "TikTok Video Downloader ohne Wasserzeichen",
     "TikTok Video herunterladen",

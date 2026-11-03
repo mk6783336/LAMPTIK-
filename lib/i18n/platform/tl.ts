@@ -93,7 +93,7 @@ export const tl: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     dir: "ltr",
     title: "I-download ang YouTube Video — MP4 HD o MP3",
     description:
-      "I-paste ang YouTube link at i-download ang video bilang MP4 hanggang 1080p, o ang audio lang bilang MP3. Gumagana ang watch, Shorts, youtu.be at playlist link.",
+      "I-paste ang YouTube link at i-download ang video bilang MP4 hanggang 1080p, o ang audio lang bilang MP3. Gumagana ang watch, Shorts at playlist link.",
     keywords: [
       "download youtube video",
       "paano mag download ng video sa youtube",

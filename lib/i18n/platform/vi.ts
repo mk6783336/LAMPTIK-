@@ -14,7 +14,7 @@ export const vi: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     dir: "ltr",
     title: "Tải Reels Instagram HD — Không Logo",
     description:
-      "Tải Reels Instagram chất lượng gốc 1080p kèm âm thanh, không logo và không cần đăng nhập. Miễn phí ngay trên trình duyệt, dùng được cả điện thoại lẫn máy tính.",
+      "Tải Reels Instagram chất lượng gốc 1080p kèm âm thanh, không logo và không cần đăng nhập. Miễn phí trên trình duyệt, dùng được cả điện thoại lẫn máy tính.",
     keywords: [
       "tải reels instagram",
       "tải video instagram",

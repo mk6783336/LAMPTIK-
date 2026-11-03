@@ -17,7 +17,7 @@ export const entry: SubTool = {
   title: "YouTube Music to MP3 - Download Songs at Source Quality",
   socialTitle: "YouTube Music to MP3 - One Song, Its Own Audio Track, No Re-encode",
   description:
-    "Turn a YouTube Music song into an MP3 or M4A: copy the track link from the app, paste it here, and download the audio it was published with. No app, no sign-up.",
+    "Turn a YouTube Music song into an MP3 or M4A: copy the track link, paste it here, and download the audio it was published with. No app, no sign-up.",
   keywords: [
     "youtube music to mp3",
     "youtube music downloader",
