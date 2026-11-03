@@ -109,13 +109,17 @@ function dimensionsOf(
 }
 
 function labelFor(dimensions: { width: number | null; height: number | null }): string {
-  const shortEdge = Math.min(
-    dimensions.width ?? 0,
-    dimensions.height ?? 0,
-  );
+  const shortEdge = Math.min(dimensions.width ?? 0, dimensions.height ?? 0);
+  if (!shortEdge) return "MP4";
+
   // Vertical video: the *short* edge is the quality tier (1080×1920 → 1080p).
-  const tier = shortEdge >= 1_000 ? 1080 : shortEdge >= 700 ? 720 : shortEdge >= 400 ? 480 : shortEdge >= 300 ? 360 : 0;
-  return tier ? `${tier}p` : "MP4";
+  // Two standard tiers are rounded, everything else is labelled with its real
+  // edge rather than snapped to a bucket — X routinely publishes 320×568,
+  // 480×852 and 576×1024 for one clip, and bucketing all three to "480p"
+  // collapsed them into a single button (the labels are also the de-dupe key).
+  if (shortEdge >= 1_000) return "1080p";
+  if (shortEdge >= 700) return "720p";
+  return `${shortEdge}p`;
 }
 
 interface RawVariant {
