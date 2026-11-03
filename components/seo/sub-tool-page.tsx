@@ -11,6 +11,7 @@ import { PlaylistBrowser } from "@/components/playlist-browser";
 import { PlatformIcon } from "@/components/platform-icons";
 import { Breadcrumb } from "@/components/seo/breadcrumb";
 import {
+  articleNode,
   breadcrumbNode,
   faqPageNode,
   howToNode,
@@ -42,6 +43,16 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
   /** Snippet block + comparison rows, keyed by slug (see quick-answers.ts). */
   const answer = SUB_TOOL_ANSWERS[tool.slug];
 
+  /**
+   * Content revision date for the Article node.
+   *
+   * Ahrefs' page classifier reads these pages as articles (their copy is a
+   * full how-to), so it expects Article markup alongside the tool schema. The
+   * date is the last content edit, not the build time — an invented `now()`
+   * would make every crawl look like a rewrite.
+   */
+  const SUB_TOOL_UPDATED_AT = "2026-11-03";
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -61,6 +72,16 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
         anchor: "how",
       }),
       faqPageNode(`${pageUrl}/#faq`, tool.faqs, pageUrl),
+      // The article view of the same page: the H1, the instant answer and the
+      // steps are long-form content, so the Article node describes them for
+      // the crawlers that classify this route as an article rather than a
+      // tool form.
+      articleNode({
+        url: pageUrl,
+        headline: `${tool.h1Lead} ${tool.h1Accent}`,
+        description: tool.description,
+        updatedAt: SUB_TOOL_UPDATED_AT,
+      }),
       // Mirrors the visible trail in the hero exactly: Home → Tools → this
       // tool. The middle hop is the hub, which is where a reader arriving
       // from search can find the other fourteen without going back to home.

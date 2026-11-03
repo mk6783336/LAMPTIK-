@@ -213,6 +213,8 @@ export function articleNode(args: {
   description: string;
   /** ISO date, `YYYY-MM-DD`; emitted as a full datetime in UTC. */
   updatedAt: string;
+  /** BCP-47 tag of the document. Defaults to English. */
+  lang?: string;
 }): Json {
   const published = new Date(`${args.updatedAt}T00:00:00Z`).toISOString();
   return {
@@ -223,7 +225,7 @@ export function articleNode(args: {
     description: args.description,
     datePublished: published,
     dateModified: published,
-    inLanguage: "en",
+    inLanguage: args.lang ?? "en",
     image: {
       "@type": "ImageObject",
       url: `${siteUrl}/opengraph-image`,

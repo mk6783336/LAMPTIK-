@@ -49,6 +49,11 @@ export default function robots(): MetadataRoute.Robots {
       disallow: ["/api/"],
     })),
     sitemap: `${siteUrl}/sitemap.xml`,
-    host: siteUrl,
+    // No `Host:` directive. It is a Yandex-only hint, and naming the host in
+    // robots.txt is one more place a crawler can read the apex domain as the
+    // canonical site — Ahrefs already lists the bare-apex root as an internal
+    // URL that 308s, because the project target there is the apex. The
+    // canonical origin is declared where it matters: the `<link
+    // rel="canonical">` tag and every absolute URL in the sitemap and schema.
   };
 }

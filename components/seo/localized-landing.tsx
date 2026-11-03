@@ -7,6 +7,7 @@ import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
 import { Downloader } from "@/components/downloader";
 import {
+  articleNode,
   breadcrumbNode,
   faqPageNode,
   howToNode,
@@ -22,6 +23,13 @@ import { languageLabel } from "@/lib/i18n/language-labels";
 import { platformBlurb, TOOLS_HUB_CARD } from "@/lib/i18n/platform-blurbs";
 import { PLATFORM_LIST, PLATFORMS, type Platform } from "@/lib/platforms";
 import { siteUrl } from "@/lib/site";
+
+/**
+ * Last content revision of the localized landings, for the Article node.
+ * A fixed editorial date, not build time: these pages are long-form how-to
+ * copy as well as a tool form, and Ahrefs' classifier reads them that way.
+ */
+const LANDING_UPDATED_AT = "2026-11-03";
 
 /** Breadcrumb root, written in the page's own language. */
 const HOME_LABELS: Partial<Record<LocaleCode, string>> = {
@@ -90,6 +98,17 @@ export function LocalizedLanding({
         anchor: "how",
       }),
       faqPageNode(`${pageUrl}/#faq`, copy.faqs, pageUrl),
+      // Article view of the same document, in the page's own language. Ten
+      // localized landings were the bulk of the "Article page missing Article
+      // schema" set: their copy is a full how-to, which is what the classifier
+      // keys on, while the graph only declared a WebApplication.
+      articleNode({
+        url: pageUrl,
+        headline: copy.title,
+        description: copy.description,
+        updatedAt: LANDING_UPDATED_AT,
+        lang: copy.htmlLang,
+      }),
       breadcrumbNode(`${pageUrl}/#breadcrumb`, [
         { name: HOME_LABELS[copy.code] ?? "Home", url: siteUrl },
         { name: copy.title, url: pageUrl },

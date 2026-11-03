@@ -100,22 +100,34 @@ export default function AppsPage() {
         hasPart: [
           {
             "@type": "SoftwareApplication",
+            "@id": `${siteUrl}/apps#extension-app`,
             name: "LampTik Chrome Extension",
             applicationCategory: "BrowserApplication",
             operatingSystem: "Chrome, Edge, Brave",
             url: `${siteUrl}/apps#extension`,
-            image: `${siteUrl}/opengraph-image`,
+            image: {
+              "@type": "ImageObject",
+              url: `${siteUrl}/opengraph-image`,
+              width: 1200,
+              height: 630,
+            },
             offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
             description:
               "Manifest V3 extension that adds a one-click Download button to YouTube, TikTok, Instagram and Facebook.",
           },
           {
             "@type": "SoftwareApplication",
+            "@id": `${siteUrl}/apps#android-app`,
             name: "LampTik for Android",
             applicationCategory: "MultimediaApplication",
             operatingSystem: "Android",
             url: `${siteUrl}/apps#android`,
-            image: `${siteUrl}/opengraph-image`,
+            image: {
+              "@type": "ImageObject",
+              url: `${siteUrl}/opengraph-image`,
+              width: 1200,
+              height: 630,
+            },
             offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
             description:
               "Android app that resolves a copied or shared video link and saves the MP4 or MP3 straight to the gallery.",
@@ -132,7 +144,12 @@ export default function AppsPage() {
         name: "LampTik Chrome Extension",
         description:
           "Manifest V3 extension that adds a one-click Download button to YouTube, TikTok, Instagram and Facebook.",
-        image: `${siteUrl}/opengraph-image`,
+        image: {
+          "@type": "ImageObject",
+          url: `${siteUrl}/opengraph-image`,
+          width: 1200,
+          height: 630,
+        },
         brand: { "@type": "Brand", name: siteConfig.name },
         category: "Browser extension",
         url: `${siteUrl}/apps#extension`,
@@ -149,7 +166,12 @@ export default function AppsPage() {
         name: "LampTik for Android",
         description:
           "Android app that resolves a copied or shared video link and saves the MP4 or MP3 straight to the gallery.",
-        image: `${siteUrl}/opengraph-image`,
+        image: {
+          "@type": "ImageObject",
+          url: `${siteUrl}/opengraph-image`,
+          width: 1200,
+          height: 630,
+        },
         brand: { "@type": "Brand", name: siteConfig.name },
         category: "Android application",
         url: `${siteUrl}/apps#android`,

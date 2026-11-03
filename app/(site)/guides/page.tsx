@@ -6,6 +6,7 @@ import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { articleNode } from "@/components/seo/JsonLd";
 import { GUIDE_LIST } from "@/lib/content/guides";
 import { siteConfig, siteUrl } from "@/lib/site";
 
@@ -55,6 +56,17 @@ export default function GuidesPage() {
           url: `${siteUrl}/guides/${guide.slug}`,
         })),
       },
+      // The hub is a library index, but its intro copy is editorial — Ahrefs
+      // classifies it as an "Article Guide" page, and it was one of the twelve
+      // pages in the article-schema issue. The Article node describes the
+      // library itself; the CollectionPage above still lists every guide.
+      articleNode({
+        url: pageUrl,
+        headline: "LAMP TIK Guides — downloading videos without a watermark",
+        description:
+          "Practical guides to downloading TikTok, Instagram and Facebook videos without a watermark: quality, formats, broken short links and the legal side.",
+        updatedAt: "2026-11-03",
+      }),
       {
         "@type": "BreadcrumbList",
         "@id": `${pageUrl}#breadcrumb`,
