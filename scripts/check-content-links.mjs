@@ -113,6 +113,7 @@ const counts = {
   linkTarget: 0,
   sitemap: 0,
   hygiene: 0,
+  redirectLinks: 0,
 };
 
 function fail(file, source, index, message) {
@@ -387,7 +388,38 @@ if (declaresLocales) {
  * A single such link is a wasted crawl hop; a chain of them is a crawl-budget
  * leak. The fix is always the same — write the final destination — so the
  * check lives here where a new page cannot reintroduce the class silently.
+ *
+ * The same rule covers `next.config.ts` redirect sources, which are worse than
+ * a trailing slash because they look intentional: `href="/fb-watch-downloader"`
+ * renders, works, and costs a hop, so a page can link it forever without a
+ * symptom. Those are read from the config below and checked as well.
  */
+/**
+ * Redirect sources declared in `next.config.ts`, keyed by normalised path.
+ *
+ * A link to one of these is the quietest kind of broken: the page works — it
+ * just 308s first — so nothing in review, lint or types objects while every
+ * crawler and every visitor spends an extra round trip, and Ahrefs reports it
+ * as a 3XX warning forever.
+ *
+ * Only static sources become keys: a pattern carrying `:slug` or `*` cannot be
+ * matched against a literal href, so it is skipped rather than guessed at.
+ */
+const nextConfigSource = await readFile(path.join(root, "next.config.ts"), "utf8");
+const redirectSources = new Map();
+for (const match of nextConfigSource.matchAll(
+  /source:\s*"\/([^"]*)"[\s\S]{0,240}?destination:\s*"([^"]+)"/g,
+)) {
+  if (/[:*()]/.test(match[1])) continue;
+  redirectSources.set(`/${match[1]}`.replace(/\/+$/, "") || "/", match[2]);
+}
+
+/** `href` without query, hash or trailing slash — the shape the server serves. */
+const normalizeHref = (href) => {
+  const pathOnly = href.split(/[?#]/)[0];
+  return pathOnly.length > 1 ? pathOnly.replace(/\/+$/, "") : "/";
+};
+
 const hygieneSources = [];
 async function collectSources(dir) {
   let entries = [];
@@ -420,6 +452,17 @@ for (const file of hygieneSources) {
         source,
         match.index,
         `internal link "${href}" has a trailing slash — the server 308s it, so the crawler burns a redirect hop`,
+      );
+    }
+
+    const destination = redirectSources.get(normalizeHref(href));
+    if (destination) {
+      counts.redirectLinks += 1;
+      fail(
+        name,
+        source,
+        match.index,
+        `internal link "${href}" is a redirect source — it 308s to "${destination}"; link the destination directly`,
       );
     }
   }
@@ -478,7 +521,8 @@ console.log(
     `${counts.guideToGuide} guide→guide, ${counts.toolToTool} tool→tool, ` +
     `${counts.toolToGuide} tool→guide, ${counts.groupToTool} group→tool, ` +
     `${counts.linkTarget} link target(s), ${counts.routes} tool route(s), ` +
-    `${counts.sitemap} sitemap URL(s), ${counts.hygiene} link-hygiene check(s)`,
+    `${counts.sitemap} sitemap URL(s), ${counts.hygiene} link-hygiene check(s), ` +
+    `${counts.redirectLinks} redirect link(s)`,
 );
 
 if (ungrouped.length > 0) process.exit(0);
