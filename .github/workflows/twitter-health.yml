@@ -10,7 +10,13 @@ name: Twitter Resolver Health
 # browser makes — and turns a regression into a GitHub issue plus a failed
 # run, which is what makes GitHub email the owner.
 #
-# No secrets or setup needed: it only calls the site's own public endpoint.
+# Phone alerts: set the ALERT_WEBHOOK_URL repository secret and a new
+# regression (and the recovery) is also pushed to chat by
+# scripts/notify-webhook.mjs — Telegram, Discord, Slack or Google Chat, the
+# payload is chosen from the URL. Only the two state *changes* are sent, so a
+# mirror that stays down does not message every six hours. Without the secret
+# the job behaves exactly as before.
+#
 # A regression opens or updates the single open issue labelled `twitter-health`
 # (one rolling issue, not one per mirror per run); the issue closes itself on
 # the first run that measures every mirror healthy again.
@@ -61,6 +67,7 @@ jobs:
         run: exit 1
 
       - name: Open or update the alert issue
+        id: issue
         if: steps.health.outputs.alerts == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -72,14 +79,28 @@ jobs:
             --json number --jq '.[0].number // empty')"
           if [ -n "$EXISTING" ]; then
             gh issue comment "$EXISTING" --body-file twitter-health-alerts.md
+            echo "created=false" >> "$GITHUB_OUTPUT"
           else
             gh issue create --title "[twitter] Resolver mirror regression" \
               --body-file twitter-health-alerts.md --label twitter-health
+            # Only a *new* regression reaches the phone; repeat runs are the
+            # issue comment, which is already where a returning reader looks.
+            echo "created=true" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Push the new regression to chat
+        if: steps.issue.outputs.created == 'true'
+        env:
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+        run: |
+          node scripts/notify-webhook.mjs \
+            --title "[twitter] resolver mirror regression" \
+            --file twitter-health-alerts.md
 
       # Only a run that actually measured every mirror may close the issue:
       # `measured` guards against reading "fixtures vanished" as "recovered".
       - name: Close the issue after recovery
+        id: recovered
         if: steps.health.outputs.alerts != 'true' && steps.health.outputs.measured == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -90,7 +111,19 @@ jobs:
           if [ -n "$EXISTING" ]; then
             gh issue comment "$EXISTING" --body "Recovered: all three mirrors are healthy in this run."
             gh issue close "$EXISTING"
+            echo "closed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "closed=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Push the recovery to chat
+        if: steps.recovered.outputs.closed == 'true'
+        env:
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+        run: |
+          node scripts/notify-webhook.mjs \
+            --title "[twitter] resolver recovered" \
+            --text "All three mirrors are healthy again in this run."
 
       - name: Fail the run when a mirror regressed
         if: steps.health.outputs.alerts == 'true'

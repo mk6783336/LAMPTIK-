@@ -12,6 +12,7 @@
     "check:links": "node scripts/check-content-links.mjs",
     "ads:health": "node scripts/ads-health.mjs",
     "twitter:health": "node scripts/twitter-health.mjs",
+    "notify:webhook": "node scripts/notify-webhook.mjs",
     "extension:package": "node scripts/package-extension.mjs",
     "bridge:tunnel": "node scripts/bridge-tunnel.mjs",
     "bridge:autostart": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-bridge-autostart.ps1",
