@@ -110,3 +110,13 @@ jobs:
           INDEX_CHECK_ORIGIN: https://www.lamptik.online
           BING_WEBMASTER_API_KEY: ${{ secrets.BING_WEBMASTER_API_KEY }}
         run: node scripts/bing-submit.mjs --new-only --stale-after-days 30 --skip-if-unconfigured
+
+      # The six permanent redirects in next.config.ts exist only to keep old,
+      # linked URLs alive (docs/legacy-redirects.md). This asserts that each one
+      # still answers a permanent 3xx to the route it names and that the
+      # destination serves 200 — otherwise a renamed page turns every inbound
+      # link into a silent dead end that no build would notice.
+      - name: Check legacy redirects
+        env:
+          INDEX_CHECK_ORIGIN: https://www.lamptik.online
+        run: node scripts/check-redirects.mjs
