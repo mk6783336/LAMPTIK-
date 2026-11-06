@@ -1,6 +1,5 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, ClipboardPaste, Link2, Loader2, X, Zap } from "lucide-react";
 import {
   useEffect,
@@ -69,7 +68,6 @@ export function UrlField({
   const [localError, setLocalError] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
 
-  const reduceMotion = useReducedMotion();
 
   /** Live detection: null until the text contains a supported video link. */
   const detected = useMemo(() => detectLink(input), [input]);
@@ -210,21 +208,14 @@ export function UrlField({
 
   const displayError = localError ?? error;
 
-  /** Glowing platform badge — icon + mandated detection copy. */
+  /** Glowing platform badge — icon + mandated detection copy. The pop-in is
+   *  a CSS keyframe (`badge-pop`); reduced motion is flattened globally in
+   *  globals.css, so no JS branch is needed. */
   const renderBadge = (key: string) => (
-    <motion.span
-      key={key}
-      initial={{ opacity: 0, scale: 0.92 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{
-        duration: reduceMotion ? 0 : 0.18,
-        ease: [0.22, 1, 0.36, 1],
-      }}
-      className="tool-badge"
-    >
+    <span key={key} className="tool-badge badge-pop">
       <PlatformIcon platform={accent} className="size-3.5" />
       {accentConfig.detectedLabel}
-    </motion.span>
+    </span>
   );
 
   /** Desktop status detail under the field (the badge lives in the bar). */

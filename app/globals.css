@@ -969,3 +969,68 @@ html:not(.dark) {
     -webkit-touch-callout: none;
   }
 }
+
+/* ------------------------------------------------------------------ motion
+   One-shot entrance motion for the toast stack, the platform badge and the
+   result reveal. These used to be framer-motion, which put the animation
+   library in the client bundle of every tool page to run three transform
+   keyframes. The site-wide `prefers-reduced-motion` block above already
+   collapses every animation duration, so none of these needs a JS branch.
+   Transform/opacity only: no layout animation, nothing that repaints text. */
+@keyframes lamp-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes lamp-toast-progress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes lamp-badge-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes lamp-result-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.toast-card {
+  animation: lamp-toast-in 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.toast-progress {
+  animation: lamp-toast-progress 5.2s linear both;
+}
+
+.badge-pop {
+  animation: lamp-badge-pop 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.result-reveal {
+  animation: lamp-result-reveal 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}

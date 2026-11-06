@@ -1,6 +1,5 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, Check, Info, X } from "lucide-react";
 import { useEffect } from "react";
 
@@ -21,6 +20,15 @@ const TOAST_STYLES = {
   info: { icon: Info, color: "var(--accent)" },
 } as const;
 
+/**
+ * Entrance + progress motion is CSS (`lamp-toast-in`, `lamp-toast-progress` in
+ * globals.css), not framer-motion. The animation library shipped ~100 KB of
+ * client JS to every page for two transform keyframes and one opacity fade;
+ * that is most of the mobile main-thread cost on a page whose only interactive
+ * part is a text field. `prefers-reduced-motion` is already handled globally:
+ * the reduced-motion media query in globals.css flattens every animation
+ * duration on the site, so these two keys need no JS branch.
+ */
 function ToastCard({
   toast,
   onDismiss,
@@ -37,12 +45,7 @@ function ToastCard({
   }, [toast.id, onDismiss]);
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 12, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 6, scale: 0.98 }}
-      transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+    <div
       role={toast.kind === "error" ? "alert" : "status"}
       // 100% solid opaque surfaces, rendered IN-FLOW below the tool buttons
       // (see ToastStack): nothing floats over the form any more, so no
@@ -52,7 +55,7 @@ function ToastCard({
         // Explicit light text on the dark card: the card's background is dark
         // in BOTH themes, so inheriting `var(--text)` made error titles black
         // on near-black in light mode (the unreadable box in the screenshot).
-        "pointer-events-auto relative w-full overflow-hidden rounded-2xl p-3.5 text-white shadow-2xl",
+        "toast-card pointer-events-auto relative w-full overflow-hidden rounded-2xl p-3.5 text-white shadow-2xl",
         toast.kind === "error"
           ? "border-2 border-rose-500/50 bg-[#120b10]"
           : "border border-white/10 bg-[#0b0c12]",
@@ -82,15 +85,12 @@ function ToastCard({
           <X className="size-3.5" />
         </button>
       </div>
-      <motion.span
+      <span
         aria-hidden="true"
-        className="absolute inset-x-0 bottom-0 h-px origin-left"
+        className="toast-progress absolute inset-x-0 bottom-0 h-px origin-left"
         style={{ background: style.color, opacity: 0.5 }}
-        initial={{ scaleX: 1 }}
-        animate={{ scaleX: 0 }}
-        transition={{ duration: 5.2, ease: "linear" }}
       />
-    </motion.div>
+    </div>
   );
 }
 
@@ -110,11 +110,9 @@ export function ToastStack({
       // text bleed through.
       className="pointer-events-auto flex w-full flex-col gap-2"
     >
-      <AnimatePresence initial={false}>
-        {toasts.map((toast) => (
-          <ToastCard key={toast.id} toast={toast} onDismiss={onDismiss} />
-        ))}
-      </AnimatePresence>
+      {toasts.map((toast) => (
+        <ToastCard key={toast.id} toast={toast} onDismiss={onDismiss} />
+      ))}
     </div>
   );
 }

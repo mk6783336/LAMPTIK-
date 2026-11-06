@@ -1,8 +1,30 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowUpRight, Check, Loader2, ShieldCheck, Sparkles, Zap } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+
+/**
+ * `prefers-reduced-motion` as React state.
+ *
+ * This replaced framer-motion's `useReducedMotion`, which was the only reason
+ * the animation library sat in the tool page's client bundle. Same behaviour,
+ * no dependency: the MediaQueryList is read once on mount and kept in sync on
+ * change, so a visitor who flips the OS setting mid-session gets the same
+ * instant scroll the reduced-motion branch already asked for.
+ */
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setReduced(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
+  return reduced;
+}
 
 
 import { PlatformSwitcher } from "@/components/platform-switcher";
@@ -368,7 +390,7 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
   const submitRef = useRef<
     (url: string, options?: { force?: boolean }) => Promise<void>
   >(async () => {});
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = usePrefersReducedMotion();
 
   const isLoading = status === "loading";
 
@@ -885,7 +907,6 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
     }
   }
 
-  const expand = { duration: reduceMotion ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] as const };
 
   return (
     <div
@@ -996,16 +1017,9 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
           />
         </div>
 
-        <AnimatePresence mode="wait" initial={false}>
+        <>
           {isLoading ? (
-            <motion.div
-              key="loading"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={expand}
-              className="overflow-hidden"
-            >
+            <div key="loading" className="overflow-hidden">
               <LoadingConsole elapsedMs={elapsedMs} platform={platform} copy={t} />
               {backupNote ? (
                 <p
@@ -1017,21 +1031,16 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
                   {backupNote}
                 </p>
               ) : null}
-            </motion.div>
+            </div>
           ) : null}
 
           {/* Result reveal: transform + opacity ONLY — compositor-friendly
               60fps on mobile, no layout-driven height animation, no blur. */}
           {status === "success" && video && media ? (
-            <motion.div
+            <div
               key={`result-${video.id}`}
               ref={resultRef}
-              initial={{ opacity: 0, y: 18, scale: 0.985 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.99 }}
-              transition={{ duration: reduceMotion ? 0 : 0.42, ease: [0.22, 1, 0.36, 1] }}
-              style={{ willChange: "transform, opacity" }}
-              className="mt-5"
+              className="result-reveal mt-5"
             >
               <div className="rule mb-5" />
               <ResultPanel
@@ -1043,9 +1052,9 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
                 onReresolve={(url) => void submitRef.current(url, { force: true })}
                 copy={t}
               />
-            </motion.div>
+            </div>
           ) : null}
-        </AnimatePresence>
+        </>
       </div>
 
       {/* Notifications render IN-FLOW below the tool buttons as solid opaque
