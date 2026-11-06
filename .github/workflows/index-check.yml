@@ -120,3 +120,11 @@ jobs:
         env:
           INDEX_CHECK_ORIGIN: https://www.lamptik.online
         run: node scripts/check-redirects.mjs
+
+      # Every <loc> is a promise about a final URL. A renamed page leaves the
+      # sitemap entry behind, and Google counts a sitemap of redirects or 404s
+      # against the whole file — so the sweep runs beside the redirect check.
+      - name: Sweep the sitemap for redirects and 404s
+        env:
+          INDEX_CHECK_ORIGIN: https://www.lamptik.online
+        run: node scripts/check-sitemap.mjs
