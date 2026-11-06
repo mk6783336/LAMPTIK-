@@ -5,6 +5,7 @@ import {
   timedFetch,
   withTimeoutSignal,
 } from "@/lib/http";
+import { isCoolingDown, recordOutcome } from "@/lib/load-balancer";
 import { isPublicMediaUrl } from "@/lib/security";
 import { hostMatches } from "@/lib/url-guard";
 
@@ -30,6 +31,15 @@ import { hostMatches } from "@/lib/url-guard";
  * Every returned URL is checked against the public-https SSRF gate AND a
  * `twimg.com` host check: a mirror is convenient, not authoritative, and a
  * hostile or compromised one must never hand the visitor an arbitrary URL.
+ *
+ * The waterfall remembers: a mirror that *times out* three times in a row is
+ * deprioritised to the end of the chain for 60 seconds by the shared breaker
+ * in `lib/load-balancer.ts` (the same one TikTok/Instagram/Facebook/YouTube
+ * use), so the next visitor does not pay that mirror's 8s timeout before
+ * reaching one that answers. It is moved, never removed — if the healthy
+ * mirrors also fail, the cooling one is still tried. A mirror that answers
+ * quickly with nothing usable (a deleted post, a changed payload) is a miss,
+ * not a failure, and does not count against it.
  */
 
 export interface TwitterVariant {
@@ -357,6 +367,25 @@ interface MirrorDefinition {
   parse: (payload: unknown) => MirrorResult | null;
 }
 
+/**
+ * Breaker key per mirror. Namespaced so it can never collide with a platform
+ * waterfall entry like `tiktok:page` (both maps live in the same module).
+ */
+function breakerKey(mirror: TwitterMirrorId): string {
+  return `twitter:${mirror}`;
+}
+
+/**
+ * Try order for one request: healthy mirrors first, cooling-down ones last.
+ * Array.prototype.sort is stable, so the declared order is preserved inside
+ * each group — fxtwitter stays preferred whenever it is not in cooldown.
+ */
+function orderMirrors(): MirrorDefinition[] {
+  return [...MIRRORS].sort(
+    (a, b) => Number(isCoolingDown(breakerKey(a.id))) - Number(isCoolingDown(breakerKey(b.id))),
+  );
+}
+
 const MIRRORS: readonly MirrorDefinition[] = [
   {
     id: "fxtwitter",
@@ -558,17 +587,25 @@ export async function extractTwitter(
   const signal = withTimeoutSignal(externalSignal);
   const id = parsed.id;
 
-  for (const mirror of MIRRORS) {
+  for (const mirror of orderMirrors()) {
     if (signal.aborted) break;
     let payload: unknown = null;
     try {
       payload = await fetchJson(mirror.url(id), signal);
     } catch {
-      continue; // mirror down / timed out: next one
+      // Transport failure: network error or the 8s per-mirror timeout. This is
+      // the only outcome that costs the visitor time, so it is the only one
+      // the breaker counts. Three in a row and the mirror goes to the back of
+      // the queue for 60s.
+      recordOutcome(breakerKey(mirror.id), false);
+      continue;
     }
+    // Answered with an error status, or with a payload that has no usable
+    // rendition: fast, cheap, and not the mirror's fault — no penalty.
     if (!payload) continue;
     const result = mirror.parse(payload);
     if (result) {
+      recordOutcome(breakerKey(mirror.id), true);
       return {
         id,
         canonicalUrl: parsed.canonicalUrl,

@@ -53,6 +53,29 @@ function recordFailure(name: string): void {
   }
 }
 
+/**
+ * Read one provider's breaker without touching it.
+ *
+ * Exposed for waterfalls that have to *order* their attempts before running
+ * any of them (the X/Twitter resolver has to distinguish a dead mirror from a
+ * healthy mirror with nothing to serve, which `runWaterfall`'s success/failure
+ * contract cannot express).
+ */
+export function isCoolingDown(name: string): boolean {
+  const record = health.get(name);
+  return record !== undefined && record.coolDownUntil > Date.now();
+}
+
+/**
+ * Record the outcome of one attempt for a caller running its own loop. Same
+ * counters `runWaterfall` uses, so both paths share a single breaker instead
+ * of drifting apart.
+ */
+export function recordOutcome(name: string, ok: boolean): void {
+  if (ok) recordSuccess(name);
+  else recordFailure(name);
+}
+
 /** For tests / health endpoints: snapshot of current breaker state. */
 export function waterfallHealthSnapshot(): Record<string, { failures: number; coolingDown: boolean }> {
   const out: Record<string, { failures: number; coolingDown: boolean }> = {};
@@ -84,12 +107,11 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, name: string): P
  * without ever blocking a fresh one.
  */
 export async function runWaterfall<T>(providers: Array<WaterfallProvider<T>>): Promise<T> {
-  const now = Date.now();
-  const ordered = [...providers].sort((a, b) => {
-    const aCool = (health.get(a.name)?.coolDownUntil ?? 0) > now ? 1 : 0;
-    const bCool = (health.get(b.name)?.coolDownUntil ?? 0) > now ? 1 : 0;
-    return aCool - bCool;
-  });
+  // Stable sort: providers with an equal breaker state keep their declared
+  // priority, so the normal order is also the order callers wrote down.
+  const ordered = [...providers].sort(
+    (a, b) => Number(isCoolingDown(a.name)) - Number(isCoolingDown(b.name)),
+  );
 
   let lastError: unknown = null;
   for (const provider of ordered) {
