@@ -6,6 +6,7 @@ import { id } from "./platform/id";
 import { pt } from "./platform/pt";
 import { th } from "./platform/th";
 import { tl } from "./platform/tl";
+import { ur } from "./platform/ur";
 import { vi } from "./platform/vi";
 
 /**
@@ -42,7 +43,18 @@ export const LOCALIZED_PLATFORMS = Object.keys(LOCALIZED_PLATFORM_SLUGS) as Loca
  * Every locale carries all three platform pages. The locale roots (`/de`,
  * `/pt`, …) remain TikTok pages; these are their per-network siblings.
  */
-export const PLATFORM_LOCALES = ["es", "ar", "de", "pt", "id", "hi", "vi", "th", "tl"] as const;
+export const PLATFORM_LOCALES = [
+  "es",
+  "ar",
+  "de",
+  "pt",
+  "id",
+  "hi",
+  "vi",
+  "th",
+  "tl",
+  "ur",
+] as const;
 export type PlatformLocale = (typeof PLATFORM_LOCALES)[number];
 
 export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform, LandingCopy>> = {
@@ -561,6 +573,9 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
   vi,
   th,
   tl,
+
+  // ------------------------------------------------------------------- Urdu
+  ur,
 };
 
 /** Locales that carry platform pages at all (every one of them does all three). */
@@ -600,6 +615,7 @@ export function platformLanguageAlternates(platform: LocalizedPlatform) {
     vi: `/vi/${slug}`,
     th: `/th/${slug}`,
     tl: `/tl/${slug}`,
+    ur: `/ur/${slug}`,
     "x-default": `/${slug}`,
   } as const;
 }

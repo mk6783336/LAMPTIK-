@@ -54,6 +54,12 @@ export const LANDING_LANGUAGES = {
   // top-five TikTok market, and French covers France plus francophone Africa.
   tr: "/tr",
   fr: "/fr",
+  // Urdu is the one locale where the *demand* is unambiguous and the
+  // competition is not: "tiktok video download" is one of Pakistan's largest
+  // queries, and the incumbents answer it with English pages. The copy carries
+  // roman-Urdu keywords beside the script ones because that is how the query
+  // is actually typed.
+  ur: "/ur",
   "x-default": "/",
 } as const;
 

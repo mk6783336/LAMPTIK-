@@ -79,3 +79,67 @@ separate build decision, not an SEO task.
 3. Once there is Tier-1 session data, move the ad stack up-market: Adsterra and
    Hilltop are low-CPM fill; a Tier-1 audience is what makes an AdSense/Ezoic-
    class network viable, and those require real traffic before they approve.
+
+## Urdu / Pakistan — the one add since this map was written (Nov 2026)
+
+This is not a Tier-1 low-RPM expansion, and it is not a "more locales" move of
+the kind the section above warns against. It is the opposite bet: a market where
+demand is large, the incumbents answer in English, and the query difficulty is
+low rather than brutal.
+
+### Evidence (client-side, approximate volumes, PK)
+
+| Query | Volume | Difficulty |
+|---|---|---|
+| `tiktok video download` | 6.1M | Easy (15) |
+| `tiktok video downloader` | 6.1M | Easy (24) |
+| `tiktok videos download` | 6.1M | Okay (44) |
+| `instagram video downloader` | 1.5M | Hard (54) |
+| `youtube video downloader` | 1.0M | Easy (22) |
+| `fb video download` | 1.0M | Okay (42) |
+
+Source: country-scoped top-search lists for Pakistan (clicks.so / seoptimer).
+Treat the numbers as relative size, not as GSC truth.
+
+### What the competitors do, and what that leaves open
+
+SnapTik, SSSTik, TikMate, MusicallyDown and SaveTT all rank with **English**
+pages in this market, and their growth comes from brand queries
+("snaptik", "ssstik") plus comparison content, not from the head term. No
+incumbent ships a real Urdu page. An app-side competitor (FBget) advertises
+"English, Urdu, Hindi, Arabic…" as a feature, which confirms the interface
+language is a purchase signal here even when the search is romanised.
+
+Pakistanis type the query in two forms: romanised (`tiktok video download`) and
+Urdu script (`ٹک ٹاک ویڈیو ڈاؤن لوڈ`). A page has to match both — hence bilingual
+keyword arrays in `lib/i18n/ur.ts` and `lib/i18n/platform/ur.ts`.
+
+### What shipped
+
+`/ur` (TikTok root) plus `/ur/instagram-reels-downloader`,
+`/ur/youtube-downloader` and `/ur/facebook-video-downloader`, as a full RTL
+locale (`<html lang="ur" dir="rtl">`), with Urdu downloader chrome, Urdu
+footer, Urdu platform blurbs, and reciprocal hreflang beside the existing
+cluster. No component changed: the locale system is data, so the four pages are
+registrations plus copy.
+
+### What was deliberately not done
+
+- **No bought backlinks or traffic panels.** Paid link networks and "Pakistan
+  traffic" panels are the fastest route to an ad-network termination, and RPM
+  is set by the real visitor anyway.
+- **No mass Urdu pages.** Four pages that match four real queries beat a
+  thousand generated ones, especially while indexation is still the gate.
+- **No homepage swap.** `/` stays the English TikTok landing; `/ur` is its
+  translation, declared as such in hreflang, so the two do not compete.
+
+### Sequence from here
+
+1. Get `/ur` and its three siblings into Search Console (sitemap already lists
+   them) and use URL Inspection to request indexing — the same gate as the other
+   pages, now with four new URLs rather than 76.
+2. Watch the `ur` query cluster in GSC for 2–3 weeks before adding more Urdu
+   content; if impressions arrive, the next pages are `/ur/tiktok-mp3-downloader`
+   and an Urdu guide, not more locales.
+3. Backlinks, if any, from things that are genuinely citable: the health-status
+   endpoint, the open `llms.txt`, and the guides — not from link farms.

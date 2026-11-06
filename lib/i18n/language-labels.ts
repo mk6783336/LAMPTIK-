@@ -22,6 +22,7 @@ export const LANGUAGE_LABELS: Record<LocaleCode | "en", string> = {
   tl: "Filipino",
   tr: "Türkçe",
   fr: "Français",
+  ur: "اردو",
 };
 
 /** The label for a language code, falling back to the code itself. */

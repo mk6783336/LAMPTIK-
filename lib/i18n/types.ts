@@ -19,7 +19,8 @@ export type LocaleCode =
   | "th"
   | "tl"
   | "tr"
-  | "fr";
+  | "fr"
+  | "ur";
 
 export interface LandingCopy {
   /** Route segment, also used for `hreflang`. */
@@ -67,6 +68,7 @@ export const LOCALE_CODES: readonly LocaleCode[] = [
   "tl",
   "tr",
   "fr",
+  "ur",
 ];
 
 export function isLocaleCode(value: string): value is LocaleCode {

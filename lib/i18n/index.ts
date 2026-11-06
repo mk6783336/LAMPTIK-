@@ -10,6 +10,7 @@ import { pt } from "./pt";
 import { th } from "./th";
 import { tl } from "./tl";
 import { tr } from "./tr";
+import { ur } from "./ur";
 import { vi } from "./vi";
 
 /**
@@ -31,6 +32,7 @@ export const LANDINGS: Record<LocaleCode, LandingCopy> = {
   tl,
   tr,
   fr,
+  ur,
 };
 
 export function getLanding(code: LocaleCode): LandingCopy {

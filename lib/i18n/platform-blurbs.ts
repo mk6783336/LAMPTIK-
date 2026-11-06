@@ -128,6 +128,16 @@ export const PLATFORM_BLURBS: Record<LocaleCode, Record<Platform, string>> = {
     youtube:
       "MP4 en 1080p ou 720p, Shorts et audio MP3 depuis n'importe quel lien watch ou youtu.be — gratuit, sans application.",
   },
+  ur: {
+    tiktok:
+      "ٹک ٹاک ویڈیوز بغیر واٹر مارک HD MP4 میں اور اصل آواز MP3 میں — vt/vm چھوٹے لنک بھی۔",
+    instagram:
+      "ریلز، پوسٹ ویڈیوز اور IGTV اصل 1080p کوالٹی میں — بغیر واٹر مارک، بغیر لاگ اِن۔",
+    facebook:
+      "Watch کی لمبی ویڈیوز (1 GB سے زیادہ)، پیج اپلوڈز اور fb.watch لنک فوراً کھلتے ہیں۔",
+    youtube:
+      "کسی بھی watch یا youtu.be لنک سے 1080p/720p MP4، Shorts اور MP3 آواز — مفت، بغیر ایپ۔",
+  },
 };
 
 /**
@@ -181,6 +191,10 @@ export const TOOLS_HUB_CARD: Record<LocaleCode, { label: string; blurb: string }
   fr: {
     label: "Tous les outils",
     blurb: "L'index complet : téléchargements par format, par réseau et par langue sur une seule page.",
+  },
+  ur: {
+    label: "تمام ٹولز",
+    blurb: "مکمل فہرست: فارمیٹ، پلیٹ فارم اور زبان کے حساب سے ڈاؤن لوڈ، ایک ہی صفحے پر۔",
   },
 };
 
