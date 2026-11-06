@@ -3,16 +3,21 @@
  * Every permanent redirect still lands on a page that answers 200.
  *
  * `next.config.ts` holds six redirects that exist only to keep old, linked
- * URLs alive (see `docs/legacy-redirects.md`). The failure mode this script
- * catches is the quiet one: a destination page gets renamed — a guide slug
- * changes, a tool page moves — and the redirect keeps answering 308, but to a
- * 404. Nothing in the build notices, because the config is valid TypeScript and
- * the source URL is not rendered anywhere.
+ * URLs alive (see `docs/legacy-redirects.md`). The failure this catches is the
+ * quiet one: a destination page gets renamed — a guide slug changes, a tool
+ * page moves — and the redirect keeps answering 308, but to nothing.
+ *
+ * Two independent assertions per rule, on purpose:
+ *
+ *   1. The source answers a permanent 3xx whose `Location` is the destination
+ *      the config names. (Catches a source that stopped redirecting, or that
+ *      redirects somewhere nobody meant.)
+ *   2. The **destination itself** is requested and must answer 200. Checking
+ *      only where the server actually went is not enough: if the rule is right
+ *      but the page is gone, the followed chain is the thing that hides it.
  *
  * The source list is parsed from `next.config.ts` rather than duplicated here,
- * so a redirect added to the config is covered the next time this runs. Each
- * source is requested with redirects disabled (to see the 3xx and its Location)
- * and then followed (to see the final status).
+ * so a redirect added to the config is covered the next time this runs.
  *
  * Deliberately NOT part of `npm run verify`: that gate has to work offline, and
  * "the destination 404s" is a fact about a deployment, not about a commit. It
@@ -36,8 +41,7 @@ const config = await readFile(configPath, "utf8");
 
 /**
  * `{ source, destination, permanent }` triples. Commented-out examples cannot
- * match: the regex requires the three keys within a short span, and a commented
- * block would have to contain all three in that order to be picked up.
+ * match: the regex needs all three keys, in that order, within a short span.
  */
 const rules = [
   ...config.matchAll(
@@ -93,55 +97,59 @@ const failures = [];
 
 for (const rule of rules) {
   const from = absolute(rule.source);
-  const expected = absolute(rule.destination);
+  const expectedDestination = absolute(rule.destination);
+
+  // Assertion 2 first: the destination has to answer on its own, whatever the
+  // redirect currently does.
+  const destination = await request(expectedDestination, "follow");
 
   const hop = await request(from, "manual");
+  const redirectedTo = hop.location ? absolute(hop.location) : null;
+  const followed = redirectedTo ? await request(redirectedTo, "follow") : { status: 0, location: null };
+
   const isRedirect = hop.status >= 300 && hop.status < 400;
   const permanent = hop.status === 301 || hop.status === 308;
-  const location = hop.location ? absolute(hop.location) : null;
-  const pointsRight = Boolean(location && sameUrl(location, expected));
-
-  const final = location ? await request(location, "follow") : { status: 0, location: null };
+  const pointsRight = Boolean(redirectedTo && sameUrl(redirectedTo, expectedDestination));
 
   rows.push({
     source: rule.source,
     hop: hop.status,
-    final: final.status,
-    destination: rule.destination,
-    redirectedTo: location ? location.replace(ORIGIN, "") || "/" : "—",
+    target: redirectedTo ? redirectedTo.replace(ORIGIN, "") || "/" : "—",
+    followed: followed.status,
+    destination: destination.status,
   });
 
   if (hop.status === 0) {
     failures.push(`${rule.source} — request failed (${hop.error ?? "no response"})`);
-    continue;
-  }
-  if (!isRedirect) {
+  } else if (!isRedirect) {
     failures.push(`${rule.source} — answered ${hop.status}, expected a 3xx redirect`);
-    continue;
+  } else {
+    if (EXPECT_PERMANENT && rule.permanent && !permanent) {
+      failures.push(`${rule.source} — answered ${hop.status}, expected a permanent 301/308`);
+    }
+    if (!pointsRight) {
+      failures.push(
+        `${rule.source} — redirects to ${rows.at(-1).target}, expected ${rule.destination}`,
+      );
+    }
+    if (followed.status !== 200) {
+      failures.push(`${rule.source} — following the redirect ends on ${followed.status || "no response"}, expected 200`);
+    }
   }
-  if (EXPECT_PERMANENT && rule.permanent && !permanent) {
-    failures.push(`${rule.source} — answered ${hop.status}, expected a permanent 301/308`);
-  }
-  if (!pointsRight) {
+
+  if (destination.status !== 200) {
     failures.push(
-      `${rule.source} — redirects to ${rows.at(-1).redirectedTo}, expected ${rule.destination}`,
-    );
-  }
-  if (final.status !== 200) {
-    failures.push(
-      `${rule.source} — destination ${rule.destination} answered ${final.status || "no response"}, expected 200`,
+      `${rule.source} — destination ${rule.destination} answers ${destination.status || "no response"}, expected 200`,
     );
   }
 }
 
 const width = Math.max(...rows.map((row) => row.source.length));
 console.log(`Redirects on ${ORIGIN}`);
-console.log(
-  `${"source".padEnd(width)}  hop  final  destination`,
-);
+console.log(`${"source".padEnd(width)}  hop  ->                       chain  dest`);
 for (const row of rows) {
   console.log(
-    `${row.source.padEnd(width)}  ${String(row.hop).padEnd(3)}  ${String(row.final).padEnd(5)}  ${row.destination}`,
+    `${row.source.padEnd(width)}  ${String(row.hop).padEnd(3)}  ${row.target.padEnd(24)} ${String(row.followed).padEnd(5)}  ${row.destination}`,
   );
 }
 
@@ -158,5 +166,5 @@ if (failures.length > 0) {
 console.log(
   `\ncheck-redirects: ${rows.length} redirect(s) land on 200 — ` +
     `${rows.filter((row) => row.hop === 308).length} permanent, ` +
-    `${rows.filter((row) => row.final === 200).length} destinations alive`,
+    `${rows.filter((row) => row.destination === 200).length} destinations alive`,
 );
