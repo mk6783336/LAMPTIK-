@@ -343,6 +343,200 @@ function fromSyndication(payload: unknown): MirrorResult | null {
 }
 
 /**
+ * The mirror chain, in the order the resolver tries it.
+ *
+ * One array, not two: the waterfall below and the health probe must agree on
+ * what a mirror *is* (URL shape and parser), or the monitor would happily
+ * report a green light for a mirror the resolver no longer calls.
+ */
+export type TwitterMirrorId = TwitterMedia["provider"];
+
+interface MirrorDefinition {
+  id: TwitterMirrorId;
+  url: (postId: string) => string;
+  parse: (payload: unknown) => MirrorResult | null;
+}
+
+const MIRRORS: readonly MirrorDefinition[] = [
+  {
+    id: "fxtwitter",
+    url: (id) => `https://api.fxtwitter.com/status/${id}`,
+    parse: fromFxTwitter,
+  },
+  {
+    id: "vxtwitter",
+    url: (id) => `https://api.vxtwitter.com/Twitter/status/${id}`,
+    parse: fromVxTwitter,
+  },
+  {
+    id: "syndication",
+    url: (id) => `https://cdn.syndication.twimg.com/tweet-result?id=${id}&token=x`,
+    parse: fromSyndication,
+  },
+];
+
+/* Health probe                                                          */
+
+/**
+ * Post(s) the probe resolves. Public video posts that have been stable for
+ * months; a monitor needs a *real* payload to parse, because that is the only
+ * way to notice a mirror changing its response shape (which is how these
+ * mirrors break — rarely by going offline, usually by renaming a field).
+ *
+ * Override with `TWITTER_HEALTH_POSTS=a,b` if one is ever deleted.
+ */
+export const DEFAULT_TWITTER_HEALTH_POSTS: readonly string[] = ["1879168383423496436"];
+
+/**
+ * `ok`          — parsed, with at least one MP4 rendition.
+ * `no_media`    — answered, but not with something we can download (deleted
+ *                 post, or a changed payload shape).
+ * `unreachable` — network failure, timeout, 5xx, 429 or an auth/anti-bot code.
+ *                 This is the state that means "the mirror is broken".
+ */
+export interface TwitterMirrorHealth {
+  mirror: TwitterMirrorId;
+  state: "ok" | "no_media" | "unreachable";
+  renditions: number;
+  durationMs: number;
+  detail: string | null;
+}
+
+export interface TwitterHealthSnapshot {
+  /** `fixture_missing` means the probe could not *measure* — not that X broke. */
+  status: "ok" | "degraded" | "down" | "fixture_missing";
+  checkedAt: string;
+  posts: string[];
+  usable: number;
+  total: number;
+  mirrors: TwitterMirrorHealth[];
+}
+
+/**
+ * A minute of caching: the endpoint is cheap but not free (three outbound
+ * requests), and the answer cannot change faster than that in any way that
+ * matters to a 6-hourly monitor.
+ */
+const HEALTH_TTL_MS = 60_000;
+
+let healthCache: { key: string; at: number; snapshot: TwitterHealthSnapshot } | null = null;
+
+async function probeMirror(
+  mirror: MirrorDefinition,
+  postIds: string[],
+): Promise<TwitterMirrorHealth> {
+  const started = Date.now();
+  let reachable = false;
+  let detail: string | null = null;
+
+  for (const postId of postIds) {
+    let response: Response;
+    try {
+      response = await timedFetch(
+        mirror.url(postId),
+        {
+          headers: {
+            Accept: "application/json",
+            Referer: "https://x.com/",
+            "User-Agent": DESKTOP_UA,
+          },
+          cache: "no-store",
+          signal: AbortSignal.timeout(MIRROR_TIMEOUT_MS),
+        },
+        MIRROR_TIMEOUT_MS,
+      );
+    } catch (error) {
+      detail = error instanceof Error ? `network: ${error.name}` : "network error";
+      continue;
+    }
+
+    if (!response.ok) {
+      await response.body?.cancel().catch(() => undefined);
+      // 404/410 is a mirror's healthy answer for a deleted post. Everything
+      // else (5xx, 429, 401/403/451) is the mirror refusing to serve — the
+      // visitor gets nothing, so it is not reachable *for us*.
+      if (response.status === 404 || response.status === 410) {
+        reachable = true;
+        detail = `HTTP ${response.status}`;
+      } else {
+        detail = `HTTP ${response.status}`;
+      }
+      continue;
+    }
+
+    reachable = true;
+    const payload = await response.json().catch(() => null);
+    const parsed = payload ? mirror.parse(payload) : null;
+    if (parsed) {
+      return {
+        mirror: mirror.id,
+        state: "ok",
+        renditions: parsed.variants.length,
+        durationMs: Date.now() - started,
+        detail: null,
+      };
+    }
+    detail = "answered without downloadable MP4 renditions";
+  }
+
+  return {
+    mirror: mirror.id,
+    state: reachable ? "no_media" : "unreachable",
+    renditions: 0,
+    durationMs: Date.now() - started,
+    detail,
+  };
+}
+
+/**
+ * Probe every mirror in parallel — not the waterfall, so a broken primary is
+ * still reported while the secondary is quietly carrying production.
+ */
+export async function twitterMirrorHealth(
+  postIds: readonly string[] = DEFAULT_TWITTER_HEALTH_POSTS,
+): Promise<TwitterHealthSnapshot> {
+  const ids = postIds
+    .map((value) => String(value).trim().replace(/^.*\/status\//, ""))
+    .filter((value) => /^\d{5,25}$/.test(value))
+    .slice(0, 3);
+  const posts = ids.length > 0 ? ids : [...DEFAULT_TWITTER_HEALTH_POSTS];
+
+  const key = posts.join(",");
+  const now = Date.now();
+  if (healthCache && healthCache.key === key && now - healthCache.at < HEALTH_TTL_MS) {
+    return healthCache.snapshot;
+  }
+
+  const mirrors = await Promise.all(MIRRORS.map((mirror) => probeMirror(mirror, posts)));
+  const usable = mirrors.filter((mirror) => mirror.state === "ok").length;
+
+  // `fixture_missing` is deliberately its own state: if every mirror says "no
+  // media" the probes agree with each other, which points at the fixture (or
+  // at X pulling the payload for good) rather than at three simultaneous
+  // outages. Reporting it as `down` would send someone to debug healthy code.
+  const status: TwitterHealthSnapshot["status"] =
+    usable === mirrors.length
+      ? "ok"
+      : usable > 0
+        ? "degraded"
+        : mirrors.every((mirror) => mirror.state === "no_media")
+          ? "fixture_missing"
+          : "down";
+
+  const snapshot: TwitterHealthSnapshot = {
+    status,
+    checkedAt: new Date().toISOString(),
+    posts,
+    usable,
+    total: mirrors.length,
+    mirrors,
+  };
+
+  healthCache = { key, at: now, snapshot };
+  return snapshot;
+}
+
+/**
  * Resolve an X/Twitter post into downloadable MP4 renditions.
  *
  * Metadata only — no media byte is fetched here. Bounded by a 12s budget that
@@ -364,39 +558,16 @@ export async function extractTwitter(
   const signal = withTimeoutSignal(externalSignal);
   const id = parsed.id;
 
-  const attempts: Array<{
-    provider: TwitterMedia["provider"];
-    load: () => Promise<unknown>;
-    parse: (payload: unknown) => MirrorResult | null;
-  }> = [
-    {
-      provider: "fxtwitter",
-      load: () => fetchJson(`https://api.fxtwitter.com/status/${id}`, signal),
-      parse: fromFxTwitter,
-    },
-    {
-      provider: "vxtwitter",
-      load: () => fetchJson(`https://api.vxtwitter.com/Twitter/status/${id}`, signal),
-      parse: fromVxTwitter,
-    },
-    {
-      provider: "syndication",
-      load: () =>
-        fetchJson(`https://cdn.syndication.twimg.com/tweet-result?id=${id}&token=x`, signal),
-      parse: fromSyndication,
-    },
-  ];
-
-  for (const attempt of attempts) {
+  for (const mirror of MIRRORS) {
     if (signal.aborted) break;
     let payload: unknown = null;
     try {
-      payload = await attempt.load();
+      payload = await fetchJson(mirror.url(id), signal);
     } catch {
       continue; // mirror down / timed out: next one
     }
     if (!payload) continue;
-    const result = attempt.parse(payload);
+    const result = mirror.parse(payload);
     if (result) {
       return {
         id,
@@ -408,7 +579,7 @@ export async function extractTwitter(
         duration: result.duration,
         isGif: result.isGif,
         variants: result.variants,
-        provider: attempt.provider,
+        provider: mirror.id,
       };
     }
   }

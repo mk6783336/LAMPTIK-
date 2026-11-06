@@ -1,0 +1,97 @@
+name: Twitter Resolver Health
+
+# Are fxtwitter / vxtwitter / syndication still answering?
+#
+# The resolver walks three public mirrors (lib/twitter.ts). One dying is
+# silent: the next tier answers, the page looks fine, and the only trace is a
+# `provider` value in the body. Two dying is an outage. These mirrors rename
+# fields and start rate-limiting without notice, so this job asks the deployed
+# site every six hours — per-mirror state plus the exact request a visitor's
+# browser makes — and turns a regression into a GitHub issue plus a failed
+# run, which is what makes GitHub email the owner.
+#
+# No secrets or setup needed: it only calls the site's own public endpoint.
+# A regression opens or updates the single open issue labelled `twitter-health`
+# (one rolling issue, not one per mirror per run); the issue closes itself on
+# the first run that measures every mirror healthy again.
+
+on:
+  schedule:
+    # Every six hours at :17 — often enough to catch a mirror within a day,
+    # off the hour so it does not queue behind the rest of GitHub's cron.
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: twitter-health
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    name: Probe the three mirrors
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # continue-on-error keeps a failed probe from skipping the reporting
+      # steps; the guard below then turns it into an explicit red run instead
+      # of a green one that measured nothing.
+      - name: Probe the mirrors
+        id: health
+        continue-on-error: true
+        env:
+          TWITTER_HEALTH_ORIGIN: https://www.lamptik.online
+          # Optional: comma-separated replacement fixtures if the default post
+          # is ever deleted (`fixture_missing` in the report asks for this).
+          TWITTER_HEALTH_POSTS: ${{ vars.TWITTER_HEALTH_POSTS }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/twitter-health.mjs
+
+      - name: Fail on a probe error
+        if: steps.health.outcome == 'failure'
+        run: exit 1
+
+      - name: Open or update the alert issue
+        if: steps.health.outputs.alerts == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh label create twitter-health --color B60205 \
+            --description "X/Twitter resolver mirror regression" 2>/dev/null || true
+          EXISTING="$(gh issue list --label twitter-health --state open --limit 1 \
+            --json number --jq '.[0].number // empty')"
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body-file twitter-health-alerts.md
+          else
+            gh issue create --title "[twitter] Resolver mirror regression" \
+              --body-file twitter-health-alerts.md --label twitter-health
+          fi
+
+      # Only a run that actually measured every mirror may close the issue:
+      # `measured` guards against reading "fixtures vanished" as "recovered".
+      - name: Close the issue after recovery
+        if: steps.health.outputs.alerts != 'true' && steps.health.outputs.measured == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          EXISTING="$(gh issue list --label twitter-health --state open --limit 1 \
+            --json number --jq '.[0].number // empty')"
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "Recovered: all three mirrors are healthy in this run."
+            gh issue close "$EXISTING"
+          fi
+
+      - name: Fail the run when a mirror regressed
+        if: steps.health.outputs.alerts == 'true'
+        run: exit 1
