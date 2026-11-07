@@ -358,10 +358,10 @@ export function AdSlot({
 
   const isLeaderboard = effectiveFormat === "leaderboard";
   const scaled = { width: width * scale, height: height * scale };
-  // alwaysReserve: pending/filled both hold the full creative box so the
-  // slot is on stage immediately; fallback collapses to the compact card.
+  // Filled, or reserved while the auction runs. The fallback card paints
+  // inside the SAME box, so this is no longer a size switch — only the
+  // question of whether a creative is on stage.
   const reserved = creativeState === "filled" || (alwaysReserve && creativeState === "pending");
-  const showSponsoredCaption = creativeState === "filled" || reserved;
   return (
     <aside
       role="complementary"
@@ -370,33 +370,34 @@ export function AdSlot({
       data-ad-slot={effectiveFormat}
       data-ad-state={creativeState}
     >
-      {/* ONE subtle disclosure. A reserved/filled creative gets a tiny
-          caption above its frame; the compact fallback bar carries its own
-          inline label — so there is never a duplicate "Sponsored" pill
-          stacked on top. */}
-      {showSponsoredCaption ? (
-        <p className="mb-1 text-center text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-3)]">
-          {sponsoredLabel}
-        </p>
-      ) : null}
+      {/* ONE subtle disclosure, always in the tree. Rendering it only once a
+          creative landed added ~20px above the slot and pushed every element
+          below it — a self-inflicted layout shift on top of the ad's own. The
+          fallback card no longer repeats the word inline, so there is still
+          exactly one label in every state. */}
+      <p className="mb-1 text-center text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-3)]">
+        {sponsoredLabel}
+      </p>
 
       <div
         ref={hostRef}
+        data-ad-live={reserved ? "true" : "false"}
+        data-ad-reserve={alwaysReserve ? "eager" : "auto"}
         className={cn(
           "relative mx-auto box-border w-full max-w-full overflow-hidden",
-          // Border around a live-or-reserved creative; the fallback card
-          // carries its own border so there is never a clipped or doubled
-          // outline.
-          reserved && "rounded-2xl border border-amber-500/15 bg-[#07080d]",
+          "rounded-2xl border border-amber-500/15 bg-[#07080d]",
           !isLeaderboard && "max-w-[300px]",
           isLeaderboard && "max-w-[728px]",
         )}
         style={{
-          // Reserved (theater/console/loaded): the scaled creative's exact
-          // height. Fallback: one compact 56px line (never a giant reserved
-          // black box). Pending without reservation: zero.
-          height:
-            reserved ? scaled.height : creativeState === "fallback" ? 56 : 0,
+          // Height is the creative's ASPECT RATIO, never a state-dependent
+          // pixel value. Before this the same box was 0px while the auction
+          // ran, 250px once a creative landed and 56px after the timeout —
+          // three heights for one element, which is the 0.38 CLS Clarity
+          // recorded. Now the box reserves its final size from the first
+          // paint and every state (pending, filled, fallback) paints inside
+          // it, so the page below it can never move.
+          aspectRatio: `${width} / ${height}`,
           backgroundColor: "#07080d",
           colorScheme: "dark",
         }}
@@ -454,17 +455,21 @@ export function AdSlot({
             />
           </div>
         ) : creativeState === "fallback" ? (
+          /* Fills the reserved box instead of shrinking it. The old 250px →
+             56px collapse was a 194px jump that moved everything below the
+             slot every time an auction came back empty. Same box, one card,
+             one disclosure (the caption above). */
           <a
             href={directLinkUrl}
             target="_blank"
             rel="sponsored nofollow noopener"
             aria-label="Sponsored partner offer — opens in a new tab"
-            className="absolute inset-x-0 top-0 box-border flex h-14 max-h-[72px] w-full max-w-full items-center justify-between gap-3 overflow-hidden rounded-xl border border-amber-500/20 bg-[#0b0c12] px-3 text-white transition-colors hover:border-amber-400/40"
+            className="absolute inset-0 box-border flex flex-col items-center justify-center gap-2 rounded-xl border border-amber-500/20 bg-[#0b0c12] px-3 text-center text-white transition-colors hover:border-amber-400/40"
           >
-            <span className="min-w-0 truncate text-xs font-medium text-slate-300">
-              <span className="text-amber-300/90">{sponsoredLabel}</span> · Recommended tools &amp; offers
+            <span className="text-xs font-medium text-slate-300">
+              Recommended tools &amp; offers
             </span>
-            <span className="shrink-0 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-200">
+            <span className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-200">
               Open ↗
             </span>
           </a>

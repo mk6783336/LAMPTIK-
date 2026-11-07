@@ -798,6 +798,216 @@ export const GUIDES: Guide[] = [
       "browser-vs-app-tiktok-downloaders-safety",
     ],
   },
+  {
+    slug: "mp4-wont-import-capcut-premiere-pro",
+    title: "Why Your MP4 Won’t Import in CapCut or Premiere Pro — and the Fix",
+    metaTitle: "Fix MP4 Import Errors in CapCut & Premiere",
+    description:
+      "“Unsupported format” or a black preview when importing an MP4? The container is fine — the codec inside it is not. Diagnose it in one minute and fix it.",
+    updatedAt: "2026-11-07",
+    shortAnswer:
+      "An MP4 is a box, not a format: it can hold H.264, H.265/HEVC, VP9 or AV1 video and AAC, Opus or AC-3 audio. Editors accept the box and reject the codec inside it. Check the actual streams first (VLC → Tools → Codec information, or MediaInfo), then either download an H.264/AAC copy or transcode the file once with ffmpeg or Media Encoder — that is the whole fix.",
+    sections: [
+      {
+        heading: "Why the same .mp4 opens in VLC but not in your editor",
+        paragraphs: [
+          "Every editor decides “can I import this?” by reading the codec identifiers inside the file, not by looking at the extension. Chrome, VLC and QuickTime ship a wide set of decoders because they play whatever the internet sends; Premiere, CapCut, DaVinci Resolve and Final Cut ship a narrower set because they have to decode in real time at full resolution while you scrub.",
+          "So a file that plays perfectly can still be refused. The four causes below cover almost every “unsupported format” report: HEVC/H.265 video, VP9/AV1 video, a missing or unsupported audio stream, and variable frame rate. iPhone footage hits the first; anything pulled from YouTube hits the second; screen recordings hit the fourth.",
+        ],
+      },
+      {
+        heading: "Identify the real codec in under a minute",
+        list: [
+          "VLC: open the file, then Tools → Codec information. The Codec field on the Stream 0 line is the answer — “H264 - MPEG-4 AVC” is safe, “HEVC” or “VP9” is the problem.",
+          "MediaInfo (free, Windows/macOS): drag the file in and read Video → Format and Audio → Format. It also shows whether the frame rate is constant or variable, which most other tools hide.",
+          "QuickTime on macOS: Window → Show Movie Inspector (⌘I). “H.265” or “HEVC” in the Format line is the diagnosis.",
+          "Premiere Pro: if the file imports but shows a black frame and an audio waveform, the video codec is unsupported and Premiere fell back to audio only — that is the same problem wearing a different symptom.",
+        ],
+        paragraphs: [],
+      },
+      {
+        heading: "The one-minute fix: transcode to H.264 + AAC",
+        paragraphs: [
+          "H.264 video with AAC audio in an MP4 container is the format every editor on every platform imports without argument. One ffmpeg pass converts anything to it, and the settings below keep the quality you already have:",
+        ],
+        list: [
+          "ffmpeg -i input.mp4 -c:v libx264 -crf 18 -preset veryfast -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart output.mp4",
+          "CRF 18 is visually lossless for most footage; raise it to 21–23 if you only need a proxy and want the file smaller.",
+          "-pix_fmt yuv420p is not decoration: 10-bit or 4:2:2 phone footage converts to a profile some editors refuse, and yuv420p avoids that.",
+          "-movflags +faststart moves the index to the front of the file, so the editor can scrub without reading the whole thing.",
+          "For a variable-frame-rate clip that stutters on the timeline, add -vsync cfr -r 30 (or 60) to force a constant rate.",
+        ],
+      },
+      {
+        heading: "What each editor needs, and what it silently rejects",
+        list: [
+          "Premiere Pro (Windows): H.264 and HEVC import only with the HEVC Video Extensions package installed; without it, HEVC shows “unsupported format”. H.264 always works.",
+          "Premiere Pro (macOS): HEVC decodes natively, but 10-bit 4:2:2 from some mirrorless cameras still needs a transcode before it will preview smoothly.",
+          "CapCut desktop: bundles its own decoder and is stricter about audio — a video-only stream (no audio track at all) can fail the import outright, so add a silent AAC track if you stripped the audio.",
+          "DaVinci Resolve (free): H.264 and HEVC import, but 10-bit H.264 is refused in the free version — transcode to ProRes or DNxHR for grading.",
+          "Final Cut Pro: prefers ProRes; it will import H.264 but a long 4K H.264 timeline will feel sluggish compared with a ProRes transcode.",
+        ],
+        paragraphs: [],
+      },
+      {
+        heading: "Where the bad file came from (and how to avoid it next time)",
+        paragraphs: [
+          "Phones are the usual source. Since iOS 11, iPhone records in HEVC by default (“High Efficiency” in Settings → Camera → Formats) and wraps it in a .mov or .mp4 that plays everywhere but imports nowhere on Windows. That is a camera setting, not a corrupted download.",
+          "Downloads are the second source, but the picture is more specific than “downloader sites give bad files”. TikTok and Instagram serve H.264 with AAC — the compatible pair — because those codecs play on the widest range of phones. YouTube is the opposite: its best renditions are VP9 or AV1 video with Opus audio in a WebM container, which is why a YouTube download often needs a transcode before an editor will touch it. A clean TikTok or Reels MP4 is usually import-ready as-is; a 4K YouTube grab usually is not.",
+          "Third source: anything that passed through a second re-encode. A file that was already compressed once, then re-encoded at a low bitrate, imports fine but looks soft — the codec is not the problem there, the bitrate is.",
+        ],
+      },
+      {
+        heading: "When the import works but the timeline still misbehaves",
+        list: [
+          "Audio drifts out of sync over a long clip: the source is variable frame rate. Re-encode with -vsync cfr and the drift disappears.",
+          "Playback stutters while scrubbing but exports fine: the source is 4K H.264 with a long GOP. Create proxies (Premiere: right-click → Proxy → Create Proxies) rather than transcoding the master.",
+          "Colours look washed out after import: the file is HDR (HLG or PQ) and the sequence is SDR. Set the sequence to Rec.709 and convert with a colour-managed transform instead of eyeballing it.",
+          "The clip is cropped or rotated 90°: phone footage carries a rotation matrix. Premiere honours it; older CapCut builds do not, so rotate the source once on export.",
+        ],
+        paragraphs: [],
+      },
+    ],
+    related: [
+      "download-tiktok-without-logo-iphone-android",
+      "why-tiktok-video-quality-drops-after-upload",
+      "iphone-safari-downloads-to-files-and-photos",
+    ],
+  },
+  {
+    slug: "iphone-safari-downloads-to-files-and-photos",
+    title: "iPhone: Downloaded Videos Land in Files — Here’s How to Get Them Into Photos",
+    metaTitle: "iPhone: Save Downloads to Photos",
+    description:
+      "Safari saves downloads to Files, and Photos will not show them until you import. Exact steps for moving a video into your camera roll, plus the errors iOS throws.",
+    updatedAt: "2026-11-07",
+    shortAnswer:
+      "Safari writes every download into the Files app (On My iPhone → Downloads), not into Photos — iOS treats Photos as a library you add to deliberately. Open Files, long-press the video, tap Share, then Save to Photos (or Save Video on older iOS). That is the whole move, and it works offline.",
+    sections: [
+      {
+        heading: "Why the file is in Files and not in Photos",
+        paragraphs: [
+          "Photos is not a downloads folder. Apple keeps it a curated library: only images and videos that arrive through the camera, a share sheet action, AirDrop, iCloud or the Photos API are written there. Safari's download manager has no permission to add to it, so a downloaded MP4 stays in Files until you hand it over explicitly.",
+          "That is a deliberate boundary, not a bug, and it is why “the download worked but the video isn't in my gallery” is the single most common iPhone complaint about any downloader. The file is there; it is one share-sheet action away from Photos.",
+        ],
+      },
+      {
+        heading: "Files → Photos, step by step (iOS 16 and later)",
+        list: [
+          "Open the Files app and go to Browse → On My iPhone → Downloads. Safari's downloads live there unless you changed the location.",
+          "Long-press the video file, then tap Share. Do not tap the file itself — that opens a player, and the player's share button is less reliable for long videos.",
+          "In the share sheet, choose Save to Photos. Depending on the iOS version the label may read Save Video — both write into the camera roll.",
+          "Confirm the video appears in Photos → Recents. If it does not, scroll to Albums → Videos; sometimes the media index lags a few seconds behind the save.",
+        ],
+        paragraphs: [],
+      },
+      {
+        heading: "When “Save to Photos” is missing from the share sheet",
+        list: [
+          "The file is still downloading: a partial download cannot be imported. Wait for the progress ring to finish; Files shows a cloud icon while it is incomplete.",
+          "The format is not one Photos accepts: Photos takes MP4 (H.264/HEVC) and MOV. A WebM, MKV or a raw audio file will not offer the action — that file has to be converted first.",
+          "No storage left: iOS hides the action when it cannot fit a second copy. Check Settings → General → iPhone Storage; a 200 MB video needs 200 MB free to duplicate into the library.",
+          "The share sheet was opened from the wrong place: long-press the file in Files, not inside a preview player, and the action comes back.",
+        ],
+        paragraphs: [],
+      },
+      {
+        heading: "Downloads that fail before they even start",
+        paragraphs: [
+          "A download that dies at 0% is almost never the file. Safari needs a moment to hand the transfer to the system download manager, and a few things interrupt that handshake: Private Relay or a VPN changing the connection mid-request, Low Power Mode throttling background transfers, and in-app browsers.",
+        ],
+        list: [
+          "Open the page in Safari, not inside TikTok's, Instagram's or Facebook's built-in browser. In-app browsers cannot write to Files at all, so the download button appears to do nothing.",
+          "Turn Private Relay off for the download (Settings → Apple ID → iCloud → Private Relay), or pause the VPN. Signed media URLs are tied to your IP and a mid-transfer IP change invalidates them.",
+          "Disable Low Power Mode while downloading: it suspends background transfers when the screen locks.",
+          "If a download stalls at 99%, leave the tab open for a minute — Safari resumes a dropped transfer instead of restarting from zero.",
+        ],
+      },
+      {
+        heading: "Audio files are a different story",
+        paragraphs: [
+          "An MP3 will never appear in Photos, because Photos does not hold audio. It stays in Files, where you can play it from the Files app or share it into another app. If you want it as a ringtone, the supported route is GarageBand: create an audio recording project, drag the file in, trim it under 30 seconds, then Share → Ringtone → Export. That is Apple's own path and it survives iOS updates, unlike the old trick of renaming an M4R file.",
+          "If you only want to listen, Voice Memos and the Files player are both fine and neither duplicates the file, which matters when storage is tight.",
+        ],
+      },
+      {
+        heading: "Keeping the file out of iCloud when you do not want it there",
+        paragraphs: [
+          "Saving to Photos also uploads to iCloud Photos if that is enabled, and a few large downloads can quietly fill a 5 GB free tier. Two honest options: turn off Settings → Photos → iCloud Photos before importing a batch, or keep the videos in Files and skip Photos entirely — Files can hold them locally under On My iPhone without syncing anywhere.",
+          "A downloaded video also survives in Files across restarts, so if the goal is just “I have the file”, importing to Photos is optional rather than mandatory.",
+        ],
+      },
+    ],
+    related: [
+      "download-tiktok-without-logo-iphone-android",
+      "mp4-wont-import-capcut-premiere-pro",
+      "browser-vs-app-tiktok-downloaders-safety",
+    ],
+  },
+  {
+    slug: "1080p-60fps-download-edit-upload-workflow",
+    title: "1080p at 60fps: Download, Edit, and Re-upload Without Losing Quality",
+    metaTitle: "1080p 60fps Workflow That Keeps Quality",
+    description:
+      "Most 60fps clips arrive at 30fps or look soft after one hop. What actually survives a download, an edit and a re-upload — with the settings that keep it.",
+    updatedAt: "2026-11-07",
+    shortAnswer:
+      "Quality survives a round trip if you start from the original stream and re-encode exactly once. Download the cleanest source the platform serves, edit on a timeline whose frame rate matches the clip, export H.264 at CRF 18–20 with yuv420p and faststart, and upload that master. Every extra generation costs detail that no setting can put back.",
+    sections: [
+      {
+        heading: "What “1080p 60fps” actually costs in bitrate",
+        paragraphs: [
+          "Resolution and frame rate are the two numbers people quote, but bitrate is the one that decides whether the result looks sharp. Doubling the frame rate doubles the number of frames a codec must describe, so a 60fps clip needs a higher bitrate than the same scene at 30fps to look equally clean — roughly 1.5–2× for comparable quality.",
+          "Platforms know this and encode accordingly. A 1080p60 upload on TikTok typically streams back at a few megabits per second; Instagram Reels sits in a similar band; YouTube's 1080p60 rendition is higher but still far below the 45–60 Mbps a camera records at. So the file you download is always a re-encode of the creator's master — the question is only how many times that master has already been re-encoded before you got it.",
+        ],
+      },
+      {
+        heading: "Check the frame rate before you blame the edit",
+        list: [
+          "ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate,avg_frame_rate,bit_rate -of default=nw=1 input.mp4 — r_frame_rate 60/1 means real 60fps; 30/1 means the platform served you 30.",
+          "MediaInfo shows Frame rate and Bit rate side by side, which is the fastest way to spot a “1080p” file that is really 2 Mbps at half the frames.",
+          "In Premiere, right-click the clip → Properties: Frame Rate is listed next to the resolution. A 60fps clip on a 30fps sequence will drop every other frame and look like judder, not like a bad download.",
+          "File size is a rough sanity check: a 15-second 1080p60 clip is typically 6–15 MB. Two megabytes for the same duration is 30fps at a low bitrate, whatever the resolution says.",
+        ],
+        paragraphs: [],
+      },
+      {
+        heading: "Editing without a second generation of loss",
+        paragraphs: [
+          "The rule that matters: decode once, encode once. Importing a compressed file, editing it and exporting it again is unavoidable — but exporting twice, or exporting an intermediate you then re-import and export again, is pure loss for no benefit.",
+        ],
+        list: [
+          "Set the sequence/timeline frame rate to the clip's own rate before you cut. Mixed 30/60 footage on one timeline should be conformed deliberately, not left to the editor's default.",
+          "Export H.264 with CRF 18–20 for the master; CRF 16–17 only if you will grade the result again. Lower numbers mostly add file size past that point.",
+          "Keep yuv420p and a standard profile (High) for 8-bit delivery. Editors and phones both accept it; 10-bit 4:2:2 will fail on plenty of players.",
+          "Add -movflags +faststart so the file starts playing before it finishes downloading — this is what makes a re-upload preview instantly on the platform's side.",
+          "For vertical delivery, cut at 1080×1920 and keep the subject inside the middle 1080×1420: every platform's UI covers the outer bands.",
+        ],
+      },
+      {
+        heading: "The upload settings that stop the platform from softening your file",
+        list: [
+          "TikTok: upload the highest-bitrate 1080p master you have; the app's own export re-encodes at a lower bitrate, so never upload from inside the app if you edited elsewhere.",
+          "Instagram Reels: 1080×1920, H.264, under the length limit; Reels re-encodes harder than feed video, so a slightly higher-bitrate master survives better.",
+          "YouTube (including Shorts): 1080p60 at 12–20 Mbps is plenty; YouTube's own guidance is generous, and a higher-bitrate source is not punished.",
+          "Never upload a file you downloaded from the same platform as your master. That is a second generation before the platform adds a third.",
+        ],
+        paragraphs: [],
+      },
+      {
+        heading: "Why generation loss is the real enemy, not the downloader",
+        paragraphs: [
+          "Each re-encode throws away detail the next one cannot recover: fast motion smears, gradients band, text edges grow halos. Three hops are usually visible; five are obvious. This is why “download → edit → upload” can look clean while “download → re-upload, download again → edit” looks soft no matter which tool did the downloading.",
+          "The practical discipline is to keep one master per project: the highest-quality file you legitimately have, stored locally, from which every platform version is exported. Re-downloading your own upload to “get it back” is exactly the lossy loop to avoid.",
+        ],
+      },
+    ],
+    related: [
+      "repurpose-tiktok-videos-for-youtube-shorts-instagram-reels",
+      "why-tiktok-video-quality-drops-after-upload",
+      "mp4-wont-import-capcut-premiere-pro",
+    ],
+  },
 ];
 
 export function getGuide(slug: string): Guide | null {

@@ -172,17 +172,16 @@ export function LocalizedLanding({
                   {copy.lede}
                 </p>
 
-                <div className="mt-6 hidden flex-wrap items-center gap-2 sm:flex">
+                {/* Facts, not controls: plain text instead of pills that read
+                    as buttons (Clarity logged dead clicks on them). */}
+                <ul className="mt-6 hidden flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--text-3)] sm:flex">
                   {copy.chips.map((chip) => (
-                    <span
-                      key={chip}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--glass-bg)] px-2.5 py-1 text-xs text-[var(--text-2)]"
-                    >
-                      <Check className="size-3 text-[var(--accent-text)]" />
+                    <li key={chip} className="inline-flex items-center gap-1.5">
+                      <Check aria-hidden="true" className="size-3 text-[var(--accent-text)]/80" />
                       {chip}
-                    </span>
+                    </li>
                   ))}
-                </div>
+                </ul>
 
                 <div className="mt-7 flex flex-wrap items-center gap-1.5 text-xs text-[var(--text-3)]">
                   <Globe className="size-3.5" aria-hidden="true" />

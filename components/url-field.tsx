@@ -76,6 +76,8 @@ export function UrlField({
   const accentConfig = PLATFORMS[accent];
 
   const seedNonce = useRef(seed.nonce);
+  /** Tap-to-paste fires at most once per mount (see `handleFocusAutopaste`). */
+  const clipboardTriedRef = useRef(false);
 
   useEffect(() => {
     setIsHydrated(true);
@@ -172,6 +174,42 @@ export function UrlField({
     }
   }
 
+  /**
+   * Tap-to-paste. A phone keyboard makes pasting a two-step chore — long-press,
+   * then Paste — so the FIRST focus of an empty field quietly asks the
+   * clipboard for a link and, when one is there, fills and fetches it.
+   *
+   * Deliberately narrow: once per mount, only while the field is still empty,
+   * only for a recognised video link, and every failure is silent. A browser
+   * that needs a clipboard permission prompt must never turn one tap on the
+   * input into a dialog, and typing is never overwritten (`inputRef` is read
+   * again after the await, so a fast typist wins).
+   */
+  async function handleFocusAutopaste() {
+    if (clipboardTriedRef.current) return;
+    clipboardTriedRef.current = true;
+    if (busy || input.trim() || !navigator.clipboard?.readText) return;
+
+    try {
+      const text = await navigator.clipboard.readText();
+      // The visitor may have started typing while the clipboard was read.
+      if (!text.trim() || inputRef.current?.value) return;
+      const link = detectLink(text);
+      if (!link) return;
+
+      setInput(extractLinkText(text));
+      setLocalError(null);
+      onNotify({
+        kind: "success",
+        title: "Link pasted",
+        description: `Fetching the clean ${PLATFORMS[link.platform].videoNoun} stream…`,
+      });
+      submitLink(link);
+    } catch {
+      // Blocked, empty or unsupported: the field simply stays idle.
+    }
+  }
+
   // Native paste (long-press / Ctrl+V into the field): same auto-fetch rule.
   function handleInputPaste(event: React.ClipboardEvent<HTMLInputElement>) {
     const text = event.clipboardData.getData("text");
@@ -262,6 +300,7 @@ export function UrlField({
           disabled={busy}
           value={input}
           onChange={(event) => handleInputChange(event.target.value)}
+          onFocus={handleFocusAutopaste}
           onKeyDown={handleInputKeyDown}
           onPaste={handleInputPaste}
           placeholder={copy?.placeholder ?? accentConfig.placeholder}

@@ -140,21 +140,23 @@ export default function HomePage() {
                   to your iPhone, Android, or PC.
                 </p>
 
-                <div className="mt-6 hidden flex-wrap items-center gap-2 sm:flex">
+                {/* Fact row, NOT chips. These three used to be bordered pills
+                    that read as buttons — Clarity showed 27% of mobile sessions
+                    tapping them and getting nothing, because they are facts
+                    about the file, not controls. Plain text with an icon
+                    removes the affordance instead of faking a target. */}
+                <ul className="mt-6 hidden flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--text-3)] sm:flex">
                   {[
                     { label: "1080p source", Icon: MonitorPlay },
                     { label: "H.264 compatible", Icon: ShieldCheck },
                     { label: "MP3 audio", Icon: Music2 },
                   ].map(({ label, Icon }) => (
-                    <span
-                      key={label}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--glass-bg)] px-2.5 py-1 text-xs text-[var(--text-2)] backdrop-blur"
-                    >
-                      <Icon className="size-3 text-[var(--accent-text)]" />
+                    <li key={label} className="inline-flex items-center gap-1.5">
+                      <Icon aria-hidden="true" className="size-3 text-[var(--accent-text)]/80" />
                       {label}
-                    </span>
+                    </li>
                   ))}
-                </div>
+                </ul>
 
                 <Link
                   href="#how"

@@ -212,17 +212,16 @@ export default async function YouTubeDownloaderPage({
                   {DESCRIPTION}
                 </p>
 
-                <div className="mt-6 hidden flex-wrap items-center gap-2 sm:flex">
+                {/* Facts, not controls — plain text, not pills (Clarity dead
+                    clicks landed on these). */}
+                <ul className="mt-6 hidden flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--text-3)] sm:flex">
                   {["1080p Full HD", "Shorts + long videos", "MP3 audio"].map((chip) => (
-                    <span
-                      key={chip}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--glass-bg)] px-2.5 py-1 text-xs text-[var(--text-2)] backdrop-blur"
-                    >
-                      <Check className="size-3 text-[var(--accent-text)]" />
+                    <li key={chip} className="inline-flex items-center gap-1.5">
+                      <Check aria-hidden="true" className="size-3 text-[var(--accent-text)]/80" />
                       {chip}
-                    </span>
+                    </li>
                   ))}
-                </div>
+                </ul>
 
                 {/* Result mode only (lg+): fills the column beside the result
                     card with the sponsor showcase instead of empty space. */}

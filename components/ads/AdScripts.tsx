@@ -1,6 +1,7 @@
 "use client";
 
 import Script from "next/script";
+import { useEffect, useState } from "react";
 
 import { hilltopMultitagSrc, monetagInPage } from "@/lib/monetization";
 
@@ -147,6 +148,64 @@ if(document.readyState==="loading"){window.setTimeout(start,0);}else{start();}
 }catch(e){}})();`;
 
 export function AdScripts() {
+  /**
+   * Nothing below loads until the visitor touches the page (or the page has
+   * been idle for a while after load).
+   *
+   * Why: Clarity measured LCP at 7.4s on phones and the largest element it
+   * named was the Monetag in-page push icon — a remote creative arriving
+   * through this very block, competing with the hero for the same connection
+   * and main thread. `afterInteractive` still meant "during load", so the ad
+   * network was joining the LCP race. Ads are now armed by the first real
+   * interaction (`pointerdown`, `touchstart`, `wheel`, `keydown` — a tap, a
+   * finger drag, a mouse wheel and a keyboard scroll all produce one) or 20s
+   * after the load event, whichever comes first.
+   *
+   * `scroll` is deliberately NOT a trigger: a restored scroll position fires
+   * it by itself on every reload, so gating on it armed the network a frame
+   * after load — measured, not assumed.
+   *
+   * The 20s fallback is deliberate, not padding. LCP keeps accepting new
+   * candidates until the visitor's first input, so arming the network a couple
+   * of seconds after load is exactly how its push icon became the 7.4s LCP
+   * element. Twenty seconds is past any plausible measurement window, and a
+   * downloader visitor taps something in the first second or two — the ones
+   * who only read are the only ones who wait.
+   *
+   * The guard and the service-worker registration ride along here too: they
+   * have nothing to guard or register until the tag exists.
+   */
+  const [armed, setArmed] = useState(false);
+
+  useEffect(() => {
+    if (armed) return;
+
+    const arm = () => setArmed(true);
+    const onLoad = () => {
+      const idle = window.requestIdleCallback;
+      if (typeof idle === "function") {
+        idle(() => window.setTimeout(arm, 20_000), { timeout: 22_000 });
+      } else {
+        window.setTimeout(arm, 20_000);
+      }
+    };
+
+    if (document.readyState === "complete") onLoad();
+    else window.addEventListener("load", onLoad, { once: true });
+
+    const events = ["pointerdown", "keydown", "touchstart", "wheel"] as const;
+    for (const name of events) {
+      window.addEventListener(name, arm, { once: true, passive: true });
+    }
+
+    return () => {
+      window.removeEventListener("load", onLoad);
+      for (const name of events) window.removeEventListener(name, arm);
+    };
+  }, [armed]);
+
+  if (!armed) return null;
+
   const registerWorker = `(function(){try{if(!("serviceWorker" in navigator))return;var go=function(){navigator.serviceWorker.register("/sw.js").catch(function(){})};if(document.readyState==="complete"){go()}else{window.addEventListener("load",go,{once:true})}}catch(e){}})();`;
 
   // The network's own loader resolves its insertion point with
