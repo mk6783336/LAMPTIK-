@@ -60,7 +60,6 @@ jobs:
             .index-check-state.json
             .bing-submit-state.json
             .gsc-check-state.json
-            .clarity-check-state.json
           key: index-check-state-${{ github.run_id }}
           restore-keys: |
             index-check-state-
@@ -100,24 +99,6 @@ jobs:
           # script picks whichever property the service account can see.
           GSC_PROPERTY: ${{ vars.GSC_PROPERTY }}
         run: node scripts/gsc-check.mjs --skip-if-unconfigured
-
-      # Clarity's Data Export API is the only programmatic way to read dead
-      # clicks, rage clicks and quick-back counts, and it only ever covers the
-      # last 72 hours with no backfill — so a snapshot per run is what a trend
-      # is made of. The state file above carries the previous numbers, and the
-      # report prints the delta.
-      #
-      # Optional. Without CLARITY_API_TOKEN the step says it is unconfigured
-      # and exits 0. The token is generated per project: Clarity → project →
-      # Settings → Data Export → Generate new API token (admin only).
-      #
-      # Note: the export does not include LCP/CLS/INP. Those stay a dashboard
-      # read; this step measures the frustration signals the CLS and dead-click
-      # fixes were supposed to move.
-      - name: Snapshot Clarity frustration signals
-        env:
-          CLARITY_API_TOKEN: ${{ secrets.CLARITY_API_TOKEN }}
-        run: node scripts/clarity-check.mjs --skip-if-unconfigured
 
       # Pushes only URLs Bing has never been told about. A blanket re-submit of
       # all 51 every week would spend the 200/month quota in four weeks and

@@ -12,7 +12,6 @@
     "check:links": "node scripts/check-content-links.mjs",
     "check:redirects": "node scripts/check-redirects.mjs",
     "check:sitemap": "node scripts/check-sitemap.mjs",
-    "check:clarity": "node scripts/clarity-check.mjs",
     "ads:health": "node scripts/ads-health.mjs",
     "twitter:health": "node scripts/twitter-health.mjs",
     "notify:webhook": "node scripts/notify-webhook.mjs",
