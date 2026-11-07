@@ -1056,3 +1056,19 @@ html:not(.dark) {
 @media (max-width: 639px) {
   .ad-reserve { aspect-ratio: 300 / 250; }
 }
+
+/* Entrance reveal: transform only, never opacity.
+   tailwind.config.ts animates `rise` from opacity 0, so hero copy is not
+   painted at FCP and Chrome records a second LCP when the fade ends —
+   measured 450-1300ms after FCP on a cold phone load, which is exactly the
+   7.7s-19.9s LCP this page was chasing. Sliding the copy without hiding it
+   keeps the motion and makes the first paint the LCP.
+.animate-rise { animation: rise-slide 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+@keyframes rise-slide {
+  from { transform: translateY(10px); }
+  to { transform: translateY(0); }
+}
+/* A slide with no fade must not outlive reduced-motion preferences. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise { animation: none; }
+}
