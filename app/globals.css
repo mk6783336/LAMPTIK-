@@ -1064,3 +1064,7 @@ html:not(.dark) {
    when its layer moved (2312ms at 431px wide), so the hero is static now: the
    first paint is the LCP and the motion lives below the fold instead. */
 .animate-rise { animation: none; }
+
+/* Returning visitors already decided; the inline script in ConsentBar sets
+   the attribute during parsing, before the panel is painted. */
+html[data-consent="1"] .consent-bar { display: none; }
