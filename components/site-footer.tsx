@@ -75,6 +75,12 @@ const FOOTER_GROUPS: Array<{ id: FooterGroupId; label: string; links: FooterLink
       // The hub, first in the column: it lists all eighteen, so it is the better
       // entry point for anyone who is not already looking for one format.
       { href: "/tools", label: "All 18 tools", id: "allTools" },
+      // Creator micro-tools. No `id`: the localized footer copy predates these
+      // routes, and their names are product names in every locale.
+      { href: "/tiktok-money-calculator", label: "Money calculator" },
+      { href: "/tiktok-safe-zone-checker", label: "Safe zone checker" },
+      { href: "/video-thumbnail-downloader", label: "Thumbnail downloader" },
+      { href: "/tiktok-caption-hashtag-extractor", label: "Caption extractor" },
       { href: "/tiktok-mp3-downloader", label: "TikTok to MP3", id: "tiktokMp3" },
       { href: "/tiktok-photo-downloader", label: "TikTok Photos", id: "tiktokPhotos" },
       { href: "/youtube-to-mp3", label: "YouTube to MP3", id: "youtubeMp3" },

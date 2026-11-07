@@ -443,10 +443,15 @@ for (const file of hygieneSources) {
   const source = await readFile(file, "utf8");
   const name = rel(file);
 
-  for (const match of source.matchAll(/href[:=]\s*["'\u0060](\/[^"'\u0060$]*)/g)) {
-    const href = match[1];
+  for (const match of source.matchAll(/href[:=]\s*(["'\u0060])(\/[^"'\u0060$]*)/g)) {
+    const delimiter = match[1];
+    const href = match[2];
+    // `/guides/${slug}` is a template, not a trailing-slash link: the capture is
+    // only the literal prefix and the interpolation follows it immediately.
+    const continuesTemplate =
+      delimiter === "`" && source[match.index + match[0].length] === "$";
     counts.hygiene += 1;
-    if (href.length > 1 && href.endsWith("/")) {
+    if (!continuesTemplate && href.length > 1 && href.endsWith("/")) {
       fail(
         name,
         source,

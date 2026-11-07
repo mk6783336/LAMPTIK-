@@ -1,5 +1,6 @@
 import { GUIDE_LIST } from "@/lib/content/guides";
 import { SUB_TOOLS } from "@/lib/content/sub-tools";
+import { CREATOR_TOOLS } from "@/lib/creator-tools";
 import { PLATFORMS, PLATFORM_LIST } from "@/lib/platforms";
 import { LOCALE_CODES } from "@/lib/i18n/types";
 import { siteConfig, siteUrl } from "@/lib/site";
@@ -50,6 +51,11 @@ function lines(): string[] {
     "",
     "## Sub-tools (one page per search intent)",
     ...SUB_TOOLS.map((tool) => `- [${tool.title}](${siteUrl}/${tool.slug}): ${tool.description}`),
+    "",
+    "## Creator tools (calculators, previews, metadata)",
+    ...CREATOR_TOOLS.map(
+      (tool) => `- [${tool.name}](${siteUrl}/${tool.slug}): ${tool.description}`,
+    ),
     "",
     "## Guides",
     `- [All guides](${siteUrl}/guides): the editorial library, indexed by task.`,

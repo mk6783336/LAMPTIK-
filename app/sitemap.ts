@@ -135,6 +135,43 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }));
 
   /**
+   * Creator micro-tools, written as literal URLs.
+   *
+   * `scripts/check-content-links.mjs` reads this file structurally: it credits
+   * `...subTools` because that array is generated from the same slugs the
+   * routes use, but it cannot resolve a URL built from an imported object. A
+   * literal entry keeps the "route exists ⇔ sitemap lists it" assertion active
+   * for these four pages, which is the check that catches a typo before a
+   * crawler does.
+   */
+  const creatorTools: MetadataRoute.Sitemap = [
+    {
+      url: `${siteUrl}/tiktok-money-calculator`,
+      lastModified: new Date("2026-11-07"),
+      changeFrequency: "monthly",
+      priority: 0.85,
+    },
+    {
+      url: `${siteUrl}/tiktok-safe-zone-checker`,
+      lastModified: new Date("2026-11-07"),
+      changeFrequency: "monthly",
+      priority: 0.85,
+    },
+    {
+      url: `${siteUrl}/video-thumbnail-downloader`,
+      lastModified: new Date("2026-11-07"),
+      changeFrequency: "monthly",
+      priority: 0.85,
+    },
+    {
+      url: `${siteUrl}/tiktok-caption-hashtag-extractor`,
+      lastModified: new Date("2026-11-07"),
+      changeFrequency: "monthly",
+      priority: 0.85,
+    },
+  ];
+
+  /**
    * Regional landings. Each declared with its `alternates.languages` cluster,
    * which is the signal that ties /ar /es /de /pt to the English tool pages
    * instead of letting them compete as unrelated duplicates.
@@ -239,6 +276,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...tools,
     ...hubs,
     ...subTools,
+    ...creatorTools,
     ...languages,
     ...localizedPlatforms,
     ...guides,

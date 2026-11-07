@@ -7,6 +7,7 @@ import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
 import { PlatformIcon } from "@/components/platform-icons";
+import { AllPagesIndex } from "@/components/seo/all-pages-index";
 import { Breadcrumb } from "@/components/seo/breadcrumb";
 import { breadcrumbNode, JsonLd } from "@/components/seo/JsonLd";
 import { HubLanguages } from "@/components/seo/language-links";
@@ -17,6 +18,7 @@ import {
   GROUPED_TOOLS,
   toolLabel,
 } from "@/lib/content/sub-tools/groups";
+import { CREATOR_TOOLS } from "@/lib/creator-tools";
 import { PLATFORMS, PLATFORM_LIST } from "@/lib/platforms";
 import { pageAlternates, siteUrl } from "@/lib/site";
 
@@ -164,6 +166,43 @@ export default function ToolsPage() {
             </div>
           </section>
 
+          {/* Creator micro-tools, above the downloader groups: these are the
+              queries the DR 80+ download giants do not answer, so they lead. */}
+          <section id="creator-tools" className="section-pad scroll-mt-24 border-t border-[var(--line)]">
+            <div className="shell">
+              <p className="eyebrow">
+                <span aria-hidden="true" className="eyebrow-dot" />
+                For creators · {CREATOR_TOOLS.length} tools
+              </p>
+              <h2 className="balance mt-4 max-w-2xl text-4xl font-semibold leading-tight tracking-headline">
+                Tools for the people making the videos.
+              </h2>
+              <p className="pretty mt-3 max-w-xl text-sm leading-relaxed text-[var(--text-2)]">
+                What the platform pays, where its interface hides your caption, what the
+                cover image is, and what the caption actually says — no login, and three of
+                the four never send your file anywhere.
+              </p>
+
+              <ul className="mt-8 grid gap-3.5 sm:grid-cols-2">
+                {CREATOR_TOOLS.map((tool) => (
+                  <li key={tool.slug} className="flex">
+                    <Link href={`/${tool.slug}`} className="bento-card group flex w-full flex-col">
+                      <span className="flex items-start justify-between gap-3">
+                        <span className="text-base font-semibold leading-snug tracking-tight">
+                          {tool.name}
+                        </span>
+                        <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
+                      </span>
+                      <span className="pretty mt-2 block text-sm leading-relaxed text-[var(--text-2)]">
+                        {tool.description}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+
           {GROUPED_TOOLS.map((group, groupIndex) => (
             <section
               key={group.id}
@@ -308,6 +347,10 @@ export default function ToolsPage() {
               </p>
             </div>
           </section>
+
+          {/* Every sitemap URL, one hop from the home page: this is the fix for
+              the 157 uncrawled internal links Ahrefs measured. */}
+          <AllPagesIndex />
 
           {/* The 27 non-English platform landings, indexed by language. */}
           <HubLanguages />

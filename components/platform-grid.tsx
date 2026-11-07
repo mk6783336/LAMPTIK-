@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
 import { PlatformIcon } from "@/components/platform-icons";
+import { CREATOR_TOOLS } from "@/lib/creator-tools";
 import { PLATFORM_LIST, PLATFORMS } from "@/lib/platforms";
 
 /**
@@ -89,6 +90,37 @@ export function PlatformGrid() {
             <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
           </span>
         </Link>
+
+        {/* Creator micro-tools: four pages that answer questions the download
+            giants do not (what TikTok pays, where a caption may sit, what the
+            cover is, what the caption says). One hop from the home page, which
+            is also what the crawl-depth fix needs. */}
+        <div className="mt-10">
+          <p className="eyebrow">
+            <span aria-hidden="true" className="eyebrow-dot" />
+            Creator tools
+          </p>
+          <h3 className="balance mt-3 text-2xl font-semibold leading-tight tracking-headline">
+            For the people making the videos.
+          </h3>
+          <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {CREATOR_TOOLS.map((tool) => (
+              <li key={tool.slug} className="flex">
+                <Link href={`/${tool.slug}`} className="bento-card group flex w-full flex-col">
+                  <span className="flex items-start justify-between gap-2">
+                    <span className="text-sm font-semibold leading-snug tracking-tight">
+                      {tool.name}
+                    </span>
+                    <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
+                  </span>
+                  <span className="pretty mt-2 block text-sm leading-relaxed text-[var(--text-2)]">
+                    {tool.description}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </section>
   );
