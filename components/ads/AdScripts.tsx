@@ -181,7 +181,19 @@ export function AdScripts() {
     let timer: number | null = null;
     const arm = () => setArmed(true);
 
-    const onLoad = () => {
+    /**
+     * `DOMContentLoaded`, NOT `load`.
+     *
+     * The first version of this gate waited for `load`, which includes every
+     * image and the ad creatives themselves. Measured on a cold production
+     * visit: TTFB 2.3s, DOMContentLoaded 7.7s, `load` **22s** — so the 2.5s
+     * timer did not start until 22s, and the networks were requested at 22.7s.
+     * On a 26-second average mobile visit that is the same lost impression as
+     * the old 20s delay, just moved. DOMContentLoaded is the point where the
+     * hero text exists and the document is parsed; the 2.5s idle window after
+     * it is what the gate was always meant to measure.
+     */
+    const onReady = () => {
       const idle = window.requestIdleCallback;
       if (typeof idle === "function") idle(arm, { timeout: 2_500 });
       // Hard ceiling: requestIdleCallback can be starved by a busy main thread
@@ -189,8 +201,8 @@ export function AdScripts() {
       timer = window.setTimeout(arm, 2_500);
     };
 
-    if (document.readyState === "complete") onLoad();
-    else window.addEventListener("load", onLoad, { once: true });
+    if (document.readyState !== "loading") onReady();
+    else window.addEventListener("DOMContentLoaded", onReady, { once: true });
 
     const events = ["pointerdown", "keydown", "touchstart", "wheel"] as const;
     for (const name of events) {
@@ -198,7 +210,7 @@ export function AdScripts() {
     }
 
     return () => {
-      window.removeEventListener("load", onLoad);
+      window.removeEventListener("DOMContentLoaded", onReady);
       if (timer !== null) window.clearTimeout(timer);
       for (const name of events) window.removeEventListener(name, arm);
     };
