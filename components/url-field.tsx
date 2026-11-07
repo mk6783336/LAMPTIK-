@@ -323,20 +323,27 @@ export function UrlField({
           </button>
         ) : null}
 
+        {/* The label is visible on phones too. An icon-only square read as
+            decoration next to a 54px primary CTA, and Clarity's dead-click
+            list was full of taps that landed beside it. A bordered button that
+            says "Paste" is the affordance; `type="button"` keeps it out of
+            form submission, and the handler fills the field and submits in one
+            tap when the clipboard holds a supported link. */}
         <button
           type="button"
           onClick={handlePasteFromClipboard}
           disabled={isPasting || busy}
+          aria-busy={isPasting}
           aria-label={t.pasteHint}
           title={t.pasteHint}
-          className="btn btn-ghost h-9 shrink-0 gap-1.5 px-2.5 text-sm sm:h-10"
+          className="btn btn-ghost h-9 shrink-0 gap-1.5 border border-[var(--glass-border)] bg-[var(--field)] px-2 text-xs sm:h-10 sm:px-2.5 sm:text-sm"
         >
           {isPasting ? (
             <Loader2 className="size-3.5 animate-spin" />
           ) : (
             <ClipboardPaste className="size-3.5" />
           )}
-          <span className="hidden sm:inline">{t.paste}</span>
+          <span className="whitespace-nowrap">{t.paste}</span>
         </button>
       </div>
 

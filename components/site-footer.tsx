@@ -72,9 +72,9 @@ const FOOTER_GROUPS: Array<{ id: FooterGroupId; label: string; links: FooterLink
     id: "subTools",
     label: "Sub-tools",
     links: [
-      // The hub, first in the column: it lists all fifteen, so it is the better
+      // The hub, first in the column: it lists all eighteen, so it is the better
       // entry point for anyone who is not already looking for one format.
-      { href: "/tools", label: "All 15 tools", id: "allTools" },
+      { href: "/tools", label: "All 18 tools", id: "allTools" },
       { href: "/tiktok-mp3-downloader", label: "TikTok to MP3", id: "tiktokMp3" },
       { href: "/tiktok-photo-downloader", label: "TikTok Photos", id: "tiktokPhotos" },
       { href: "/youtube-to-mp3", label: "YouTube to MP3", id: "youtubeMp3" },

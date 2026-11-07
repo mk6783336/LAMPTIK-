@@ -15,6 +15,11 @@ export const metadata: Metadata = {
   title: { absolute: TITLE },
   description: DESCRIPTION,
   keywords: [
+    "facebook private video download",
+    "facebook private video downloader online",
+    "facebook watch video download hd",
+    "facebook reel downloader hd",
+    "fb.watch video download",
     "Facebook private video downloader",
     "Facebook video download without watermark",
     "Facebook video downloader HD",

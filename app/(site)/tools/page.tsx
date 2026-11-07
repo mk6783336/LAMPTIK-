@@ -23,18 +23,18 @@ import { pageAlternates, siteUrl } from "@/lib/site";
 /**
  * /tools — the index for every programmatic sub-tool.
  *
- * Two jobs. For a visitor, it answers "which of these fifteen pages do I
+ * Two jobs. For a visitor, it answers "which of these eighteen pages do I
  * actually want?" by grouping them by task instead of by platform. For a
- * crawler, it turns fifteen leaf pages into one hop from the home page, which
+ * crawler, it turns eighteen leaf pages into one hop from the home page, which
  * is the difference between pages that get discovered and pages that sit in
  * the sitemap waiting.
  *
  * Content comes from `GROUPED_TOOLS`, so a tool added to the sub-tool index
  * appears here — and in the schema's ItemList — without touching this file.
  */
-const TITLE = "All 15 Download Tools — Video, Audio & Photos";
+const TITLE = "All 18 Download Tools — Video, Audio & Photos";
 const DESCRIPTION =
-  "All fifteen LAMP TIK downloaders in one place: YouTube MP4, MP3 and playlists, TikTok photos and Stories, Instagram Reels audio and Facebook HD.";
+  "All eighteen LAMP TIK downloaders in one place: YouTube MP4, MP3 and playlists, TikTok photos, Stories and CapCut-ready clips, Instagram Reels audio and Facebook HD.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },

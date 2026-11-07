@@ -1,6 +1,7 @@
 import type { LandingCopy, LocaleCode } from "@/lib/i18n/types";
 
 import { de } from "./platform/de";
+import { fr } from "./platform/fr";
 import { hi } from "./platform/hi";
 import { id } from "./platform/id";
 import { pt } from "./platform/pt";
@@ -47,6 +48,7 @@ export const PLATFORM_LOCALES = [
   "es",
   "ar",
   "de",
+  "fr",
   "pt",
   "id",
   "hi",
@@ -563,8 +565,9 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
     },
   },
 
-  // ------------------------------------------- German, Portuguese, Indonesian
+  // ------------------------------------- German, French, Portuguese, Indonesian
   de,
+  fr,
   pt,
   id,
 
@@ -609,6 +612,7 @@ export function platformLanguageAlternates(platform: LocalizedPlatform) {
     es: `/es/${slug}`,
     ar: `/ar/${slug}`,
     de: `/de/${slug}`,
+    fr: `/fr/${slug}`,
     "pt-BR": `/pt/${slug}`,
     id: `/id/${slug}`,
     hi: `/hi/${slug}`,

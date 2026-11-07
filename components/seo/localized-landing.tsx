@@ -17,7 +17,13 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import type { LandingCopy, LocaleCode } from "@/lib/i18n/types";
 import { LOCALE_CODES } from "@/lib/i18n/types";
-import { platformPath } from "@/lib/i18n/platform-landings";
+import {
+  hasPlatformLanding,
+  PLATFORM_LANDINGS,
+  platformPath,
+  type LocalizedPlatform,
+  type PlatformLocale,
+} from "@/lib/i18n/platform-landings";
 import { FOOTER_COPY } from "@/lib/i18n/footer-copy";
 import { languageLabel } from "@/lib/i18n/language-labels";
 import { platformBlurb, TOOLS_HUB_CARD } from "@/lib/i18n/platform-blurbs";
@@ -137,6 +143,21 @@ export function LocalizedLanding({
   /** Localized page for a platform when one exists, else the English tool. */
   const toolHref = (id: Platform) =>
     id === "tiktok" ? `/${copy.code}` : platformPath(copy.code, id) ?? PLATFORMS[id].path;
+
+  /**
+   * Anchor text for a sibling card, in this page's language: the sibling's own
+   * title up to its em dash. A bare "Instagram" anchor tells a crawler nothing
+   * about the page behind it; "Instagram Reels herunterladen in HD" is the
+   * query the German page is written to answer, taken from the page itself so
+   * the two cannot drift apart. Falls back to the platform name for TikTok
+   * (the locale root keeps the generic name) and for locales without a
+   * translated page.
+   */
+  const siblingAnchor = (id: Platform): string => {
+    if (id === "tiktok" || !hasPlatformLanding(copy.code)) return PLATFORMS[id].name;
+    const localized = PLATFORM_LANDINGS[copy.code as PlatformLocale][id as LocalizedPlatform];
+    return localized.title.split(" — ")[0]?.trim() || PLATFORMS[id].name;
+  };
 
   return (
     <>
@@ -293,7 +314,7 @@ export function LocalizedLanding({
                   <Link key={id} href={toolHref(id)} className="bento-card group flex items-start gap-3">
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center justify-between gap-2 text-base font-semibold tracking-tight">
-                        {PLATFORMS[id].name}
+                        {siblingAnchor(id)}
                         <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                       </span>
                       <span className="pretty mt-1.5 block text-sm leading-relaxed text-[var(--text-2)]">
@@ -314,6 +335,22 @@ export function LocalizedLanding({
                   </span>
                 </Link>
               </div>
+
+              {/* Twitter / X completes the five networks, but it has no
+                  translated page: the destination is English and the anchor
+                  says so. A translated label here would promise a page that
+                  does not exist — the same reason the footer keeps English
+                  labels for single-language routes. */}
+              <p className="mt-4 text-sm text-[var(--text-2)]">
+                <Link
+                  href="/twitter-video-downloader"
+                  hrefLang="en"
+                  lang="en"
+                  className="text-[var(--accent-text)] underline-offset-4 hover:underline"
+                >
+                  Twitter / X video downloader — MP4 up to 1080p (English)
+                </Link>
+              </p>
 
               <div className="panel mt-8 flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">

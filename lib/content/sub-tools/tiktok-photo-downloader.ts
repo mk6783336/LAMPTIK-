@@ -22,6 +22,10 @@ export const entry: SubTool = {
   keywords: [
     "tiktok photo downloader",
     "tiktok slideshow downloader",
+    "tiktok slideshow downloader no watermark",
+    "tiktok slideshow pictures",
+    "tiktok slideshow downloader hd",
+    "tiktok photo slideshow download",
     "how to save tiktok photos",
     "download tiktok slideshow images",
     "tiktok photo mode download",

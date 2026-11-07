@@ -19,6 +19,10 @@ export const entry: SubTool = {
   keywords: [
     "Instagram Reels audio",
     "Instagram Reels audio finder",
+    "instagram reel audio extractor",
+    "instagram reel audio save",
+    "save instagram reel audio mp3 iphone",
+    "instagram reel audio downloader remove watermark",
     "Instagram Reels audio extraction",
     "download Instagram Reel audio",
     "download Reels audio copy paste",

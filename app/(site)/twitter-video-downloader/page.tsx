@@ -60,6 +60,10 @@ export const metadata: Metadata = {
   description: DESCRIPTION,
   keywords: [
     "Twitter video downloader",
+    "twitter gif saver",
+    "twitter gif converter",
+    "twitter gif downloader iphone",
+    "twitter gif to mp4",
     "X video downloader",
     "download Twitter video MP4",
     "twitter video download 1080p",

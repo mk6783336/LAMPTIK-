@@ -3,7 +3,7 @@ import type { SubTool } from "@/lib/content/sub-tool-types";
 import { SUB_TOOL_MAP } from "./index";
 
 /**
- * The fifteen sub-tools, arranged by the task a visitor arrives with.
+ * The eighteen sub-tools, arranged by the task a visitor arrives with.
  *
  * Alphabetical or platform-ordered lists make sense to the person who built
  * the site; a visitor searching "youtube mp3" does not care that Story
@@ -34,7 +34,15 @@ export const TOOL_GROUPS: readonly ToolGroup[] = [
       "youtube-to-mp4-1080p",
       "youtube-shorts-downloader",
       "facebook-reels-downloader",
+      "instagram-reels-to-mp4",
     ],
+  },
+  {
+    id: "editing",
+    title: "Edit it somewhere else",
+    intent:
+      "The download is the file an editor accepts: H.264 MP4 with its audio muxed in, so CapCut or Premiere opens it without a transcode first.",
+    slugs: ["tiktok-video-for-capcut"],
   },
   {
     id: "photos",
@@ -52,6 +60,7 @@ export const TOOL_GROUPS: readonly ToolGroup[] = [
       "youtube-to-mp3",
       "youtube-shorts-to-mp3",
       "youtube-music-to-mp3",
+      "youtube-mp3-320kbps",
       "tiktok-mp3-downloader",
       "instagram-reels-audio",
     ],

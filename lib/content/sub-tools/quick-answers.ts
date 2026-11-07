@@ -23,6 +23,74 @@ export interface SubToolAnswer {
 }
 
 export const SUB_TOOL_ANSWERS: Record<string, SubToolAnswer> = {
+  "tiktok-video-for-capcut": {
+    query: "How do I get a TikTok video into CapCut?",
+    answer:
+      "Paste the TikTok link here and save the HD MP4, then import that file in CapCut. TikTok already serves H.264 video with AAC audio — the pair every CapCut build reads — so there is no conversion step and the audio arrives attached to the clip.",
+    comparison: [
+      {
+        label: "What you import",
+        ours: "The platform's own H.264/AAC stream, watermark-free",
+        theirs: "A screen recording of the player, UI and all, which then needs cropping",
+      },
+      {
+        label: "Audio on the timeline",
+        ours: "Muxed AAC — CapCut links it automatically, in sync",
+        theirs: "A separate recorder track that drifts against the picture",
+      },
+      {
+        label: "The usual import failure",
+        ours: "Not possible from this file: H.264 is accepted everywhere",
+        theirs: "HEVC from a phone recording, which Windows CapCut refuses",
+      },
+    ],
+  },
+
+  "instagram-reels-to-mp4": {
+    query: "Is there a way to convert an Instagram Reel to MP4?",
+    answer:
+      "There is nothing to convert: Instagram's player already streams Reels as a progressive MP4 — H.264 video with AAC audio in one file. Saving that stream gives you the MP4 at its published 1080×1920 size without an extra encode.",
+    comparison: [
+      {
+        label: "The file",
+        ours: "The exact MP4 Instagram sends its own player",
+        theirs: "A re-encode of a re-encode, run through a cloud converter",
+      },
+      {
+        label: "Audio",
+        ours: "AAC inside the MP4, untouched",
+        theirs: "Sometimes stripped, which is why the clip plays silent",
+      },
+      {
+        label: "Dimensions",
+        ours: "9:16, 1080×1920 where the creator published it",
+        theirs: "Downscaled to fit a free-tier conversion limit",
+      },
+    ],
+  },
+
+  "youtube-mp3-320kbps": {
+    query: "Can I get a YouTube video as a 320 kbps MP3?",
+    answer:
+      "No — YouTube's audio tops out around 128–160 kbps, so a 320 kbps file made from it is the same audio in a bigger container. This tool gives you the source M4A plus one honest MP3 encode, and shows the bitrate it actually received instead of a label.",
+    comparison: [
+      {
+        label: "Bitrate shown",
+        ours: "Whatever the source serves, measured — commonly ~128–160 kbps",
+        theirs: "A hard-coded \"320 kbps\" label on every file",
+      },
+      {
+        label: "Generations",
+        ours: "The source AAC itself, or one MP3 encode from it",
+        theirs: "Decode, pad, re-encode — three steps, no extra detail",
+      },
+      {
+        label: "What the bigger file means",
+        ours: "Stated plainly: bytes, not resolution of detail",
+        theirs: "Presented as higher quality, which it cannot be",
+      },
+    ],
+  },
   "tiktok-mp3-downloader": {
     query: "How do I convert a TikTok video to MP3?",
     answer:
