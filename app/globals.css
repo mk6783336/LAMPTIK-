@@ -6,15 +6,25 @@
    ONE primary font, self-hosted from /public — a single latin-subset woff2.
    Next 15.x stopped injecting the font <link rel="preload"> for next/font
    (vercel/next.js#62332), so the font is vendored here with a stable path
-   that the layout preloads explicitly. font-display=swap renders fallback
-   text instantly; the metric-adjusted "Inter Fallback" (Arial with size
-   adjustments copied from Next's own output) keeps the swap shift-free.
+   that the layout preloads explicitly.
+
+   `font-display: optional`, NOT `swap`. Measured on a cold production visit
+   (390-431px viewport, incognito, no service worker): first paint 2901ms, the
+   woff2 finished at 5080ms because it was competing with the page's own JS
+   chunks, and `swap` then re-painted the hero paragraph at 5250ms — Chrome
+   records a new LCP candidate on a font swap, so the reported LCP was the
+   font's arrival, not the page's paint. With `optional` the browser either
+   has the font inside its ~100ms block window (preloaded, fast connection —
+   Inter is used) or paints the metric-adjusted "Inter Fallback" once and
+   never repaints: LCP equals FCP, and CLS stays 0 because the fallback is
+   size-adjusted to the same metrics. The preload stays: it is what makes the
+   fast path (font ready before first paint) possible at all.
 --------------------------------------------------------------------------- */
 @font-face {
   font-family: "Inter";
   font-style: normal;
   font-weight: 100 900;
-  font-display: swap;
+  font-display: optional;
   src: url("/fonts/inter-latin.woff2") format("woff2");
   unicode-range: u+00??, u+0131, u+0152-0153, u+02bb-02bc, u+02c6, u+02da,
     u+02dc, u+0304, u+0308, u+0329, u+2000-206f, u+20ac, u+2122, u+2191,
