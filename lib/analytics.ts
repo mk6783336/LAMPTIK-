@@ -103,8 +103,16 @@ export interface DownloadEventMeta {
  *
  * `ad_slot_result` is emitted by `lib/ad-telemetry.ts` once per ad auction
  * (filled / blocked / timeout) with the zone key and the wait time, so a dead
- * zone is distinguishable from a slow one. */
-export type AnalyticsEvent = "download_start" | "platform_switch" | "ad_slot_result";
+ * zone is distinguishable from a slow one.
+ *
+ * `web_vitals` is emitted by `components/web-vitals.tsx` once per pageview per
+ * metric (LCP, CLS, INP) when the page is hidden — field numbers for the
+ * performance work, from our own analytics rather than a dashboard. */
+export type AnalyticsEvent =
+  | "download_start"
+  | "platform_switch"
+  | "ad_slot_result"
+  | "web_vitals";
 
 /**
  * Send one GA4 event.

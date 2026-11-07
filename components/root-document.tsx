@@ -8,6 +8,7 @@ import {
   GoogleTagManagerNoScript,
 } from "@/components/google-tag-manager";
 import { JsonLd, siteEntityGraph } from "@/components/seo/JsonLd";
+import { WebVitals } from "@/components/web-vitals";
 
 import "@/app/globals.css";
 
@@ -118,6 +119,10 @@ export function RootDocument({
             exists exactly once per document, after the Consent Mode defaults
             in <head>. */}
         <GoogleAnalytics />
+        {/* Field LCP / CLS / INP per pageview, flushed on page hide into the
+            same GA4 events as everything else (see components/web-vitals.tsx).
+            Rendered here so both root layouts report exactly once. */}
+        <WebVitals />
       </body>
     </html>
   );

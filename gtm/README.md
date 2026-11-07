@@ -1,12 +1,13 @@
 # Google Tag Manager — `GTM-PF5KDMW4`
 
-The site pushes three custom events onto `dataLayer` (see `lib/analytics.ts`):
+The site pushes four custom events onto `dataLayer` (see `lib/analytics.ts`):
 
 | Event | Parameters |
 | --- | --- |
 | `download_start` | `platform`, `format` (`mp4` / `m4a` / `mp3` / `audio`), `delivery` (`proxy` / `direct` / `bridge`), `quality` (`hd` / `sd`, video only) |
 | `platform_switch` | `from`, `to` |
 | `ad_slot_result` | `slot`, `zone_key`, `format`, `outcome` (`filled` / `blocked` / `timeout`), `wait_ms`, `page_path` |
+| `web_vitals` | `metric` (`LCP` / `CLS` / `INP`), `value` (ms; the unitless ratio for CLS), `rating` (`good` / `needs-improvement` / `poor`) |
 
 `GTM-PF5KDMW4-events.json` is an importable container file that creates the
 Data Layer variables and Custom Event triggers for the two *conversion*
@@ -16,6 +17,13 @@ events. **It contains no tags on purpose.**
 it through `gtag()` (`lib/ad-telemetry.ts`), so the container only needs it if
 ad telemetry should reach a destination that GA4 does not cover — add a
 `CE - ad_slot_result` trigger yourself in that case.
+
+`web_vitals` is in the same position and for the same reason: it is emitted
+once per pageview per metric by `components/web-vitals.tsx` and reaches both
+GA4 properties through `gtag()`. Register the `metric` and `rating`
+parameters under GA4 Admin → Custom definitions (event scope) before they can
+be used as dimensions in an Explore report; the event itself is collected
+from the first pageview whether or not they are registered.
 
 ## Why no tags
 
