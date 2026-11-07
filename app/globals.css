@@ -1044,3 +1044,15 @@ html:not(.dark) {
 .result-reveal {
   animation: lamp-result-reveal 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
+
+/* Ad slot reservation.
+   The box height must never depend on JS ordering: AdSlot swaps a 728x90
+   leaderboard to 300x250 below 640px in a matchMedia effect after hydration.
+   With an inline aspect-ratio the server painted ~48px at 390px wide and the
+   swap grew it to 325px, moving every element below it (measured 0.05 CLS on
+   the slot under the tool). Pinning the phone ratio in CSS keeps the layout
+   final at first paint; only the iframe inside changes. */
+.ad-reserve { aspect-ratio: var(--ad-ratio); }
+@media (max-width: 639px) {
+  .ad-reserve { aspect-ratio: 300 / 250; }
+}

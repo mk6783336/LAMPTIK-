@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import { reportAdOutcome, type AdOutcome } from "@/lib/ad-telemetry";
 import { cn } from "@/lib/cn";
@@ -408,23 +408,31 @@ export function AdSlot({
         data-ad-live={reserved ? "true" : "false"}
         data-ad-reserve={alwaysReserve ? "eager" : "auto"}
         className={cn(
-          "relative mx-auto box-border w-full max-w-full overflow-hidden",
+          "ad-reserve relative mx-auto box-border w-full max-w-full overflow-hidden",
           "rounded-2xl border border-amber-500/15 bg-[#07080d]",
           !isLeaderboard && "max-w-[300px]",
           isLeaderboard && "max-w-[728px]",
         )}
-        style={{
-          // Height is the creative's ASPECT RATIO, never a state-dependent
-          // pixel value. Before this the same box was 0px while the auction
-          // ran, 250px once a creative landed and 56px after the timeout —
-          // three heights for one element, which is the 0.38 CLS Clarity
-          // recorded. Now the box reserves its final size from the first
-          // paint and every state (pending, filled, fallback) paints inside
-          // it, so the page below it can never move.
-          aspectRatio: `${width} / ${height}`,
-          backgroundColor: "#07080d",
-          colorScheme: "dark",
-        }}
+        style={
+          {
+            // Height is the creative's ASPECT RATIO, never a state-dependent
+            // pixel value. Before this the same box was 0px while the auction
+            // ran, 250px once a creative landed and 56px after the timeout —
+            // three heights for one element, which is the 0.38 CLS Clarity
+            // recorded.
+            //
+            // It is a custom property, not `aspectRatio`, because the mobile
+            // leaderboard→rectangle swap happens in a matchMedia effect AFTER
+            // hydration: the server painted 728×90 (~48px tall at 390px wide)
+            // and the swap grew it to 325px, moving everything below it. That
+            // was a measured 0.05 CLS on the slot under the tool. `globals.css`
+            // pins `.ad-reserve` to 300/250 below 640px, so the phone layout is
+            // final at first paint and the swap only changes the iframe.
+            "--ad-ratio": `${width} / ${height}`,
+            backgroundColor: "#07080d",
+            colorScheme: "dark",
+          } as CSSProperties
+        }
       >
         {frameSrc ? (
           <div
