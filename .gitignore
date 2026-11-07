@@ -57,6 +57,9 @@ __pycache__/
 .index-check-state.json
 .bing-submit-state.json
 .gsc-check-state.json
+# Clarity export snapshots — the Data Export API only covers the last 72 hours
+# and has no backfill, so this file IS the trend and must never be committed
+.clarity-check-state.json
 # written by scripts/ads-health.mjs only when a zone regressed; the workflow
 # turns it into an issue, a local run should not leave it at the repo root
 ads-health-alerts.md
