@@ -87,9 +87,33 @@ const nextStartByKey = new Map<string, number>();
  * Reveal a slot now, or after its turn behind another slot on the same zone.
  * Returns a cancel function for the unmount case.
  */
-function scheduleReveal(key: string, reveal: () => void): () => void {
+/**
+ * Cold-load gate: no slot may request a creative before
+ * `domContentLoaded + 1500ms`.
+ *
+ * On a cold visit the CSS, the webfont and ~20 JS chunks are all in flight at
+ * once; an ad iframe started in that window competes for the same bandwidth and
+ * pushes the hero's own paint later. Measured on a throttled phone profile, the
+ * first slot's frame request was the last thing the critical path needed. The
+ * gate is computed once per page — result-panel and modal mounts happen long
+ * after it has passed, so they are unaffected.
+ */
+let coldGateStartAt = 0;
+function coldGateDelay(): number {
+  if (typeof window === "undefined") return 0;
+  if (coldGateStartAt === 0) {
+    const nav = performance.getEntriesByType("navigation")[0] as
+      | PerformanceNavigationTiming
+      | undefined;
+    const dcl = nav?.domContentLoadedEventEnd ?? 0;
+    coldGateStartAt = performance.timeOrigin + (dcl > 0 ? dcl : performance.now()) + 1_500;
+  }
+  return Math.max(0, coldGateStartAt - Date.now());
+}
+
+function scheduleReveal(key: string, reveal: () => void, delayMs = 0): () => void {
   const now = Date.now();
-  const startAt = Math.max(now, (nextStartByKey.get(key) ?? 0) + SAME_ZONE_STAGGER_MS);
+  const startAt = Math.max(now + delayMs, (nextStartByKey.get(key) ?? 0) + SAME_ZONE_STAGGER_MS);
   nextStartByKey.set(key, startAt);
 
   if (startAt <= now) {
@@ -234,12 +258,12 @@ export function AdSlot({
     const laidOut = node.getClientRects().length > 0;
 
     if (eager && laidOut && typeof window !== "undefined") {
-      return scheduleReveal(key, reveal);
+      return scheduleReveal(key, reveal, coldGateDelay());
     }
 
     let cancel: (() => void) | null = null;
     const start = () => {
-      cancel = scheduleReveal(key, reveal);
+      cancel = scheduleReveal(key, reveal, coldGateDelay());
     };
 
     if (typeof window !== "undefined" && laidOut) {

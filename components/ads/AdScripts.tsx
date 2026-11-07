@@ -1,8 +1,3 @@
-"use client";
-
-import Script from "next/script";
-import { useEffect, useState } from "react";
-
 import { hilltopMultitagSrc, monetagInPage } from "@/lib/monetization";
 
 /**
@@ -149,119 +144,49 @@ if(document.readyState==="loading"){window.setTimeout(start,0);}else{start();}
 
 export function AdScripts() {
   /**
-   * Armed by the first real interaction, or ~2.5s after load if the visitor has
-   * not touched anything yet — whichever comes first.
+   * Server-rendered bootstrap — deliberately NOT a React effect.
    *
-   * Why the interaction gate exists at all: Clarity measured LCP at 7.4s on
-   * phones and the largest element it named was the Monetag in-page push icon,
-   * a remote creative arriving through this block and competing with the hero
-   * for the same connection and main thread. `afterInteractive` still meant
-   * "during load", so the network joined the LCP race.
+   * Measured on a cold production visit: the client bundle took 10–14s to
+   * hydrate, so the old `useEffect` that armed the networks ran at
+   * `DOMContentLoaded + 10.6s` even though the timer was 2.5s. The networks
+   * lost the impression while React was still downloading. This script is in
+   * the server HTML, so it exists before any JS chunk is parsed: nothing about
+   * it depends on hydration.
    *
-   * Why 2.5s and not 20s: Ahrefs reports a 26-second average mobile visit on
-   * this site. A 20-second gate meant the majority of phone sessions ended
-   * before a single ad script had fired — no push card, no MultiTag, no
-   * impression, on exactly the traffic the networks pay for. `requestIdleCallback`
-   * lands after the browser has finished its first paint work, so the hero
-   * text is already the LCP element when the tag arrives; the 2.5s timer is the
-   * ceiling for a phone that never goes idle. Measured at 390×844 and
-   * 1280×800: CLS 0, LCP unchanged, all three networks requested inside 3s.
-   *
-   * `scroll` is deliberately NOT a trigger: a restored scroll position fires
-   * it by itself on every reload, so gating on it armed the network a frame
-   * after load — measured, not assumed. The guard and the service-worker
-   * registration ride along here too: they have nothing to guard or register
-   * until the tag exists.
+   * Arming: first `pointerdown` / `touchstart` / `wheel` / `keydown`, or
+   * `DOMContentLoaded` + `requestIdleCallback` with a hard 2000ms timeout.
+   * `load` is not used — it waits for every image (22s measured), which is the
+   * same lost impression the 20s gate used to cause.
    */
-  const [armed, setArmed] = useState(false);
+  const config = JSON.stringify({
+    monetag: monetagInPage ? { src: monetagInPage.src, zone: monetagInPage.zone || "" } : null,
+    hilltop: hilltopMultitagSrc || "",
+  });
 
-  useEffect(() => {
-    if (armed) return;
-
-    let timer: number | null = null;
-    const arm = () => setArmed(true);
-
-    /**
-     * `DOMContentLoaded`, NOT `load`.
-     *
-     * The first version of this gate waited for `load`, which includes every
-     * image and the ad creatives themselves. Measured on a cold production
-     * visit: TTFB 2.3s, DOMContentLoaded 7.7s, `load` **22s** — so the 2.5s
-     * timer did not start until 22s, and the networks were requested at 22.7s.
-     * On a 26-second average mobile visit that is the same lost impression as
-     * the old 20s delay, just moved. DOMContentLoaded is the point where the
-     * hero text exists and the document is parsed; the 2.5s idle window after
-     * it is what the gate was always meant to measure.
-     */
-    const onReady = () => {
-      const idle = window.requestIdleCallback;
-      if (typeof idle === "function") idle(arm, { timeout: 2_500 });
-      // Hard ceiling: requestIdleCallback can be starved by a busy main thread
-      // (which is precisely the phone this gate used to punish).
-      timer = window.setTimeout(arm, 2_500);
-    };
-
-    if (document.readyState !== "loading") onReady();
-    else window.addEventListener("DOMContentLoaded", onReady, { once: true });
-
-    const events = ["pointerdown", "keydown", "touchstart", "wheel"] as const;
-    for (const name of events) {
-      window.addEventListener(name, arm, { once: true, passive: true });
-    }
-
-    return () => {
-      window.removeEventListener("DOMContentLoaded", onReady);
-      if (timer !== null) window.clearTimeout(timer);
-      for (const name of events) window.removeEventListener(name, arm);
-    };
-  }, [armed]);
-
-  if (!armed) return null;
-
-  const registerWorker = `(function(){try{if(!("serviceWorker" in navigator))return;var go=function(){navigator.serviceWorker.register("/sw.js").catch(function(){})};if(document.readyState==="complete"){go()}else{window.addEventListener("load",go,{once:true})}}catch(e){}})();`;
-
-  // The network's own loader resolves its insertion point with
-  // `document.currentScript`, which is null inside a React-rendered inline
-  // <script>, then falls back to "last script in the document" — which can be a
-  // tag that is not in the DOM yet. Appending to <head> is the same result
-  // without either assumption; the window flag stops React's dev double-mount
-  // and a client-side revisit from loading the tag twice.
-  const loadHilltopMultitag = `(function(){try{if(window.__lamptikHilltopTag)return;window.__lamptikHilltopTag=1;var d=document,s=d.createElement("script");s.settings={};s.src=${JSON.stringify(
-    hilltopMultitagSrc,
-  )};s.async=true;s.referrerPolicy="no-referrer-when-downgrade";(d.head||d.body||d.documentElement).appendChild(s);}catch(e){}})();`;
-
-  return (
-    <>
-      {/* Monetag In-Page Push — the account's highest-CPM format. Rendered
-          only when the dashboard's tag URL is configured, so the site ships
-          nothing it cannot fill. It is a corner card, not a full-viewport
-          layer: the Vignette stays banned for the reason in AGENTS.md. */}
-      {monetagInPage ? (
-        <Script
-          id="monetag-inpage-push"
-          src={monetagInPage.src}
-          strategy="afterInteractive"
-          data-cfasync="false"
-          data-zone={monetagInPage.zone || undefined}
-        />
-      ) : null}
-      {/* HilltopAds MultiTag — mounted on every viewport, including phones.
-          On mobile the guard below keeps its card in the top strip and hides
-          it while a result panel is open, so mobile inventory is monetized
-          without ever covering the Download CTA. */}
-      {hilltopMultitagSrc ? (
-        <Script id="hilltopads-multitag" strategy="afterInteractive">
-          {loadHilltopMultitag}
-        </Script>
-      ) : null}
-      {/* Mobile geometry guard. Runs in the same document as the tag above and
-          is idempotent: it only ever tracks the fixed z-index≥1e9 cards. */}
-      <Script id="lamptik-mobile-ad-guard" strategy="afterInteractive">
-        {GUARD_MOBILE_CARDS}
-      </Script>
-      <Script id="monetag-sw" strategy="afterInteractive">
-        {registerWorker}
-      </Script>
-    </>
-  );
+  const bootstrap = `(function(){try{
+var cfg=${config};
+if(window.__lamptikAdsBooted)return;
+window.__lamptikAdsBooted=1;
+function guard(){${GUARD_MOBILE_CARDS}}
+function inject(src,attrs){var d=document,s=d.createElement("script");s.async=true;s.src=src;if(attrs){for(var k in attrs){if(attrs[k]){s.setAttribute(k,attrs[k]);}}}s.referrerPolicy="no-referrer-when-downgrade";(d.head||d.body||d.documentElement).appendChild(s);}
+function arm(){
+  if(window.__lamptikAdsArmed)return;
+  window.__lamptikAdsArmed=1;
+  try{guard();}catch(e){}
+  if(cfg.monetag){try{inject(cfg.monetag.src,{"data-zone":cfg.monetag.zone,"data-cfasync":"false"});}catch(e){}}
+  if(cfg.hilltop&&!window.__lamptikHilltopTag){window.__lamptikHilltopTag=1;try{inject(cfg.hilltop);}catch(e){}}
+  try{if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js").catch(function(){});}}catch(e){}
 }
+function soon(){
+  var idle=window.requestIdleCallback;
+  if(typeof idle==="function"){idle(arm,{timeout:2000});}
+  window.setTimeout(arm,2000);
+}
+var ev=["pointerdown","touchstart","wheel","keydown"];
+for(var i=0;i<ev.length;i++){window.addEventListener(ev[i],arm,{once:true,passive:true});}
+if(document.readyState!=="loading"){soon();}else{document.addEventListener("DOMContentLoaded",soon,{once:true});}
+}catch(e){}})();`;
+
+  return <script id="lamptik-ads-bootstrap" dangerouslySetInnerHTML={{ __html: bootstrap }} />;
+}
+

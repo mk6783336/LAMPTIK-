@@ -937,7 +937,7 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
         <PlatformSwitcher active={platform} />
       </div>
 
-      <div className="panel mt-3 overflow-hidden p-4 sm:p-6">
+      <div className="panel mt-2 overflow-hidden p-3 sm:mt-3 sm:p-6">
         {/* Lit top edge — one hairline of neon, the only chrome on the card. */}
         <div
           aria-hidden="true"
@@ -945,7 +945,7 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
         />
 
         {/* Panel header: real system state, never fake telemetry. */}
-        <div className="flex items-center justify-between gap-3 pb-4">
+        <div className="flex items-center justify-between gap-3 pb-2 sm:pb-4">
           <div className="flex min-w-0 items-center gap-2">
             <span className="relative flex size-2 shrink-0">
               {isLoading ? (

@@ -57,7 +57,7 @@ export function SiteHeader() {
     NAV.find((item) => item.platform && isCurrent(pathname, item.href))?.platform ?? null;
 
   return (
-    <header className="sticky top-0 z-[2147483647] isolate pt-3 sm:pt-4">
+    <header className="sticky top-0 z-[2147483647] isolate pt-2 sm:pt-4">
       {/* Scrim: fades the page out behind the floating bar so content never
           shows through the gutter above a sticky header. */}
       <div
@@ -70,7 +70,7 @@ export function SiteHeader() {
             spill is the mobile nav strip, which sets `overflow-x: auto` and
             therefore clips itself. */}
         <div className="glass rounded-2xl shadow-[0_24px_60px_-48px_rgba(0,0,0,0.95)] backdrop-blur-2xl">
-          <div className="flex h-14 items-center justify-between gap-2 pl-3 pr-2 sm:pl-4 sm:pr-2.5">
+          <div className="flex h-12 items-center justify-between gap-2 pl-3 pr-2 sm:h-14 sm:pl-4 sm:pr-2.5">
             <Logo />
 
             <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">

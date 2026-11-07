@@ -352,7 +352,7 @@ export function UrlField({
       <div
         id="url-status"
         aria-live="polite"
-        className="mt-2 flex min-h-[18px] items-center justify-between gap-3 px-0.5 text-sm"
+        className="mt-1.5 flex min-h-[16px] items-center justify-between gap-3 px-0.5 text-sm sm:mt-2 sm:min-h-[18px]"
       >
         <span
           title={displayError ?? undefined}
@@ -417,7 +417,7 @@ export function UrlField({
         disabled={busy || !isHydrated}
         aria-busy={busy}
         className={cn(
-          "btn btn-primary tool-cta group mt-3 h-[54px] w-full gap-2.5 px-5 text-base font-semibold tracking-tight",
+          "btn btn-primary tool-cta group mt-2 h-[52px] w-full gap-2.5 px-5 text-base font-semibold tracking-tight sm:mt-3 sm:h-[54px]",
           busy && "opacity-70",
         )}
       >

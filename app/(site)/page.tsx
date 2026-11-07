@@ -114,26 +114,31 @@ export default function HomePage() {
               full-width on phones. A 12-column grid ties the value
               proposition and the tool card together instead of leaving a
               dead horizontal gap between them. */}
-          <section className="pb-12 pt-10 sm:pb-16 sm:pt-14 lg:pt-20">
+          <section className="pb-10 pt-4 sm:pb-16 sm:pt-14 lg:pt-20">
             <div className="shell grid items-start gap-6 lg:grid-cols-12 lg:gap-8">
               <div className="animate-rise min-w-0 lg:col-span-5">
-                <Breadcrumb
-                  trail={[{ name: "Tools", href: "/tools" }, { name: "TikTok Downloader" }]}
-                />
+                {/* Mobile fold: the breadcrumb costs ~20px above the CTA and
+                    the sticky header already carries the navigation, so it is
+                    hidden below `sm` rather than removed from the page. */}
+                <div className="hidden sm:block">
+                  <Breadcrumb
+                    trail={[{ name: "Tools", href: "/tools" }, { name: "TikTok Downloader" }]}
+                  />
+                </div>
 
-                <p className="eyebrow mt-6">
+                <p className="eyebrow mt-3 sm:mt-6">
                   <span aria-hidden="true" className="eyebrow-dot" />
                   Free · No app required · No watermark
                 </p>
 
-                <h1 className="balance mt-4 text-4xl font-semibold leading-[1.02] tracking-headline sm:mt-5 sm:text-5xl">
+                <h1 className="balance mt-3 text-[30px] font-semibold leading-[1.05] tracking-headline sm:mt-5 sm:text-5xl">
                   TikTok videos.
                   <span className="text-gradient mt-1 block">
                     Without the watermark.
                   </span>
                 </h1>
 
-                <p className="pretty mt-4 max-w-lg text-base leading-relaxed text-[var(--text-2)] sm:mt-5 sm:text-base">
+                <p className="pretty mt-2 line-clamp-2 max-w-lg text-sm leading-relaxed text-[var(--text-2)] sm:mt-5 sm:line-clamp-none sm:text-base">
                   Download TikTok in HD MP4 — up to Full HD 1080p, no logo, no app — or
                   convert to MP3 with the original sound. Paste any tiktok.com,
                   vt.tiktok.com, or vm.tiktok.com link and the clean file saves straight

@@ -55,11 +55,30 @@ const PACE_MS = Number(process.env.GSC_PACE_MS ?? 400);
 const MAX_RETRIES = 2;
 
 const SKIP_IF_UNCONFIGURED = process.argv.includes("--skip-if-unconfigured");
-const KEY_RAW = (
+/**
+ * Service-account key, in priority order: env (CI secret), then the key file
+ * already sitting in `.scratch/ga4-key.json`. `.scratch/` is git-ignored, so
+ * the file never ships — but it is the same account the ad-fill report uses,
+ * and re-pasting a key into an env var just to run the report locally is how
+ * a working integration ends up reported as "not configured".
+ */
+const KEY_FILE = process.env.GSC_KEY_FILE ?? ".scratch/ga4-key.json";
+let KEY_RAW = (
   process.env.GSC_SERVICE_ACCOUNT_JSON ??
   process.env.GA4_SERVICE_ACCOUNT_JSON ??
   ""
 ).trim();
+
+async function resolveKeyRaw() {
+  if (KEY_RAW) return KEY_RAW;
+  try {
+    KEY_RAW = (await readFile(KEY_FILE, "utf8")).trim();
+    if (KEY_RAW) log(`using the service-account key at ${KEY_FILE}`);
+  } catch {
+    // No key file: the report stays "not configured" and the script exits 0.
+  }
+  return KEY_RAW;
+}
 
 const log = (message) => console.log(message);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -479,9 +498,11 @@ function loadState(raw) {
 async function main() {
   log(`Google Search Console report for ${ORIGIN}`);
 
-  if (!KEY_RAW) {
+  const keyRaw = await resolveKeyRaw();
+
+  if (!keyRaw) {
     const skipped =
-      "Google Search Console is not configured — no `GSC_SERVICE_ACCOUNT_JSON` secret.";
+      `Google Search Console is not configured — no \`GSC_SERVICE_ACCOUNT_JSON\` and no key at \`${KEY_FILE}\`.`;
     log(`${skipped}${SKIP_IF_UNCONFIGURED ? " Skipping." : ""}`);
     if (process.env.GITHUB_STEP_SUMMARY) {
       await appendFile(process.env.GITHUB_STEP_SUMMARY, `${buildSummary({ skipped })}\n`);
@@ -489,7 +510,7 @@ async function main() {
     return;
   }
 
-  const credentials = parseCredentials(KEY_RAW);
+  const credentials = parseCredentials(keyRaw);
   log(`service account ${credentials.email} (project ${credentials.project})`);
   const token = await getAccessToken(credentials);
 

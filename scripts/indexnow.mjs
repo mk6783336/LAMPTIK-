@@ -44,7 +44,12 @@ const DRY_RUN = process.argv.includes("--dry");
  * routes whose visible copy happens to differ.
  */
 const SUBMIT_ALL = process.env.INDEXNOW_ALL === "1" || process.argv.includes("--all");
-const ENDPOINT = "https://api.indexnow.org/indexnow";
+/**
+ * IndexNow's own endpoint, with Bing's as a fallback. A stalled connection to
+ * one must not cost the whole submission — the previous version hung here with
+ * no per-request deadline, which is why the run never printed a status code.
+ */
+const ENDPOINTS = ["https://api.indexnow.org/indexnow", "https://www.bing.com/indexnow"];
 
 const HOST = new URL(ORIGIN).host;
 const log = (...parts) => console.log("[indexnow]", ...parts);
@@ -54,7 +59,7 @@ async function fetchText(url, init) {
   const response = await fetch(url, {
     ...init,
     headers: { "cache-control": "no-cache", ...(init?.headers ?? {}) },
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(12_000),
   });
   return { status: response.status, ok: response.ok, body: await response.text() };
 }
@@ -168,20 +173,29 @@ async function main() {
   const changed = [];
   let unreadable = 0;
 
-  for (const url of urls) {
-    try {
-      const { status, ok, body } = await fetchText(url);
-      if (!ok) {
+  // SUBMIT_ALL never needs the hashes: every URL is about to be sent anyway.
+  // Crawling all of them one by one is what made this script look hung — at up
+  // to 12s per stalled page, 90 pages held the process for tens of minutes and
+  // the POST never ran. The hash pass only exists to narrow a normal run to
+  // the pages whose visible content actually moved.
+  if (SUBMIT_ALL) {
+    log(`${urls.length} URL(s) requested via INDEXNOW_ALL — skipping the hash pass`);
+  } else {
+    for (const url of urls) {
+      try {
+        const { status, ok, body } = await fetchText(url);
+        if (!ok) {
+          unreadable += 1;
+          log(`skipping ${url} (HTTP ${status})`);
+          continue;
+        }
+        const hash = contentFingerprint(body);
+        next[url] = hash;
+        if (previous[url] !== hash) changed.push(url);
+      } catch (error) {
         unreadable += 1;
-        log(`skipping ${url} (HTTP ${status})`);
-        continue;
+        log(`skipping ${url} (${error instanceof Error ? error.message : String(error)})`);
       }
-      const hash = contentFingerprint(body);
-      next[url] = hash;
-      if (previous[url] !== hash) changed.push(url);
-    } catch (error) {
-      unreadable += 1;
-      log(`skipping ${url} (${error instanceof Error ? error.message : String(error)})`);
     }
   }
 
@@ -207,27 +221,47 @@ async function main() {
     return;
   }
 
-  const response = await fetch(ENDPOINT, {
-    method: "POST",
-    headers: { "content-type": "application/json; charset=utf-8" },
-    body: JSON.stringify({
-      host: HOST,
-      key: KEY,
-      keyLocation: `${ORIGIN}/${KEY}.txt`,
-      urlList: submission,
-    }),
-    signal: AbortSignal.timeout(30_000),
+  const payload = JSON.stringify({
+    host: HOST,
+    key: KEY,
+    keyLocation: `${ORIGIN}/${KEY}.txt`,
+    urlList: submission,
   });
-  const responseBody = (await response.text()).slice(0, 400);
 
-  // 200 = accepted, 202 = accepted but key still being validated.
-  if (response.status !== 200 && response.status !== 202) {
-    log(`IndexNow rejected the submission: HTTP ${response.status} ${responseBody}`);
+  let status = 0;
+  let responseBody = "";
+  let delivered = false;
+
+  for (const endpoint of ENDPOINTS) {
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "content-type": "application/json; charset=utf-8" },
+        body: payload,
+        signal: AbortSignal.timeout(12_000),
+      });
+      status = response.status;
+      responseBody = (await response.text()).slice(0, 400);
+      log(`POST ${endpoint} -> HTTP ${status} ${responseBody}`.trim());
+      // 200 = accepted, 202 = accepted but the key is still being validated.
+      if (status === 200 || status === 202) {
+        delivered = true;
+        break;
+      }
+    } catch (error) {
+      log(
+        `POST ${endpoint} failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  if (!delivered) {
+    log(`IndexNow rejected the submission (last HTTP ${status || "none"})`);
     process.exit(1);
   }
 
   await writeFile(STATE_PATH, JSON.stringify({ pages: next }, null, 2));
-  log(`submitted ${submission.length} URL(s): HTTP ${response.status} ${responseBody}`.trim());
+  log(`submitted ${submission.length} URL(s): HTTP ${status} ${responseBody}`.trim());
 }
 
 main().catch((error) => {
