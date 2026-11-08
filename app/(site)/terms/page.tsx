@@ -17,6 +17,9 @@ export const metadata: Metadata = {
   title: "Terms of Service",
   description: DESCRIPTION,
   alternates: { canonical: "/terms" },
+  // Same reason as `/privacy`: the legal pages competed with `/` for the brand
+  // query. Reachable, linkable, but no longer a search result of its own.
+  robots: { index: false, follow: true },
   openGraph: {
     images: ["/opengraph-image"],
     title: "Terms of Service · LAMP TIK",
@@ -67,7 +70,14 @@ export default function TermsPage() {
 
         <main className="flex-1">
           <article className="mx-auto max-w-3xl px-5 pb-20 pt-12 sm:px-6 sm:pt-16">
-            <nav aria-label="Breadcrumb" className="micro text-[var(--text-3)]">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent-text)] underline-offset-4 hover:underline"
+            >
+              <span aria-hidden="true">←</span> LAMP TIK Video Downloader
+            </Link>
+
+            <nav aria-label="Breadcrumb" className="micro mt-3 text-[var(--text-3)]">
               <Link href="/" className="hover:text-[var(--text-2)]">
                 Home
               </Link>

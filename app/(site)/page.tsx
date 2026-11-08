@@ -12,10 +12,13 @@ import { Breadcrumb } from "@/components/seo/breadcrumb";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import {
+  APP_ID,
   breadcrumbNode,
   faqPageNode,
   howToNode,
   JsonLd,
+  ORG_ID,
+  SITE_ID,
   webApplicationNode,
 } from "@/components/seo/JsonLd";
 import { ToolSeoContent } from "@/components/seo/ToolSeoContent";
@@ -61,6 +64,28 @@ export default function HomePage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
+      // The homepage is the brand's landing entity: name it with the brand in
+      // front, and point it at the site, organisation and product nodes by
+      // `@id`. This is the node a "LAMP TIK" query should resolve to, instead
+      // of a legal page that merely repeats the brand in its body text.
+      {
+        "@type": "WebPage",
+        "@id": `${siteUrl}/#webpage`,
+        url: siteUrl,
+        name: "LAMP TIK Video Downloader — TikTok, Instagram, Facebook & YouTube",
+        description: DESCRIPTION,
+        isPartOf: { "@id": SITE_ID },
+        about: { "@id": ORG_ID },
+        mainEntity: { "@id": APP_ID },
+        breadcrumb: { "@id": `${siteUrl}/#breadcrumb` },
+        primaryImageOfPage: {
+          "@type": "ImageObject",
+          url: `${siteUrl}/opengraph-image`,
+          width: 1200,
+          height: 630,
+        },
+        inLanguage: "en",
+      },
       webApplicationNode({
         id: `${siteUrl}/#app`,
         name: `${siteConfig.name} — TikTok Video Downloader`,

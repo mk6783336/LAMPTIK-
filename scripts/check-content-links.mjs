@@ -338,6 +338,23 @@ const declaresLocales = /\$\{siteUrl\}\/\$\{code\}/.test(sitemapSource);
 
 const declaredRoutes = new Set([...declared].map((path_) => (path_ === "" ? "/" : path_)));
 
+/**
+ * True when the page at `routePath` exports `robots: { index: false }`.
+ *
+ * Read from the source rather than the rendered HTML because this runs before
+ * the build; the pattern allows the comment lines and nested `googleBot` object
+ * that a hand-written metadata block tends to carry between the two keys.
+ */
+async function isNoindexed(routePath) {
+  const segments = routePath.split("/").filter(Boolean);
+  try {
+    const source = await readFile(path.join(sitePath, ...segments, "page.tsx"), "utf8");
+    return /robots:\s*\{[\s\S]{0,200}?index:\s*false/.test(source);
+  } catch {
+    return false;
+  }
+}
+
 for (const path_ of declaredRoutes) {
   counts.sitemap += 1;
   if (!routes.has(path_)) {
@@ -351,14 +368,20 @@ for (const path_ of declaredRoutes) {
 }
 
 for (const path_ of routes) {
-  if (!declaredRoutes.has(path_)) {
-    fail(
-      rel(sitemapPath),
-      sitemapSource,
-      sitemapSource.lastIndexOf("return ["),
-      `the route "${path_}" exists but is missing from the sitemap`,
-    );
-  }
+  if (declaredRoutes.has(path_)) continue;
+  // A route may be absent from the sitemap only when the page itself says it
+  // must not be indexed. The legal pages are exactly that case: they answer 200
+  // for visitors and ad reviewers, but they are `noindex, follow` so they stop
+  // competing with `/` for the brand query. Without this exemption the parity
+  // rule would force them back into the sitemap and undo the fix.
+  if (await isNoindexed(path_)) continue;
+
+  fail(
+    rel(sitemapPath),
+    sitemapSource,
+    sitemapSource.lastIndexOf("return ["),
+    `the route "${path_}" exists but is missing from the sitemap`,
+  );
 }
 
 if (declaresLocales) {

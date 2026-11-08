@@ -55,8 +55,11 @@ export function organizationNode(): Json {
     name: siteConfig.name,
     // The bare brand string is what search and LLM crawlers quote; the
     // alternate spelling matches how visitors actually type the domain.
-    alternateName: ["LampTik", "Lamp Tik", "LampTik Downloader"],
+    alternateName: ["LampTik", "Lamp Tik", "LampTik Downloader", "LAMP TIK Video Downloader"],
     url: siteUrl,
+    // The brand query is the one search where the right answer is unambiguous,
+    // so the entity states its own slogan in the words visitors type.
+    slogan: "LAMP TIK — free TikTok, Instagram, Facebook and YouTube video downloader",
     description: ENTITY_DESCRIPTION,
     disambiguatingDescription: ENTITY_DISAMBIGUATION,
     email: CONTACT_EMAIL,
@@ -96,10 +99,16 @@ export function websiteNode(): Json {
     "@id": SITE_ID,
     url: siteUrl,
     name: siteConfig.name,
-    alternateName: "LampTik",
+    // The full navigational name, not just the short brand: "LAMP TIK" alone is
+    // ambiguous, and the homepage is what this entity has to win.
+    alternateName: ["LampTik", "Lamp Tik", "LAMP TIK Video Downloader"],
     description: ENTITY_DESCRIPTION,
     disambiguatingDescription: ENTITY_DISAMBIGUATION,
     publisher: { "@id": ORG_ID },
+    // Ties the site entity to the organisation and to the product it offers,
+    // so a brand query has one canonical entity to resolve to `https://www.lamptik.online/`.
+    about: { "@id": ORG_ID },
+    mainEntity: { "@id": APP_ID },
     inLanguage: "en",
   };
 }

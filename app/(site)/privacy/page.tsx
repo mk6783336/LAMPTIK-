@@ -12,6 +12,11 @@ export const metadata: Metadata = {
   description:
     "What LAMP TIK stores (almost nothing), how advertising cookies work, and how to control them. Privacy-first by design.",
   alternates: { canonical: "/privacy" },
+  // De-indexed on purpose. `/privacy` ranked 3.3 for the brand query while `/`
+  // sat at 34.8 — a legal document was answering "LAMP TIK" better than the
+  // tool did. The page stays public and 200 for visitors and ad reviews; it
+  // just no longer competes with the homepage for the brand entity.
+  robots: { index: false, follow: true },
   openGraph: {
     images: ["/opengraph-image"],
     title: "Privacy Policy · LAMP TIK",
@@ -65,7 +70,16 @@ export default function PrivacyPage() {
 
         <main className="flex-1">
           <article className="mx-auto max-w-3xl px-5 pb-20 pt-12 sm:px-6 sm:pt-16">
-            <nav aria-label="Breadcrumb" className="micro text-[var(--text-3)]">
+            {/* The way back is the brand line, not a bare "Home": a legal page
+                is a dead end for a visitor who arrived from a search snippet. */}
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent-text)] underline-offset-4 hover:underline"
+            >
+              <span aria-hidden="true">←</span> LAMP TIK Video Downloader
+            </Link>
+
+            <nav aria-label="Breadcrumb" className="micro mt-3 text-[var(--text-3)]">
               <Link href="/" className="hover:text-[var(--text-2)]">
                 Home
               </Link>

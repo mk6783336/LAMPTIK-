@@ -16,9 +16,13 @@ import { LANDING_LANGUAGES, siteUrl } from "@/lib/site";
  * 404s is a quality signal against you, so the guide entries are generated
  * from the same `GUIDE_LIST` that produces the pages themselves.
  *
- * Priorities reflect commercial intent, not vanity: the three tools are the
- * pages we want ranked, guides are the supporting cluster, legal pages are
- * noise to a crawler and are declared as such.
+ * Priorities reflect commercial intent, not vanity: the tools are the pages we
+ * want ranked, guides are the supporting cluster, and the legal pages are
+ * deliberately absent. They used to be listed at priority 0.2, which was enough
+ * for `/privacy` to take the brand query at position 3.3 while `/` sat at 34.8:
+ * four near-identical legal documents naming "LAMP TIK" competed with the tool
+ * for its own entity. They stay reachable (200, footer-linked, honest for ad
+ * reviewers) but are `noindex, follow` and no longer declared here.
  */
 /**
  * Absolute hrefs for an hreflang cluster.
@@ -63,8 +67,6 @@ const REVISED = {
   apps: "2026-11-03",
   about: "2026-10-30",
   contact: "2026-10-30",
-  privacy: "2026-11-02",
-  terms: "2026-10-30",
 } as const;
 
 const revised = (date: string) => new Date(date);
@@ -270,21 +272,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  const legal: MetadataRoute.Sitemap = [
-    {
-      url: `${siteUrl}/privacy`,
-      lastModified: revised(REVISED.privacy),
-      changeFrequency: "yearly",
-      priority: 0.2,
-    },
-    {
-      url: `${siteUrl}/terms`,
-      lastModified: revised(REVISED.terms),
-      changeFrequency: "yearly",
-      priority: 0.2,
-    },
-  ];
-
   /**
    * Platform landings outside English: six URLs, each the same-platform sibling
    * of the English tool page rather than a translation of the locale root. They
@@ -311,6 +298,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...localizedPlatforms,
     ...guides,
     ...company,
-    ...legal,
   ];
 }
