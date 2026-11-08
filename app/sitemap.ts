@@ -9,7 +9,7 @@ import {
   platformLanguageAlternates,
 } from "@/lib/i18n/platform-landings";
 import { LOCALE_CODES } from "@/lib/i18n/types";
-import { LANDING_LANGUAGES, siteConfig, siteUrl } from "@/lib/site";
+import { LANDING_LANGUAGES, siteUrl } from "@/lib/site";
 
 /**
  * XML sitemap. Only routes that actually exist are listed — a sitemap full of
@@ -38,8 +38,38 @@ function absoluteLanguages(languages: Record<string, string>): Record<string, st
   );
 }
 
+/**
+ * `lastmod` per page group: the date of the last commit that actually changed
+ * that group's rendered content, not the build date and not one shared number.
+ *
+ * 75 of the 94 URLs used to carry a single constant (`siteConfig.lastModified`,
+ * 2026-10-20). Every page edited after it then shipped a `lastmod` up to 19 days
+ * older than the change, and `lastmod` is the signal Google uses to decide what
+ * to recrawl — so the pages that were edited and still not in the index were
+ * described to Google as unchanged. Grouping by the file that renders each
+ * page keeps the date honest and still leaves one place to update.
+ */
+const REVISED = {
+  home: "2026-11-08",
+  instagram: "2026-10-31",
+  facebook: "2026-11-07",
+  twitter: "2026-11-08",
+  youtube: "2026-11-08",
+  toolsHub: "2026-11-08",
+  subTools: "2026-11-07",
+  localized: "2026-11-07",
+  guidesHub: "2026-11-07",
+  services: "2026-11-03",
+  apps: "2026-11-03",
+  about: "2026-10-30",
+  contact: "2026-10-30",
+  privacy: "2026-11-02",
+  terms: "2026-10-30",
+} as const;
+
+const revised = (date: string) => new Date(date);
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  const updated = new Date(siteConfig.lastModified);
 
   /**
    * hreflang clusters per platform page, keyed by slug. Used on BOTH the
@@ -62,21 +92,21 @@ export default function sitemap(): MetadataRoute.Sitemap {
       // the locale cluster, so it has to declare that cluster; without it the
       // eleven locale roots pointed at a page that never pointed back.
       url: siteUrl,
-      lastModified: updated,
+      lastModified: revised(REVISED.home),
       changeFrequency: "daily",
       priority: 1,
       alternates: { languages: landingLanguages },
     },
     {
       url: `${siteUrl}/instagram-reels-downloader`,
-      lastModified: updated,
+      lastModified: revised(REVISED.instagram),
       changeFrequency: "daily",
       priority: 1,
       alternates: { languages: platformLanguages["instagram-reels-downloader"] },
     },
     {
       url: `${siteUrl}/facebook-video-downloader`,
-      lastModified: updated,
+      lastModified: revised(REVISED.facebook),
       changeFrequency: "daily",
       priority: 1,
       alternates: { languages: platformLanguages["facebook-video-downloader"] },
@@ -86,7 +116,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       // an existing platform page — so it is declared here, beside the four
       // platform landings it sits next to in the footer.
       url: `${siteUrl}/twitter-video-downloader`,
-      lastModified: updated,
+      lastModified: revised(REVISED.twitter),
       changeFrequency: "daily",
       priority: 0.95,
       alternates: {
@@ -98,7 +128,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${siteUrl}/youtube-downloader`,
-      lastModified: updated,
+      lastModified: revised(REVISED.youtube),
       changeFrequency: "daily",
       priority: 1,
       alternates: { languages: platformLanguages["youtube-downloader"] },
@@ -117,7 +147,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const hubs: MetadataRoute.Sitemap = [
     {
       url: `${siteUrl}/tools`,
-      lastModified: new Date("2026-10-29"),
+      lastModified: revised(REVISED.toolsHub),
       changeFrequency: "weekly",
       priority: 0.8,
     },
@@ -129,7 +159,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
    */
   const subTools: MetadataRoute.Sitemap = SUB_TOOLS.map((tool) => ({
     url: `${siteUrl}/${tool.slug}`,
-    lastModified: updated,
+    lastModified: revised(REVISED.subTools),
     changeFrequency: "weekly" as const,
     priority: 0.9,
   }));
@@ -184,7 +214,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
    */
   const languages: MetadataRoute.Sitemap = LOCALE_CODES.map((code) => ({
     url: `${siteUrl}/${code}`,
-    lastModified: updated,
+    lastModified: revised(REVISED.localized),
     changeFrequency: "weekly" as const,
     // 0.9, level with the programmatic sub-tools: a localized root is a
     // monetizable landing page in its own market, not a secondary mirror of
@@ -196,7 +226,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const guides: MetadataRoute.Sitemap = [
     {
       url: `${siteUrl}/guides`,
-      lastModified: updated,
+      lastModified: revised(REVISED.guidesHub),
       changeFrequency: "weekly",
       priority: 0.8,
     },
@@ -214,7 +244,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       // download, so it outranks About and Contact in the sitemap even though
       // it is a "company" page.
       url: `${siteUrl}/services`,
-      lastModified: updated,
+      lastModified: revised(REVISED.services),
       changeFrequency: "monthly",
       priority: 0.7,
     },
@@ -222,19 +252,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
       // Distribution hub for the off-store clients — a real page with its own
       // install steps, so it belongs in the index next to About and Contact.
       url: `${siteUrl}/apps`,
-      lastModified: updated,
+      lastModified: revised(REVISED.apps),
       changeFrequency: "monthly",
       priority: 0.6,
     },
     {
       url: `${siteUrl}/about`,
-      lastModified: updated,
+      lastModified: revised(REVISED.about),
       changeFrequency: "monthly",
       priority: 0.4,
     },
     {
       url: `${siteUrl}/contact`,
-      lastModified: updated,
+      lastModified: revised(REVISED.contact),
       changeFrequency: "monthly",
       priority: 0.4,
     },
@@ -243,13 +273,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const legal: MetadataRoute.Sitemap = [
     {
       url: `${siteUrl}/privacy`,
-      lastModified: updated,
+      lastModified: revised(REVISED.privacy),
       changeFrequency: "yearly",
       priority: 0.2,
     },
     {
       url: `${siteUrl}/terms`,
-      lastModified: updated,
+      lastModified: revised(REVISED.terms),
       changeFrequency: "yearly",
       priority: 0.2,
     },
@@ -265,7 +295,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const localizedPlatforms: MetadataRoute.Sitemap = PLATFORM_LOCALES.flatMap((code) =>
     LOCALIZED_PLATFORMS.map((platform) => ({
       url: `${siteUrl}/${code}/${LOCALIZED_PLATFORM_SLUGS[platform]}`,
-      lastModified: updated,
+      lastModified: revised(REVISED.localized),
       changeFrequency: "weekly" as const,
       priority: 0.8,
       alternates: { languages: platformLanguages[LOCALIZED_PLATFORM_SLUGS[platform]] },
