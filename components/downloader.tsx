@@ -36,6 +36,7 @@ import { clientMirrorStreams, clientOembedMeta } from "@/lib/youtube-client";
 
 import { ToastStack, type ToastItem } from "@/components/toast";
 import { UrlField } from "@/components/url-field";
+import { signalAdIntent } from "@/lib/ad-intent";
 import { cn } from "@/lib/cn";
 import { PLATFORMS, type Platform } from "@/lib/platforms";
 import { downloaderCopy, type DownloaderCopy } from "@/lib/i18n/ui";
@@ -705,6 +706,10 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
     setElapsedMs(0);
     setBackupNote(null);
     lastSubmittedUrlRef.current = url;
+    // The visitor submitted a real link: the tool is in use, so the post-intent
+    // push networks may load from here on (lib/ad-intent.ts). Fires once per
+    // pageview, and after the sanitise step so junk submissions never arm it.
+    signalAdIntent("resolve-submit");
 
     // Real elapsed-time readout while the resolver runs.
     const startedAt = performance.now();

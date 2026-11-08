@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowUpRight, Check } from "lucide-react";
 
 import { AdSlot } from "@/components/ads/AdSlot";
+import { EngagementIntent } from "@/components/ads/engagement-intent";
 import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
@@ -356,6 +357,9 @@ export default function ToolsPage() {
           <HubLanguages />
         </main>
 
+        {/* The hub is a reading page, not a tool: arm on scroll depth after a
+            real dwell (lib/ad-intent.ts). */}
+        <EngagementIntent />
         <SiteFooter />
       </div>
     </>

@@ -289,25 +289,6 @@ html:not(.dark) {
     -webkit-backdrop-filter: blur(18px) saturate(140%);
   }
 
-  /* Hover treatment shared by interactive glass cards. `transform` only —
-     no shadow animation on large surfaces (compositor-friendly). */
-  .glass-hover {
-    transition:
-      border-color 240ms cubic-bezier(0.22, 1, 0.36, 1),
-      background-color 240ms cubic-bezier(0.22, 1, 0.36, 1),
-      transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  .glass-hover:hover {
-    border-color: var(--glass-border-hover);
-    background-color: rgba(255, 255, 255, 0.055);
-    transform: translateY(-2px);
-  }
-
-  html:not(.dark) .glass-hover:hover {
-    background-color: rgba(255, 255, 255, 0.86);
-  }
-
   /* Gradient-word treatment for hero accents. Falls back to the accent ink
      where background-clip:text is unsupported. */
   .text-gradient {
@@ -975,9 +956,6 @@ html:not(.dark) {
     text-wrap: pretty;
   }
 
-  .no-tap {
-    -webkit-touch-callout: none;
-  }
 }
 
 /* ------------------------------------------------------------------ motion
@@ -1058,12 +1036,12 @@ html:not(.dark) {
 }
 
 /* Above-the-fold copy paints, it does not animate in.
-   tailwind.config.ts runs `rise` from opacity 0, so hero copy was unpainted at
-   FCP and Chrome recorded a second LCP when the fade ended (450-1300ms after
-   FCP on a cold phone). A transform-only slide still re-registered a candidate
-   when its layer moved (2312ms at 431px wide), so the hero is static now: the
-   first paint is the LCP and the motion lives below the fold instead. */
-.animate-rise { animation: none; }
+   The `rise` keyframe started at opacity 0, so hero copy was unpainted at FCP
+   and Chrome recorded a second LCP when the fade ended (450-1300ms after FCP on
+   a cold phone); a transform-only slide re-registered a candidate when its
+   layer moved (2312ms at 431px wide). The keyframe, its utility and the
+   `animate-rise` class on the markup are all gone now — the first paint is the
+   LCP, and the only motion left is below the fold. */
 
 /* Returning visitors already decided; the inline script in ConsentBar sets
    the attribute during parsing, before the panel is painted. */

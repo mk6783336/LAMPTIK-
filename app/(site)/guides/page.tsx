@@ -4,6 +4,7 @@ import { ArrowUpRight, BookOpen } from "lucide-react";
 
 import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
+import { EngagementIntent } from "@/components/ads/engagement-intent";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { articleNode } from "@/components/seo/JsonLd";
@@ -206,6 +207,9 @@ export default function GuidesPage() {
           </section>
         </main>
 
+        {/* No download happens on this page, so the post-intent arm is
+            scroll depth after a real dwell (lib/ad-intent.ts). */}
+        <EngagementIntent />
         <SiteFooter />
       </div>
     </>

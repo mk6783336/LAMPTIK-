@@ -107,11 +107,17 @@ export interface DownloadEventMeta {
  *
  * `web_vitals` is emitted by `components/web-vitals.tsx` once per pageview per
  * metric (LCP, CLS, INP) when the page is hidden — field numbers for the
- * performance work, from our own analytics rather than a dashboard. */
+ * performance work, from our own analytics rather than a dashboard.
+ *
+ * `ad_intent_armed` is emitted by `lib/ad-intent.ts` the first time a visitor
+ * does something that only a real tool user does — the moment the post-intent
+ * push networks are allowed to load. Its `trigger` dimension is what turns
+ * "did gating cost us impressions?" into a query instead of an argument. */
 export type AnalyticsEvent =
   | "download_start"
   | "platform_switch"
   | "ad_slot_result"
+  | "ad_intent_armed"
   | "web_vitals";
 
 /**

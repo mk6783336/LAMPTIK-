@@ -6,6 +6,7 @@ import { ArrowUpRight, BookOpen, Sparkles } from "lucide-react";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
+import { EngagementIntent } from "@/components/ads/engagement-intent";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { guideTool } from "@/lib/content/guide-tool";
@@ -297,6 +298,9 @@ export default async function GuidePage({
           </article>
         </main>
 
+        {/* Reading a third of the guide for four seconds is the engagement
+            signal this page has instead of a download click. */}
+        <EngagementIntent />
         <SiteFooter />
       </div>
     </>

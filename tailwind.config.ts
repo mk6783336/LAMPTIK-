@@ -75,10 +75,6 @@ const config: Config = {
           "0%, 50%": { opacity: "1" },
           "51%, 100%": { opacity: "0" },
         },
-        rise: {
-          from: { opacity: "0", transform: "translateY(16px)" },
-          to: { opacity: "1", transform: "translateY(0)" },
-        },
         pulse: {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.35" },
@@ -109,7 +105,6 @@ const config: Config = {
       animation: {
         sweep: "sweep 1.15s cubic-bezier(0.4, 0, 0.2, 1) infinite",
         blink: "blink 1.1s steps(1) infinite",
-        rise: "rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both",
         pulse: "pulse 2.4s ease-in-out infinite",
         glow: "glow 2.6s ease-in-out infinite",
         aurora: "aurora 22s ease-in-out infinite",

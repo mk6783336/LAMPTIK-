@@ -117,7 +117,7 @@ export default function HomePage() {
               dead horizontal gap between them. */}
           <section className="pb-10 pt-4 sm:pb-16 sm:pt-14 lg:pt-20">
             <div className="shell grid items-start gap-6 lg:grid-cols-12 lg:gap-8">
-              <div className="animate-rise min-w-0 lg:col-span-5">
+              <div className="min-w-0 lg:col-span-5">
                 {/* Mobile fold: the breadcrumb costs ~20px above the CTA and
                     the sticky header already carries the navigation, so it is
                     hidden below `sm` rather than removed from the page. */}
@@ -173,7 +173,7 @@ export default function HomePage() {
                 </Link>
               </div>
 
-              <div className="animate-rise min-w-0 lg:col-span-7 [animation-delay:80ms]">
+              <div className="min-w-0 lg:col-span-7">
                 <Downloader />
                 <CreatorToolkitBar className="mt-3" />
               </div>

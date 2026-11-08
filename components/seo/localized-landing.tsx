@@ -176,7 +176,7 @@ export function LocalizedLanding({
         <main className="flex-1">
           <section className="pb-12 pt-10 sm:pb-16 sm:pt-14 lg:pt-20">
             <div className="shell grid items-start gap-6 lg:grid-cols-12 lg:gap-8">
-              <div className="animate-rise min-w-0 lg:col-span-5">
+              <div className="min-w-0 lg:col-span-5">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="eyebrow">
                     <span aria-hidden="true" className="eyebrow-dot" />
@@ -219,7 +219,7 @@ export function LocalizedLanding({
                 </div>
               </div>
 
-              <div className="animate-rise min-w-0 lg:col-span-7 [animation-delay:80ms]">
+              <div className="min-w-0 lg:col-span-7">
                 <div className="mb-2 flex items-baseline justify-between gap-3">
                   <p className="text-sm font-semibold tracking-tight">{copy.tool.heading}</p>
                   <p className="text-xs text-[var(--text-3)]">{copy.tool.note}</p>

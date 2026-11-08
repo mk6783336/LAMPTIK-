@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight, Check, Youtube } from "lucide-react";
@@ -19,6 +20,7 @@ import {
   webApplicationNode,
 } from "@/components/seo/JsonLd";
 import { Downloader } from "@/components/downloader";
+import { YouTubeDownloaderWithPrefill } from "@/components/youtube-downloader-prefill";
 import { PLATFORMS } from "@/lib/platforms";
 import { platformLanguageAlternates } from "@/lib/i18n/platform-landings";
 import { siteUrl } from "@/lib/site";
@@ -121,25 +123,15 @@ const FAQS = [
 ];
 
 /**
- * A playlist item links here with `?url=` so the chosen video is already in
- * the field. Only an 11-character YouTube id survives: the parameter can
- * never smuggle another platform or an arbitrary URL into the resolver.
+ * Static: the `?url=` prefill (a playlist item links here with the chosen video)
+ * is read in the browser by `YouTubeDownloaderWithPrefill`, so nothing on this
+ * route touches request data. It used to be `ƒ Dynamic` because of
+ * `searchParams`, which meant a function invocation and `Cache: MISS` on every
+ * visit while every other tool page was served prerendered.
  */
-function prefilledVideoUrl(value: string | string[] | undefined): string | undefined {
-  if (typeof value !== "string") return undefined;
-  const match = value.match(
-    /^https:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})(?:[&?#].*)?$/,
-  );
-  return match ? `https://www.youtube.com/watch?v=${match[1]}` : undefined;
-}
+export const dynamic = "force-static";
 
-export default async function YouTubeDownloaderPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const params = await searchParams;
-  const initialUrl = prefilledVideoUrl(params.url);
+export default function YouTubeDownloaderPage() {
   const pageUrl = `${siteUrl}/youtube-downloader`;
 
   const jsonLd = {
@@ -190,7 +182,7 @@ export default async function YouTubeDownloaderPage({
         <main className="flex-1">
           <section className="pb-12 pt-10 sm:pb-16 sm:pt-14 lg:pt-20">
             <div className="hero-stage shell grid items-start gap-6 lg:grid-cols-12 lg:gap-8">
-              <div className="animate-rise hero-copy min-w-0 lg:col-span-5">
+              <div className="hero-copy min-w-0 lg:col-span-5">
                 <Breadcrumb
                   trail={[
                     { name: "Home", href: "/" },
@@ -232,8 +224,10 @@ export default async function YouTubeDownloaderPage({
                 </div>
               </div>
 
-              <div className="animate-rise min-w-0 lg:col-span-7 [animation-delay:80ms]">
-                <Downloader platform="youtube" initialUrl={initialUrl} />
+              <div className="min-w-0 lg:col-span-7">
+                <Suspense fallback={<Downloader platform="youtube" />}>
+                  <YouTubeDownloaderWithPrefill />
+                </Suspense>
                 <CreatorToolkitBar className="mt-3" />
               </div>
             </div>
