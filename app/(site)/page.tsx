@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { ArrowUpRight, MonitorPlay, Music2, ShieldCheck } from "lucide-react";
 
@@ -22,41 +23,60 @@ import {
   webApplicationNode,
 } from "@/components/seo/JsonLd";
 import { ToolSeoContent } from "@/components/seo/ToolSeoContent";
+import { TitleExperiment } from "@/components/title-experiment";
 import { TOOL_SEO } from "@/lib/content/tool-seo";
 import { GUIDE_LIST } from "@/lib/content/guides";
+import {
+  HOME_TITLE_COOKIE,
+  isVariant,
+  titleFor,
+} from "@/lib/experiments/home-title";
 import { LANDING_LANGUAGES, siteConfig, siteUrl } from "@/lib/site";
 
-/** ≤60 chars, primary keyword first: Google never truncates it. */
-const TITLE = "TikTok Video Downloader Without Watermark — HD MP4 & MP3";
 /** Social cards have room; keep the richer, benefit-led version there. */
 const SOCIAL_TITLE =
   "TikTok Video Downloader Without Watermark — Full HD 1080p MP4 & MP3 (Free, Fast)";
 const DESCRIPTION =
   "Download TikTok videos without a watermark in Full HD 1080p MP4 or MP3, and resolve vt/vm short links. Free, no app, no sign-up — saves to phone or PC.";
 
-export const metadata: Metadata = {
-  // `absolute` bypasses the layout template: this is the exact SERP title.
-  title: { absolute: TITLE },
-  description: DESCRIPTION,
-  keywords: [...siteConfig.keywords],
-  // Home is the English member of the translated landing cluster.
-  alternates: { canonical: "/", languages: LANDING_LANGUAGES },
-  openGraph: {
-    type: "website",
-    url: siteUrl,
-    siteName: siteConfig.name,
-    title: SOCIAL_TITLE,
+/**
+ * The SERP title is the experiment (`lib/experiments/home-title.ts`): a sticky
+ * cookie picks between the keyword-first and brand-first wordings, and both keep
+ * the same keyword phrase. Everything else is identical per variant, so a
+ * difference in engagement can only be the title.
+ *
+ * Reading the cookie makes this route render per request. That is the price of
+ * a server-side title test — a client-side swap would flash and would not be
+ * what a crawler ever sees.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const assigned = (await cookies()).get(HOME_TITLE_COOKIE)?.value;
+  const variant = isVariant(assigned) ? assigned : "control";
+
+  return {
+    // `absolute` bypasses the layout template: this is the exact SERP title.
+    title: { absolute: titleFor(variant) },
     description: DESCRIPTION,
-    locale: "en_US",
-    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: SOCIAL_TITLE }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: SOCIAL_TITLE,
-    description: DESCRIPTION,
-    images: ["/opengraph-image"],
-  },
-};
+    keywords: [...siteConfig.keywords],
+    // Home is the English member of the translated landing cluster.
+    alternates: { canonical: "/", languages: LANDING_LANGUAGES },
+    openGraph: {
+      type: "website",
+      url: siteUrl,
+      siteName: siteConfig.name,
+      title: SOCIAL_TITLE,
+      description: DESCRIPTION,
+      locale: "en_US",
+      images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: SOCIAL_TITLE }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: SOCIAL_TITLE,
+      description: DESCRIPTION,
+      images: ["/opengraph-image"],
+    },
+  };
+}
 
 export default function HomePage() {
   const seo = TOOL_SEO.tiktok;
@@ -129,6 +149,7 @@ export default function HomePage() {
   return (
     <>
       <JsonLd data={jsonLd} />
+      <TitleExperiment />
       <AmbientBackground />
       <ConsentBar />
 

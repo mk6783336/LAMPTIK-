@@ -107,7 +107,8 @@ export default function PrivacyPage() {
                   per download is an anonymous counter — which platform, and
                   whether the transfer started — never the link, the file name
                   or your IP. The only data stored about you lives in your own
-                  browser (theme and privacy choices). Advertising, if enabled, uses cookies
+                  browser (your theme, your privacy choices, and which wording
+                  of the homepage title you were shown). Advertising, if enabled, uses cookies
                   governed by your consent choice, and Google Analytics 4 counts
                   page views under that same choice — cookieless until you
                   accept, and never told which links you download.
@@ -243,6 +244,18 @@ export default function PrivacyPage() {
                       The theme and consent values in your browser&apos;s
                       local storage. No advertising cookie is set before you
                       consent.
+                    </span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span aria-hidden="true" className="mt-2 size-1 shrink-0 rounded-full bg-[var(--accent)]" />
+                    <span>
+                      <strong className="text-[var(--text)]">Title test (functional).</strong>{" "}
+                      The <code className="text-[var(--text)]">lamptik_title_ab</code>{" "}
+                      cookie stores one word — which wording of the homepage
+                      title you were shown — for 30 days, so the title does not
+                      change between visits. It holds no identifier, is never
+                      sent to a third party, and clearing it simply gives you
+                      a fresh assignment.
                     </span>
                   </li>
                   <li className="flex gap-3">
