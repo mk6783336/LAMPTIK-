@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, Check, Loader2, ShieldCheck, Sparkles, Zap } from "lucide-react";
+import { ArrowUpRight, Check, Copy, Loader2, ShieldCheck, Sparkles, Zap } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
@@ -346,6 +346,55 @@ function LoadingConsole({
   );
 }
 
+/**
+ * The URL-prefix trick, made copyable.
+ *
+ * `lamptik.online/<video url>` resolves on arrival (see the catch-all bridge at
+ * `app/(site)/[...target]/page.tsx`). The badge exists so the trick is
+ * discoverable and shareable — a mechanic nobody sees is a mechanic nobody
+ * tells a friend about — and it copies the prefix so a link can be built by
+ * pasting it in front of a video address.
+ */
+function UrlPrefixTip() {
+  const PREFIX = "https://www.lamptik.online/";
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(PREFIX);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1_800);
+    } catch {
+      // Clipboard blocked (permissions, http origin): the text stays readable.
+    }
+  }
+
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl border border-[var(--glass-border)] bg-[var(--field)] px-3 py-2 text-xs leading-relaxed text-[var(--text-2)]">
+      <Zap aria-hidden="true" className="size-3.5 shrink-0 text-[var(--accent-text)]" />
+      <span className="min-w-0 flex-1">
+        <span className="font-semibold text-[var(--text)]">Pro tip:</span> type{" "}
+        <code className="rounded bg-[var(--bg-sunken)] px-1 py-0.5 font-mono text-xs text-[var(--text)]">
+          lamptik.online/
+        </code>{" "}
+        in front of any TikTok, Reels, Shorts or X link and it starts downloading.
+      </span>
+      <button
+        type="button"
+        onClick={copy}
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[var(--glass-border)] px-2.5 py-1 text-xs font-medium transition-colors duration-200 hover:border-[var(--glass-border-hover)] hover:text-[var(--text)]"
+      >
+        {copied ? (
+          <Check aria-hidden="true" className="size-3 text-[var(--ok)]" />
+        ) : (
+          <Copy aria-hidden="true" className="size-3" />
+        )}
+        {copied ? "Copied" : "Copy"}
+      </button>
+    </div>
+  );
+}
+
 interface DownloaderProps {
   /** Which platform page this shell lives on — default accent + copy. */
   platform?: Platform;
@@ -448,7 +497,10 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
     if (restoredRef.current) return;
     restoredRef.current = true;
     if (typeof window === "undefined") return;
-    if (new URLSearchParams(window.location.search).has("shared_url")) return;
+    const initialParams = new URLSearchParams(window.location.search);
+    // Any auto-resolve hand-off (`?url=` deep link, `?shared_url=`) wins over
+    // the cached card: the visitor asked for THIS video.
+    if (initialParams.has("shared_url") || initialParams.has("url")) return;
     void restoreLastResult();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -481,6 +533,60 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
     setMedia(last.media);
     setStatus("success");
   }
+
+  /**
+   * `?url=` deep link — the landing half of the URL-prefix shortcut.
+   *
+   * The catch-all bridge (`app/(site)/[...target]/page.tsx`) and any shared
+   * link arrive here with the video address already encoded. Resolving it on
+   * mount is the whole point of the trick: type `lamptik.online/<video url>`,
+   * press Enter, watch the result appear — no paste, no second click.
+   *
+   * Consumed exactly once (parameter stripped from the address bar so a
+   * reload does not re-fetch) and outside the ad gate: a visitor who was
+   * handed a deep link already chose this video, and a 10s gate in front of
+   * that choice would waste the share. YouTube links open on the dedicated
+   * page for the same reason as `?shared_url=`.
+   */
+  const urlParamHandledRef = useRef(false);
+  useEffect(() => {
+    if (urlParamHandledRef.current) return;
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    const incoming = params.get("url");
+    if (!incoming || !incoming.trim()) return;
+    urlParamHandledRef.current = true;
+
+    params.delete("url");
+    const cleaned = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+    try {
+      window.history.replaceState(window.history.state, "", cleaned);
+    } catch {
+      // History API unavailable — the handled ref still prevents a re-fire.
+    }
+
+    void (async () => {
+      const { detectLink } = await import("@/lib/detect");
+      const detected = detectLink(incoming);
+      if (!detected) {
+        setSeed((current) => ({ value: incoming.trim(), nonce: current.nonce + 1 }));
+        inputRef.current?.focus();
+        return;
+      }
+      if (detected.platform === "youtube" && platform !== "youtube") {
+        window.location.assign(
+          `/youtube-downloader?url=${encodeURIComponent(detected.url)}`,
+        );
+        return;
+      }
+      setSeed((current) => ({ value: detected.url, nonce: current.nonce + 1 }));
+      skipNextResultScrollRef.current = false;
+      void submitRef.current(detected.url);
+    })();
+    // Runs once per mount: a deep link describes the page the visitor opened.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (sharedHandledRef.current) return;
@@ -990,6 +1096,8 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
           onNotify={notify}
           copy={t}
         />
+
+        <UrlPrefixTip />
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-xs text-[var(--text-2)] sm:text-sm">
           <span className="inline-flex min-w-0 items-center gap-1.5">

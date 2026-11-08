@@ -118,7 +118,9 @@ export type AnalyticsEvent =
   | "platform_switch"
   | "ad_slot_result"
   | "ad_intent_armed"
-  | "web_vitals";
+  | "web_vitals"
+  /** A sponsor tab opened after a file hand-off — see lib/smartlink.ts. */
+  | "smartlink_open";
 
 /**
  * Send one GA4 event.

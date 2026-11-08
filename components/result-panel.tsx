@@ -23,6 +23,7 @@ import { PlatformIcon } from "@/components/platform-icons";
 import { cn } from "@/lib/cn";
 import { PLATFORMS } from "@/lib/platforms";
 import { directLinkUrl, smartlinkUrl } from "@/lib/monetization";
+import { openSmartlinkOnce } from "@/lib/smartlink";
 import { ENGLISH_DOWNLOADER_COPY, type DownloaderCopy } from "@/lib/i18n/ui";
 
 import { isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
@@ -317,6 +318,10 @@ export function ResultPanel({
     );
     frame.src = href;
     document.body.appendChild(frame);
+    // The frame navigation has already been initiated above, so the sponsor
+    // tab below cannot cancel or delay the transfer — and the download is the
+    // only moment the visitor has been served. Once per session (lib/smartlink).
+    openSmartlinkOnce("download");
     signalDownloadIntent(kind);
     // Live until the proxied stream has had its full 300s window — removing
     // the frame earlier aborts a still-streaming download.
@@ -366,6 +371,9 @@ export function ResultPanel({
     anchor.style.display = "none";
     document.body.appendChild(anchor);
     anchor.click();
+    // Same order as the proxy path: the click has already dispatched, so the
+    // file hand-off precedes the sponsor tab.
+    openSmartlinkOnce("download-direct");
     signalDownloadIntent(kind);
     window.setTimeout(() => anchor.remove(), 30_000);
     setTheater({
