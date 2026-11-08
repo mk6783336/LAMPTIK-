@@ -11,11 +11,16 @@ import type { SubTool } from "@/lib/content/sub-tool-types";
 export const entry: SubTool = {
   slug: "instagram-reels-audio",
   platform: "instagram",
-  title: "Instagram Reels Audio - Finder, Save & Extract Sound",
+  // SERP copy leads with the query the page actually answers. The previous
+  // title ("Finder, Save & Extract Sound") named no outcome, and the
+  // description opened by denying the request — "Instagram has no audio-only
+  // file" — which told the searcher to look elsewhere before reading the
+  // method. Position 8 with zero clicks is what that snippet earns.
+  title: "Instagram Reels Audio - Download the Sound, Extract MP3",
   socialTitle:
-    "Instagram Reels Audio - Save the Reel With Its Original Sound (No Fake MP3)",
+    "Instagram Reels Audio - Save the Reel With Its Original Sound, Then MP3",
   description:
-    "Instagram has no audio-only file: save the Reel with its original soundtrack intact, then extract MP3 from the saved MP4. No login, no fake MP3.",
+    "Save an Instagram Reel with its original soundtrack intact, no login or watermark, then turn that MP4 into MP3 locally. Free on iPhone and Android.",
   keywords: [
     "Instagram Reels audio",
     "Instagram Reels audio finder",
