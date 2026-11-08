@@ -5,6 +5,7 @@ import { ArrowUpRight, MonitorPlay, Music2, ShieldCheck } from "lucide-react";
 import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
+import { CreatorToolkitBar } from "@/components/creator-toolkit-bar";
 import { Downloader } from "@/components/downloader";
 import { PlatformGrid } from "@/components/platform-grid";
 import { Breadcrumb } from "@/components/seo/breadcrumb";
@@ -174,6 +175,7 @@ export default function HomePage() {
 
               <div className="animate-rise min-w-0 lg:col-span-7 [animation-delay:80ms]">
                 <Downloader />
+                <CreatorToolkitBar className="mt-3" />
               </div>
             </div>
 

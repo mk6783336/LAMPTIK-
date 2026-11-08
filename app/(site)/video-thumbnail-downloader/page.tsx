@@ -5,6 +5,8 @@ import { ThumbnailExtractor } from "@/components/tools/thumbnail-extractor";
 import { CREATOR_TOOL_MAP } from "@/lib/creator-tools";
 import { pageAlternates, siteUrl } from "@/lib/site";
 
+export const dynamic = "force-static";
+
 const tool = CREATOR_TOOL_MAP["video-thumbnail-downloader"];
 
 export const metadata: Metadata = {

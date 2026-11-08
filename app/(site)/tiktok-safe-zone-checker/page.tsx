@@ -5,6 +5,8 @@ import { SafeZoneChecker } from "@/components/tools/safe-zone-checker";
 import { CREATOR_TOOL_MAP } from "@/lib/creator-tools";
 import { pageAlternates, siteUrl } from "@/lib/site";
 
+export const dynamic = "force-static";
+
 const tool = CREATOR_TOOL_MAP["tiktok-safe-zone-checker"];
 
 export const metadata: Metadata = {

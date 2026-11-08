@@ -18,6 +18,7 @@ import { formatBytes, formatDuration } from "@/lib/format";
 import type { ToastItem } from "@/components/toast";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { DownloadStartedModal } from "@/components/ads/DownloadStartedModal";
+import { CreatorToolkitBar } from "@/components/creator-toolkit-bar";
 import { PlatformIcon } from "@/components/platform-icons";
 import { cn } from "@/lib/cn";
 import { PLATFORMS } from "@/lib/platforms";
@@ -251,6 +252,20 @@ export function ResultPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theaterAttemptId]);
 
+  /**
+   * Unlocks the push ad networks, which now load only after a real download
+   * (see `components/ads/AdScripts.tsx`). Dispatched AFTER the file hand-off
+   * — the iframe has already navigated or the anchor has already clicked — so
+   * nothing in this path can delay the download.
+   */
+  function signalDownloadIntent(kind: string) {
+    try {
+      document.dispatchEvent(new CustomEvent("lamptik:intent", { detail: { kind } }));
+    } catch {
+      // Very old browser: the push networks simply stay unarmed.
+    }
+  }
+
   function rejectKnownYouTubeInterstitial(url: string | null): boolean {
     if (platform !== "youtube" || !url || !isKnownLoaderInterstitialUrl(url)) return false;
     setTheater(null);
@@ -302,6 +317,7 @@ export function ResultPanel({
     );
     frame.src = href;
     document.body.appendChild(frame);
+    signalDownloadIntent(kind);
     // Live until the proxied stream has had its full 300s window — removing
     // the frame earlier aborts a still-streaming download.
     window.setTimeout(() => frame.remove(), 300_000);
@@ -350,6 +366,7 @@ export function ResultPanel({
     anchor.style.display = "none";
     document.body.appendChild(anchor);
     anchor.click();
+    signalDownloadIntent(kind);
     window.setTimeout(() => anchor.remove(), 30_000);
     setTheater({
       attemptId: Date.now(),
@@ -728,6 +745,10 @@ export function ResultPanel({
               <ArrowUpRight aria-hidden="true" className="size-4 shrink-0 text-[var(--text-3)]" />
             </a>
           ) : null}
+
+          {/* Second pageview from the same visit: the four creator tools sit
+              right under a visitor who has already saved a file. */}
+          <CreatorToolkitBar className="mt-1" />
 
           {/* SnapTik sandwich — BOTTOM slice. Deliberately AFTER the partner
               link: the mirror CTA is a continuation of the save options, and

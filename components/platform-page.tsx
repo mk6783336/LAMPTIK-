@@ -5,6 +5,7 @@ import { AdSlot } from "@/components/ads/AdSlot";
 import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
+import { CreatorToolkitBar } from "@/components/creator-toolkit-bar";
 import { Downloader } from "@/components/downloader";
 import { PlatformBento } from "@/components/platform-bento";
 import { PlatformIcon } from "@/components/platform-icons";
@@ -223,6 +224,7 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
 
               <div className="animate-rise min-w-0 lg:col-span-7 [animation-delay:80ms]">
                 <Downloader platform={platform} />
+                <CreatorToolkitBar className="mt-3" />
               </div>
             </div>
 

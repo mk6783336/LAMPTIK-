@@ -1,143 +1,183 @@
 import { hilltopMultitagSrc, monetagInPage } from "@/lib/monetization";
 
 /**
- * Global third-party ad surface — minimal, non-blocking, mobile-safe.
+ * Global third-party ad surface — in-flow banners on load, push cards only
+ * after download intent.
  *
- * LAMP TIK monetizes exclusively through formats that can never paint an
- * invisible full-viewport layer over the page:
+ * What is monetized, and when:
  *
- * 1. In-flow banner slots (`AdSlot.tsx`, leaderboard + rectangle) rendered
- *    inside `position: relative; overflow: hidden` boxes.
+ * 1. In-flow banner slots (`AdSlot.tsx`) — rendered on first paint inside
+ *    `position: relative; overflow: hidden` boxes with a reserved
+ *    aspect-ratio, so a late creative cannot move the page (CLS 0).
  * 2. The HilltopAds Direct Link (`idealistic-revenue.com/FtK1df`) as the href
- *    of a visible sponsored card — the side rail and the banner fallback —
- *    i.e. only where the visitor sees what they are clicking. It is never
- *    opened programmatically from the download button: a download click
- *    produces the file and nothing else.
- * 3. The inline 10-second countdown in `result-panel.tsx`.
- * 4. The submit-time VAST gate in `VideoAdGate.tsx` — a visible, timed card
- *    whose countdown is independent of the ad request and which portals above
- *    the page rather than relying on a remote creative to stay clickable.
+ *    of a visible sponsored card — the side rail, the banner fallback and the
+ *    result panel. Only where the visitor sees what they are clicking.
+ * 3. The inline 10-second countdown in `result-panel.tsx` and the
+ *    submit-time VAST gate in `VideoAdGate.tsx` — visible, timed cards.
+ * 4. The Monetag In-Page Push and the HilltopAds MultiTag: **post-intent
+ *    only**. See below.
  *
- * The Monetag Vignette (`vignette.min.js`) and the Adsterra Social Bar are
- * banned here on purpose: both inject `position: fixed; inset: 0;
- * z-index: 2147483647` layers whose tap-through depends on their remote
- * creative rendering correctly. When that creative hangs (slow phone, poor
- * network), the invisible iframe stays over the whole page and swallows every
- * tap and scroll gesture — the "site frozen on mobile" production failure.
+ * The Monetag Vignette (`vignette.min.js`) and the Adsterra Social Bar stay
+ * banned: both inject `position: fixed; inset: 0; z-index: 2147483647` layers
+ * whose tap-through depends on a remote creative rendering correctly. When it
+ * hangs, the invisible iframe swallows every tap and scroll — the "site frozen
+ * on mobile" production failure.
  *
- * The HilltopAds MultiTag is mounted on **every** viewport (see the loader
- * below). On a 390×844 phone its card is a `position: fixed` node with
- * `z-index: 2147483647` that measured 364×272px at y=520–792 while the
- * Download CTA sat at y=730–784 — it covered the button, which is the banned
- * failure mode. Mobile is ~90% of this site's traffic, so switching the tag
- * off below 768px threw away the whole mobile inventory; instead the
- * `GUARD_MOBILE_CARDS` script below pins any such card to the top of the
- * viewport (`top: 64px`, `bottom: auto`, `max-height: 40vh`) and hides it
- * entirely while a result panel is on screen. The guard keys off
- * `data-ad-guard="result"` — the marker `result-panel.tsx` already renders —
- * so it works on the platform pages and on `/twitter-video-downloader`
- * without either page knowing about the ad.
+ * POST-INTENT (2026-11-08). Both push tags used to arm themselves on load, at
+ * the first pointer event, or at DOMContentLoaded + idle, whichever came
+ * first. Cold, 390×844, that put a `position: fixed` creative over the page
+ * before the visitor had done anything, and the creative it served was a fake
+ * operating-system notification ("Jennifer sent you (1) video", "MEMETIC
+ * HAZARD DETECTED") — social engineering, which Google Safe Browsing /
+ * Chrome's deceptive-site classifier treats as a policy violation, and which
+ * is the most plausible cause of an 86% smartphone bounce rate. Both networks
+ * now load only after a real download intent:
  *
- * Everything below is measured, not assumed: the acceptance test is a 390px
- * Chromium rect check where the card's box and the Download CTA's box must not
- * intersect (`ctaCoveredByAd: []`).
+ *   - `document` event `lamptik:intent` — dispatched by `ResultPanel` at the
+ *     instant the file hand-off happens (after the iframe navigates or the
+ *     anchor clicks, so it can never delay a download);
+ *   - a capturing `click` on `a[download]` or `a[href*="/api/download"]` —
+ *     the plain anchors the creator tools use, so those pages are covered
+ *     without importing anything.
  *
- * What also remains is the Service Worker registration at the domain root: the
- * Direct Link account's domain verification requires `/sw.js` to exist AND be
- * registered. The worker itself renders nothing. Registration failures are
- * swallowed — a blocked or unsupported case must never surface as a console
- * error on a download page.
+ * A visitor who bounces without downloading therefore never meets a push
+ * creative, and the visitor who got their file is exactly the one worth
+ * monetizing. Banners are unchanged: they are clean, in-flow, and reserved.
+ *
+ * The Service Worker registration stays on load: the Direct Link account's
+ * domain verification requires `/sw.js` to exist AND be registered, and the
+ * worker itself renders nothing and intercepts nothing (see `public/sw.js`).
  */
 
 /**
- * Mobile geometry guard for fixed-position push cards.
+ * Deception + geometry guard for third-party fixed layers.
  *
- * The network's card is unclassed and injected at a random time, so this
- * cannot be a stylesheet rule. A MutationObserver catches the insertion, then:
+ * Two jobs, both measured at runtime rather than assumed:
  *
- *  - only nodes whose computed `position` is `fixed` **and** whose `z-index`
- *    is ≥ 1e9 are touched (that ceiling is the push card's signature; nothing
- *    in this app sets it);
- *  - below 768px they are pinned to the top strip and capped at 40vh, so their
- *    box ends far above the Download CTA;
- *  - while `[data-ad-guard="result"]` exists they are hidden outright — that is
- *    the moment the visitor is reaching for Download;
- *  - above 768px every override is removed again, so a rotation or a desktop
- *    resize restores the network's own placement.
+ *  - DECEPTION: any fixed node at z-index ≥ 1e9 whose own text (or `title` /
+ *    `aria-label`) matches the scareware pattern is hidden outright. The
+ *    pattern covers the creatives actually observed in production — fake
+ *    virus/hazard warnings and fake "N people sent you" chat notifications.
+ *  - GEOMETRY: on ≤767px a surviving card is pinned to the top strip
+ *    (`top: 64px`, `max-height: 40vh`) so its box ends far from the thumb's
+ *    resting place, and a card whose box intersects any control inside
+ *    `[data-ad-guard="result"]` is hidden until it stops intersecting,
+ *    re-checked on scroll, resize, media-query change and DOM mutation.
+ *
+ * The intersection test replaces the earlier page-state rule, which hid the
+ * card whenever a result panel existed. With post-intent arming that would
+ * have made mobile push inventory unreachable — the card only ever loads when
+ * a result panel is on screen. Testing the actual boxes keeps the real
+ * invariant (never cover the tool) instead of approximating it.
+ *
+ * Honest limit: a creative painted *inside* a cross-origin iframe is opaque to
+ * `textContent`, so the text scan only sees nodes the network injects into our
+ * own document. No page script can read a frame's pixels. Intent gating is
+ * what removes the landing-page deception; this guard is the second line, not
+ * a complete one.
  *
  * Written as a string (not JSX) because it has to run before React hydration
  * finishes and must not re-run on a route change.
  */
-const GUARD_MOBILE_CARDS = `(function(){try{
-if(!window.matchMedia)return;
-var mq=window.matchMedia("(max-width: 767px)");
+const GUARD_CARDS = `(function(){try{
+var mq=window.matchMedia?window.matchMedia("(max-width: 767px)"):null;
+var DECEPTIVE=/(?:hazard|virus|infected|malware|spyware|security alert|security warning|system warning|system alert|antivirus|congratulations[^.]{0,40}(?:won|prize|gift)|claim your (?:prize|reward|gift)|sent you \\(\\d+\\)|you have \\(\\d+\\) new|verify you are human|unusual activity|suspicious activity|iphone[^.]{0,12}winner)/i;
 var cards=[];
 var pending=0;
-function active(){return !!document.querySelector('[data-ad-guard="result"]');}
-function place(el,isActive){
-  if(!mq.matches){
+function hide(el,reason){
+  try{el.style.setProperty("display","none","important");}catch(e){}
+  try{el.setAttribute("data-lamptik-guard",reason);}catch(e){}
+}
+function reset(el){
+  var p=["display","top","bottom","left","right","transform","max-height"];
+  for(var i=0;i<p.length;i++){try{el.style.removeProperty(p[i]);}catch(e){}}
+  try{el.removeAttribute("data-lamptik-guard");}catch(e){}
+}
+function deceptive(el){
+  var t="";
+  try{
+    t=(el.getAttribute("aria-label")||"")+" "+(el.getAttribute("title")||"")+" "+(el.textContent||"");
+  }catch(e){return false;}
+  if(!t)return false;
+  if(t.length>4000)t=t.slice(0,4000);
+  return DECEPTIVE.test(t);
+}
+function controls(){
+  try{return document.querySelectorAll('[data-ad-guard="result"] button, [data-ad-guard="result"] a');}catch(e){return [];}
+}
+function coversTool(el){
+  var r;
+  try{r=el.getBoundingClientRect();}catch(e){return false;}
+  if(!r||r.width<2||r.height<2)return false;
+  var nodes=controls();
+  for(var i=0;i<nodes.length;i++){
+    var b;
+    try{b=nodes[i].getBoundingClientRect();}catch(e){continue;}
+    if(!b||b.width<2||b.height<2)continue;
+    if(r.left<b.right+8&&r.right>b.left-8&&r.top<b.bottom+8&&r.bottom>b.top-8)return true;
+  }
+  return false;
+}
+function place(el){
+  if(deceptive(el)){hide(el,"deceptive");return;}
+  if(!mq||!mq.matches){reset(el);return;}
+  try{
     el.style.removeProperty("display");
-    el.style.removeProperty("top");
-    el.style.removeProperty("bottom");
-    el.style.removeProperty("left");
-    el.style.removeProperty("right");
-    el.style.removeProperty("transform");
-    el.style.removeProperty("max-height");
-    el.removeAttribute("data-lamptik-guard");
-    return;
-  }
-  if(isActive){
-    el.style.setProperty("display","none","important");
-    el.setAttribute("data-lamptik-guard","hidden");
-    return;
-  }
-  el.style.removeProperty("display");
-  el.style.setProperty("top","64px","important");
-  el.style.setProperty("bottom","auto","important");
-  el.style.setProperty("left","50%","important");
-  el.style.setProperty("right","auto","important");
-  el.style.setProperty("transform","translateX(-50%)","important");
-  el.style.setProperty("max-height","40vh","important");
-  el.setAttribute("data-lamptik-guard","clamped");
+    el.style.setProperty("top","64px","important");
+    el.style.setProperty("bottom","auto","important");
+    el.style.setProperty("left","50%","important");
+    el.style.setProperty("right","auto","important");
+    el.style.setProperty("transform","translateX(-50%)","important");
+    el.style.setProperty("max-height","40vh","important");
+  }catch(e){}
+  if(coversTool(el)){hide(el,"covered");return;}
+  try{el.setAttribute("data-lamptik-guard","clamped");}catch(e){}
 }
 function scan(root){
   if(!root||root.nodeType!==1)return;
-  var isActive=active();
-  var nodes=[root].concat(Array.prototype.slice.call(root.querySelectorAll("div,iframe,ins,section,aside"),0,120));
+  var nodes=[root];
+  var kids=root.querySelectorAll?root.querySelectorAll("div,iframe,ins,section,aside"):[];
+  for(var k=0;k<kids.length&&k<120;k++)nodes.push(kids[k]);
   for(var i=0;i<nodes.length;i++){
     var el=nodes[i];
     if(!el||el.nodeType!==1)continue;
-    if(el.hasAttribute("data-ad-guard"))continue;
+    if(cards.indexOf(el)!==-1)continue;
     var cs;
     try{cs=window.getComputedStyle(el);}catch(e){continue;}
-    if(cs.position!=="fixed")continue;
+    if(!cs||cs.position!=="fixed")continue;
     var z=parseInt(cs.zIndex,10);
     if(!(z>=1000000000))continue;
-    if(cards.indexOf(el)===-1)cards.push(el);
-    place(el,isActive);
+    cards.push(el);
+    place(el);
   }
 }
 function refresh(){
-  var isActive=active();
   for(var i=cards.length-1;i>=0;i--){
     if(!cards[i].isConnected){cards.splice(i,1);continue;}
-    place(cards[i],isActive);
+    place(cards[i]);
   }
 }
 function start(){
-  var body=document.body;
-  if(!body){window.setTimeout(start,250);return;}
-  scan(body);
+  if(!document.body){window.setTimeout(start,250);return;}
+  scan(document.body);
   var mo=new MutationObserver(function(records){
     for(var r=0;r<records.length;r++){
       var added=records[r].addedNodes;
-      for(var n=0;n<added.length;n++)scan(added[n]);
+      for(var n=0;n<added.length;n++){if(added[n]&&added[n].nodeType===1)scan(added[n]);}
     }
     if(pending)return;
     pending=window.setTimeout(function(){pending=0;refresh();},120);
   });
-  mo.observe(body,{childList:true,subtree:true});
-  if(mq.addEventListener)mq.addEventListener("change",refresh);
+  mo.observe(document.body,{childList:true,subtree:true});
+  var raf=0;
+  function onMove(){
+    if(raf)return;
+    var schedule=window.requestAnimationFrame||function(f){return window.setTimeout(f,80);};
+    raf=schedule(function(){raf=0;refresh();});
+  }
+  window.addEventListener("scroll",onMove,{passive:true});
+  window.addEventListener("resize",onMove,{passive:true});
+  if(mq&&mq.addEventListener)mq.addEventListener("change",onMove);
 }
 if(document.readyState==="loading"){window.setTimeout(start,0);}else{start();}
 }catch(e){}})();`;
@@ -147,16 +187,11 @@ export function AdScripts() {
    * Server-rendered bootstrap — deliberately NOT a React effect.
    *
    * Measured on a cold production visit: the client bundle took 10–14s to
-   * hydrate, so the old `useEffect` that armed the networks ran at
-   * `DOMContentLoaded + 10.6s` even though the timer was 2.5s. The networks
-   * lost the impression while React was still downloading. This script is in
-   * the server HTML, so it exists before any JS chunk is parsed: nothing about
-   * it depends on hydration.
-   *
-   * Arming: first `pointerdown` / `touchstart` / `wheel` / `keydown`, or
-   * `DOMContentLoaded` + `requestIdleCallback` with a hard 2000ms timeout.
-   * `load` is not used — it waits for every image (22s measured), which is the
-   * same lost impression the 20s gate used to cause.
+   * hydrate, so a `useEffect` equivalent would arm at
+   * `DOMContentLoaded + 10.6s` at best. This script is in the server HTML, so
+   * it exists before any JS chunk is parsed and nothing about it depends on
+   * hydration. It arms nothing on load any more: it only installs the intent
+   * listener, the guard and the service-worker registration.
    */
   const config = JSON.stringify({
     monetag: monetagInPage ? { src: monetagInPage.src, zone: monetagInPage.zone || "" } : null,
@@ -167,26 +202,27 @@ export function AdScripts() {
 var cfg=${config};
 if(window.__lamptikAdsBooted)return;
 window.__lamptikAdsBooted=1;
-function guard(){${GUARD_MOBILE_CARDS}}
+function guard(){${GUARD_CARDS}}
 function inject(src,attrs){var d=document,s=d.createElement("script");s.async=true;s.src=src;if(attrs){for(var k in attrs){if(attrs[k]){s.setAttribute(k,attrs[k]);}}}s.referrerPolicy="no-referrer-when-downgrade";(d.head||d.body||d.documentElement).appendChild(s);}
 function arm(){
   if(window.__lamptikAdsArmed)return;
   window.__lamptikAdsArmed=1;
-  try{guard();}catch(e){}
   if(cfg.monetag){try{inject(cfg.monetag.src,{"data-zone":cfg.monetag.zone,"data-cfasync":"false"});}catch(e){}}
   if(cfg.hilltop&&!window.__lamptikHilltopTag){window.__lamptikHilltopTag=1;try{inject(cfg.hilltop);}catch(e){}}
-  try{if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js").catch(function(){});}}catch(e){}
 }
-function soon(){
-  var idle=window.requestIdleCallback;
-  if(typeof idle==="function"){idle(arm,{timeout:2000});}
-  window.setTimeout(arm,2000);
-}
-var ev=["pointerdown","touchstart","wheel","keydown"];
-for(var i=0;i<ev.length;i++){window.addEventListener(ev[i],arm,{once:true,passive:true});}
-if(document.readyState!=="loading"){soon();}else{document.addEventListener("DOMContentLoaded",soon,{once:true});}
+window.__lamptikArmAds=arm;
+function intent(){try{arm();}catch(e){}}
+document.addEventListener("lamptik:intent",intent,{once:true});
+document.addEventListener("click",function(e){
+  var t=e.target;
+  if(!t||!t.closest)return;
+  var hit=null;
+  try{hit=t.closest('a[download],a[href*="/api/download"]');}catch(err){}
+  if(hit)intent();
+},true);
+try{guard();}catch(e){}
+try{if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js").catch(function(){});}}catch(e){}
 }catch(e){}})();`;
 
   return <script id="lamptik-ads-bootstrap" dangerouslySetInnerHTML={{ __html: bootstrap }} />;
 }
-

@@ -5,6 +5,15 @@ import { CaptionExtractor } from "@/components/tools/caption-extractor";
 import { CREATOR_TOOL_MAP } from "@/lib/creator-tools";
 import { pageAlternates, siteUrl } from "@/lib/site";
 
+/**
+ * Static by construction: the route reads no request data (no `searchParams`,
+ * no cookies, no headers), so its HTML is prerendered at build time and served
+ * from the CDN edge. `force-static` states that explicitly — an import that
+ * starts touching request state then fails the build instead of quietly
+ * turning the page into a per-request render.
+ */
+export const dynamic = "force-static";
+
 const tool = CREATOR_TOOL_MAP["tiktok-caption-hashtag-extractor"];
 
 export const metadata: Metadata = {

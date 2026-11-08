@@ -5,6 +5,8 @@ import { MoneyCalculator } from "@/components/tools/money-calculator";
 import { CREATOR_TOOL_MAP } from "@/lib/creator-tools";
 import { pageAlternates, siteUrl } from "@/lib/site";
 
+export const dynamic = "force-static";
+
 const tool = CREATOR_TOOL_MAP["tiktok-money-calculator"];
 
 export const metadata: Metadata = {

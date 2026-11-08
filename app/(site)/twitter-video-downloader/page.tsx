@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { AdSlot } from "@/components/ads/AdSlot";
 import { AmbientBackground } from "@/components/ambient-background";
+import { CreatorToolkitBar } from "@/components/creator-toolkit-bar";
 import { Breadcrumb } from "@/components/seo/breadcrumb";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -200,6 +201,7 @@ export default function TwitterVideoDownloaderPage() {
 
                 <div className="min-w-0">
                   <TwitterDownloader />
+                  <CreatorToolkitBar className="mt-3" />
                 </div>
               </div>
 

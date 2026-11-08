@@ -6,6 +6,7 @@ import { AdSlot } from "@/components/ads/AdSlot";
 import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
+import { CreatorToolkitBar } from "@/components/creator-toolkit-bar";
 import { Breadcrumb } from "@/components/seo/breadcrumb";
 import { PlatformLanguages } from "@/components/seo/language-links";
 import { SiteFooter } from "@/components/site-footer";
@@ -233,6 +234,7 @@ export default async function YouTubeDownloaderPage({
 
               <div className="animate-rise min-w-0 lg:col-span-7 [animation-delay:80ms]">
                 <Downloader platform="youtube" initialUrl={initialUrl} />
+                <CreatorToolkitBar className="mt-3" />
               </div>
             </div>
 
