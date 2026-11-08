@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Download, Link2, Loader2, ShieldCheck } from "lucide-react";
 
 interface TwitterVariant {
@@ -67,9 +67,43 @@ export function TwitterDownloader() {
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  async function resolve(event: React.FormEvent<HTMLFormElement>) {
+  /**
+   * `?url=` deep link — the X half of the URL-prefix shortcut.
+   *
+   * X has its own resolver (`/api/twitter`) and its own panel, so a shared
+   * `lamptik.online/<x.com link>` cannot ride the shared downloader's flow.
+   * The bridge routes those links here instead, and this effect finishes the
+   * job the other platforms get from `Downloader`: resolve on arrival.
+   */
+  const deepLinkHandled = useRef(false);
+  useEffect(() => {
+    if (deepLinkHandled.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const incoming = params.get("url");
+    if (!incoming || !incoming.trim()) return;
+    deepLinkHandled.current = true;
+
+    params.delete("url");
+    const cleaned = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+    try {
+      window.history.replaceState(window.history.state, "", cleaned);
+    } catch {
+      // History API unavailable — the handled ref still prevents a re-fire.
+    }
+
+    setUrl(incoming.trim());
+    void resolveUrl(incoming.trim());
+    // Runs once per mount: a deep link describes the page the visitor opened.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function resolve(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const trimmed = url.trim();
+    void resolveUrl(url);
+  }
+
+  async function resolveUrl(raw: string) {
+    const trimmed = raw.trim();
     if (!trimmed) {
       setError("Paste an X (Twitter) post link first.");
       inputRef.current?.focus();

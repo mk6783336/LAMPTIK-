@@ -570,6 +570,22 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
       const { detectLink } = await import("@/lib/detect");
       const detected = detectLink(incoming);
       if (!detected) {
+        // X is not part of the shared flow (its own resolver, its own panel):
+        // hand the link to that page instead of leaving a filled-in field on a
+        // shell that would answer "isn't a TikTok, Instagram, Facebook… link".
+        const host = (() => {
+          try {
+            return new URL(incoming.trim()).hostname.replace(/^www\./, "").toLowerCase();
+          } catch {
+            return "";
+          }
+        })();
+        if (host === "x.com" || host.endsWith(".x.com") || host === "twitter.com" || host.endsWith(".twitter.com")) {
+          window.location.assign(
+            `/twitter-video-downloader?url=${encodeURIComponent(incoming.trim())}`,
+          );
+          return;
+        }
         setSeed((current) => ({ value: incoming.trim(), nonce: current.nonce + 1 }));
         inputRef.current?.focus();
         return;

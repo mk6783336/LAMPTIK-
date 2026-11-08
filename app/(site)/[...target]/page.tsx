@@ -59,5 +59,13 @@ export default async function UrlPrefixBridge({
   }
   if (!/^https?:$/.test(parsed.protocol) || !resolvable(parsed)) notFound();
 
+  // X has its own resolver and its own panel (`/api/twitter` returns a list of
+  // renditions, not one video + one audio track), so the shared downloader
+  // cannot resolve an x.com link — it would land on a prefilled field and stop.
+  const host = parsed.hostname.toLowerCase().replace(/^www\./, "").replace(/^mobile\./, "");
+  if (host === "x.com" || host.endsWith(".x.com") || host === "twitter.com" || host.endsWith(".twitter.com")) {
+    redirect(`/twitter-video-downloader?url=${encodeURIComponent(parsed.toString())}`);
+  }
+
   redirect(`/?url=${encodeURIComponent(parsed.toString())}`);
 }
