@@ -79,7 +79,7 @@ export default function PrivacyPage() {
               Privacy policy
             </h1>
             <p className="mt-3 text-sm text-[var(--text-3)]">
-              Last updated: November 2, 2026
+              Last updated: November 8, 2026
             </p>
 
             <div className="mt-10 space-y-9 text-base leading-relaxed text-[var(--text-2)]">
@@ -89,9 +89,11 @@ export default function PrivacyPage() {
                 </h2>
                 <p className="mt-2">
                   LAMP TIK does not require an account, does not store the links
-                  you download, and does not keep logs of your activity. The
-                  only data stored about you lives in your own browser (theme
-                  and privacy choices). Advertising, if enabled, uses cookies
+                  you download, and keeps no activity log. The one thing written
+                  per download is an anonymous counter — which platform, and
+                  whether the transfer started — never the link, the file name
+                  or your IP. The only data stored about you lives in your own
+                  browser (theme and privacy choices). Advertising, if enabled, uses cookies
                   governed by your consent choice, and Google Analytics 4 counts
                   page views under that same choice — cookieless until you
                   accept, and never told which links you download.

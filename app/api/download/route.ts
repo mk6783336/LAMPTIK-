@@ -249,6 +249,67 @@ function withDownloadName(url: string, name: string): string {
  * state. This replaces the old 302-to-`/?dl=…` hand-off, which caused Chrome
  * to save OUR OWN HOMEPAGE as `download.html`.
  */
+/**
+ * Aggregate counter for a transfer that actually started.
+ *
+ * Why this exists: `download_start` in GA4 is click intent, and the hidden
+ * iframe hand-off is invisible to client code — 16 starts once produced 1
+ * `file_download`, which was GA4's automatic file-extension event fired by a
+ * `.zip` link on /apps, not by this route. The server is the only place that
+ * can witness a transfer beginning, so it records exactly that.
+ *
+ * What it deliberately does not contain: the link, the video id, the
+ * filename, the IP, the user agent, or anything else that would identify a
+ * person or a file. One structured line per started transfer — platform,
+ * kind, delivery path and size — is what "did the file start" needs, and it
+ * is the shape the privacy page describes. Vercel's runtime log is the store;
+ * there is no database here to grow, corrupt or breach.
+ */
+type DownloadDelivery = "proxy" | "bridge" | "direct";
+
+interface TransferStarted {
+  delivery: DownloadDelivery;
+  platform: DownloadPlatform;
+  kind: DownloadKind;
+  /** 200 for a full relay, 206 for a ranged resume, 302 for a CDN hand-off. */
+  status: number;
+  /** Upstream Content-Length when known, else null. */
+  bytes: number | null;
+}
+
+function countTransferStarted(event: TransferStarted): void {
+  try {
+    console.log(`[download] stream-start ${JSON.stringify(event)}`);
+  } catch {
+    // A counter must never be able to fail a download.
+  }
+}
+
+/**
+ * Count the first byte of a relayed body.
+ *
+ * A `TransformStream` only runs when the client pulls the response, so a
+ * download that is cancelled before any byte arrives is not counted as
+ * started. The chunk is forwarded untouched — this adds no buffering.
+ */
+function countOnFirstChunk(
+  source: ReadableStream<Uint8Array>,
+  event: TransferStarted,
+): ReadableStream<Uint8Array> {
+  let counted = false;
+  return source.pipeThrough(
+    new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        if (!counted) {
+          counted = true;
+          countTransferStarted(event);
+        }
+        controller.enqueue(chunk);
+      },
+    }),
+  );
+}
+
 function failDownload(): Response {
   return new NextResponse(null, {
     // 4xx, not 5xx: a failed download navigation must never land in Vercel's
@@ -352,6 +413,13 @@ async function verifiedBinaryHandoff(
       if (acceptable) {
         // A bridge fallback still names the file: without it the browser saves
         // "stream" (or `lamptik-audio.m4a`) instead of the platform filename.
+        countTransferStarted({
+          delivery: isBridgeStreamUrl(finalUrl) ? "bridge" : "direct",
+          platform,
+          kind,
+          status: 302,
+          bytes: null,
+        });
         return handOffToCdn(
           isBridgeStreamUrl(finalUrl)
             ? withDownloadName(finalUrl, filenameFor(request, kind, contentType))
@@ -633,6 +701,9 @@ async function attemptMedia(request: NextRequest, args: AttemptArgs, allowHeal: 
   // stops being the bottleneck for a large video.
   if (!isPartial && isBridgeStreamUrl(upstreamUrl)) {
     await upstream.body.cancel().catch(() => undefined);
+    // A hand-off is a started transfer too, just on the visitor's connection
+    // rather than ours; labelled separately so the two are never confused.
+    countTransferStarted({ delivery: "bridge", platform, kind, status: 302, bytes: contentLength });
     return handOffToCdn(withDownloadName(upstreamUrl, filenameFor(request, kind, upstreamType)));
   }
 
@@ -680,10 +751,17 @@ async function attemptMedia(request: NextRequest, args: AttemptArgs, allowHeal: 
   const contentRange = upstream.headers.get("content-range");
   if (contentRange) headers.set("Content-Range", contentRange);
 
-  return new Response(stream, {
-    status: upstream.status,
-    headers,
-  });
+  return new Response(
+    countOnFirstChunk(stream, {
+      delivery: "proxy",
+      platform,
+      kind,
+      status: upstream.status,
+      // `length` is the header string or the numeric fallback from `mediaSize`.
+      bytes: toByteCount(length === null ? null : String(length)),
+    }),
+    { status: upstream.status, headers },
+  );
 }
 
 /**
