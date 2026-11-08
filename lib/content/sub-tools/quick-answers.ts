@@ -207,9 +207,15 @@ export const SUB_TOOL_ANSWERS: Record<string, SubToolAnswer> = {
   },
 
   "instagram-reels-audio": {
+    // The old answer promised "an audio file with no video track attached" and
+    // "the post's audio track, extracted once" — which the page's own FAQ
+    // contradicted ("Why did I get a video when I asked for audio?") and which
+    // the resolver cannot do: Instagram publishes no audio-only stream. A
+    // snippet block is the one line a searcher reads before clicking, so a
+    // claim there has to match the file that actually arrives.
     query: "How do I download audio from an Instagram Reel?",
     answer:
-      "Paste the Reel link and choose the audio download. The track is taken from the Reel's own audio stream, so you get the sound the creator published rather than a re-encode of the video.",
+      "Copy the Reel's link, paste it above and download: that saves the Reel with its original AAC soundtrack, not a silent video and not a re-encode. Instagram publishes no audio-only stream, so the MP3 comes from that saved MP4 on your own device — VLC's Convert/Save, or one ffmpeg command.",
     comparison: [
       {
         label: "Login wall",
@@ -217,14 +223,14 @@ export const SUB_TOOL_ANSWERS: Record<string, SubToolAnswer> = {
         theirs: "\"Log in to continue\", or a browser extension reading your feed",
       },
       {
-        label: "Audio source",
-        ours: "The post's audio track, extracted once",
-        theirs: "The MP4 converted afterwards, adding a second lossy generation",
+        label: "What the file is",
+        ours: "The Reel itself, MP4 with the original AAC track and no re-encode",
+        theirs: "An \"MP3\" that is a server-side transcode of the video, adding a second lossy generation",
       },
       {
-        label: "What you get",
-        ours: "An audio file with no video track attached",
-        theirs: "A video file you have to strip yourself",
+        label: "Getting the MP3",
+        ours: "Extracted locally from the file you already have, with an exact one-line command",
+        theirs: "Held behind a countdown, a re-upload, or a paid \"HD\" tier",
       },
     ],
   },

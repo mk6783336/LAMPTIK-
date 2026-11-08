@@ -1,45 +1,54 @@
 import type { SubTool } from "@/lib/content/sub-tool-types";
 
 /**
- * Reels-audio intent, answered honestly.
+ * Getting the sound out of an Instagram Reel, answered honestly.
+ *
+ * Search Console gives this page two queries in 90 days and both are
+ * "download the audio" wording: `instagram reel audio download` (position 63)
+ * and `insta post audio extractor` (position 47). The page was titled for
+ * "Finder … Extract", so it ranked for wording it did not carry and did not
+ * rank for the wording it did — position 47 is not a CTR problem, it is a
+ * relevance one.
  *
  * Instagram mixes the soundtrack into the video and publishes no audio-only
- * stream. The page therefore saves the Reel with its audio intact and
- * explains how to reuse or extract the sound, instead of advertising a
- * one-click MP3 that would be a transcode at best and a lie at worst.
+ * stream, so the page still refuses to promise a one-click MP3: it saves the
+ * Reel with its audio intact and explains the two honest routes to the sound.
+ * The query now appears in the title, the H1, the first sentence, the steps and
+ * the FAQ, which is the only thing a rewrite can change.
  */
 export const entry: SubTool = {
   slug: "instagram-reels-audio",
   platform: "instagram",
-  // SERP copy leads with the query the page actually answers. The previous
-  // title ("Finder, Save & Extract Sound") named no outcome, and the
-  // description opened by denying the request — "Instagram has no audio-only
-  // file" — which told the searcher to look elsewhere before reading the
-  // method. Position 8 with zero clicks is what that snippet earns.
-  title: "Instagram Reels Audio - Download the Sound, Extract MP3",
+  // 57 characters, exact query first. Both measured queries contain this
+  // phrase, and the earlier "Finder" wording contained neither.
+  title: "Instagram Reel Audio Download - Save the Sound, Get MP3",
   socialTitle:
-    "Instagram Reels Audio - Save the Reel With Its Original Sound, Then MP3",
+    "Instagram Reel Audio Download - Save the Reel With Its Original Sound, Then MP3",
+  // 154 characters: query, then the two things that decide the click —
+  // no login, and a route to MP3 that does not cost money.
   description:
-    "Save an Instagram Reel with its original soundtrack intact, no login or watermark, then turn that MP4 into MP3 locally. Free on iPhone and Android.",
+    "Download Instagram Reel audio: save the Reel with its original sound, no login or watermark, then turn that MP4 into MP3 locally on iPhone or Android.",
   keywords: [
+    "Instagram Reel audio download",
+    "download audio from Instagram Reel",
+    "instagram reel audio extractor",
+    "insta post audio extractor",
+    "instagram reel audio downloader remove watermark",
     "Instagram Reels audio",
     "Instagram Reels audio finder",
-    "instagram reel audio extractor",
     "instagram reel audio save",
     "save instagram reel audio mp3 iphone",
-    "instagram reel audio downloader remove watermark",
     "Instagram Reels audio extraction",
-    "download Instagram Reel audio",
     "download Reels audio copy paste",
     "Instagram original audio",
     "save Reel sound",
     "Instagram audio download no login",
   ],
-  eyebrow: "Instagram Reels - the original track, untouched",
-  h1Lead: "Instagram audio.",
-  h1Accent: "The sound, straight from the Reel.",
+  eyebrow: "Instagram Reels - download the audio, keep the sound",
+  h1Lead: "Instagram Reel audio download.",
+  h1Accent: "The sound, straight from the post.",
   lede:
-    "Instagram does not publish a Reel's audio as a separate file: the soundtrack is muxed into the video as an AAC track. This page saves that Reel with the audio untouched, then tells you the two honest ways to reuse the sound - Instagram's own Use audio flow, or an offline extraction from the MP4 you just saved.",
+    "Instagram never publishes a Reel's audio as its own file: the soundtrack is an AAC track muxed into the video. So this page does the part that is real. It downloads the Reel with the audio untouched, then shows the two honest routes to a reusable sound - Instagram's own Use audio flow, or an offline extraction from the MP4 you just saved. No login, no watermark, no fake MP3.",
   chips: ["Original sound intact", "No login", "No fake MP3"],
   facts: [
     ["Audio track", "AAC, inside the MP4"],
@@ -51,24 +60,34 @@ export const entry: SubTool = {
     {
       title: "Paste the Reel link",
       body:
-        "Copy the Reel in Instagram (Share then Copy link) and paste it above. Public Reels, video posts and IGTV links resolve; photo carousels do not, because there is no video or audio track to save. No Instagram account is needed on this site.",
+        "Open the Reel in Instagram, tap Share then Copy link, and paste it above. Public Reels, video posts and IGTV links resolve without an account; photo carousels do not, because there is no audio track to save.",
     },
     {
-      title: "Save the file that carries the sound",
+      title: "Download the Reel, then take the MP3",
       body:
-        "The download is the Reel itself, MP4 with its original AAC audio - not a re-encode and not a silent video. To reuse the sound in your own Reel, tap Use audio on the original post in Instagram, which is the route the creator's rights allow. To keep an MP3 locally, extract it from the saved MP4 offline.",
+        "The file you get is the Reel itself - MP4 with its original AAC audio, not a silent video and not a re-encode. To reuse the sound inside Instagram, tap Use audio on the original post. To keep an MP3, extract it from that MP4 on your own device: VLC (Media, Convert/Save, MP3) or ffmpeg -i reel.mp4 -vn -c:a libmp3lame -q:a 2 sound.mp3.",
     },
   ],
   faqs: [
     {
+      question: "How do I download audio from an Instagram Reel?",
+      answer:
+        "Copy the Reel's link (Share, then Copy link), paste it above, and press download. That saves the Reel with its original AAC soundtrack intact - Instagram does not publish an audio-only stream, so the sound arrives inside the MP4 and becomes an MP3 on your device in the next step.",
+    },
+    {
       question: "Can I download just the audio as an MP3?",
       answer:
-        "Not from Instagram, because there is no audio-only stream to fetch. Any site offering a one-click Reels MP3 is either converting the video server-side or serving a different file than it claims. This page does not pretend: it gives you the Reel with the original audio, and the MP3 step happens from that file on your device.",
+        "Not straight from Instagram, because there is no audio-only stream to fetch. Any site offering a one-click Reels MP3 is either converting the video server-side or serving a different file than it claims. This page does not pretend: it gives you the Reel with the original audio, and the MP3 step happens from that file on your device.",
     },
     {
       question: "How do I turn the saved Reel into an MP3?",
       answer:
         "Use a local converter, not a website: in VLC, Media then Convert/Save and choose MP3; or with ffmpeg run: ffmpeg -i reel.mp4 -vn -c:a libmp3lame -q:a 2 sound.mp3. Both are free, work offline, and keep the file off anyone else's server.",
+    },
+    {
+      question: "Does the download remove the Instagram watermark or username?",
+      answer:
+        "The file is the stream Instagram serves to a browser, so it carries no Instagram watermark and no burned-in username - that overlay is added by the app when you re-share inside Instagram, not by this download. What it does keep is the creator's own text and stickers, because they are part of the video.",
     },
     {
       question: "Is the audio quality reduced by downloading the Reel?",
@@ -85,13 +104,8 @@ export const entry: SubTool = {
       answer:
         "Yes for public Reels. Instagram hides private accounts and age-restricted posts from anonymous requests, so those links fail with a clear message rather than a loop. You never enter an Instagram password on this site.",
     },
-    {
-      question: "Why did I get a video when I asked for audio?",
-      answer:
-        "Because the sound lives inside that video. A Reel is one muxed stream: separating the audio into a new file is a transcoding job, and doing it server-side would mean re-encoding every request. The MP4 keeps the highest-quality copy; extraction takes seconds locally.",
-    },
   ],
-  appName: "LAMP TIK Instagram Reels Audio Saver",
+  appName: "LAMP TIK Instagram Reel Audio Downloader",
   features: [
     "Save the Reel with its original AAC soundtrack intact",
     "No fake MP3 conversion and no re-encode",
@@ -99,10 +113,6 @@ export const entry: SubTool = {
     "No Instagram login and no app",
     "Clear, offline route from the saved MP4 to MP3",
   ],
-  related: [
-    "instagram-story-downloader",
-    "tiktok-mp3-downloader",
-    "youtube-music-to-mp3",
-  ],
+  related: ["instagram-reels-to-mp4", "instagram-story-downloader", "tiktok-mp3-downloader"],
   guides: [{ slug: "how-to-download-instagram-reels-in-hd" }],
 };
