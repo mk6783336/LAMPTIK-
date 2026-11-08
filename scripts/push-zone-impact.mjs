@@ -156,6 +156,9 @@ async function eventCount(range, eventName, auth) {
 
 /* -------------------------------- report ------------------------------- */
 
+/** Rates and the session-duration mean are window values, never per-day ones. */
+const isMean = (metric) => metric.endsWith("Rate") || metric === "averageSessionDuration";
+
 const fmt = (metric, value) =>
   metric.endsWith("Rate")
     ? `${(value * 100).toFixed(1)}%`
@@ -192,16 +195,20 @@ async function main() {
     return;
   }
 
-  const perDay = (total, days) => (total === null ? null : total / days);
   console.log(
     "metric".padEnd(22),
-    "before/day".padStart(11),
-    "after/day".padStart(11),
+    "before".padStart(11),
+    "after".padStart(11),
     "delta".padStart(8),
   );
   for (const metric of METRICS) {
-    const base = perDay(beforeTotals[metric], DAYS);
-    const next = afterTotals ? perDay(afterTotals[metric], afterDays) : null;
+    // Counts are compared per day (the windows differ in length); a rate or a
+    // mean is already normalised, and dividing it by the day count would
+    // report a 24% bounce rate as 3.5% — a number with no meaning.
+    const perUnit = (total, days) =>
+      total === null ? null : isMean(metric) ? total : total / days;
+    const base = perUnit(beforeTotals[metric], DAYS);
+    const next = afterTotals ? perUnit(afterTotals[metric], afterDays) : null;
     const delta = next === null || base === 0 ? "—" : `${(((next - base) / base) * 100).toFixed(0)}%`;
     console.log(
       metric.padEnd(22),
@@ -212,6 +219,7 @@ async function main() {
   }
 
   const perSession = (count, sessions) => (sessions > 0 ? (count / sessions).toFixed(2) : "—");
+  console.log("counts are per day; rates and average duration are whole-window values.");
   console.log("");
   console.log(
     `download_start/session  before ${perSession(downloadsBefore, beforeTotals.sessions)}` +
