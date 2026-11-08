@@ -26,10 +26,14 @@ export function EngagementIntent() {
     const check = () => {
       if (done) return;
       if (Date.now() - startedAt < MIN_DWELL_MS) return;
-      const total = document.documentElement.scrollHeight;
-      if (total <= 0) return;
-      const seen = window.scrollY + window.innerHeight;
-      if (seen / total < SCROLL_RATIO) return;
+      // Progress is measured against what can actually scroll, so a page that
+      // barely overflows a tall viewport does not read as "35% read" while
+      // sitting at the top. The first version divided by the full document
+      // height and armed a guide on dwell alone — measured `armed: true` with
+      // `scrollY === 0` before any scroll happened.
+      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+      if (scrollable <= 0) return;
+      if (window.scrollY / scrollable < SCROLL_RATIO) return;
       done = true;
       window.removeEventListener("scroll", check);
       signalAdIntent("scroll-depth");
