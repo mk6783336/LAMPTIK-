@@ -189,11 +189,26 @@ async function store(days: Map<string, DayTotal>): Promise<boolean> {
   }
 }
 
+/**
+ * Ownership token for the drain handshake.
+ *
+ * Vercel's probe carries the token either as the `x-vercel-verify` header or as
+ * an `x-vercel-verify` query parameter depending on where the drain was created
+ * from (API vs dashboard), and it checks the response header. Reading both
+ * means one implementation satisfies either sender.
+ */
+function verifyToken(request: NextRequest): string | null {
+  const fromQuery = request.nextUrl.searchParams.get("x-vercel-verify");
+  if (fromQuery) return fromQuery;
+  const fromHeader = request.headers.get("x-vercel-verify");
+  return fromHeader ?? null;
+}
+
 /** Vercel probes the URL before enabling the drain: answer, count nothing. */
 export async function GET(request: NextRequest): Promise<Response> {
   // The ownership handshake has been seen as both a GET and a POST; echo the
   // token on either, so enabling the drain never depends on the method.
-  const probe = request.headers.get("x-vercel-verify");
+  const probe = verifyToken(request);
   return new NextResponse("lamptik log-drain", {
     status: 200,
     headers: {
@@ -206,7 +221,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
 export async function POST(request: NextRequest): Promise<Response> {
   // Ownership handshake: no signature, no events — just prove we are here.
-  const probe = request.headers.get("x-vercel-verify");
+  const probe = verifyToken(request);
   if (probe) {
     return new NextResponse(null, { status: 200, headers: { "x-vercel-verify": probe } });
   }
@@ -222,6 +237,10 @@ export async function POST(request: NextRequest): Promise<Response> {
 
   const header = request.headers.get("x-vercel-signature");
   if (!header) {
+    // A rejected delivery is worth one line: it is the only way to see what a
+    // handshake actually sent when the drain refuses to be created. No body,
+    // no token, no IP — just the method and path.
+    console.log(`[log-drain] unsigned delivery: ${request.method} ${request.nextUrl.pathname}`);
     return NextResponse.json({ stored: false, counted: 0, reason: "unsigned" }, { status: 401 });
   }
 
