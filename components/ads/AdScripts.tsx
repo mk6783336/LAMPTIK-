@@ -14,8 +14,10 @@ import { hilltopMultitagSrc, monetagInPage } from "@/lib/monetization";
  *    result panel. Only where the visitor sees what they are clicking.
  * 3. The inline 10-second countdown in `result-panel.tsx` and the
  *    submit-time VAST gate in `VideoAdGate.tsx` — visible, timed cards.
- * 4. The Monetag In-Page Push and the HilltopAds MultiTag: **post-intent
- *    only**. See below.
+ * 4. The Monetag In-Page Push and the HilltopAds MultiTag: **off**, and
+ *    post-intent when enabled. Both are gated by `pushAdsEnabled` in
+ *    `lib/monetization.ts`, which requires an explicit
+ *    `NEXT_PUBLIC_PUSH_ADS_ENABLED=1`. See below.
  *
  * The Monetag Vignette (`vignette.min.js`) and the Adsterra Social Bar stay
  * banned: both inject `position: fixed; inset: 0; z-index: 2147483647` layers
@@ -81,7 +83,7 @@ import { hilltopMultitagSrc, monetagInPage } from "@/lib/monetization";
  */
 const GUARD_CARDS = `(function(){try{
 var mq=window.matchMedia?window.matchMedia("(max-width: 767px)"):null;
-var DECEPTIVE=/(?:hazard|virus|infected|malware|spyware|security alert|security warning|system warning|system alert|antivirus|congratulations[^.]{0,40}(?:won|prize|gift)|claim your (?:prize|reward|gift)|sent you \\(\\d+\\)|you have \\(\\d+\\) new|verify you are human|unusual activity|suspicious activity|iphone[^.]{0,12}winner)/i;
+var DECEPTIVE=/(?:hazard|virus|infected|malware|spyware|security alert|security warning|system warning|system alert|antivirus|protect your data|your data is not safe|anime girls|congratulations[^.]{0,40}(?:won|prize|gift)|claim your (?:prize|reward|gift)|sent you \\(\\d+\\)|you have \\(\\d+\\) new|verify you are human|unusual activity|suspicious activity|iphone[^.]{0,12}winner)/i;
 var cards=[];
 var pending=0;
 function hide(el,reason){

@@ -54,6 +54,31 @@ export const adsterraRectangleKey =
  */
 export const smartlinkUrl = process.env.NEXT_PUBLIC_SMARTLINK_URL?.trim() || "";
 
+/**
+ * Push-notification zones — OFF (2026-11-08).
+ *
+ * Both networks shipped live: Monetag In-Page Push (zone 12181860, from the
+ * Vercel env var) and the HilltopAds MultiTag (hardcoded default). Observed on
+ * the production homepage, they rendered in-page push cards labelled
+ * `www.lamptik.online` — "Protect your data! Without a VPN, your data is not
+ * safe." and "Anime Girls Everyone Loves" — floating over the page and, with
+ * the post-download dialog open, over the result panel's controls. That is
+ * fake-system-notification inventory (Chrome's deceptive-site classifier and
+ * Google's ad policies both treat it as such), and it is exactly the surface
+ * AGENTS.md bans: a remote creative deciding whether it covers the tool.
+ *
+ * The switch is deliberately backwards: opt IN, not opt out. Neither tag
+ * loads unless `NEXT_PUBLIC_PUSH_ADS_ENABLED` is literally `1`, so a stale env
+ * value or a hardcoded default can never put a floating card back on the page
+ * by accident. Turning it back on is one Vercel variable and a redeploy; the
+ * integrations and their parsing are untouched.
+ *
+ * In-flow `AdSlot` banners are unaffected — they reserve space, they never
+ * float, and they are the only ad surface that has never caused a freeze or a
+ * trust warning.
+ */
+export const pushAdsEnabled = process.env.NEXT_PUBLIC_PUSH_ADS_ENABLED === "1";
+
 /** Monetag domain-verification token, emitted as `<meta name="monetag">`. */
 export const monetagVerification = process.env.NEXT_PUBLIC_MONETAG_META?.trim() || null;
 
@@ -92,6 +117,7 @@ const MONETAG_INPAGE_RAW = process.env.NEXT_PUBLIC_MONETAG_INPAGE_SRC?.trim() ||
  * `data-zone` / `dataset.zone`, because the tag ignores everything else.
  */
 export const monetagInPage = (() => {
+  if (!pushAdsEnabled) return null;
   const raw = MONETAG_INPAGE_RAW;
   if (!raw) return null;
   const zone = raw.match(/(?:data-zone|dataset\.zone)\s*[=:]\s*['"]?(\d{3,})/i)?.[1] ?? "";
@@ -118,9 +144,10 @@ export const monetagInPage = (() => {
  * a time (see the note in `components/ads/AdScripts.tsx`): two cards in the
  * same corner is a layout and a policy problem, not extra revenue.
  */
-export const hilltopMultitagSrc =
-  process.env.NEXT_PUBLIC_HILLTOP_MULTITAG_SRC?.trim() ||
-  "https://quarrelsomebitter.com/boX.VVsedOGFli0-Y/WGcP/jesmt9KuLZnUglvkNPqTwcJ1/OvTNEXygMtDUU/tLNozZUu5OMqTdINwfOsQB";
+export const hilltopMultitagSrc = !pushAdsEnabled
+  ? ""
+  : process.env.NEXT_PUBLIC_HILLTOP_MULTITAG_SRC?.trim() ||
+    "https://quarrelsomebitter.com/boX.VVsedOGFli0-Y/WGcP/jesmt9KuLZnUglvkNPqTwcJ1/OvTNEXygMtDUU/tLNozZUu5OMqTdINwfOsQB";
 
 /**
  * HilltopAds Direct Link — used ONLY as the href of an in-page sponsored card
