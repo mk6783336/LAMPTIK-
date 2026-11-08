@@ -118,9 +118,7 @@ export type AnalyticsEvent =
   | "platform_switch"
   | "ad_slot_result"
   | "ad_intent_armed"
-  | "web_vitals"
-  /** Which homepage title a visitor received — see lib/experiments/home-title.ts. */
-  | "home_title_variant";
+  | "web_vitals";
 
 /**
  * Send one GA4 event.
