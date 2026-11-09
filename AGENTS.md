@@ -7,8 +7,15 @@ enforceable part of this document.
 ## What this repo is
 
 A production Next.js 15.5 (App Router, React 19, TypeScript strict, Tailwind
-3.4) web downloader for TikTok, Instagram Reels, Facebook and YouTube. It is a
-**pure web tool** — there is no native app, no APK and no install flow.
+3.4) web downloader for TikTok, Instagram Reels, Facebook and YouTube. The
+website is the whole product: no install is required and no browser-only
+feature is gated behind one.
+
+There is, separately, an optional sideload shell in [`mobile-app/`](mobile-app/)
+(Expo / React Native, built to an APK by `build-apk.yml` and linked from
+`/apps`). It is a thin client over the same API routes — it never resolves a
+link itself — and editing it does not affect the site build, so treat the web
+app as the product and this folder as a convenience.
 
 ```
 app/                 routes; app/api/{fetch,youtube,download,ad-frame} are the edge/node endpoints

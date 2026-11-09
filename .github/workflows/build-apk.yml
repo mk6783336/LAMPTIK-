@@ -144,6 +144,27 @@ jobs:
           console.log("release buildType now signs with lamptik-release.keystore");
           NODE
 
+      # The wrapper's first job is fetching the Gradle distribution: it 307s
+      # services.gradle.org to GitHub's release assets, and that hop answered
+      # 504 twice on 2026-11-09, killing the job in eight seconds before a
+      # single Kotlin file compiled. Nothing in this repository was wrong, and
+      # a red run per CDN blip trains everyone to ignore this workflow — so the
+      # fetch is retried on its own. `--version` downloads the distribution and
+      # prints it; it does not start the build.
+      - name: Warm the Gradle distribution, with retries
+        working-directory: mobile-app/android
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4; do
+            if ./gradlew --version; then
+              exit 0
+            fi
+            echo "::warning::Gradle distribution fetch failed (attempt ${attempt}/4) — the GitHub release-asset hop is having a bad minute; retrying in 20s."
+            sleep 20
+          done
+          echo "::error::Gradle could not be downloaded in four attempts — check https://github.com/gradle/gradle-distributions/releases before touching this workflow."
+          exit 1
+
       # One ABI only. React Native builds all four by default, which turns a
       # ~20 MB APK into a 60-80 MB universal one — over Git's comfortable
       # commit size and slow to download on mobile. arm64-v8a covers every
