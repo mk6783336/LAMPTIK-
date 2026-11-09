@@ -20,6 +20,7 @@
     "bridge:autostart": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-bridge-autostart.ps1",
     "downloads:totals": "node scripts/download-totals.mjs",
     "seo:radar": "node scripts/seo-intelligence.mjs",
+    "seo:radar:diff": "node scripts/seo-radar-diff.mjs",
     "seo:outreach": "node scripts/tier1-outreach-radar.mjs",
     "seo:submit": "node scripts/gsc-sitemaps.mjs",
     "site:build": "node scripts/build-pages-site.mjs",

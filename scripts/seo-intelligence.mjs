@@ -196,6 +196,29 @@ const SERP_LIMIT = QUICK ? 12 : 70;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const log = (...parts) => console.log(...parts);
 
+/**
+ * A verdict is only useful as a delta: "this phrase is a LOW-KD GAP today" say
+ * nothing about whether the page we wrote for it moved three weeks later. Each
+ * run appends one compact line here, in git, so `npm run seo:radar:diff` can
+ * compare this sweep with the last one instead of asking anyone to remember it.
+ * The raw SERP evidence stays in the git-ignored `.scratch/seo-radar.json`.
+ */
+const HISTORY_JSONL = path.join(process.cwd(), "docs/seo-radar-history.jsonl");
+
+function recordSnapshot(measured) {
+  const snapshot = {
+    ranAt: new Date().toISOString(),
+    measured: measured.map((row) => ({
+      query: row.query,
+      verdict: row.verdict,
+      difficulty: row.difficulty,
+      page: row.page ?? null,
+    })),
+  };
+  fs.appendFileSync(HISTORY_JSONL, `${JSON.stringify(snapshot)}\n`);
+  log(`history: snapshot appended (${snapshot.measured.length} queries) → docs/seo-radar-history.jsonl`);
+}
+
 async function getJson(url) {
   const response = await fetch(url, {
     headers: { "user-agent": UA, accept: "application/json,*/*" },
@@ -690,6 +713,7 @@ async function main() {
   }
 
   await writeDocs({ measured, harvested, stats, indexSource });
+  recordSnapshot(measured);
 
   const zero = measured.filter((row) => row.verdict === "TRUE ZERO-KD");
   const locked = measured.filter((row) => row.verdict === "LOCKED HEAD TERM");
