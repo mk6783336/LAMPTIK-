@@ -34,11 +34,27 @@ export function ThemeToggle() {
   }
 
   return (
-    <div
-      className="relative flex h-9 shrink-0 items-center rounded-full border border-[var(--glass-border)] bg-[var(--field)] p-0.5 shadow-[inset_0_1px_0_0_var(--highlight)]"
-      role="group"
-      aria-label="Colour theme"
-    >
+    <>
+      {/* Phones get one toggle. The two-position control below is ~70px, and
+          the header row's logo and right-hand cluster are both `shrink-0`, so
+          at 390px that control pushed the row 10px past its edge (the theme
+          buttons were the last thing before the bar's rounded corner). A
+          single button is the same affordance on a phone: tap, theme flips. */}
+      <button
+        type="button"
+        onClick={() => setTheme(!isDark)}
+        aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
+        title={isDark ? "Switch to light theme" : "Switch to dark theme"}
+        className="grid size-9 shrink-0 place-items-center rounded-full border border-[var(--glass-border)] bg-[var(--field)] text-[var(--text-2)] transition-colors duration-200 hover:border-[var(--glass-border-hover)] hover:text-[var(--text)] sm:hidden"
+      >
+        {isDark ? <Sun className="size-[15px]" /> : <Moon className="size-[15px]" />}
+      </button>
+
+      <div
+        className="relative hidden h-9 shrink-0 items-center rounded-full border border-[var(--glass-border)] bg-[var(--field)] p-0.5 shadow-[inset_0_1px_0_0_var(--highlight)] sm:flex"
+        role="group"
+        aria-label="Colour theme"
+      >
       {/* Sliding knob: left = light, right = dark. */}
       <span
         aria-hidden="true"
@@ -64,6 +80,7 @@ export function ThemeToggle() {
       >
         <Moon className="size-[15px]" />
       </button>
-    </div>
+      </div>
+    </>
   );
 }
