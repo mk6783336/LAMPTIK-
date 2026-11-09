@@ -370,6 +370,14 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
           "Neither. LAMP TIK works in any modern browser on iPhone, Android, Windows and macOS with no login. Nothing is installed and no Facebook credentials are ever requested.",
       },
       {
+        // Autocomplete, not a difficulty score: "iphone facebook video
+        // downloader" (and its shortcut/app variants) is suggested in every
+        // country we harvest, and the page answered nothing about iPhones.
+        question: "Does the Facebook video downloader work on iPhone?",
+        answer:
+          "Yes. Safari runs the same tool as desktop Chrome, so paste the link and choose Download HD MP4. iOS cannot write into Photos from a website, so the file lands in Files → On My iPhone → Downloads; open Files, long-press the MP4 and tap Share → Save Video to put it in your camera roll. Long Watch uploads work too — the download streams rather than being held in memory, so the phone has no size limit to hit.",
+      },
+      {
         question: "What if the fb.watch link no longer opens?",
         answer:
           "fb.watch is a shortener, so the link points at the post rather than at the video itself, and a shortener can expire or stop resolving once the original post is deleted. Open the video in Facebook and share it again for a fresh link — a full /videos/ URL pasted from the address bar works too.",

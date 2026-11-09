@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://mk6783336.github.io/sitemap.xml

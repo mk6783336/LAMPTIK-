@@ -83,7 +83,7 @@ import { hilltopMultitagSrc, monetagInPage } from "@/lib/monetization";
  */
 const GUARD_CARDS = `(function(){try{
 var mq=window.matchMedia?window.matchMedia("(max-width: 767px)"):null;
-var DECEPTIVE=/(?:hazard|virus|infected|malware|spyware|security alert|security warning|system warning|system alert|antivirus|protect your data|your data is not safe|anime girls|congratulations[^.]{0,40}(?:won|prize|gift)|claim your (?:prize|reward|gift)|sent you \\(\\d+\\)|you have \\(\\d+\\) new|verify you are human|unusual activity|suspicious activity|iphone[^.]{0,12}winner)/i;
+var DECEPTIVE=/(?:hazard|virus|infected|malware|spyware|security alert|security warning|system warning|system alert|antivirus|protect your data|your data is not safe|without a vpn|anime girls|dating|adult|congratulations[^.]{0,40}(?:won|prize|gift)|claim your (?:prize|reward|gift)|sent you \\(\\d+\\)|you have \\(\\d+\\) new|verify you are human|unusual activity|suspicious activity|iphone[^.]{0,12}winner)/i;
 var cards=[];
 var pending=0;
 function hide(el,reason){
