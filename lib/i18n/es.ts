@@ -24,6 +24,9 @@ export const es: LandingCopy = {
     "descargar videos de facebook",
     "youtube a mp3",
     "descargar video tiktok hd",
+    "bajar videos de tiktok online gratis",
+    "descargar videos de tiktok online gratis",
+    "descargar tiktok sin marca de agua mp4",
   ],
   eyebrow: "Gratis · Sin marca de agua · Sin instalar nada",
   h1Lead: "Descarga videos de TikTok",
@@ -86,6 +89,16 @@ export const es: LandingCopy = {
       question: "¿Funciona en iPhone y en Android desde el navegador?",
       answer:
         "Sí. Funciona en Safari en iPhone y iPad, en Chrome en Android y en cualquier navegador de escritorio. En iPhone el archivo se guarda en la app Archivos; desde ahí puedes moverlo a Fotos.",
+    },
+    {
+      question: "¿Puedo bajar videos de TikTok online gratis, sin app y sin marca de agua?",
+      answer:
+        "Sí. Todo ocurre en el navegador: pegas el enlace, eliges la calidad y el archivo se guarda en tu dispositivo sin instalar nada y sin crear cuenta. La versión que se descarga es la original de TikTok, sin el logotipo que añade el menú Compartir, y en el mismo paso puedes quedarte solo con el audio en MP3.",
+    },
+    {
+      question: "¿Cómo descargo el audio de un Reel de Instagram en MP3?",
+      answer:
+        "Copia el enlace del Reel y pégalo en el descargador de Reels: además del MP4 completo ofrece la pista de audio. Si solo quieres el sonido, abre la versión de audio y guarda el MP3, que sale del mismo archivo que sirve Instagram y no de una grabación de pantalla.",
     },
     {
       question: "¿Tengo que instalar una app o registrarme?",

@@ -19,6 +19,8 @@ import {
   webApplicationNode,
 } from "@/components/seo/JsonLd";
 import { ToolSeoContent } from "@/components/seo/ToolSeoContent";
+import { ToolBridge } from "@/components/seo/tool-bridge";
+import type { BridgeLink } from "@/lib/i18n/tool-bridges";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { TOOL_SEO } from "@/lib/content/tool-seo";
@@ -120,6 +122,17 @@ const CANONICALS: Record<Exclude<Platform, "youtube">, string> = {
  * Downloader pre-configured for the platform, the bento capability grid, and
  * one-click cross-links to the other downloaders.
  */
+/**
+ * Cross-links to the two product pages Search Console still lists as "URL is
+ * unknown to Google". Rendered above the fold on the pages that are already
+ * indexed, so the crawler meets a dofollow path to them on the same pass
+ * instead of only in the footer.
+ */
+const CRAWL_BRIDGE: BridgeLink[] = [
+  { href: "/facebook-video-downloader", label: "Facebook video downloader (HD)" },
+  { href: "/twitter-video-downloader", label: "X / Twitter video downloader (MP4)" },
+];
+
 export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtube"> }) {
   const content = PAGE_CONTENT[platform];
   const canonical = CANONICALS[platform];
@@ -229,6 +242,13 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
             </div>
 
             {/* Slot B — Outstream Video Ad + 300x250 + 728x90 directly below the downloader card. */}
+            <div className="shell mt-8">
+              <ToolBridge
+                heading="Other downloaders on this site"
+                links={CRAWL_BRIDGE.filter((link) => link.href !== canonical)}
+              />
+            </div>
+
             <div className="shell mt-8 sm:mt-10">
               <VideoAdUnit />
             </div>

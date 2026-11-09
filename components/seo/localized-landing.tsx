@@ -29,6 +29,8 @@ import { languageLabel } from "@/lib/i18n/language-labels";
 import { platformBlurb, TOOLS_HUB_CARD } from "@/lib/i18n/platform-blurbs";
 import { PLATFORM_LIST, PLATFORMS, type Platform } from "@/lib/platforms";
 import { siteUrl } from "@/lib/site";
+import { ToolBridge } from "@/components/seo/tool-bridge";
+import { TOOL_BRIDGES } from "@/lib/i18n/tool-bridges";
 
 /**
  * Last content revision of the localized landings, for the Article node.
@@ -70,7 +72,12 @@ export function LocalizedLanding({
   /** Canonical path, when it is not simply `/{code}` (platform sub-pages). */
   path?: string;
 }) {
-  const pageUrl = `${siteUrl}${path ?? `/${copy.code}`}`;
+  const pagePath = path ?? `/${copy.code}`;
+  const pageUrl = `${siteUrl}${pagePath}`;
+  // Above-the-fold cross-links for the locales with demand evidence; the page
+  // never links to itself, so a platform landing only shows the siblings.
+  const bridge = TOOL_BRIDGES[copy.code];
+  const bridgeLinks = (bridge?.links ?? []).filter((link) => link.href !== pagePath);
   const theme = PLATFORMS[platform];
 
   const jsonLd = {
@@ -227,6 +234,12 @@ export function LocalizedLanding({
                 <Downloader platform={platform} locale={copy.code} />
               </div>
             </div>
+
+            {bridge && bridgeLinks.length > 0 ? (
+              <div className="shell mt-8">
+                <ToolBridge heading={bridge.heading} links={bridgeLinks} />
+              </div>
+            ) : null}
 
             <div className="shell mt-8 sm:mt-10">
               <VideoAdUnit />

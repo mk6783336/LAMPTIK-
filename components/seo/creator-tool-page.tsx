@@ -15,6 +15,8 @@ import {
 } from "@/components/seo/JsonLd";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { ToolBridge } from "@/components/seo/tool-bridge";
+import type { BridgeLink } from "@/lib/i18n/tool-bridges";
 import { getCreatorTool, type CreatorTool } from "@/lib/creator-tools";
 import { siteUrl } from "@/lib/site";
 
@@ -27,6 +29,19 @@ import { siteUrl } from "@/lib/site";
  * components as the rest of the site: the box is sized from the first paint, so
  * a late creative cannot move the page (CLS stays at zero).
  */
+/**
+ * The two downloaders Google has not crawled yet, linked from every creator
+ * tool that is already indexed. These pages get a crawler in the door with
+ * their own content; the strip gives it somewhere to go next.
+ */
+const DOWNLOADER_BRIDGE: { heading: string; links: BridgeLink[] } = {
+  heading: "The downloaders that actually save the file",
+  links: [
+    { href: "/facebook-video-downloader", label: "Facebook video downloader (HD, fb.watch)" },
+    { href: "/twitter-video-downloader", label: "X / Twitter video downloader (MP4)" },
+  ],
+};
+
 export function CreatorToolPage({
   tool,
   children,
@@ -106,6 +121,10 @@ export function CreatorToolPage({
               </div>
 
               <div className="min-w-0 lg:col-span-7">{children}</div>
+            </div>
+
+            <div className="shell mt-8">
+              <ToolBridge heading={DOWNLOADER_BRIDGE.heading} links={DOWNLOADER_BRIDGE.links} />
             </div>
 
             <div className="shell mt-8 sm:mt-10">

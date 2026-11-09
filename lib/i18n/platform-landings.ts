@@ -76,6 +76,8 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
         "bajar reels sin marca de agua",
         "descargar reels en hd",
         "descargar reels sin iniciar sesion",
+        "descargar audio de reels instagram mp3",
+        "descargar reels de instagram hd sin marca de agua",
       ],
       eyebrow: "Instagram Reels · gratis · sin cuenta",
       h1Lead: "Descarga Reels de Instagram",
@@ -124,6 +126,11 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
           question: "¿Qué hago si el Reel no se descarga?",
           answer:
             "Comprueba que el vídeo se reproduce en Instagram sin haber iniciado sesión. Si se ve pero aquí falla, espera un minuto y reinténtalo: Instagram limita las peticiones anónimas cuando hay mucho tráfico. Si está borrado o es privado, no existe ningún archivo público que descargar.",
+        },
+        {
+          question: "¿Puedo descargar el audio de un Reel en MP3?",
+          answer:
+            "Sí. El MP4 que sirve Instagram ya trae la pista de audio, así que se puede extraer a MP3 sin volver a grabar nada: es el mismo sonido original, no la captura del altavoz del móvil. Si el Reel usa música con licencia, el archivo sirve para escucharlo, pero publicarlo como propio sigue dependiendo de los derechos del tema.",
         },
         {
           question: "¿Funciona con fotos y carruseles?",
@@ -243,6 +250,7 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
         "descargar reels de facebook",
         "fb.watch descargar",
         "guardar video de facebook",
+        "descargar videos de facebook hd gratis",
       ],
       eyebrow: "Facebook · HD · sin instalar nada",
       h1Lead: "Descarga videos de Facebook",
@@ -296,6 +304,11 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
           question: "¿Se pueden descargar videos privados o de grupos?",
           answer:
             "No. Necesitan una sesión con permiso para verlos, y esta herramienta nunca pide credenciales de Facebook. Sí funcionan las publicaciones públicas de páginas, Watch y Reels públicos.",
+        },
+        {
+          question: "¿Se pueden descargar videos de Facebook en HD gratis y sin app?",
+          answer:
+            "Sí, todas las publicaciones públicas se descargan sin coste, sin cuenta y sin instalar nada, y la herramienta pide primero la variante HD. Si ese vídeo no tiene una versión en alta definición, recibes la mejor SD disponible y el panel indica cuál se ha entregado, para que nunca etiquete un 360p como HD.",
         },
         {
           question: "¿El archivo lleva marca de agua?",
