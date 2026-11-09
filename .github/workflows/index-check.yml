@@ -98,7 +98,27 @@ jobs:
           # property rather than the usual sc-domain: one. Left empty, the
           # script picks whichever property the service account can see.
           GSC_PROPERTY: ${{ vars.GSC_PROPERTY }}
+          # 200 rather than the script's 60 default: a sweep that cannot finish
+          # stores `pass: null`, and the weekly scoreboard's indexed column then
+          # has no number to show. 96 URLs at 400ms pacing fits the budget.
+          GSC_URL_LIMIT: "200"
+          # The 240s default stopped this sweep at ~65 URLs, which stores
+          # `pass: null` — the one number the scoreboard cannot derive on its own.
+          GSC_API_BUDGET_MS: "600000"
+          GSC_PACE_MS: "250"
         run: node scripts/gsc-check.mjs --skip-if-unconfigured
+
+      # One row per week in `docs/seo-scoreboard.jsonl`, printed into the same
+      # Summary tab: clicks, impressions, pages with impressions, the last
+      # complete indexed count and the seven-page coverage. CI cannot commit, so
+      # it runs with `--no-write` and the deltas stay against the last committed
+      # row — a number on a page, not a memory of last Monday.
+      - name: Weekly scoreboard
+        env:
+          GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+          GA4_SERVICE_ACCOUNT_JSON: ${{ secrets.GA4_SERVICE_ACCOUNT_JSON }}
+          GSC_PROPERTY: ${{ vars.GSC_PROPERTY }}
+        run: node scripts/seo-scoreboard.mjs --no-write
 
       # Pushes only URLs Bing has never been told about. A blanket re-submit of
       # all 51 every week would spend the 200/month quota in four weeks and
