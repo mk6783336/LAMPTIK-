@@ -80,6 +80,22 @@ export const TOOL_GROUPS: readonly ToolGroup[] = [
     slugs: ["tiktok-story-downloader", "instagram-story-downloader"],
   },
   {
+    // The crawl path for the country cluster. Without a group the four pages
+    // would exist only in the sitemap and in each other's cards, which is the
+    // orphan shape the parity check in scripts/check-content-links.mjs exists
+    // to catch.
+    id: "regions",
+    title: "By country",
+    intent:
+      "The same four platforms, answered for one market: the copyright rules that actually apply there, and the links the platform refuses to serve from it.",
+    slugs: [
+      "download-videos-united-states",
+      "download-videos-united-kingdom",
+      "download-videos-canada",
+      "download-videos-germany",
+    ],
+  },
+  {
     id: "access",
     title: "iPhone and short links",
     intent:

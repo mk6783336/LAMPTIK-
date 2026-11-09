@@ -1,5 +1,9 @@
 import type { SubTool } from "@/lib/content/sub-tool-types";
 
+import { entry as canada } from "./download-videos-canada";
+import { entry as germany } from "./download-videos-germany";
+import { entry as unitedKingdom } from "./download-videos-united-kingdom";
+import { entry as unitedStates } from "./download-videos-united-states";
 import { entry as facebookReels } from "./facebook-reels-downloader";
 import { entry as instagramReelsAudio } from "./instagram-reels-audio";
 import { entry as instagramReelsToMp4 } from "./instagram-reels-to-mp4";
@@ -65,6 +69,16 @@ export const SUB_TOOLS: readonly SubTool[] = [
   tiktokVideoForCapcut,
   instagramReelsToMp4,
   youtubeAudioBitrate,
+  // Batch five: the country cluster. Not another platform or format — the same
+  // four resolvers answered for one market, because the two things that block
+  // a download (what the local copyright rules allow, and which videos the
+  // platform refuses to serve there) are country-specific in a way that no
+  // single global page can say. Each one mounts a *different* platform so the
+  // four are not one page with a country name swapped in.
+  unitedStates,
+  unitedKingdom,
+  canada,
+  germany,
 ];
 
 export const SUB_TOOL_MAP: Readonly<Record<string, SubTool>> = Object.fromEntries(

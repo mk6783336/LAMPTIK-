@@ -23,6 +23,84 @@ export interface SubToolAnswer {
 }
 
 export const SUB_TOOL_ANSWERS: Record<string, SubToolAnswer> = {
+  // ---------------------------------------------------------------------
+  // Country cluster. The comparison rows here are about what a given market
+  // changes — a region lock, a DRM service, a share-link shape — rather than
+  // repeating the generic "ours vs theirs" rows, which would make four pages
+  // read as one page four times.
+  // ---------------------------------------------------------------------
+  "download-videos-united-states": {
+    query: "How do I download a video in the United States?",
+    answer:
+      "Paste the public link into the field above — TikTok, Reels, YouTube or Facebook — and tap the download button: the MP4 goes to your browser's Downloads folder with no app and no account. US copyright still belongs to the person who made the clip; fair use under 17 U.S.C. §107 is a defence you argue afterwards, not a permission granted up front.",
+    comparison: [
+      {
+        label: "Where the file comes from",
+        ours: "The public stream the platform serves its own player",
+        theirs: "A screen recording of playback, interface and notifications included",
+      },
+      {
+        label: "What it refuses",
+        ours: "Private, friends-only and deleted posts — reported, never attempted with a session",
+        theirs: "A login form that asks for your password to reach them",
+      },
+    ],
+  },
+
+  "download-videos-united-kingdom": {
+    query: "How do I download an Instagram Reel in the UK?",
+    answer:
+      "Copy the Reel's link from the three-dot menu, paste it above and download: you get the 1080×1920 MP4 with its AAC audio already inside, with no login and no app. Public Reels resolve anonymously; private accounts are refused rather than opened with your credentials.",
+    comparison: [
+      {
+        label: "Reels audio",
+        ours: "The progressive MP4, audio track intact — it plays with sound first time",
+        theirs: "The video-only rendition, which arrives silent",
+      },
+      {
+        label: "DRM services",
+        ours: "iPlayer, ITVX, Channel 4 and Prime are named as unsupported, before you paste a link",
+        theirs: "A \"works on everything\" promise that fails after the ad has played",
+      },
+    ],
+  },
+
+  "download-videos-canada": {
+    query: "How do I download a Facebook video in HD in Canada?",
+    answer:
+      "Copy the post's link — fb.watch cards and permalinks both work — paste it above and choose the HD download. The MP4 arrives with its audio muxed in, so a long Watch upload plays with sound in QuickTime or VLC without a second track to merge.",
+    comparison: [
+      {
+        label: "Share links",
+        ours: "fb.watch and /share/ chains unwrapped on the server, so no manual expansion",
+        theirs: "A canonical /videos/ permalink you have to dig out of the page source",
+      },
+      {
+        label: "Silent 1080p",
+        ours: "Video-only renditions are rejected before any button appears",
+        theirs: "A \"successful\" HD download that plays with no audio at all",
+      },
+    ],
+  },
+
+  "download-videos-germany": {
+    query: "How do I download a YouTube video in Germany?",
+    answer:
+      "Paste the watch, Shorts, youtu.be or music.youtube.com link and choose MP4 or MP3: the video comes as the rendition YouTube published, and the MP3 reports the bitrate it actually received — usually 128 to 160 kbps, because that is what YouTube uploads carry. A video blocked for Germany stays blocked; that answer is reported, not routed around.",
+    comparison: [
+      {
+        label: "Region locks",
+        ours: "Reported as the platform's own answer — no proxy in another country is used",
+        theirs: "Claims to bypass them, or fails quietly after a long wait",
+      },
+      {
+        label: "Bitrate",
+        ours: "Measured from the audio track that arrived, typically around 128–160 kbps",
+        theirs: "A fixed \"320 kbps\" label on audio padded into a bigger container",
+      },
+    ],
+  },
+
   "tiktok-video-for-capcut": {
     query: "How do I get a TikTok video into CapCut?",
     answer:

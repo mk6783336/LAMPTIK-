@@ -210,10 +210,9 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
               <p className="eyebrow">
                 <span aria-hidden="true" className="eyebrow-dot" />
                 More tools
-              </p>
-              <h2 className="balance mt-4 text-4xl font-semibold leading-tight tracking-headline">
-                Also save from {platform.name}
-              </h2>
+              </p>                <h2 className="balance mt-4 text-4xl font-semibold leading-tight tracking-headline">
+                  {tool.relatedHeading ?? `Also save from ${platform.name}`}
+                </h2>
               <div className="mt-8 grid gap-3.5 sm:grid-cols-3">
                 {related.map((entry) => (
                   <Link key={entry.slug} href={`/${entry.slug}`} className="bento-card group flex items-start gap-4">
@@ -223,7 +222,10 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
                         <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
                       </span>
                       <span className="pretty mt-1.5 block text-sm leading-relaxed text-[var(--text-2)]">
-                        {entry.h1Lead} {entry.lede}
+                        {/* A sibling country card is a destination, not a
+                            summary: its lede is three sentences about another
+                            market and would triple the height of this grid. */}
+                        {tool.relatedHeading ? `${entry.h1Lead} ${entry.h1Accent}` : `${entry.h1Lead} ${entry.lede}`}
                       </span>
                     </span>
                   </Link>
@@ -267,6 +269,27 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
                   </li>
                 ))}
               </ol>
+
+              {tool.notes?.length ? (
+                <div className="mt-10">
+                  <h2 className="text-2xl font-semibold tracking-headline">
+                    Worth knowing before you save.
+                  </h2>
+                  <div className="mt-4 space-y-3">
+                    {tool.notes.map((note) => (
+                      <div
+                        key={note.title}
+                        className="rounded-xl border border-[var(--glass-border)] border-l-2 border-l-[var(--accent)] bg-[var(--field)] p-4"
+                      >
+                        <p className="text-sm font-semibold tracking-tight">{note.title}</p>
+                        <p className="pretty mt-1.5 text-sm leading-relaxed text-[var(--text-2)]">
+                          {note.body}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
               <h2 id="faq" className="mt-10 scroll-mt-24 text-2xl font-semibold tracking-headline">
                 Frequently asked questions

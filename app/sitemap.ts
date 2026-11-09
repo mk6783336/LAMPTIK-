@@ -60,7 +60,7 @@ const REVISED = {
   twitter: "2026-11-08",
   youtube: "2026-11-08",
   toolsHub: "2026-11-08",
-  subTools: "2026-11-08",
+  subTools: "2026-11-09",
   localized: "2026-11-07",
   guidesHub: "2026-11-07",
   services: "2026-11-03",

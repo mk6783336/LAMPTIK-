@@ -17,6 +17,11 @@ export interface SubToolStep {
   body: string;
 }
 
+export interface SubToolNote {
+  title: string;
+  body: string;
+}
+
 export interface SubToolFaq {
   question: string;
   answer: string;
@@ -83,6 +88,20 @@ export interface SubTool {
   facts: [string, string][];
   /** Two how-it-works steps (unique mechanics per tool). */
   steps: [SubToolStep, SubToolStep];
+  /**
+   * Background the page would otherwise bury in a FAQ: the rules that apply,
+   * the failure that is local to one market. Rendered under its own heading
+   * between the steps and the FAQ. Used by the country pages, where the legal
+   * and licensing context is the reason the page exists.
+   */
+  notes?: SubToolNote[];
+  /**
+   * Overrides the cross-link heading ("Also save from <platform>"). Only the
+   * country cluster sets it, because its siblings are other countries rather
+   * than more tools on the same platform — and a card grid that says "also
+   * save from TikTok" above three country names is simply wrong.
+   */
+  relatedHeading?: string;
   /** At least four Q&A pairs, all rendered on the page. */
   faqs: SubToolFaq[];
   /** schema.org WebApplication name. */
