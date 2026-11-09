@@ -65,7 +65,9 @@ const REVISED = {
   youtube: "2026-11-08",
   toolsHub: "2026-11-08",
   subTools: "2026-11-09",
-  localized: "2026-11-07",
+  // 2026-11-09: the Spanish root now answers the Telegram and HD wording it
+  // was already getting impressions for.
+  localized: "2026-11-09",
   guidesHub: "2026-11-07",
   services: "2026-11-03",
   apps: "2026-11-03",

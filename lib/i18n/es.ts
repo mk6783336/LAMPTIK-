@@ -17,11 +17,13 @@ export const es: LandingCopy = {
     "Descarga videos de TikTok sin marca de agua, Reels de Instagram, videos de Facebook y YouTube en MP4 HD o MP3. Gratis, sin app y sin registrarte.",
   keywords: [
     "descargar videos de tiktok sin marca de agua",
+    "tiktok sin marca",
+    "descargar tiktok sin marca de agua hd",
+    "descargar tiktok sin marca de agua telegram",
     "descargar reels de instagram",
     "descargar videos de facebook",
     "youtube a mp3",
     "descargar video tiktok hd",
-    "descargar videos sin marca de agua",
   ],
   eyebrow: "Gratis · Sin marca de agua · Sin instalar nada",
   h1Lead: "Descarga videos de TikTok",
@@ -45,7 +47,7 @@ export const es: LandingCopy = {
     {
       title: "Copia el enlace del video",
       body:
-        "En TikTok toca Compartir → Copiar enlace. En Instagram, Facebook o YouTube usa el mismo menú Compartir. Los enlaces cortos como vt.tiktok.com o youtu.be también funcionan.",
+        "En TikTok toca Compartir → Copiar enlace. En Instagram, Facebook o YouTube usa el mismo menú Compartir. Los enlaces cortos como vt.tiktok.com o youtu.be también funcionan. Si el video te llegó por WhatsApp o Telegram, el enlace ya está dentro del mensaje: cópialo desde ahí.",
     },
     {
       title: "Pégalo en el cuadro de arriba",
@@ -64,6 +66,16 @@ export const es: LandingCopy = {
       question: "¿Cómo descargo un video de TikTok sin marca de agua?",
       answer:
         "Copia el enlace del video en TikTok, pégalo arriba y pulsa Descargar HD MP4. Solicitamos la versión original que TikTok guarda en su CDN en lugar de la copia con el logotipo que genera el menú Compartir, así que el archivo llega limpio y sin recortes.",
+    },
+    {
+      question: "¿Puedo descargar un TikTok que me llegó por Telegram o WhatsApp?",
+      answer:
+        "Sí, siempre que el mensaje incluya el enlace del video (algo como tiktok.com/@usuario/video/… o vt.tiktok.com). Ese enlace es lo único que hace falta: cópialo del chat, pégalo arriba y el archivo se resuelve igual que cualquier otro. Lo que no se puede descargar es un video reenviado como archivo, porque al reenviarlo se pierde la dirección original y no queda nada público que pedir.",
+    },
+    {
+      question: "¿El video sale en HD de verdad?",
+      answer:
+        "Se entrega la versión de mayor resolución que TikTok tenga publicada para ese video, normalmente 720p o 1080p. No se reescala ni se recodifica: si el autor subió el video en 540p, el archivo será 540p y la ficha lo indica antes de descargar. Por eso dos videos distintos pueden dar archivos de distinto tamaño.",
     },
     {
       question: "¿Se guardan mis enlaces o mis videos?",
