@@ -8,7 +8,8 @@ import { PLATFORM_LIST, PLATFORMS } from "@/lib/platforms";
 /**
  * Home-page cross-links as a four-up bento: one card per platform, each
  * carrying its own accent so the grid reads as a product family rather than
- * four copies of the same tile.
+ * copies of the same tile. The fifth card is Twitter / X, which is not in
+ * `PLATFORM_LIST` because it resolves through its own endpoint.
  *
  * `data-platform` / `data-platform-from` feed the GA4 click listener in
  * `components/google-analytics.tsx`: a server component cannot attach an
@@ -71,6 +72,40 @@ export function PlatformGrid() {
               </Link>
             );
           })}
+
+          {/* The fifth surface. Not in `PLATFORM_LIST` on purpose: that union
+              drives the shared multi-platform downloader, and X resolves
+              through its own endpoint. Search Console reported this page as
+              "Discovered - currently not indexed" with four inbound links in
+              the whole site — the home page is one hop, so the card belongs
+              here and not only in the footer. No `data-platform`: the GA4
+              handler maps that attribute to the four shared-downloader
+              platforms, and a fifth value would be silently dropped. */}
+          <Link
+            href="/twitter-video-downloader"
+            prefetch={true}
+            className="bento-card group flex flex-col"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="bento-icon">
+                <span aria-hidden="true" className="text-sm font-semibold">
+                  X
+                </span>
+              </span>
+              <ArrowUpRight className="size-4 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
+            </div>
+            <h3 className="mt-6 text-base font-semibold tracking-tight">Twitter / X video</h3>
+            <p className="pretty mt-2 text-sm leading-relaxed text-[var(--text-2)]">
+              Videos and GIFs from any x.com or twitter.com post — up to 1080p MP4, no
+              watermark, no login.
+            </p>
+            <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--tool-ink)]">
+              Open downloader
+              <span className="transition-transform duration-300 group-hover:translate-x-1">
+                →
+              </span>
+            </span>
+          </Link>
         </div>
 
         {/* Hub link: the platform cards cover the four main downloaders, but a
