@@ -44,7 +44,7 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 24
 
       # Restores the last known content hashes so only genuinely changed pages
       # are submitted. The per-run key makes the cache always writable.

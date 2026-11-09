@@ -47,7 +47,7 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 24
 
       # continue-on-error keeps a configuration failure from skipping the
       # steps below; the guard right after turns it into an explicit red run

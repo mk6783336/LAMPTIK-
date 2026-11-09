@@ -48,7 +48,7 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 24
 
       # Restores the run history so the report can show a delta. The per-run key
       # makes the cache always writable; restore-keys picks up the newest prior.

@@ -46,7 +46,7 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 24
 
       # continue-on-error keeps a failed probe from skipping the reporting
       # steps; the guard below then turns it into an explicit red run instead
