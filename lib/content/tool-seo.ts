@@ -201,6 +201,15 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
     ],
     faqs: [
       {
+        // Measured LOW-KD GAP: "instagram reels downloader without watermark
+        // hd free" and "... online". Each answer states a limit, because the
+        // pages already ranking promise HD for photo-only posts they cannot
+        // return.
+        question: "Is this Instagram Reels downloader free, HD and watermark-free?",
+        answer:
+          "All three, and none of them come from post-processing: Instagram serves Reels as a progressive MP4 at 1080×1920 with the audio already muxed in and no logo burned on, so the file here is that stream untouched. There is no online queue and no credit system — the resolver runs server-side inside your request, and the panel prints the exact dimensions, codec and byte size before the button appears. Photo-only posts and carousels are the one thing it refuses, because there is no video stream to hand you.",
+      },
+      {
         question: "How do I download an Instagram Reel without a watermark?",
         answer:
           "Open the Reel, tap ••• → Copy link, then paste it into the field above and choose Download HD MP4. Instagram's own stream has no watermark, so the saved file is clean without any extra processing.",
@@ -339,6 +348,15 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
       },
     ],
     faqs: [
+      {
+        // SERP-verified cluster: "iphone fb video downloader app", "best iphone
+        // facebook video downloader", "... app iphone free". The existing iPhone
+        // answer covers the Files→Photos mechanics; this one answers the app
+        // question the App Store listings dodge.
+        question: "Which iPhone Facebook video downloader app should I use — or do I need one?",
+        answer:
+          "You do not need one: Safari is the better tool for this on iPhone, and the \"free iPhone Facebook video downloader\" apps mostly wrap the same public request while asking for photo-library and network permissions. Paste the fb.watch or /videos/ link into Safari, tap Download HD MP4, and the file saves to Files → On My iPhone → Downloads. Long-press it there → Share → Save Video to move it into the camera roll. No watermark is added at any point, because Facebook's own stream carries none.",
+      },
       {
         question: "How do I download a Facebook video in HD?",
         answer:

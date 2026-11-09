@@ -30,6 +30,20 @@ const DESCRIPTION =
 
 const FAQS: ReadonlyArray<{ question: string; answer: string }> = [
   {
+    // Live SERP check (`npm run seo:radar`): every "without watermark" variant
+    // of this query lands in the LOW-KD GAP set — the top ten match the phrase
+    // in their titles but none of them explains *why* there is nothing to
+    // remove, which is the one thing we can answer honestly.
+    question: "Is there a Twitter video downloader without a watermark in HD?",
+    answer:
+      "X never stamps a watermark onto the MP4s it serves, so \"no watermark\" here is a property of the source rather than something removed afterwards — no crop, no blur, no re-encode. The quality list is ordered best-first, and the panel prints the exact resolution and bitrate beside each option, so a 720p fallback is never labelled HD. When the account uploaded a 1080p master, the 1920×1080 file is the one at the top of that list.",
+  },
+  {
+    question: "Do I need a Twitter video downloader APK or an app?",
+    answer:
+      "No, and the APKs advertising themselves as a \"twitter video downloader without watermark\" are the riskiest way to get the file. They request storage and network permissions, cannot be audited, and several are wrappers around the same public endpoints with injected ads. This page runs in Safari or Chrome, needs no install and no X login, and hands the MP4 to the browser's own download manager.",
+  },
+  {
     question: "How do I download a video from X (Twitter)?",
     answer:
       "Copy the link to the post — not the profile — and paste it above. The page resolves the post, lists every MP4 rendition X published, and hands the one you pick to your browser's download manager.",

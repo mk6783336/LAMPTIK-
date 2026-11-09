@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TikTok safe zone checker for 1080×1920 — where the UI actually covers your video</title>
+<meta name="description" content="The real TikTok and Reels safe area on a 1080×1920 canvas: which pixels the buttons and caption cover, and a checker that draws them over your own frame." />
+<link rel="canonical" href="https://mk6783336.github.io/tiktok-safe-zone-1080x1920-checker.html" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="TikTok safe zone checker for 1080×1920 — where the UI actually covers your video" />
+<meta property="og:description" content="The real TikTok and Reels safe area on a 1080×1920 canvas: which pixels the buttons and caption cover, and a checker that draws them over your own frame." />
+<meta property="og:url" content="https://mk6783336.github.io/tiktok-safe-zone-1080x1920-checker.html" />
+<meta property="og:site_name" content="free.video.tools" />
+<style>
+:root{--bg:#0b0d12;--panel:#12151d;--line:#232838;--text:#eef1f7;--muted:#a2acc2;--accent:#7cf2c8;--accent-2:#9d8bff}
+@media (prefers-color-scheme:light){:root{--bg:#f7f8fb;--panel:#fff;--line:#e3e7ef;--text:#151a23;--muted:#5a6478;--accent:#0a7f62;--accent-2:#5b46d6}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.wrap{width:100%;max-width:900px;margin:0 auto;padding:0 18px}
+header{padding:18px 0;border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{font-weight:700;letter-spacing:-.02em;font-size:16px}.brand span{color:var(--accent)}
+nav a{color:var(--muted);text-decoration:none;font-size:14px;margin-left:14px}
+nav a:hover{color:var(--text)}
+main{padding:34px 0 10px}
+h1{font-size:clamp(26px,4.6vw,40px);line-height:1.1;letter-spacing:-.03em;margin:0 0 12px}
+h2{font-size:clamp(20px,3.2vw,26px);letter-spacing:-.02em;margin:32px 0 10px}
+h3{font-size:16px;margin:0 0 6px}
+p{margin:0 0 12px}
+.lede{color:var(--muted);max-width:64ch}
+a{color:var(--accent)}
+form{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 8px}
+input[type=url]{flex:1 1 300px;min-width:0;padding:12px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-size:15px}
+input[type=url]:focus{outline:2px solid var(--accent);outline-offset:1px}
+button{padding:12px 18px;border-radius:10px;border:0;background:var(--accent);color:#052e24;font-weight:700;font-size:15px;cursor:pointer}
+.hint{color:var(--muted);font-size:13px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}
+details{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;background:var(--panel)}
+summary{cursor:pointer;font-weight:600}
+details p{color:var(--muted);margin:8px 0 0}
+ul.siblings{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:6px;grid-template-columns:1fr}
+@media(min-width:640px){ul.siblings{grid-template-columns:1fr 1fr}}
+ul.siblings a{display:block;padding:10px 12px;border:1px solid var(--line);border-radius:10px;text-decoration:none;font-size:14px;background:var(--panel)}
+ul.siblings a:hover{border-color:var(--accent)}
+footer{padding:24px 0 40px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+footer a{color:var(--muted)}
+</style>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://mk6783336.github.io/tiktok-safe-zone-1080x1920-checker.html#page","url":"https://mk6783336.github.io/tiktok-safe-zone-1080x1920-checker.html","name":"TikTok safe zone checker for 1080×1920 — where the UI actually covers your video","description":"The real TikTok and Reels safe area on a 1080×1920 canvas: which pixels the buttons and caption cover, and a checker that draws them over your own frame.","inLanguage":"en","isPartOf":{"@id":"https://mk6783336.github.io/#site"}},{"@type":"FAQPage","@id":"https://mk6783336.github.io/tiktok-safe-zone-1080x1920-checker.html#faq","mainEntity":[{"@type":"Question","name":"What is the TikTok safe zone in pixels?","acceptedAnswer":{"@type":"Answer","text":"Treat the central 1080×1420 of a 1080×1920 frame as safe: the right rail and the bottom caption block both fall outside it."}},{"@type":"Question","name":"Is the Reels safe zone the same?","acceptedAnswer":{"@type":"Answer","text":"Close but not identical — the action rail sits higher and the caption block is shorter. Testing both in the checker avoids re-editing later."}},{"@type":"Question","name":"Does the checker upload my image?","acceptedAnswer":{"@type":"Answer","text":"No. It runs entirely in the browser."}}]},{"@type":"BreadcrumbList","@id":"https://mk6783336.github.io/tiktok-safe-zone-1080x1920-checker.html#breadcrumb","itemListElement":[{"@type":"ListItem","position":1,"name":"Downloader hub","item":"https://mk6783336.github.io/"},{"@type":"ListItem","position":2,"name":"The 1080×1920 safe zone, measured rather than guessed","item":"https://mk6783336.github.io/tiktok-safe-zone-1080x1920-checker.html"}]}]}</script>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="brand">free<span>.</span>video<span>.</span>tools</div>
+  <nav><a href="index.html">Hub</a><a href="creator-tools.html">Creator tools</a><a href="#faq">FAQ</a></nav>
+</div></header>
+<main class="wrap">
+  <h1>The 1080×1920 safe zone, measured rather than guessed</h1>
+  <p class="lede">“Keep text in the middle” is not a specification. The right side is the action rail, the bottom-left is the caption block, and the two differ between TikTok and Reels.</p>
+  <p><a class="cta" href="https://www.lamptik.online/tiktok-safe-zone-checker">Open Safe-zone checker →</a></p>
+    <p class="hint">Runs in the browser on www.lamptik.online — nothing is uploaded from this page.</p>
+  <h2>The numbers that matter</h2>
+  <p>On a 1080×1920 canvas, the right rail occupies roughly the outer 120–150 px, and the caption plus sound label cover the bottom ~350 px on the left. The top carries a status strip on some devices.</p>
+  <p>Keeping critical text inside the central 1080×1420 box survives both apps. Anything outside it is a bet on one viewer's device.</p>
+  <h2>Check the frame, not the template</h2>
+  <p>A template tells you where the overlays were on the designer's phone. A checker draws them over your actual frame at the real size, so a headline that looked fine on a mockup is visibly clipped before you upload.</p>
+  <h2 id="faq">Questions this page answers</h2>
+  <details><summary>What is the TikTok safe zone in pixels?</summary><p>Treat the central 1080×1420 of a 1080×1920 frame as safe: the right rail and the bottom caption block both fall outside it.</p></details>
+  <details><summary>Is the Reels safe zone the same?</summary><p>Close but not identical — the action rail sits higher and the caption block is shorter. Testing both in the checker avoids re-editing later.</p></details>
+  <details><summary>Does the checker upload my image?</summary><p>No. It runs entirely in the browser.</p></details>
+  <h2>Keep reading</h2>
+  <ul class="siblings">
+    <li><a href="index.html">Downloader hub</a></li>
+    <li><a href="creator-tools.html">Creator tools</a></li>
+    <li><a href="tiktok-1080p-h264-downloader.html">TikTok in 1080p H.264</a></li>
+    <li><a href="instagram-reels-audio-mp3-extractor.html">Save a Reel's audio, not a recording of it</a></li>
+    <li><a href="iphone-facebook-video-downloader.html">Facebook video to your iPhone camera roll, without an app</a></li>
+    <li><a href="twitter-x-gif-to-mp4-converter.html">X GIFs are MP4s</a></li>
+    <li><a href="tiktok-slideshow-photo-saver.html">Photo posts and slideshows: there is no video to download</a></li>
+    <li><a href="tiktok-money-rpm-calculator-2026.html">What 1,000 views pays, with the withholding included</a></li>
+    <li><a href="fix-mp4-capcut-premiere-pro.html">MP4 won't import? It is one of four things</a></li>
+  </ul>
+</main>
+<footer><div class="wrap"><p>Independent guides. Not affiliated with TikTok, Instagram, Meta, Google or X. Download your own work or content you have permission to use. Updated 2026-11-09.</p></div></footer>
+<script>
+(function(){
+  var form=document.querySelector("form.tool");
+  if(!form) return;
+  var input=form.querySelector("input[type=url]");
+  function open(url){var v=(url||"").trim();if(v) location.href="https://www.lamptik.online/?url="+encodeURIComponent(v);}
+  form.addEventListener("submit",function(e){e.preventDefault();open(input.value);});
+  input.addEventListener("paste",function(){setTimeout(function(){if(input.value.trim().length>10) open(input.value);},60);});
+})();
+</script>
+</body>
+</html>

@@ -64,19 +64,113 @@ const MODIFIERS = [
   "1080p",
   "safe zone",
   "calculator",
+  // Problem, device, codec and workflow qualifiers. These are the phrases the
+  // head-term downloaders have no page for, which is where the openings are.
+  "fix",
+  "not working",
+  "camera roll",
+  "premiere pro",
+  "h264",
+  "60fps",
+  "slideshow",
+  "overlay",
+  "by country",
 ];
 
-/** One seed per tool: the modifier is prefixed to it, so one seed is enough. */
+/**
+ * Every tool carries its head term plus the long-tail problem, device, format
+ * and creator-workflow seeds that the giant downloaders have no page for. The
+ * first seed receives every modifier; the extras are measured as written, so a
+ * deliberate phrase like `tiktok safe zone overlay checker 1080x1920` is tested
+ * exactly as a person would type it.
+ */
 const TOOLS = [
-  { slug: "tiktok", seed: "tiktok video downloader", page: "/" },
-  { slug: "instagram", seed: "instagram reels downloader", page: "/instagram-reels-downloader" },
-  { slug: "youtube", seed: "youtube video downloader", page: "/youtube-downloader" },
-  { slug: "facebook", seed: "facebook video downloader", page: "/facebook-video-downloader" },
-  { slug: "twitter", seed: "twitter video downloader", page: "/twitter-video-downloader" },
-  { slug: "thumbnail", seed: "youtube thumbnail downloader", page: "/video-thumbnail-downloader" },
-  { slug: "caption", seed: "tiktok hashtag generator", page: "/tiktok-caption-hashtag-extractor" },
-  { slug: "safe-zone", seed: "tiktok safe zone", page: "/tiktok-safe-zone-checker" },
-  { slug: "money", seed: "tiktok money calculator", page: "/tiktok-money-calculator" },
+  {
+    slug: "tiktok",
+    page: "/",
+    seeds: [
+      "tiktok video downloader",
+      "download tiktok to iphone camera roll without app",
+      "tiktok h264 mp4 downloader for premiere pro",
+      "download 1080p 60fps tiktok without watermark",
+      "tiktok slideshow photo downloader hd",
+    ],
+  },
+  {
+    slug: "instagram",
+    page: "/instagram-reels-downloader",
+    seeds: [
+      "instagram reels downloader",
+      "save instagram reel audio to iphone files",
+      "instagram reels audio mp3 extractor",
+      "download instagram reel hd without login",
+    ],
+  },
+  {
+    slug: "youtube",
+    page: "/youtube-downloader",
+    seeds: [
+      "youtube video downloader",
+      "youtube to mp3 320kbps",
+      "youtube shorts downloader hd",
+      "youtube 1080p 60fps download edit upload workflow",
+    ],
+  },
+  {
+    slug: "facebook",
+    page: "/facebook-video-downloader",
+    seeds: [
+      "facebook video downloader",
+      "facebook video downloader iphone safari",
+      "save facebook video to iphone camera roll",
+      "fb watch video download hd 1080p",
+    ],
+  },
+  {
+    slug: "twitter",
+    page: "/twitter-video-downloader",
+    seeds: [
+      "twitter video downloader",
+      "twitter gif to mp4 converter online",
+      "x video download mp4 hd",
+    ],
+  },
+  {
+    slug: "thumbnail",
+    page: "/video-thumbnail-downloader",
+    seeds: [
+      "youtube thumbnail downloader",
+      "video thumbnail extractor hd",
+      "tiktok thumbnail downloader",
+    ],
+  },
+  {
+    slug: "caption",
+    page: "/tiktok-caption-hashtag-extractor",
+    seeds: [
+      "tiktok hashtag generator",
+      "tiktok caption extractor from link",
+      "extract hashtags from tiktok video link",
+    ],
+  },
+  {
+    slug: "safe-zone",
+    page: "/tiktok-safe-zone-checker",
+    seeds: [
+      "tiktok safe zone",
+      "tiktok safe zone overlay checker 1080x1920",
+      "instagram reels safe zone template",
+    ],
+  },
+  {
+    slug: "money",
+    page: "/tiktok-money-calculator",
+    seeds: [
+      "tiktok money calculator",
+      "tiktok creator rewards rpm calculator by country",
+      "tiktok rpm calculator 2026",
+    ],
+  },
 ];
 
 /** Domains that signal an open SERP rather than a defended one. */
@@ -97,7 +191,7 @@ const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 const OUT_DOC = path.join(process.cwd(), "docs/live-zero-kd-opportunities.md");
 const OUT_JSON = path.join(process.cwd(), ".scratch/seo-radar.json");
-const SERP_LIMIT = QUICK ? 12 : 40;
+const SERP_LIMIT = QUICK ? 12 : 70;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const log = (...parts) => console.log(...parts);
@@ -152,11 +246,14 @@ async function harvest() {
 
   const jobs = [];
   for (const tool of TOOLS) {
+    const [primary, ...extras] = tool.seeds;
     for (const modifier of MODIFIERS) {
-      const query = `${modifier} ${tool.seed}`;
-      jobs.push({ tool, modifier, query, geo: GEOS[jobs.length % GEOS.length] });
+      jobs.push({ tool, query: `${modifier} ${primary}` });
     }
+    // Extras are measured verbatim: they already read like a real search.
+    for (const seed of extras) jobs.push({ tool, query: seed });
   }
+  for (const [index, job] of jobs.entries()) job.geo = GEOS[index % GEOS.length];
 
   for (let index = 0; index < jobs.length; index += 4) {
     const batch = jobs.slice(index, index + 4);
@@ -184,7 +281,9 @@ async function harvest() {
   for (const tool of TOOLS) {
     stats.bingCalls += 1;
     try {
-      for (const suggestion of await bingSuggest(tool.seed)) {
+      const suggestions = [];
+      for (const seed of tool.seeds) suggestions.push(...(await bingSuggest(seed)));
+      for (const suggestion of suggestions) {
         if (!usableSuggestion(suggestion)) continue;
         const key = suggestion.toLowerCase();
         const entry = found.get(key) ?? { hits: 0, geos: new Set(), tool: tool.slug, page: tool.page };
@@ -367,6 +466,10 @@ function score(query, results) {
   let verdict = "CONTESTED";
   if (weakTop5.length >= 2) verdict = "TRUE ZERO-KD";
   else if (brandsTop3.length === 3 && exactTop5 >= 2) verdict = "LOCKED HEAD TERM";
+  // LOW-KD GAP: the query is winnable on relevance rather than authority —
+  // fewer than three of the ten ranking pages bothered to match the phrase in
+  // their title, so someone can out-answer them without out-branding them.
+  else if (exact < 3) verdict = "LOW-KD GAP";
 
   // 0 = wide open, 10 = three incumbents with exact-match titles.
   const difficulty = Math.min(
@@ -456,6 +559,7 @@ async function writeDocs(payload) {
   const { measured, harvested, stats, indexSource } = payload;
   const byDifficulty = (a, b) => (a.difficulty ?? 99) - (b.difficulty ?? 99);
   const zero = measured.filter((row) => row.verdict === "TRUE ZERO-KD").sort(byDifficulty);
+  const gaps = measured.filter((row) => row.verdict === "LOW-KD GAP").sort(byDifficulty);
   const contested = measured.filter((row) => row.verdict === "CONTESTED").sort(byDifficulty);
   const locked = measured.filter((row) => row.verdict === "LOCKED HEAD TERM");
   const unverified = measured.filter((row) => row.verdict === "UNVERIFIED");
@@ -480,6 +584,11 @@ async function writeDocs(payload) {
     "## TRUE ZERO-KD — write the page now",
     "",
     tableFor(zero),
+    "## LOW-KD GAP — winnable on relevance",
+    "",
+    "Fewer than three of the top ten match the phrase in their title, so a page that answers it properly does not need authority to outrank them.",
+    "",
+    tableFor(gaps.slice(0, 25)),
     "## CONTESTED — open but defended",
     "",
     tableFor(contested.slice(0, 15)),
@@ -553,7 +662,7 @@ async function main() {
   const candidates = [];
   for (const entry of harvested) {
     const used = perTool.get(entry.tool) ?? 0;
-    if (used >= 3) continue;
+    if (used >= 5) continue;
     perTool.set(entry.tool, used + 1);
     candidates.push(entry);
     if (candidates.length >= SERP_LIMIT) break;

@@ -99,6 +99,14 @@ export const CREATOR_TOOLS: readonly CreatorTool[] = [
           "Because TikTok does not publish a rate card. The range comes from creator-reported earnings across countries and niches, and the true number for any single video depends on watch time, audience location, and the month's pool. A single precise number would be invented.",
       },
       {
+        // LOW-KD GAP: "how is tiktok money calculator", "how do you calculate
+        // money on a calculator" — the SERP answers "what is RPM", not the
+        // arithmetic, so this states the arithmetic.
+        question: "How does a TikTok money calculator get from views to dollars?",
+        answer:
+          "By multiplying, never by looking anything up: (views ÷ 1000) × the RPM you supply for your country and niche, then the engagement and qualification discounts. Creator Rewards pays on qualified views over one second, so 100,000 raw views are not 100,000 paid views — a step most earnings estimates skip. That is also why two calculators disagree about the same video: one is quoting a US average, the other your own inputs.",
+      },
+      {
         question: "How many views do I need to make $1,000 a month?",
         answer:
           "At a $1.00 RPM and a 60% qualification rate you need roughly 1.7 million qualified views a month. The reverse calculator on this page does that arithmetic for your own country and niche, including the engagement discount.",
@@ -149,6 +157,14 @@ export const CREATOR_TOOLS: readonly CreatorTool[] = [
       },
     ],
     faqs: [
+      {
+        // LOW-KD GAP: "capcut tiktok safe zone", "tiktok safe zone template",
+        // "tiktok safe zone png". Editors search for the template before they
+        // know what the numbers are, so the answer gives them the numbers.
+        question: "Can I check the TikTok safe zone in CapCut before exporting?",
+        answer:
+          "Yes, and it is the cheapest place to catch a caption that will be covered. CapCut's 9:16 canvas is 1080×1920 — the same frame this checker measures — so export a still at the frame you care about and drop it here with the TikTok overlay on. Keep the text inside the central 1080×1420 and it clears both the right-hand action rail and the bottom caption block. The overlay coordinates are printed in pixels, which is what you need to build a reusable CapCut template or a PNG guide layer for Premiere and Resolve.",
+      },
       {
         question: "What is a safe zone in a 9:16 video?",
         answer:
@@ -216,6 +232,14 @@ export const CREATOR_TOOLS: readonly CreatorTool[] = [
     ],
     faqs: [
       {
+        // LOW-KD GAP: "youtube thumbnail downloader online / 4k / hd". YouTube
+        // tops out at 1280×720 for covers, so the honest answer is a ceiling,
+        // not a promise of 4K.
+        question: "Is this a YouTube thumbnail downloader that returns 4K, or only HD?",
+        answer:
+          "It returns the largest file YouTube actually publishes: maxresdefault (1280×720) when that rendition exists, then sddefault, then hqdefault. YouTube does not expose a 4K cover as a separate asset, so a page selling a \"4K thumbnail downloader\" is either upscaling a 1280-wide JPEG or screenshotting the player. The card here names the rendition you received — SD 640×480 included — instead of calling an upscale 4K.",
+      },
+      {
         question: "Is the downloaded thumbnail the original quality?",
         answer:
           "It is the largest copy the platform publishes for that post, which is usually 1080 pixels wide on TikTok and up to 1280 on YouTube. If the platform only exposes a smaller preview, that is the ceiling — this tool never upscales an image and calls it HD.",
@@ -281,6 +305,14 @@ export const CREATOR_TOOLS: readonly CreatorTool[] = [
       },
     ],
     faqs: [
+      {
+        // LOW-KD GAP: "tiktok hashtag generator", "... tools", "... to go viral".
+        // Generators invent tags; extracting the tags a real audience was served
+        // is the defensible version of the same search intent.
+        question: "Can this extractor work as a TikTok hashtag generator?",
+        answer:
+          "It is the research half of one, and the better half. Paste ten posts that over-performed in your niche and each card returns the caption with its hashtags split out, de-duplicated and in the order they were written, so the tags that repeat across winners stand out from the noise. A generator invents combinations nobody searched for; this gives you the tags a real audience was already served, and you still write the caption yourself.",
+      },
       {
         question: "Can I copy a caption and reuse it on my own post?",
         answer:

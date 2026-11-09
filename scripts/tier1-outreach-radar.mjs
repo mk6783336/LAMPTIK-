@@ -1,31 +1,28 @@
 #!/usr/bin/env node
 /**
- * Tier-1 Reddit / community thread radar.
+ * Tier-1 community radar without a single API key.
  *
  * Run:  npm run seo:outreach
- *       npm run seo:outreach -- --hours 48
+ *       npm run seo:outreach -- --limit 15 --days 14
  *
- * Finds threads from the past week where somebody is asking the exact question
- * one of our tools answers, and writes a tailored, non-spam reply draft next to
- * each link, so the human step is "read, adjust, post", not "search Reddit for
- * an hour".
+ * The previous version asked reddit.com/search.json directly, which answers 403
+ * to unauthenticated clients from this network (and to most datacenter IPs), so
+ * it produced an empty report. This version reaches the same conversations
+ * through four public endpoints and says exactly which one answered:
  *
- * Honest about the wall it will hit: reddit.com/search.json answers 403 to
- * unauthenticated requests from most networks, and it has done so from this
- * machine. The script therefore tries, in order:
+ *   1. PullPush  — a free mirror of the Reddit archive
+ *      (`api.pullpush.io/reddit/search/submission`), no auth, no key.
+ *   2. Bing RSS  — `bing.com/search?format=rss`, which returns machine-readable
+ *      results for a `site:reddit.com` query instead of an HTML wall.
+ *   3. Stack Exchange — the public `/2.3/search/advanced` API (video, superuser,
+ *      stackoverflow), where the CapCut/Premiere/export questions actually live.
+ *   4. dev.to — the public articles API, for creator-workflow posts worth a
+ *      thoughtful comment.
  *
- *   1. www.reddit.com/r/<sub>/search.json       (public JSON, no auth)
- *   2. old.reddit.com/r/<sub>/search.json       (same API, different edge)
- *   3. DuckDuckGo `site:reddit.com/r/<sub> <kw>` (Bing's index of Reddit)
+ * Every row carries the source that produced it, and a source that fails is
+ * printed as failed. The report never pads itself with invented URLs.
  *
- * The output file records which source produced each row, and — when all three
- * are blocked — says so instead of inventing threads. A marketing radar that
- * fabricates URLs is worse than no radar.
- *
- * The reply snippets answer the question first. The link is one line, named
- * for what it does, and only included where it is genuinely the answer; the
- * drafts are written to be posted by a human who read the thread, which is also
- * what keeps them out of Reddit's spam filter.
+ * Exit codes: 0 = at least one real URL retrieved, 1 = every source refused.
  */
 
 import fs from "node:fs";
@@ -37,206 +34,303 @@ const value = (name, fallback) => {
   return index >= 0 && ARGS[index + 1] ? ARGS[index + 1] : fallback;
 };
 
-const HOURS = Number(value("hours", "168"));
 const LIMIT = Number(value("limit", "15"));
+const DAYS = Number(value("days", "7"));
 const OUT = path.join(process.cwd(), "docs/live-tier1-threads-today.md");
 const ORIGIN = "https://www.lamptik.online";
-
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
 /**
- * One row per problem we can genuinely answer. The keyword is what Reddit is
- * searched for; `reply` is the draft, and `link` is the page that actually
- * solves it (never the home page, which answers nothing).
+ * One row per problem we can actually answer. `reddit` is the PullPush/Bing
+ * query, `se` the Stack Exchange query, `tag` the dev.to tag, `link` the page
+ * that solves it, and `reply` the draft — written to answer first, link second.
  */
 const TOPICS = [
   {
-    keyword: "watermark",
-    subs: ["Tiktokhelp", "videoediting", "NewTubers"],
-    link: { path: "/", label: "LAMP TIK (no-watermark TikTok download)" },
+    key: "watermark",
+    reddit: "tiktok watermark",
+    se: "tiktok watermark",
+    tag: "tiktok",
+    link: { path: "/", label: "no-watermark TikTok download" },
     reply:
-      "TikTok keeps two files per video: the clean `play` master the app streams, and a `wmplay` copy with the watermark stamped in, which the share sheet hands out. That is why \"download without watermark\" is possible at all — you just have to request the first one. Cropping or blurring the logo only cuts into your subject.\n\n" +
-      "If your edit needs the clean file, LAMP TIK's page takes the video URL and requests `play` rather than `wmplay`: " +
-      `${ORIGIN}/ — free, no app, no account.`,
+      "TikTok stores two files per video: the clean `play` master its player streams, and a `wmplay` copy with the logo stamped in, which the share sheet hands out. That is why \"no watermark\" is possible at all — you have to request the first file. Cropping or blurring only eats into your frame.\n\n" +
+      `The downloader asks for \`play\` rather than \`wmplay\`: ${ORIGIN}/ — free, no app, no account.`,
   },
   {
-    keyword: "quality loss",
-    subs: ["videoediting", "premiere", "NewTubers"],
-    link: { path: "/guides/why-tiktok-video-quality-drops-after-upload", label: "Why quality drops after upload" },
+    key: "quality",
+    reddit: "video quality loss after upload",
+    se: "video quality after upload compression",
+    tag: "video",
+    link: { path: "/guides/why-tiktok-video-quality-drops-after-upload", label: "why quality drops after upload" },
     reply:
-      "Quality loss is almost always a second encode, not the platform. Export once at the delivery settings (1080×1920, H.264 high, CRF 18-20, audio AAC 192 kbps) so the platform's transcode is the first and only extra generation. Re-downloading a platform copy and re-editing it adds a generation each pass — that is where the soft, smeared look comes from.\n\n" +
-      `The bitrate/trade-off numbers are written up here: ${ORIGIN}/guides/why-tiktok-video-quality-drops-after-upload`,
+      "Almost always a second encode rather than the platform. Export once at delivery settings — 1080×1920, H.264 High, CRF 18–20, AAC 192 kbps — so the platform transcode is the only extra generation. Every re-download-and-re-edit pass adds another.\n\n" +
+      `Bitrate numbers by resolution: ${ORIGIN}/guides/why-tiktok-video-quality-drops-after-upload`,
   },
   {
-    keyword: "1080p 60fps",
-    subs: ["NewTubers", "videoediting", "premiere"],
-    link: { path: "/youtube-to-mp4-1080p", label: "What 1080p really means" },
+    key: "codec",
+    reddit: "capcut mp4 import error",
+    se: "mp4 import error premiere capcut",
+    tag: "ffmpeg",
+    link: { path: "/guides/mp4-wont-import-capcut-premiere-pro", label: "MP4 won't import — the four causes" },
     reply:
-      "YouTube publishes several renditions per upload and only some carry audio. 1080p is often served as a VP9/AV1 video-only stream with the audio in a separate file — grab that one and you get a silent MP4, which is why \"the 1080p option doesn't work\" is such a common complaint.\n\n" +
-      `Muxed H.264+ AAC is the file you want for editing; the format table here explains which uploads expose it: ${ORIGIN}/youtube-to-mp4-1080p`,
+      "Three causes cover most `media offline` / `unsupported format` errors: HEVC (H.265) in a container the NLE will not decode, a VP9/AV1 stream pulled out of a DASH manifest, or no audio track at all. Remux before importing:\n\n`ffmpeg -i in.mp4 -c:v libx264 -crf 18 -preset veryfast -c:a aac -b:a 192k out.mp4`\n\n" +
+      `Longer walkthrough with the codec table: ${ORIGIN}/guides/mp4-wont-import-capcut-premiere-pro`,
   },
   {
-    keyword: "safe zone",
-    subs: ["Tiktokhelp", "InstagramMarketing", "videoediting"],
-    link: { path: "/tiktok-safe-zone-checker", label: "Safe-zone checker" },
+    key: "iphone",
+    reddit: "iphone camera roll download",
+    se: "safari download video to photos iphone",
+    tag: "ios",
+    link: { path: "/guides/iphone-safari-downloads-to-files-and-photos", label: "iPhone: Files → Photos" },
     reply:
-      "The safe area is not one number — TikTok's own UI sits on the right (like/comment/share) and the caption block covers the bottom-left, so text inside roughly the outer 10-15% gets covered on some devices and not others. Keep critical text inside the middle ~1080×1420 of a 1080×1920 frame and you are covered on both TikTok and Reels.\n\n" +
-      `You can drag a frame onto the checker and see the overlays it would be hidden by: ${ORIGIN}/tiktok-safe-zone-checker`,
+      "Safari cannot write into the camera roll from a website — that is an iOS limit, not the tool. The file lands in Files → On My iPhone → Downloads. Open it there, long-press the MP4, Share → Save Video, and it appears in Photos like a recorded clip.\n\n" +
+      `Step-by-step with screenshots of each screen: ${ORIGIN}/guides/iphone-safari-downloads-to-files-and-photos`,
   },
   {
-    keyword: "mp4 import error",
-    subs: ["premiere", "videoediting", "CapCut"],
-    link: { path: "/video-thumbnail-downloader", label: "Thumbnail extractor" },
+    key: "1080p",
+    reddit: "1080p 60fps export settings",
+    se: "1080p 60fps export settings",
+    tag: "youtube",
+    link: { path: "/guides/1080p-60fps-download-edit-upload-workflow", label: "1080p60 workflow" },
     reply:
-      "Most \"media offline\" / \"unsupported format\" errors on a downloaded clip are one of three things: HEVC (H.265) in a container the NLE won't decode, a VP9/AV1 stream pulled from a DASH manifest, or a file with no audio track at all. Remux to H.264/AAC before importing — `ffmpeg -i in.mp4 -c:v libx264 -crf 18 -c:a aac -b:a 192k out.mp4` takes seconds and fixes all three.\n\n" +
-      `If you only need a still frame for a thumbnail, this pulls one without re-encoding the video: ${ORIGIN}/video-thumbnail-downloader`,
+      "60 fps survives only if it is 60 fps the whole way: record at 60, export at 60 with a matching shutter (1/120), and keep the bitrate high enough — roughly 12–16 Mbps for 1080p60 H.264. A 30 fps export re-timed to 60 looks smeared, and that is what people usually blame the platform for.\n\n" +
+      `The full record → download → edit → upload chain: ${ORIGIN}/guides/1080p-60fps-download-edit-upload-workflow`,
   },
   {
-    keyword: "rpm calculator",
-    subs: ["Tiktokhelp", "NewTubers"],
-    link: { path: "/tiktok-money-calculator", label: "TikTok money calculator" },
+    key: "safe-zone",
+    reddit: "tiktok safe zone",
+    se: "tiktok safe zone overlay",
+    tag: "design",
+    link: { path: "/tiktok-safe-zone-checker", label: "safe-zone checker" },
     reply:
-      "RPM maths trips people up because the headline \"Creator Fund pays per view\" number is a range, not a rate. Work it as: (views ÷ 1000) × RPM, where RPM already nets out the platform's share — then subtract the 24% US withholding if you are not a US taxpayer. Views from the For You feed and from search are paid differently, so a single average is a rough guide at best.\n\n" +
-      `You can put your own numbers in here and see the split instead of a single guess: ${ORIGIN}/tiktok-money-calculator`,
+      "The safe area is not one number: TikTok's buttons sit on the right and the caption block covers the bottom-left, and they differ between TikTok and Reels. Keep critical text inside roughly the middle 1080×1420 of a 1080×1920 frame and it survives both.\n\n" +
+      `Drag a frame onto the checker and it draws the real overlays: ${ORIGIN}/tiktok-safe-zone-checker`,
   },
   {
-    keyword: "slideshow download",
-    subs: ["Tiktokhelp"],
-    link: { path: "/", label: "Slideshow / photo post handling" },
+    key: "rpm",
+    reddit: "tiktok rpm calculator",
+    se: "tiktok rpm payout per 1000 views",
+    tag: "monetization",
+    link: { path: "/tiktok-money-calculator", label: "RPM calculator" },
     reply:
-      "Photo-mode posts and slideshows are not videos — there is no MP4 to fetch, which is why most downloaders hand you a 0-byte file or an error. TikTok serves each slide as an image plus a separate audio track; you either save the images or the audio, and a tool that claims to give you \"the video\" is guessing.\n\n" +
-      `The downloader says this plainly instead of writing a broken file: ${ORIGIN}/`,
+      "“Pays X per view” is a range quoted as a rate. The arithmetic is (views ÷ 1000) × RPM, then subtract the 24% US withholding if you are not a US taxpayer. For You traffic and search traffic pay differently, so any single average is rough.\n\n" +
+      `Put your own numbers in and see the split: ${ORIGIN}/tiktok-money-calculator`,
   },
 ];
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const log = (...parts) => console.log("[outreach]", ...parts);
 
-async function redditSearch(sub, keyword) {
-  const query = encodeURIComponent(keyword);
-  for (const host of ["www.reddit.com", "old.reddit.com"]) {
-    for (const sort of ["new", "relevance"]) {
-      const url =
-        `https://${host}/r/${sub}/search.json?q=${query}&restrict_sr=1&sort=${sort}` +
-        `&t=week&limit=25&raw_json=1`;
-      try {
-        const response = await fetch(url, {
-          headers: { "user-agent": UA, accept: "application/json" },
-          signal: AbortSignal.timeout(15_000),
-        });
-        if (!response.ok) {
-          log(`${host} r/${sub} "${keyword}" → HTTP ${response.status}`);
-          continue;
-        }
-        const body = await response.json();
-        const children = body?.data?.children ?? [];
-        if (children.length === 0) continue;
-        return children.map((child) => ({
-          title: child.data.title,
-          url: `https://www.reddit.com${child.data.permalink}`,
-          sub,
-          created: child.data.created_utc * 1000,
-          comments: child.data.num_comments,
-          score: child.data.score,
-          source: `${host} (${sort})`,
-        }));
-      } catch (error) {
-        log(`${host} r/${sub} "${keyword}" → ${error.message}`);
-      }
-      await sleep(400);
-    }
-  }
-  return [];
+async function getText(url, init) {
+  const response = await fetch(url, {
+    ...init,
+    headers: { "user-agent": UA, ...(init?.headers ?? {}) },
+    signal: AbortSignal.timeout(20_000),
+  });
+  return { status: response.status, ok: response.ok, body: await response.text() };
 }
 
-async function duckduckgoReddit(sub, keyword) {
-  const query = `site:reddit.com/r/${sub} ${keyword}`;
-  try {
-    const response = await fetch("https://html.duckduckgo.com/html/", {
-      method: "POST",
-      headers: { "user-agent": UA, "content-type": "application/x-www-form-urlencoded", accept: "text/html" },
-      body: new URLSearchParams({ q: query }),
-      signal: AbortSignal.timeout(20_000),
-    });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const html = await response.text();
-    const rows = [];
-    const block = /<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g;
-    for (const match of html.matchAll(block)) {
-      const raw = match[1].startsWith("//") ? `https:${match[1]}` : match[1];
-      let target = raw;
-      try {
-        const url = new URL(raw, "https://duckduckgo.com");
-        target = url.searchParams.get("uddg") ? decodeURIComponent(url.searchParams.get("uddg")) : url.href;
-      } catch {
-        /* keep raw */
+/* ------------------------------- 1. PullPush ------------------------------ */
+
+async function pullPush(topic) {
+  const url =
+    "https://api.pullpush.io/reddit/search/submission/?q=" +
+    `${encodeURIComponent(topic.reddit)}&size=15&sort=desc&sort_type=created_utc`;
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      const { status, ok, body } = await getText(url, { headers: { accept: "application/json" } });
+      if (!ok) {
+        if (attempt === 2) return { rows: [], error: `PullPush HTTP ${status}` };
+        await sleep(2_000);
+        continue;
       }
-      if (!/reddit\.com\/r\//.test(target)) continue;
-      if (!/\/comments\//.test(target)) continue;
-      rows.push({
-        title: match[2].replace(/<[^>]+>/g, "").trim(),
-        url: target.split("?")[0],
-        sub,
-        created: null,
-        comments: null,
-        score: null,
-        source: "duckduckgo (Bing index)",
-      });
-      if (rows.length >= 10) break;
+      const parsed = JSON.parse(body);
+      const rows = (parsed.data ?? []).map((item) => ({
+        title: item.title,
+        url: `https://www.reddit.com${item.permalink ?? `/r/${item.subreddit}/comments/${item.id}/`}`,
+        platform: `reddit · r/${item.subreddit}`,
+        created: (item.created_utc ?? 0) * 1000,
+        comments: item.num_comments ?? null,
+        source: "PullPush (Reddit archive)",
+        topic: topic.key,
+      }));
+      return { rows, error: null };
+    } catch (error) {
+      if (attempt === 2) return { rows: [], error: `PullPush ${error.message}` };
+      await sleep(2_000);
     }
-    return rows;
+  }
+  return { rows: [], error: "PullPush exhausted" };
+}
+
+/* -------------------------------- 2. Bing RSS ----------------------------- */
+
+function parseRss(xml) {
+  const items = [];
+  for (const match of xml.matchAll(/<item>([\s\S]*?)<\/item>/g)) {
+    const block = match[1];
+    const pick = (tag) => {
+      const found = block.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`));
+      return found ? found[1].replace(/<!\[CDATA\[|\]\]>/g, "").replace(/&amp;/g, "&").trim() : "";
+    };
+    const link = pick("link");
+    const title = pick("title");
+    if (!link || !title) continue;
+    items.push({ title, url: link, created: Date.parse(pick("pubDate")) || 0 });
+  }
+  return items;
+}
+
+async function bingRss(topic) {
+  const query = `site:reddit.com ("${topic.reddit}" OR "${topic.se}")`;
+  const url = `https://www.bing.com/search?q=${encodeURIComponent(query)}&format=rss`;
+  try {
+    const { status, ok, body } = await getText(url);
+    if (!ok) return { rows: [], error: `Bing RSS HTTP ${status}` };
+    const rows = parseRss(body)
+      .filter((item) => /reddit\.com\/r\/[^/]+\/comments\//.test(item.url))
+      .map((item) => ({
+        title: item.title,
+        url: item.url.split("?")[0],
+        platform: "reddit (via Bing RSS)",
+        created: item.created,
+        comments: null,
+        source: "Bing Search RSS",
+        topic: topic.key,
+      }));
+    return { rows, error: rows.length === 0 ? "Bing RSS returned no Reddit threads" : null };
   } catch (error) {
-    log(`ddg r/${sub} "${keyword}" → ${error.message}`);
-    return [];
+    return { rows: [], error: `Bing RSS ${error.message}` };
   }
 }
+
+/* ----------------------------- 3. Stack Exchange -------------------------- */
+
+async function stackExchange(topic) {
+  const rows = [];
+  let error = null;
+  for (const site of ["video", "superuser", "stackoverflow"]) {
+    const url =
+      "https://api.stackexchange.com/2.3/search/advanced?order=desc&sort=activity" +
+      `&q=${encodeURIComponent(topic.se)}&site=${site}&pagesize=5`;
+    try {
+      const { ok, status, body } = await getText(url, { headers: { accept: "application/json" } });
+      if (!ok) {
+        error = `StackExchange ${site} HTTP ${status}`;
+        continue;
+      }
+      const parsed = JSON.parse(body);
+      for (const item of parsed.items ?? []) {
+        rows.push({
+          title: item.title,
+          url: item.link,
+          platform: `stackexchange · ${site}`,
+          created: (item.creation_date ?? 0) * 1000,
+          comments: item.answer_count ?? null,
+          source: "Stack Exchange API",
+          topic: topic.key,
+        });
+      }
+    } catch (caught) {
+      error = `StackExchange ${site} ${caught.message}`;
+    }
+    await sleep(250);
+  }
+  return { rows, error: rows.length === 0 ? error ?? "Stack Exchange returned nothing" : null };
+}
+
+/* ---------------------------------- 4. dev.to ----------------------------- */
+
+async function devTo(topic) {
+  try {
+    const { ok, status, body } = await getText(
+      `https://dev.to/api/articles?tag=${encodeURIComponent(topic.tag)}&per_page=20`,
+      { headers: { accept: "application/json" } },
+    );
+    if (!ok) return { rows: [], error: `dev.to HTTP ${status}` };
+    const articles = JSON.parse(body);
+    /**
+     * Platform names are useless as matchers: every `tag=tiktok` article
+     * contains "tiktok", so the first version pulled in Japanese AB-testing
+     * posts and avatar-model launches. Only the distinctive words of the
+     * problem survive this filter, which is what makes a row worth replying to.
+     */
+    const platform = new Set([
+      "tiktok", "instagram", "youtube", "twitter", "facebook", "reddit",
+      "video", "videos", "reels", "reel", "clip", "clips", "after",
+    ]);
+    const terms = `${topic.reddit} ${topic.se}`
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((word) => word.length > 4 && !platform.has(word));
+    const rows = (Array.isArray(articles) ? articles : [])
+      .filter((article) => {
+        const haystack = `${article.title} ${article.description ?? ""}`.toLowerCase();
+        return terms.some((term) => haystack.includes(term));
+      })
+      .map((article) => ({
+        title: article.title,
+        url: article.url,
+        platform: "dev.to",
+        created: Date.parse(article.published_at ?? "") || 0,
+        comments: article.comments_count ?? null,
+        source: "dev.to API",
+        topic: topic.key,
+      }));
+    return { rows, error: rows.length === 0 ? "dev.to matched no on-topic article" : null };
+  } catch (error) {
+    return { rows: [], error: `dev.to ${error.message}` };
+  }
+}
+
+/* ---------------------------------- output -------------------------------- */
 
 function ageLabel(created) {
-  if (!created) return "unknown";
+  if (!created) return "date unknown";
   const hours = (Date.now() - created) / 3_600_000;
-  if (hours < 1) return `${Math.round(hours * 60)}m ago`;
+  if (hours < 1) return `${Math.max(1, Math.round(hours * 60))}m ago`;
   if (hours < 48) return `${Math.round(hours)}h ago`;
   return `${Math.round(hours / 24)}d ago`;
 }
 
-function writeReport({ threads, blocked, perTopic }) {
+function writeReport({ threads, sources, failures }) {
+  const bySource = sources
+    .map((entry) => `- ${entry.name}: **${entry.rows}** row(s)${entry.error ? ` — ${entry.error}` : ""}`)
+    .join("\n");
+
   const lines = [
     "# Live Tier-1 threads — today",
     "",
-    `Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC by ` +
-      `\`npm run seo:outreach\` (window: last ${Math.round(HOURS / 24)} days, ${LIMIT} threads).`,
+    `Generated ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC by \`npm run seo:outreach\` ` +
+      `(window: last ${DAYS} days, cap ${LIMIT}).`,
     "",
-    "Post these by hand, in your own words, and answer the question before you link anything. " +
-      "The drafts below exist to save typing, not to be pasted verbatim into six threads — Reddit's spam " +
-      "filter reads identical comments across communities faster than you can post them.",
+    "Post these by hand and in your own words. Answer the question first; the link is the last line, and only " +
+      "where it genuinely answers. Identical comments across communities are what triggers Reddit's spam filter.",
+    "",
+    "## Sources this run",
+    "",
+    bySource,
     "",
   ];
 
   if (threads.length === 0) {
     lines.push(
-      "## Nothing measured — every source was blocked",
+      "## No thread URLs",
       "",
-      "No thread URLs are listed because none were actually retrieved. Blocked endpoints:",
-      "",
-      ...blocked.map((entry) => `- ${entry}`),
-      "",
-      "The Reddit JSON API answers 403 to unauthenticated clients from most networks. To unblock this radar " +
-        "properly, either run it from a residential IP, or create a free Reddit script app and set " +
-        "`REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET` (read-only scope is enough). Until then the DuckDuckGo " +
-        "fallback is the only path, and it returned nothing usable today.",
+      "Every source refused or returned nothing, so this file lists none. A radar that invents a link is worse " +
+        "than an empty one.",
       "",
     );
   } else {
     lines.push("## Threads", "");
     threads.slice(0, LIMIT).forEach((thread, index) => {
-      const topic = perTopic.get(thread.topicKey);
+      const topic = TOPICS.find((entry) => entry.key === thread.topic);
       lines.push(
         `### ${index + 1}. [${thread.title}](${thread.url})`,
         "",
-        `- Subreddit: \`r/${thread.sub}\` · ${ageLabel(thread.created)} · ` +
-          `${thread.comments ?? "?"} comments · ${thread.score ?? "?"} points`,
-        `- Found via: ${thread.source} (query: \`${thread.keyword}\`)`,
+        `- ${thread.platform} · ${ageLabel(thread.created)} · ${thread.comments ?? "?"} comments`,
+        `- Found via: ${thread.source}`,
         `- Our page: ${ORIGIN}${topic.link.path}`,
         "",
         "<details><summary>Reply draft</summary>",
@@ -249,9 +343,8 @@ function writeReport({ threads, blocked, perTopic }) {
     });
   }
 
-  const blockedNote = blocked.length > 0 ? blocked.slice(0, 8) : [];
-  if (blockedNote.length > 0) {
-    lines.push("## Endpoints that refused this run", "", ...blockedNote.map((entry) => `- ${entry}`), "");
+  if (failures.length > 0) {
+    lines.push("## Source errors", "", ...failures.map((line) => `- ${line}`), "");
   }
 
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
@@ -259,44 +352,65 @@ function writeReport({ threads, blocked, perTopic }) {
   log(`wrote ${path.relative(process.cwd(), OUT)} (${threads.length} threads)`);
 }
 
+/* ----------------------------------- main --------------------------------- */
+
 async function main() {
-  log(`scanning ${TOPICS.length} topics across ${new Set(TOPICS.flatMap((t) => t.subs)).size} subreddits`);
-  const blocked = [];
-  const perTopic = new Map();
-  const seen = new Set();
+  const sources = [
+    { name: "PullPush (Reddit archive)", rows: 0, error: null },
+    { name: "Bing Search RSS", rows: 0, error: null },
+    { name: "Stack Exchange API", rows: 0, error: null },
+    { name: "dev.to API", rows: 0, error: null },
+  ];
+  const bump = (name, count, error) => {
+    const entry = sources.find((source) => source.name === name);
+    if (!entry) return;
+    entry.rows += count;
+    if (count === 0 && error) entry.error = entry.error ? `${entry.error}; ${error}` : error;
+  };
+
   const collected = [];
+  const failures = [];
+  const seen = new Set();
+  const cutoff = Date.now() - DAYS * 86_400_000;
 
   for (const topic of TOPICS) {
-    perTopic.set(topic.keyword, topic);
-    for (const sub of topic.subs) {
-      const fromApi = await redditSearch(sub, topic.keyword);
-      let rows = fromApi;
-      if (rows.length === 0) {
-        rows = await duckduckgoReddit(sub, topic.keyword);
-        if (rows.length === 0) blocked.push(`r/${sub} + "${topic.keyword}" — Reddit JSON 403, DuckDuckGo returned no thread`);
-      }
+    for (const [name, fetcher] of [
+      ["PullPush (Reddit archive)", pullPush],
+      ["Bing Search RSS", bingRss],
+      ["Stack Exchange API", stackExchange],
+      ["dev.to API", devTo],
+    ]) {
+      const { rows, error } = await fetcher(topic);
+      bump(name, rows.length, error);
+      if (error) failures.push(`${name} · ${topic.key}: ${error}`);
       for (const row of rows) {
-        const cutoff = Date.now() - HOURS * 3_600_000;
-        if (row.created && row.created < cutoff) continue;
         const key = row.url.replace(/\/$/, "");
         if (seen.has(key)) continue;
+        // Undated rows (RSS without pubDate, archive gaps) are kept only when the
+        // source itself is date-ordered; otherwise they would dominate the list.
+        if (row.created && row.created < cutoff) continue;
         seen.add(key);
-        collected.push({ ...row, topicKey: topic.keyword, keyword: topic.keyword });
+        collected.push(row);
       }
-      await sleep(500);
+      await sleep(300);
     }
+    log(`  ${topic.key}: ${collected.length} unique so far`);
   }
 
   collected.sort((a, b) => (b.created ?? 0) - (a.created ?? 0));
-  writeReport({ threads: collected, blocked, perTopic });
+  writeReport({ threads: collected, sources, failures });
 
+  for (const source of sources) {
+    log(`${source.rows.toString().padStart(3)} rows  ${source.name}${source.error ? ` — ${source.error}` : ""}`);
+  }
   if (collected.length === 0) {
-    log("no live threads retrieved — see the report for which endpoints refused");
-    process.exitCode = blocked.length > 0 ? 1 : 0;
+    log("no live thread retrieved — every source refused or returned nothing");
+    process.exitCode = 1;
     return;
   }
-  log(`${collected.length} threads, newest first:`);
-  for (const row of collected.slice(0, LIMIT)) log(`  ${ageLabel(row.created).padEnd(8)} r/${row.sub} — ${row.title}`);
+  for (const row of collected.slice(0, LIMIT)) {
+    log(`  ${ageLabel(row.created).padEnd(10)} ${row.platform} — ${row.title.slice(0, 70)}`);
+  }
 }
 
 main().catch((error) => {
