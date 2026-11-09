@@ -116,12 +116,18 @@ export function SiteHeader() {
                   theme toggle instead of inside NAV: a sixth full-size nav
                   item pushed the desktop row past 1152px, and this is a
                   secondary surface, not a platform page. */}
+              {/* Hidden under 375px: below that the row measures 330px of
+                  content inside a 284px bar (46px over), and since the logo
+                  and this cluster are both `shrink-0` the surplus has nowhere
+                  to go but past the corner. This badge is the secondary item
+                  here: the resolver row below stays, and the footer still
+                  links /apps under Company, so nothing becomes unreachable. */}
               <Link
                 href="/apps"
                 prefetch={true}
                 aria-current={isCurrent(pathname, "/apps") ? "page" : undefined}
                 className={cn(
-                  "inline-flex h-9 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition-colors duration-200 sm:px-3 sm:text-sm",
+                  "hidden h-9 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium transition-colors duration-200 min-[375px]:inline-flex sm:px-3 sm:text-sm",
                   isCurrent(pathname, "/apps")
                     ? "border-[var(--glass-border-hover)] bg-[var(--field-strong)] text-[var(--text)]"
                     : "border-[var(--glass-border)] bg-[var(--field)] text-[var(--text-2)] hover:border-[var(--glass-border-hover)] hover:text-[var(--text)]",
