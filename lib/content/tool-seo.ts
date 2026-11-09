@@ -323,6 +323,15 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
         anchor: "Is downloading videos legal?",
         note: "Copyright, fair use and personal use, plainly.",
       },
+      {
+        // Search Console listed /twitter-video-downloader as "Discovered -
+        // currently not indexed" with four inbound links in the whole site.
+        // The two platform pages Google does crawl every other day are the
+        // shortest path to it, so each one links it in prose.
+        href: "/twitter-video-downloader",
+        anchor: "Twitter / X video downloader",
+        note: "Videos and GIFs from any x.com post, up to 1080p.",
+      },
     ],
   },
 
@@ -473,6 +482,11 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
         href: "/guides/browser-vs-app-tiktok-downloaders-safety",
         anchor: "Browser downloaders vs APK apps",
         note: "The smallest attack surface, explained.",
+      },
+      {
+        href: "/twitter-video-downloader",
+        anchor: "Twitter / X video downloader",
+        note: "The fifth surface — same browser, no login, 1080p MP4.",
       },
     ],
   },

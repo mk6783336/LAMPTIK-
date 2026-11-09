@@ -55,9 +55,13 @@ function absoluteLanguages(languages: Record<string, string>): Record<string, st
  */
 const REVISED = {
   home: "2026-11-08",
-  instagram: "2026-10-31",
-  facebook: "2026-11-07",
-  twitter: "2026-11-08",
+  // 2026-11-09: the FAQ copy these three pages render changed (LOW-KD phrases
+  // answered on facebook, instagram and twitter). An older `lastmod` tells
+  // Google the page it should recrawl is unchanged, which is the opposite of
+  // what two not-yet-indexed URLs need.
+  instagram: "2026-11-09",
+  facebook: "2026-11-09",
+  twitter: "2026-11-09",
   youtube: "2026-11-08",
   toolsHub: "2026-11-08",
   subTools: "2026-11-09",
@@ -179,25 +183,25 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const creatorTools: MetadataRoute.Sitemap = [
     {
       url: `${siteUrl}/tiktok-money-calculator`,
-      lastModified: new Date("2026-11-07"),
+      lastModified: new Date("2026-11-09"),
       changeFrequency: "monthly",
       priority: 0.85,
     },
     {
       url: `${siteUrl}/tiktok-safe-zone-checker`,
-      lastModified: new Date("2026-11-07"),
+      lastModified: new Date("2026-11-09"),
       changeFrequency: "monthly",
       priority: 0.85,
     },
     {
       url: `${siteUrl}/video-thumbnail-downloader`,
-      lastModified: new Date("2026-11-07"),
+      lastModified: new Date("2026-11-09"),
       changeFrequency: "monthly",
       priority: 0.85,
     },
     {
       url: `${siteUrl}/tiktok-caption-hashtag-extractor`,
-      lastModified: new Date("2026-11-07"),
+      lastModified: new Date("2026-11-09"),
       changeFrequency: "monthly",
       priority: 0.85,
     },
