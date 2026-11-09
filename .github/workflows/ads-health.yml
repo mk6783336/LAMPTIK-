@@ -71,10 +71,6 @@ jobs:
           GA4_DROP_POINTS: ${{ vars.GA4_DROP_POINTS }}
         run: node scripts/ads-health.mjs
 
-      - name: Fail on a measurement error
-        if: steps.health.outcome == 'failure'
-        run: exit 1
-
       # One rolling issue, not one per zone per day: the alert is a place to
       # look, and an inbox with fourteen duplicates is not. A repeat
       # regression becomes a comment on the same issue.
@@ -109,6 +105,13 @@ jobs:
             gh issue comment "$EXISTING" --body "Recovered: every zone is back within the alert thresholds in this run."
             gh issue close "$EXISTING"
           fi
+
+      # Same ordering rule as twitter-health.yml: an exiting step skips the rest
+      # of the job, so a failed measurement must be reported before it fails the
+      # run — otherwise the alert exists only as a red badge nobody sees.
+      - name: Fail on a measurement error
+        if: steps.health.outcome == 'failure'
+        run: exit 1
 
       - name: Fail the run when a zone regressed
         if: steps.health.outputs.alerts == 'true'

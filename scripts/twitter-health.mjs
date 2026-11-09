@@ -41,12 +41,28 @@ const ORIGIN = (process.env.TWITTER_HEALTH_ORIGIN ?? "https://www.lamptik.online
   /\/+$/,
   "",
 );
-const FIXTURE = (
-  process.env.TWITTER_HEALTH_POSTS ?? "1879168383423496436"
-)
-  .split(",")[0]
-  .trim()
-  .replace(/^.*\/status\//, "");
+/** The post this check reads when no override is configured. */
+const DEFAULT_FIXTURE = "1879168383423496436";
+/**
+ * Fixture ids, with the empty case treated as "not set".
+ *
+ * A GitHub repository variable that was never created reaches the step as an
+ * EMPTY STRING, not as undefined — and `??` only falls back for null/undefined,
+ * so the original `(process.env.TWITTER_HEALTH_POSTS ?? default)` produced
+ * `FIXTURE === ""`. Every scheduled run then requested
+ * `https://x.com/i/status/`, reported the visitor path as broken while all
+ * three mirrors were healthy, and failed the job. Eight consecutive runs died
+ * this way, and the alert issue never opened because the failing guard step sat
+ * above it — so the monitor was silent about its own silence.
+ *
+ * Ids are filtered rather than trusted: a stray comma or a pasted URL tail must
+ * fall back to the default, never become a malformed fixture.
+ */
+const FIXTURES = (process.env.TWITTER_HEALTH_POSTS ?? "")
+  .split(",")
+  .map((entry) => entry.trim().replace(/^.*\/status\//, "").replace(/[?#].*$/, ""))
+  .filter((entry) => /^\d{5,25}$/.test(entry));
+const FIXTURE = FIXTURES[0] ?? DEFAULT_FIXTURE;
 const ALERT_PATH = process.env.TWITTER_HEALTH_ALERT_PATH ?? "twitter-health-alerts.md";
 const RUN_URL = (process.env.RUN_URL ?? "").trim();
 /** Two retries: a scheduled run must tell "one bad request" from "one dead mirror". */
@@ -107,6 +123,14 @@ async function main() {
 
   log(`Twitter resolver health — ${ORIGIN}`);
   log("");
+
+  // Say it out loud when an override was supplied but unusable: silently
+  // measuring a different post than the one configured is how a "healthy"
+  // report ends up describing something nobody asked about.
+  if (FIXTURES.length === 0 && (process.env.TWITTER_HEALTH_POSTS ?? "").trim() !== "") {
+    log(`TWITTER_HEALTH_POSTS has no usable post id — falling back to ${DEFAULT_FIXTURE}.`);
+    log("");
+  }
 
   try {
     const health = await getJsonWithRetry(`${ORIGIN}/api/twitter/health`, "health endpoint");

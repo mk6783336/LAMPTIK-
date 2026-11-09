@@ -62,10 +62,6 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: node scripts/twitter-health.mjs
 
-      - name: Fail on a probe error
-        if: steps.health.outcome == 'failure'
-        run: exit 1
-
       - name: Open or update the alert issue
         id: issue
         if: steps.health.outputs.alerts == 'true'
@@ -124,6 +120,14 @@ jobs:
           node scripts/notify-webhook.mjs \
             --title "[twitter] resolver recovered" \
             --text "All three mirrors are healthy again in this run."
+
+      # Both failure exits sit at the end on purpose. A step that exits 1 skips
+      # every step below it, so while this guard sat directly under the probe a
+      # failed probe produced a red run with no issue and no chat message — the
+      # exact silence this job exists to break.
+      - name: Fail on a probe error
+        if: steps.health.outcome == 'failure'
+        run: exit 1
 
       - name: Fail the run when a mirror regressed
         if: steps.health.outputs.alerts == 'true'
