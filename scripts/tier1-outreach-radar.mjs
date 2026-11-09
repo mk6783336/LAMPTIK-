@@ -388,7 +388,15 @@ async function main() {
         if (seen.has(key)) continue;
         // Undated rows (RSS without pubDate, archive gaps) are kept only when the
         // source itself is date-ordered; otherwise they would dominate the list.
-        if (row.created && row.created < cutoff) continue;
+        //
+        // Stack Exchange is the exception: its API is sorted by recent
+        // *activity*, not creation, and the video/superuser sites are quiet — a
+        // 2022 "remove the TikTok logo with ffmpeg" question that still collects
+        // answers is a live thread and a far better fit than anything dev.to
+        // published this week. Measuring SE rows against the 7-day Reddit window
+        // discarded every one of them, so age never filters this source; the
+        // activity sort already does that job.
+        if (row.source !== "Stack Exchange API" && row.created && row.created < cutoff) continue;
         seen.add(key);
         collected.push(row);
       }
