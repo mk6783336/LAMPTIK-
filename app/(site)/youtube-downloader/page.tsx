@@ -398,6 +398,25 @@ export default function YouTubeDownloaderPage() {
                     "Shorts to MP3",
                     "Just the audio from a vertical Short.",
                   ],
+                  // The same page in the three languages that carry it. Kept in
+                  // this grid rather than only in the language strip below, so
+                  // the localized URLs are reached by a contextual anchor from
+                  // the body of the page that actually answers the query.
+                  [
+                    "/hi/youtube-downloader",
+                    "YouTube downloader in Hindi",
+                    "यही टूल हिंदी में — 1080p MP4 और MP3, बिना ऐप।",
+                  ],
+                  [
+                    "/tl/youtube-downloader",
+                    "YouTube downloader sa Filipino",
+                    "Parehong tool, 1080p MP4 at MP3 — walang app na kailangan.",
+                  ],
+                  [
+                    "/ur/youtube-downloader",
+                    "YouTube downloader in Urdu",
+                    "وہی ٹول اردو میں — 1080p MP4 اور MP3، بغیر ایپ کے۔",
+                  ],
                 ].map(([href, title, note]) => (
                   <Link key={href} href={href} className="bento-card group flex items-start gap-3">
                     <span className="min-w-0 flex-1">

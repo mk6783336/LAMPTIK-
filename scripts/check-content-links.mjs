@@ -16,7 +16,8 @@
  *   sub-tools[].guides[].slug → must be a guide slug
  *   groups[].slugs[]          → must be a sub-tool slug
  *   sub-tools[].slug          → must have an app/(site)/<slug>/page.tsx
- *   tool-seo links[].href     → must be a route that exists on disk
+ *   tool-seo links[].href     → must be a route that exists on disk, including
+ *                              the /<locale>/<platform> pages under app/(i18n)
  *   app/sitemap.ts            → must agree with the routes on disk, both ways
  *
  * The last one is the invariant the registry comments promise: an entry without
@@ -272,6 +273,34 @@ async function discoverRoutes() {
 }
 
 const routes = await discoverRoutes();
+
+/**
+ * Localized platform pages (`/hi/youtube-downloader`, `/ur/instagram-reels-downloader`).
+ *
+ * They are served by app/(i18n)/[lang]/[tool]/page.tsx — outside the tree
+ * `discoverRoutes` walks — and the sitemap emits them from a variable rather
+ * than as literals. So they join the set of *link targets* only, never the
+ * route set that the sitemap parity check compares.
+ */
+async function discoverLocaleTargets() {
+  const targets = new Set();
+  try {
+    await stat(path.join(root, "app/(i18n)/[lang]/[tool]/page.tsx"));
+  } catch {
+    return targets; // no localized platform routes in this build
+  }
+
+  const source = await readFile(path.join(root, "lib/i18n/platform-landings.ts"), "utf8");
+  const listOf = (pattern) =>
+    [...(source.match(pattern)?.[1] ?? "").matchAll(/"([^"]+)"/g)].map((match) => match[1]);
+
+  const locales = listOf(/export const PLATFORM_LOCALES[^=]*=\s*\[([\s\S]*?)\]/);
+  const slugs = listOf(/export const LOCALIZED_PLATFORM_SLUGS[^=]*=\s*\{([\s\S]*?)\}/);
+  for (const locale of locales) for (const slug of slugs) targets.add(`/${locale}/${slug}`);
+  return targets;
+}
+
+const linkTargets = new Set([...routes, ...(await discoverLocaleTargets())]);
 const toolSeoSource = await readFile(toolSeoPath, "utf8");
 
 for (const { bodyStart, body } of arrayBodies(toolSeoSource, "links")) {
@@ -283,12 +312,12 @@ for (const { bodyStart, body } of arrayBodies(toolSeoSource, "links")) {
     if (!href.startsWith("/")) continue;
 
     const target = href.split(/[?#]/)[0].replace(/\/+$/, "") || "/";
-    if (!routes.has(target)) {
+    if (!linkTargets.has(target)) {
       fail(
         rel(toolSeoPath),
         toolSeoSource,
         bodyStart + match.index,
-        `a platform page links to "${href}", which matches no route in app/(site)`,
+        `a platform page links to "${href}", which matches no route in app/(site) or app/(i18n)`,
       );
     }
   }

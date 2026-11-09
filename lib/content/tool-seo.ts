@@ -290,6 +290,11 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
         note: "Reels, Watch uploads and fb.watch links.",
       },
       {
+        href: "/ur/instagram-reels-downloader",
+        anchor: "Instagram Reels downloader in Urdu",
+        note: "The same Reels tool with Urdu instructions — same original HD file.",
+      },
+      {
         href: "/guides/how-to-download-instagram-reels-in-hd",
         anchor: "Download Instagram Reels in HD",
         note: "Device-by-device instructions and quality notes.",
@@ -417,6 +422,11 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
         href: "/instagram-reels-downloader",
         anchor: "Instagram Reels downloader",
         note: "Original-quality Reels at full 1080p.",
+      },
+      {
+        href: "/ur/facebook-video-downloader",
+        anchor: "Facebook video downloader in Urdu",
+        note: "This page in Urdu — same HD extraction and the same 1GB+ handling.",
       },
       {
         href: "/guides/how-to-download-large-facebook-videos-in-1080p-hd",
