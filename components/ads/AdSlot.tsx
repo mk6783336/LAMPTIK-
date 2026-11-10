@@ -314,6 +314,29 @@ export function AdSlot({
     return () => observer.disconnect();
   }, [width]);
 
+  /**
+   * The mobile zone key, computed the same way as `key` but for the rectangle
+   * a leaderboard swaps into under 640px. Emitted as a data attribute so the
+   * parse-time bootstrap can pick the right one without duplicating this
+   * logic (a second copy of the zone table is how a slot starts billing the
+   * wrong zone).
+   */
+  const mobileKey = (zoneId !== undefined ? (zoneId ?? "") : adZoneKey(slot, "rectangle")).trim();
+
+  /**
+   * Above-the-fold slots render their `<iframe>` with the rest of the HTML.
+   *
+   * Measured on a throttled 390px phone, the first ad request left at ~11s
+   * because `frameSrc` only becomes non-empty after hydration (the React
+   * effect that sets `visible`). The element is therefore server-rendered
+   * WITHOUT a src, and the inline bootstrap in `AdScripts` assigns the src at
+   * `DOMContentLoaded + 1200ms` — after first paint, before hydration. React
+   * still owns the node (so there is no adoption, no second iframe and no
+   * duplicate auction); when `frameSrc` finally fills in it writes the same
+   * URL, which does not reload a frame that already has it.
+   */
+  const bootable = Boolean(eager) && Boolean(key);
+
   const frameSrc = useMemo(() => {
     if (!key || !visible || creativeState === "fallback") return "";
     const params = new URLSearchParams({ key, w: String(width), h: String(height) });
@@ -332,7 +355,11 @@ export function AdSlot({
       attemptRef.current = null;
       return;
     }
-    attemptRef.current = { startedAt: Date.now(), reported: false };
+    // A booted frame has been in the network since the bootstrap assigned its
+    // src; the auction clock must start there, not here, or the reported
+    // `wait_ms` would claim a slot answered faster than it did.
+    const bootedAt = reloadToken === 0 ? Number(frameRef.current?.dataset.adStarted) || 0 : 0;
+    attemptRef.current = { startedAt: bootedAt || Date.now(), reported: false };
   }, [frameSrc, reloadToken]);
 
   // Attached as soon as the zone key is known, deliberately NOT gated on
@@ -449,7 +476,7 @@ export function AdSlot({
           />
         ) : null}
 
-        {frameSrc ? (
+        {frameSrc || bootable ? (
           <div
             className={cn(
               "shrink-0",
@@ -468,7 +495,14 @@ export function AdSlot({
               key={reloadToken}
               ref={frameRef}
               title={label ?? "Sponsored advertisement"}
-              src={frameSrc}
+              src={frameSrc || undefined}
+              data-ad-boot={bootable ? "1" : undefined}
+              data-ad-zone={bootable ? key : undefined}
+              data-ad-zone-mobile={bootable ? mobileKey : undefined}
+              data-ad-w={bootable ? width : undefined}
+              data-ad-h={bootable ? height : undefined}
+              data-ad-w-mobile={bootable ? AD_RESERVED.rectangle.width : undefined}
+              data-ad-h-mobile={bootable ? AD_RESERVED.rectangle.height : undefined}
               width={width}
               height={height}
               loading="eager"

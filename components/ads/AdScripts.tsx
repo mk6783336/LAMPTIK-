@@ -222,7 +222,30 @@ document.addEventListener("click",function(e){
   try{hit=t.closest('a[download],a[href*="/api/download"]');}catch(err){}
   if(hit)intent();
 },true);
+function bootFrames(){
+  function run(){
+    var frames=document.querySelectorAll("iframe[data-ad-boot]");
+    var mq=window.matchMedia?window.matchMedia("(max-width: 639px)"):null;
+    var mobile=!!(mq&&mq.matches);
+    for(var i=0;i<frames.length;i++){
+      var f=frames[i];
+      if(!f||f.getAttribute("src"))continue;
+      var key=f.getAttribute(mobile?"data-ad-zone-mobile":"data-ad-zone");
+      var w=f.getAttribute(mobile?"data-ad-w-mobile":"data-ad-w");
+      var h=f.getAttribute(mobile?"data-ad-h-mobile":"data-ad-h");
+      if(!key||!w||!h)continue;
+      try{f.setAttribute("data-ad-started",String(Date.now()));}catch(e){}
+      f.src="/api/ad-frame?key="+encodeURIComponent(key)+"&w="+w+"&h="+h;
+    }
+  }
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",function(){window.setTimeout(run,1200);});
+  }else{
+    window.setTimeout(run,1200);
+  }
+}
 try{guard();}catch(e){}
+try{bootFrames();}catch(e){}
 try{if("serviceWorker" in navigator){navigator.serviceWorker.register("/sw.js").catch(function(){});}}catch(e){}
 }catch(e){}})();`;
 
