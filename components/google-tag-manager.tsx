@@ -11,13 +11,19 @@ import { gtmContainerId } from "@/lib/analytics";
  * 2. A `<noscript>` iframe as the first element in `<body>`, for visitors
  *    with JavaScript disabled.
  *
- * Why `afterInteractive` instead of the raw snippet pasted "as high in the
- * head as possible": the raw form executes at parse time and competes with
- * the LCP image for bandwidth on the very first paint. `afterInteractive`
- * still places the tag in the document head, but schedules it after
- * hydration. The ordering that actually matters is preserved — the Consent
- * Mode v2 defaults in `components/consent-mode.tsx` are a plain inline head
- * script, so they always run before this container can load a single tag.
+ * Why `lazyOnload` instead of the raw snippet pasted "as high in the head as
+ * possible": the raw form executes at parse time and competes with the LCP
+ * text for bandwidth on the first paint. `afterInteractive` was still too
+ * early — a throttled 390px trace put `gtm.js` and the tags it fires inside
+ * the window a visitor is trying to use the tool in (239ms here, plus a
+ * Clarity collect that lands at 2.5s and is fired BY this container), while
+ * `gtm.js` is not the site's measurement path: GA4 is configured directly in
+ * `components/google-analytics.tsx`, so nothing about page views, downloads or
+ * platform switches depends on this container being early. It now loads when
+ * the browser is idle after `load`, which is the first moment it cannot delay
+ * anyone. The ordering that matters is preserved — the Consent Mode v2
+ * defaults in `components/consent-mode.tsx` are a plain inline head script, so
+ * they always run before this container can load a single tag.
  *
  * One Google property per job: the direct GA4 tags (`G-TLNZNDJD4J` and
  * `G-8YQHV877RV`) in `components/google-analytics.tsx` remain the measurement
@@ -37,7 +43,7 @@ export function GoogleTagManager() {
   const id = JSON.stringify(gtmContainerId);
 
   return (
-    <Script id="gtm-container" strategy="afterInteractive">
+    <Script id="gtm-container" strategy="lazyOnload">
       {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer',${id});`}
     </Script>
   );
