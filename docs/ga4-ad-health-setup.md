@@ -142,8 +142,18 @@ node scripts/ads-health.mjs
 ```
 
 Locally without credentials, `--skip-if-unconfigured` prints what is missing
-and exits `0`; the workflow does not pass that flag on purpose, because a green
-run that measured nothing is worse than a red one that says so.
+and exits `0`. The scheduled workflow passes that flag too, and the reason is
+evidence rather than preference: with the secret missing, the job exited 1
+seven seconds into every run, so the red badge meant "not set up" far more
+often than "a zone regressed" — the one alert this job exists to send was
+buried under its own configuration noise.
+
+The run still refuses to pass for a healthy one. It writes **Ad fill health:
+not configured — this run passed without measuring anything** to the run's
+Summary tab, and `configured=false` is a separate output from `alerts`, so a
+missing key can never be read as a zone that recovered. Once
+`GA4_SERVICE_ACCOUNT_JSON` exists, a red run means a real API or zone problem
+again.
 
 ## Tuning
 
