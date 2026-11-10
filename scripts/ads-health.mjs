@@ -24,6 +24,12 @@
  * `ads-health-alerts.md` when something is wrong (the workflow turns that
  * file into a GitHub issue and a failed run).
  *
+ * The same window's traffic follows it: sessions, users, page views, where the
+ * sessions came from and the top pages. A fill rate is a ratio over a sample
+ * nobody sized — a zone can "drop" because a channel stopped sending people,
+ * and this is the table that shows which. It is reporting only: traffic never
+ * opens or closes an issue.
+ *
  * Auth is the same service account used by `scripts/gsc-check.mjs`: the key
  * is accepted raw or base64, and `GA4_SERVICE_ACCOUNT_JSON` falls back to
  * `GSC_SERVICE_ACCOUNT_JSON` so one key can serve both APIs. The account must
@@ -227,6 +233,152 @@ async function runReport(token) {
 }
 
 // ---------------------------------------------------------------------------
+// Traffic — what the auctions rode on
+// ---------------------------------------------------------------------------
+
+const number = new Intl.NumberFormat("en-US");
+
+/**
+ * Three questions in one call, on the fill report's own window: how much
+ * traffic arrived, where it came from, and which pages it read.
+ *
+ * This is deliberately not allowed to take the run down. A fill-rate
+ * regression is the alert this job exists to send, and a quota error or a
+ * renamed dimension here must not replace that alert with a stack trace —
+ * the caller catches and reports the reason in the summary instead.
+ */
+async function loadTraffic(token) {
+  const url = `https://analyticsdata.googleapis.com/v1beta/properties/${PROPERTY}:batchRunReports`;
+  const dateRanges = [{ startDate: RECENT.startDate, endDate: RECENT.endDate }];
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({
+      requests: [
+        {
+          dateRanges,
+          metrics: [{ name: "sessions" }, { name: "totalUsers" }, { name: "screenPageViews" }],
+        },
+        {
+          dateRanges,
+          dimensions: [{ name: "sessionSource" }, { name: "sessionMedium" }],
+          metrics: [{ name: "sessions" }],
+          limit: 10,
+          orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+        },
+        {
+          dateRanges,
+          dimensions: [{ name: "pagePath" }],
+          metrics: [{ name: "screenPageViews" }, { name: "sessions" }],
+          limit: 10,
+          orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
+        },
+      ],
+    }),
+    signal: AbortSignal.timeout(60_000),
+  });
+
+  const text = await response.text();
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = null;
+  }
+  if (!response.ok) {
+    throw new Error(data?.error?.message ?? `HTTP ${response.status}`);
+  }
+
+  const reports = data?.reports ?? [];
+  const total = reports[0]?.rows?.[0]?.metricValues ?? [];
+  const count = (value) => Number(value?.value ?? 0);
+
+  return {
+    sessions: count(total[0]),
+    users: count(total[1]),
+    views: count(total[2]),
+    sources: (reports[1]?.rows ?? []).map((row) => ({
+      source: row.dimensionValues?.[0]?.value || "(not set)",
+      medium: row.dimensionValues?.[1]?.value || "(not set)",
+      sessions: count(row.metricValues?.[0]),
+    })),
+    pages: (reports[2]?.rows ?? []).map((row) => ({
+      path: row.dimensionValues?.[0]?.value || "(not set)",
+      views: count(row.metricValues?.[0]),
+      sessions: count(row.metricValues?.[1]),
+    })),
+  };
+}
+
+/** A `|` in a path or source would break the table's columns. */
+function escapeCell(value) {
+  return String(value).replace(/\|/g, "\\|");
+}
+
+function renderTraffic(traffic) {
+  summary(`## Traffic, same window`);
+  summary(`Recent: **${RECENT.startDate} → ${RECENT.endDate}** (${RECENT_DAYS}d).`);
+
+  if (traffic.error) {
+    log("");
+    log(`traffic: unavailable — ${traffic.error}`);
+    summary("");
+    summary(`> **Traffic report unavailable.** ${traffic.error}`);
+    summary("");
+    return;
+  }
+
+  const { sessions, users, views, sources, pages } = traffic;
+  log("");
+  log(
+    `traffic ${RECENT.startDate}..${RECENT.endDate}: ${number.format(sessions)} sessions · ` +
+      `${number.format(users)} users · ${number.format(views)} page views`,
+  );
+
+  summary("");
+  summary(
+    `**${number.format(sessions)}** sessions · **${number.format(users)}** users · ` +
+      `**${number.format(views)}** page views`,
+  );
+  summary("");
+
+  if (!sessions) {
+    summary("_No sessions in this window._");
+    summary("");
+    return;
+  }
+
+  if (sources.length) {
+    summary(`### Where the sessions came from`);
+    summary("| Source / medium | Sessions |");
+    summary("| --- | ---: |");
+    for (const entry of sources) {
+      summary(
+        `| ${escapeCell(entry.source)} / ${escapeCell(entry.medium)} | ${number.format(
+          entry.sessions,
+        )} |`,
+      );
+    }
+    summary("");
+  }
+
+  if (pages.length) {
+    summary(`### Top pages`);
+    summary("| Page | Views | Sessions |");
+    summary("| --- | ---: | ---: |");
+    for (const entry of pages) {
+      summary(
+        `| \`${escapeCell(entry.path)}\` | ${number.format(entry.views)} | ${number.format(
+          entry.sessions,
+        )} |`,
+      );
+    }
+    summary("");
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Aggregation
 // ---------------------------------------------------------------------------
 
@@ -398,6 +550,12 @@ async function main() {
 
   const credentials = parseCredentials(KEY_RAW);
   const token = await getAccessToken(credentials);
+
+  // Fetched before the ad report so a window with no auctions still answers
+  // the traffic question, and caught here so a traffic failure is a line in
+  // the summary rather than the end of the run.
+  const traffic = await loadTraffic(token).catch((error) => ({ error: error.message }));
+
   const data = await runReport(token);
   const rows = data?.rows ?? [];
 
@@ -410,6 +568,7 @@ async function main() {
     // wrong" from "nothing was measured": only the former may close an issue.
     setOutput("measured", "false");
     setOutput("alerts", "false");
+    renderTraffic(traffic);
     return;
   }
 
@@ -443,6 +602,9 @@ async function main() {
   summary(
     `Alert rule: a drop of ≥${DROP_POINTS} points, or zero fills, on at least ${MIN_AUCTIONS} measurable auctions.`,
   );
+  summary("");
+
+  renderTraffic(traffic);
 
   if (!alerts.length) {
     setOutput("alerts", "false");

@@ -17,6 +17,11 @@ name: Ad Fill Health
 #     fallback so one key can serve Search Console and GA4) and the numeric
 #     property id in the GA4_PROPERTY_ID repository variable.
 #
+# The same run also prints the window's traffic into the Summary — sessions,
+# users, page views, source/medium and top pages, on the identical dates. It is
+# reporting only: traffic never opens or closes an issue, and a traffic query
+# that fails is recorded in the summary without suppressing the fill alert.
+#
 # A regression opens or updates an issue labelled `ads-health` and fails the
 # run — the failed scheduled run is what makes GitHub email the owner. The
 # issue closes itself on the first run that measures every zone back inside
@@ -39,7 +44,7 @@ concurrency:
 
 jobs:
   report:
-    name: Report ad fill by zone
+    name: Report ad fill and traffic
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

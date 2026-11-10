@@ -27,6 +27,11 @@ moves.
 
 ## What the report contains
 
+The traffic block sits under the zone table and covers the identical dates,
+because a fill rate is a ratio over a sample nobody sized: a zone can look like
+it "dropped" when the channel feeding it simply stopped sending people. Traffic
+is reporting only — it never opens an issue and never closes one.
+
 | Section | Source | Notes |
 |---|---|---|
 | Fill rate per zone, recent window | GA4 Data API | Default: last 3 days, ending 2 days ago |
@@ -34,6 +39,9 @@ moves.
 | Auctions measured and blocked share | GA4 Data API | Blocked traffic shown, excluded from the rate |
 | Placements using each zone | GA4 Data API | Answers "which slot do I fix?" |
 | Verdict per zone (`ok` / `dropping` / `dead` / `blocked` / `new`) | Script | Sorted so problems come first |
+| Traffic for the same window: sessions, users, page views | GA4 Data API | Totals over the recent window |
+| Where the sessions came from (source / medium) | GA4 Data API | Top 10 by sessions |
+| Top pages | GA4 Data API | Top 10 by page views |
 
 The report lands in the workflow run's **Summary** tab, and the console log
 carries the same table.
@@ -186,6 +194,10 @@ All optional, set as repository **variables** (Settings → Secrets and variable
   describes the state a couple of days ago, not this morning. For "right now",
   the site's own `__lamptikAds()` inspection (dev builds) or the GA4 Realtime
   tab is the tool.
+- **Traffic never fails the run.** If the traffic queries error (quota, a
+  renamed dimension), the summary says so in one line and the fill-rate report
+  and its alert still go out. A missing traffic table is not a reason to lose
+  the dead-zone signal.
 - **Quiet zones stay quiet.** Under `GA4_MIN_AUCTIONS` there is not enough data
   to call a drop a drop, and the zone shows status `new` or `ok` rather than a
   false alarm.
