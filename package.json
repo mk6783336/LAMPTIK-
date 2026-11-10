@@ -14,6 +14,7 @@
     "check:header": "node scripts/check-header-width.mjs",
     "check:ads": "node scripts/check-ad-integrity.mjs",
     "check:sitemap": "node scripts/check-sitemap.mjs",
+    "check:i18n": "node scripts/check-i18n-seo.mjs",
     "ads:health": "node scripts/ads-health.mjs",
     "twitter:health": "node scripts/twitter-health.mjs",
     "notify:webhook": "node scripts/notify-webhook.mjs",
