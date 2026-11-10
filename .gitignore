@@ -60,3 +60,4 @@ __pycache__/
 # written by scripts/ads-health.mjs only when a zone regressed; the workflow
 # turns it into an issue, a local run should not leave it at the repo root
 ads-health-alerts.md
+i18n-failures.md

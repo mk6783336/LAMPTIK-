@@ -1,0 +1,99 @@
+name: Locale Pages
+
+# Weekly proof that the 41 translated pages are still worth indexing.
+#
+# Why this is a job and not a one-off decision: the locale pages were kept in
+# the index because they are real translations, and that stays true only while
+# something checks it. A locale copy that silently falls back to English, a
+# canonical that drifts, an hreflang cluster naming a page that was deleted —
+# none of those break a build or a page, and none of them are visible in
+# traffic until the locale has been de-indexed for weeks.
+#
+# `scripts/check-i18n-seo.mjs` is the rule. This job runs it, and when it fails
+# the issue names the exact page and every rule it broke, so the fix is a file
+# edit rather than an investigation. The failing run is what makes GitHub tell
+# the owner; the issue is the record.
+#
+# A green run closes the issue only because the same run measured every page —
+# there is no "nothing was checked" state that can pass for healthy.
+
+on:
+  schedule:
+    # Mondays, 05:17 UTC: after the weekend's deploys, before the week's work.
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: i18n-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Locale pages still indexable and translated
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      # continue-on-error so the steps below still run: a failure has to become
+      # an issue before it becomes a red badge.
+      - name: Check every locale page
+        id: i18n
+        continue-on-error: true
+        env:
+          I18N_ORIGIN: https://www.lamptik.online
+          I18N_REPORT_PATH: i18n-failures.md
+        run: node scripts/check-i18n-seo.mjs
+
+      # One rolling issue. The body names the page and the reasons, so a repeat
+      # failure is a comment on the same thread instead of a new one each week.
+      - name: Open or update the issue
+        if: always() && steps.i18n.outputs.failures != '0' && hashFiles('i18n-failures.md') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh label create i18n-indexing --color 1D76DB \
+            --description "A locale page stopped being a real translation" 2>/dev/null || true
+          EXISTING="$(gh issue list --label i18n-indexing --state open --limit 1 \
+            --json number --jq '.[0].number // empty')"
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body-file i18n-failures.md
+          else
+            gh issue create --title "[i18n] A locale page is no longer a real translation" \
+              --body-file i18n-failures.md --label i18n-indexing
+          fi
+
+      # Only a run that checked every page may close it.
+      - name: Close the issue after recovery
+        if: always() && steps.i18n.outputs.failures == '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          EXISTING="$(gh issue list --label i18n-indexing --state open --limit 1 \
+            --json number --jq '.[0].number // empty')"
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "Recovered: every locale page passes again in this run."
+            gh issue close "$EXISTING"
+          fi
+
+      # A check that could not run (network, a throw) has no report and no
+      # count: it must fail the job without pretending a page broke a rule.
+      - name: Fail when the check itself errored
+        if: always() && steps.i18n.outcome == 'failure' && steps.i18n.outputs.failures == ''
+        run: |
+          echo "::error::the locale check did not produce a result — see the step log above"
+          exit 1
+
+      - name: Fail the run when a locale page broke a rule
+        if: always() && steps.i18n.outputs.failures != '0'
+        run: exit 1

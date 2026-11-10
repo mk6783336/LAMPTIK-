@@ -38,12 +38,62 @@
  * Exit: 0 = every page passes, 1 = at least one broke a rule.
  */
 
+import { appendFileSync, writeFileSync } from "node:fs";
+
 const ORIGIN = (process.env.I18N_ORIGIN ?? "https://www.lamptik.online").replace(/\/+$/, "");
 const RTL = new Set(["ar", "ur", "fa", "he"]);
+/** Where the workflow expects the issue body; nothing is written when unset. */
+const REPORT_PATH = (process.env.I18N_REPORT_PATH ?? "").trim();
+const SELF_TEST = process.argv.includes("--self-test");
 
 const text = (html, re) => (html.match(re) || [])[1] || "";
 const strip = (value) => value.replace(/\/+$/, "");
 const normalise = (path) => (path === "" ? "/" : strip(path));
+
+/** Step outputs, so the workflow branches on a count instead of on text. */
+function setOutput(name, value) {
+  const path = process.env.GITHUB_OUTPUT;
+  if (!path) return;
+  appendFileSync(path, `${name}=${value}\n`);
+}
+
+function summary(markdown) {
+  const path = process.env.GITHUB_STEP_SUMMARY;
+  if (!path) return;
+  appendFileSync(path, `${markdown}\n`);
+}
+
+/** The issue body. Absent when the run passed, so the file cannot be stale. */
+function writeReport(markdown) {
+  if (!REPORT_PATH) return;
+  writeFileSync(REPORT_PATH, `${markdown}\n`, "utf8");
+}
+
+/**
+ * One row per broken page, naming the page and every rule it broke — the whole
+ * point of the issue is that a reader can go straight to that file instead of
+ * re-running the check to find out which of 45 pages moved.
+ */
+function renderFailures(failures, counts) {
+  return [
+    `## A locale page is no longer a real translation`,
+    "",
+    `${failures.length} of ${counts.checked} locale pages broke a rule in this run ` +
+      `(${counts.roots} locale roots, ${counts.slugs} localized platform page set(s)).`,
+    "",
+    "| Page | What broke |",
+    "| --- | --- |",
+    ...failures.map((failure) => `| \`${failure.path}\` | ${failure.problems.join("; ")} |`),
+    "",
+    "A locale page may stay in the index only while it is 200, self-canonical, tagged with the " +
+      "right `lang`/`dir`, indexable, still exactly as wide an hreflang cluster as the pages that " +
+      "exist, and translated rather than English.",
+    "",
+    "Fix the copy or the tags for that page. If it cannot carry real localized content yet, " +
+      "`robots: noindex` that one page — the decision this enforces is recorded at the top of " +
+      "`scripts/check-i18n-seo.mjs`.",
+  ].join("\n");
+}
 
 async function fetchPage(path) {
   const response = await fetch(`${ORIGIN}${path}`, { redirect: "manual" });
@@ -81,6 +131,27 @@ function clusterLanguages(home) {
     map.set(alternate.href, alternate.lang);
   }
   return map;
+}
+
+if (SELF_TEST) {
+  const report = renderFailures(
+    [
+      {
+        path: "/es/example-page",
+        problems: ["H1 is the English page's — not translated", "cluster missing tr"],
+      },
+    ],
+    { checked: 45, roots: 12, slugs: 3 },
+  );
+  console.log(report);
+  writeReport(report);
+  const named =
+    report.includes("/es/example-page") &&
+    report.includes("not translated") &&
+    report.includes("cluster missing tr") &&
+    report.includes("1 of 45");
+  console.log(named ? "self-test: the report names the page and both reasons" : "self-test: FAILED");
+  process.exit(named ? 0 : 1);
 }
 
 const home = await fetchPage("/");
@@ -200,10 +271,25 @@ console.log(
     `${slugs.length} localized platform page set(s)`,
 );
 
+setOutput("checked", String(rows.length));
+setOutput("failures", String(failures.length));
+
 if (!failures.length) {
+  summary(`### Locale pages: ${rows.length}/${rows.length} pass`);
+  summary("");
+  summary(
+    "Every locale root and localized platform page is 200, self-canonical, tagged with its own " +
+      "language, indexable, in a complete hreflang cluster, and translated rather than English.",
+  );
   console.log("Every locale page is indexable, self-canonical, correctly tagged and translated.");
   process.exit(0);
 }
+
+const report = renderFailures(failures, {
+  checked: rows.length,
+  roots: roots.length,
+  slugs: slugs.length,
+});
 
 console.error("");
 console.error(`${failures.length} page(s) broke a rule — fix the copy/tags, or noindex that page:`);
@@ -211,4 +297,7 @@ for (const failure of failures) {
   console.error(`  ${failure.path}`);
   for (const problem of failure.problems) console.error(`    - ${problem}`);
 }
+
+writeReport(report);
+summary(report);
 process.exit(1);
