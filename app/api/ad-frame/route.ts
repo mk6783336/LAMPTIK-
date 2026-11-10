@@ -49,6 +49,10 @@ export function GET(request: NextRequest) {
 <link rel="dns-prefetch" href="https://bellnewyork.org">
 <style>html,body{margin:0;padding:0;background:#07080d;color:#fff;overflow:hidden;color-scheme:dark}body{display:flex;align-items:center;justify-content:center;min-height:100vh}</style>
 </head><body style="background:#07080d;margin:0;padding:0;display:flex;align-items:center;justify-content:center;">
+<!-- Reserved-state paint. The tag below appends its creative, which paints on
+     top of this; until then the box is not a blank #07080d void. Decorative
+     only: no link, no text that could be read as an offer, nothing clickable. -->
+<div aria-hidden="true" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 38%,rgba(251,191,36,0.07),transparent 62%)"><span style="font:600 10px/1 system-ui,-apple-system,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#3a4053">Sponsored</span></div>
 <script type="text/javascript">atOptions={"key":${JSON.stringify(key)},"format":"iframe","height":${size.height},"width":${size.width},"params":{}};</script>
 <!-- The script's onerror is the only reliable signal that the network tag was
      never fetched: an ad-blocker (or a DNS/CSP failure) fires it, a genuine

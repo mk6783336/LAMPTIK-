@@ -26,18 +26,19 @@ export function AmbientBackground() {
       />
 
       {/* Cyan wash, top-left. Slow drift keeps the page feeling alive without
-          repainting the gradient itself. */}
-      <div
-        className="absolute -left-[18%] -top-[14%] h-[760px] w-[760px] max-w-[95vw] animate-aurora rounded-full opacity-80 [animation-delay:-6s]"
+          repainting the gradient itself. */}        {/* The drift runs from `sm` up. Two 760px gradient discs animating
+            forever is compositor work a phone pays on every frame, and a LoAF
+            trace of a cold mobile load showed a 1.3s frame with 7ms of script
+            in it — the cost is paint/animation, not JS. Phones keep the same
+            static wash. */}
+        <div className="absolute -left-[18%] -top-[14%] h-[760px] w-[760px] max-w-[95vw] rounded-full opacity-80 sm:animate-aurora [animation-delay:-6s]"
         style={{
           background:
             "radial-gradient(closest-side, var(--mesh-a), transparent 72%)",
         }}
       />
 
-      {/* Violet wash, top-right. */}
-      <div
-        className="absolute -right-[20%] top-[2%] h-[720px] w-[720px] max-w-[95vw] animate-aurora rounded-full opacity-85 [animation-delay:-13s]"
+      {/* Violet wash, top-right. */}        <div className="absolute -right-[20%] top-[2%] h-[720px] w-[720px] max-w-[95vw] rounded-full opacity-85 sm:animate-aurora [animation-delay:-13s]"
         style={{
           background:
             "radial-gradient(closest-side, var(--mesh-b), transparent 72%)",
@@ -53,8 +54,13 @@ export function AmbientBackground() {
         }}
       />
 
-      {/* Structure: hairline grid confined to the hero zone. */}
-      <div className="hairline-grid absolute inset-x-0 top-0 h-[780px] [mask-image:radial-gradient(ellipse_74%_64%_at_50%_0%,black_8%,transparent_78%)]" />
+      {/* Structure: hairline grid confined to the hero zone.
+
+          Desktop only. A `mask-image` over a 780px band forces an offscreen
+          buffer for the whole hero on every paint, which is the most expensive
+          thing in this component and pure decoration — phones get the same
+          hero without the grid rather than paying for it on every scroll. */}
+      <div className="hairline-grid absolute inset-x-0 top-0 hidden h-[780px] [mask-image:radial-gradient(ellipse_74%_64%_at_50%_0%,black_8%,transparent_78%)] sm:block" />
 
       {/* Static film grain. A 160px tile, painted once — and skipped on
           phones entirely (`globals.css` hides `.noise-layer` under 768px):

@@ -434,6 +434,21 @@ export function AdSlot({
           } as CSSProperties
         }
       >
+        {/* Painted from first paint, before the frame even mounts. Without it
+            the reserved box is a 250px black rectangle for the several seconds
+            between paint and the first ad request — measured at 5s on a
+            throttled phone — which reads as a broken page rather than as
+            reserved inventory. Decoration only: it takes no tap, covers no
+            creative (the frame paints above it), and disappears the moment the
+            slot reports filled or fallback. */}
+        {creativeState === "pending" ? (
+          <div
+            aria-hidden="true"
+            data-ad-placeholder="true"
+            className="pointer-events-none absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_50%_38%,rgba(251,191,36,0.07),transparent_62%)] motion-safe:animate-pulse"
+          />
+        ) : null}
+
         {frameSrc ? (
           <div
             className={cn(
