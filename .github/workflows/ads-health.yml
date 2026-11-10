@@ -69,7 +69,25 @@ jobs:
           GA4_BASELINE_DAYS: ${{ vars.GA4_BASELINE_DAYS }}
           GA4_MIN_AUCTIONS: ${{ vars.GA4_MIN_AUCTIONS }}
           GA4_DROP_POINTS: ${{ vars.GA4_DROP_POINTS }}
-        run: node scripts/ads-health.mjs
+        # A missing key is a setup gap, not a regression. Without this flag the
+        # job exited 1 seven seconds in, which turned every scheduled run red —
+        # indistinguishable from a real fill-rate drop, and so it buried the one
+        # signal the job exists to send.
+        run: node scripts/ads-health.mjs --skip-if-unconfigured
+
+      # Green, but never silently: the run says in its own summary that it
+      # measured nothing, so an unconfigured check cannot pass for a healthy
+      # one.
+      - name: Report that the check is not configured
+        if: steps.health.outputs.configured == 'false'
+        run: |
+          {
+            echo "### Ad fill health: not configured"
+            echo ""
+            echo "This run passed **without measuring anything** — \`GA4_SERVICE_ACCOUNT_JSON\` is unset."
+            echo ""
+            echo "Add the service-account key (optionally \`GA4_PROPERTY_ID\`) so this job can watch zone fill rates; see \`docs/ga4-ad-health-setup.md\`."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       # One rolling issue, not one per zone per day: the alert is a place to
       # look, and an inbox with fourteen duplicates is not. A repeat
