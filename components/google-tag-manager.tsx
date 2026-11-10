@@ -1,5 +1,4 @@
-import Script from "next/script";
-
+import { GoogleTagManagerLoader } from "@/components/google-tag-manager-loader";
 import { gtmContainerId } from "@/lib/analytics";
 
 /**
@@ -11,19 +10,20 @@ import { gtmContainerId } from "@/lib/analytics";
  * 2. A `<noscript>` iframe as the first element in `<body>`, for visitors
  *    with JavaScript disabled.
  *
- * Why `lazyOnload` instead of the raw snippet pasted "as high in the head as
- * possible": the raw form executes at parse time and competes with the LCP
- * text for bandwidth on the first paint. `afterInteractive` was still too
- * early — a throttled 390px trace put `gtm.js` and the tags it fires inside
- * the window a visitor is trying to use the tool in (239ms here, plus a
- * Clarity collect that lands at 2.5s and is fired BY this container), while
- * `gtm.js` is not the site's measurement path: GA4 is configured directly in
- * `components/google-analytics.tsx`, so nothing about page views, downloads or
- * platform switches depends on this container being early. It now loads when
- * the browser is idle after `load`, which is the first moment it cannot delay
- * anyone. The ordering that matters is preserved — the Consent Mode v2
- * defaults in `components/consent-mode.tsx` are a plain inline head script, so
- * they always run before this container can load a single tag.
+ * When it loads, and why: a throttled 390px trace put `gtm.js` and the tags it
+ * fires inside the window a visitor is trying to use the tool in (239ms here,
+ * plus a Clarity collect at 2.5s that this container loads). It is also not
+ * the site's measurement path — GA4 is configured directly in
+ * `components/google-analytics.tsx`, so page views, `download_start` and
+ * `platform_switch` do not depend on this container being early.
+ *
+ * `afterInteractive` was early by a second; `lazyOnload` was no better, because
+ * an inline bootstrap is part of the payload and executes at parse time
+ * whatever the strategy says (measured: `gtm.js` at 792ms, `load` still
+ * pending). `GoogleTagManagerLoader` therefore injects the container from a
+ * client effect after `window.load`, with a 6s cap. The ordering that matters
+ * is unchanged — the Consent Mode v2 defaults in `components/consent-mode.tsx`
+ * are a plain inline head script, so they always run before any tag.
  *
  * One Google property per job: the direct GA4 tags (`G-TLNZNDJD4J` and
  * `G-8YQHV877RV`) in `components/google-analytics.tsx` remain the measurement
@@ -38,15 +38,7 @@ import { gtmContainerId } from "@/lib/analytics";
  */
 export function GoogleTagManager() {
   if (!gtmContainerId) return null;
-
-  // JSON-encoded so the id can only ever land as a JS string literal.
-  const id = JSON.stringify(gtmContainerId);
-
-  return (
-    <Script id="gtm-container" strategy="lazyOnload">
-      {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer',${id});`}
-    </Script>
-  );
+  return <GoogleTagManagerLoader containerId={gtmContainerId} />;
 }
 
 /**
