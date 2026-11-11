@@ -9,6 +9,7 @@ import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
 import { CreatorToolkitBar } from "@/components/creator-toolkit-bar";
 import { Breadcrumb } from "@/components/seo/breadcrumb";
+import { ToolBridge } from "@/components/seo/tool-bridge";
 import { PlatformLanguages } from "@/components/seo/language-links";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -131,6 +132,20 @@ const FAQS = [
  */
 export const dynamic = "force-static";
 
+/**
+ * Cross-links to the two tool pages Search Console still lists as uncrawled.
+ *
+ * This route is the most-linked English page on the site, and it only reached
+ * Facebook — through the `PLATFORMS` grid further down — so
+ * `/twitter-video-downloader` had no contextual inbound link from it at all.
+ * The strip is the same component the three platform pages render, in flow and
+ * above the fold, where a crawler meets it on the same pass.
+ */
+const CRAWL_BRIDGE = [
+  { href: "/facebook-video-downloader", label: "Facebook video downloader (HD, fb.watch)" },
+  { href: "/twitter-video-downloader", label: "X / Twitter video downloader (MP4)" },
+];
+
 export default function YouTubeDownloaderPage() {
   const pageUrl = `${siteUrl}/youtube-downloader`;
 
@@ -234,6 +249,10 @@ export default function YouTubeDownloaderPage() {
 
             <div className="shell mt-8 sm:mt-10">
               <VideoAdUnit />
+            </div>
+
+            <div className="shell mt-8">
+              <ToolBridge heading="Other downloaders on this site" links={CRAWL_BRIDGE} />
             </div>
 
             <div className="shell mt-10 sm:mt-12">

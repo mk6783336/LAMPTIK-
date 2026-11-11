@@ -4,7 +4,9 @@
     "(33 localized platform pages inspected: 28 PASS, 5 not). This file is the watch list",
     "read by scripts/watch-unindexed.mjs; it is not generated, so remove a page here once it",
     "is indexed and the page it names stops being checked. `observed` is the verdict that",
-    "put the page on the list, not a live value — the live value is in the run report."
+    "put the page on the list, not a live value — the live value is in the run report.",
+    "The two English tool pages are watched here as well: they are what the GitHub Pages",
+    "crawl-bridge pages point at, so this is where the effect of that work becomes visible."
   ],
   "origin": "https://www.lamptik.online",
   "measured": "2026-11-11",
@@ -43,6 +45,20 @@
       "coverageState": "Discovered - currently not indexed",
       "firstSeen": "2026-11-11",
       "note": "known URL, deprioritised crawl"
+    },
+    {
+      "path": "/facebook-video-downloader",
+      "observed": "NEUTRAL",
+      "coverageState": "Discovered - currently not indexed",
+      "firstSeen": "2026-11-11",
+      "note": "200/indexable/self-canonical, in the sitemap, linked by the three platform pages and now by the GitHub Pages bridge; Google has recorded the URL but never fetched it"
+    },
+    {
+      "path": "/twitter-video-downloader",
+      "observed": "NEUTRAL",
+      "coverageState": "URL is unknown to Google",
+      "firstSeen": "2026-11-11",
+      "note": "read as 'Discovered' this morning and fell back to unknown between runs; it had no contextual inbound link from /youtube-downloader until now"
     }
   ]
 }
