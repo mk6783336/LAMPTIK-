@@ -61,3 +61,8 @@ __pycache__/
 # turns it into an issue, a local run should not leave it at the repo root
 ads-health-alerts.md
 i18n-failures.md
+# run history for scripts/watch-unindexed.mjs — restored between workflow runs by
+# actions/cache, same as .gsc-check-state.json above
+.unindexed-watch-state.json
+# written by scripts/watch-unindexed.mjs for the workflow to turn into an issue
+unindexed-watch-report.md

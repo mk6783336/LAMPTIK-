@@ -1,0 +1,133 @@
+name: Unindexed Locale Watch
+
+# Daily verdict on the locale pages Google has not indexed, with one issue that
+# stays open until each of them answers PASS.
+#
+# The Monday Index Check already inspects all 96 sitemap URLs, but it reports
+# counts: five pages leaving `NEUTRAL` moves PASS from 91 to 96, and the per-URL
+# detail is collapsed in a <details> block with no memory of last week. Nothing
+# in that report distinguishes "stuck for a month" from "never mentioned", and
+# nothing catches a page slipping from `NEUTRAL` to `FAIL`.
+#
+# `scripts/watch-unindexed.mjs` inspects only `docs/unindexed-watch.json` — five
+# URLs, five API calls, well inside the 2000/day inspection quota — and diffs
+# them against the previous run.
+#
+# What it cannot do is make Google recrawl: `urlInspection/index:inspect` is
+# read-only, and "Request indexing" in Search Console is a click, not an API.
+# The site side is already correct for all five (200, index/follow,
+# self-canonical, sitemap-listed, linked from their locale root, complete
+# hreflang cluster), verified 2026-11-11 — so this job is the clock, not the fix.
+#
+# Deliberate asymmetry: staying `NEUTRAL` keeps the issue open and the run
+# GREEN, because that is the known state and a permanently red badge is not a
+# signal. A watched page moving to `FAIL` fails the run — Google knew that URL
+# and excluded it, which is a regression in the pages themselves.
+#
+# Optional secret: GSC_SERVICE_ACCOUNT_JSON (GA4_SERVICE_ACCOUNT_JSON is the
+# fallback). Without either, the run says in its Summary that it measured
+# nothing and passes — a missing optional secret must not fail a schedule.
+
+on:
+  schedule:
+    # 06:40 UTC daily: after Ad Fill Health (06:20) and before Index Check's
+    # Monday sweep, so a week's worth of flips is never a week old.
+    - cron: "40 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: unindexed-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    name: Inspect the unindexed locale pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      # The previous run is the baseline for the diff, so the history has to
+      # survive between runs. Same per-run key pattern as Index Check: always
+      # writable, restore-keys picks up the newest prior.
+      - uses: actions/cache@v4
+        with:
+          path: .unindexed-watch-state.json
+          key: unindexed-watch-${{ github.run_id }}
+          restore-keys: |
+            unindexed-watch-
+
+      # continue-on-error so the steps below always run: a measurement failure
+      # has to reach the Summary before it turns the run red.
+      - name: Inspect the watched URLs
+        id: watch
+        continue-on-error: true
+        env:
+          GSC_SERVICE_ACCOUNT_JSON: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+          GA4_SERVICE_ACCOUNT_JSON: ${{ secrets.GA4_SERVICE_ACCOUNT_JSON }}
+          WATCH_REPORT_PATH: unindexed-watch-report.md
+        run: node scripts/watch-unindexed.mjs --skip-if-unconfigured
+
+      - name: Report that the check is not configured
+        if: steps.watch.outputs.measured != 'true'
+        run: |
+          {
+            echo "### Unindexed locale watch: not configured"
+            echo ""
+            echo "This run passed **without inspecting anything** — no service-account key is set."
+            echo ""
+            echo "Add \`GSC_SERVICE_ACCOUNT_JSON\` (the key \`scripts/gsc-check.mjs\` already uses)"
+            echo "so the five watched URLs are re-checked daily; see \`docs/google-search-console-setup.md\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # One rolling issue. While pages remain, a run that measured them keeps
+      # the thread current; a repeat is a comment, not a new issue each morning.
+      - name: Open or update the tracking issue
+        if: steps.watch.outputs.measured == 'true' && steps.watch.outputs.remaining != '0' && hashFiles('unindexed-watch-report.md') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh label create index-watch --color FBCA04 \
+            --description "A locale page Google has not indexed yet" 2>/dev/null || true
+          EXISTING="$(gh issue list --label index-watch --state open --limit 1 \
+            --json number --jq '.[0].number // empty')"
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body-file unindexed-watch-report.md
+          else
+            gh issue create --title "[seo] Locale pages Google has not indexed" \
+              --body-file unindexed-watch-report.md --label index-watch
+          fi
+
+      # Only a run that inspected every watched URL may close it — `measured`
+      # is what stops "we could not check today" from reading as "recovered".
+      - name: Close the issue once every watched page is indexed
+        if: steps.watch.outputs.measured == 'true' && steps.watch.outputs.remaining == '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          EXISTING="$(gh issue list --label index-watch --state open --limit 1 \
+            --json number --jq '.[0].number // empty')"
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "Every watched locale page now answers \`PASS\` to the URL Inspection API. Closing; the daily job keeps watching the file for anything added back to it."
+            gh issue close "$EXISTING"
+          fi
+
+      - name: Fail when the measurement failed
+        if: steps.watch.outcome == 'failure'
+        run: exit 1
+
+      # A watched page Google had fetched and then excluded is a page-level
+      # regression: red run, and the issue comment above says which ones.
+      - name: Fail when a watched page regressed to FAIL
+        if: steps.watch.outputs.regressed == 'true'
+        run: exit 1
