@@ -69,6 +69,13 @@ const WATCH = [
 ];
 
 const DAYS = Number(value("days", "28"));
+/**
+ * Per-request deadline, in milliseconds. URL Inspection occasionally holds a
+ * request past 30s; that used to abort the whole table with `The operation was
+ * aborted due to timeout`, and every page after the slow one vanished from the
+ * report. `GSC_TIMEOUT_MS=60000 npm run seo:gsc` raises it for one run.
+ */
+const REQUEST_TIMEOUT_MS = Number(process.env.GSC_TIMEOUT_MS ?? 30_000);
 
 /**
  * `--path=/foo` and `--path /foo` both work, and the inline form is the one to
@@ -186,7 +193,7 @@ async function googleFetch(url, token, { method = "GET", body } = {}) {
       ...(body ? { "content-type": "application/json" } : {}),
     },
     ...(body ? { body: JSON.stringify(body) } : {}),
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
   const text = await response.text();
   const parsed = text ? JSON.parse(text) : {};
@@ -286,7 +293,24 @@ async function main() {
   for (const path of WATCH) {
     const now = pick(nowRows, path);
     const before = pick(beforeRows, path);
-    const coverage = await inspect(token, property, path);
+    // One slow page must not cost the rest of the table: retry once at the same
+    // deadline, then report the row as unmeasured rather than losing the pages
+    // that come after it.
+    let coverage;
+    try {
+      coverage = await inspect(token, property, path);
+    } catch (firstError) {
+      try {
+        coverage = await inspect(token, property, path);
+      } catch (retryError) {
+        coverage = {
+          verdict: "UNMEASURED",
+          state: retryError?.message ?? String(firstError),
+          lastCrawl: null,
+          canonical: null,
+        };
+      }
+    }
     const crawled = coverage.lastCrawl ? `last crawl ${coverage.lastCrawl.slice(0, 10)}` : "never crawled";
     const numbers = now
       ? `${String(now.clicks).padStart(7)}${String(now.impressions).padStart(8)}${String(before?.impressions ?? 0).padStart(8)}`
