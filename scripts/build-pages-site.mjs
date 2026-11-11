@@ -26,7 +26,7 @@ import path from "node:path";
 const OUT_DIR = path.join(process.cwd(), "docs/parasite-seo/site");
 const SITE = "https://mk6783336.github.io";
 const ORIGIN = "https://www.lamptik.online";
-const UPDATED = "2026-11-09";
+const UPDATED = "2026-11-11";
 
 /** The eight landing pages, one per long-tail problem cluster. */
 const PAGES = [
@@ -361,6 +361,152 @@ const PAGES = [
     ],
     related: ["tiktok-1080p-h264-downloader", "twitter-x-gif-to-mp4-converter"],
   },
+  {
+    slug: "video-thumbnail-downloader",
+    title: "Video thumbnail downloader — the cover frame at the size it was uploaded",
+    description:
+      "Save a video's cover frame at full resolution instead of screenshotting it: where the platforms keep the thumbnail, which size to pick, and why a screenshot is never as sharp.",
+    h1: "The cover frame, at the resolution it was actually stored",
+    tool: { path: "/video-thumbnail-downloader", label: "thumbnail downloader", mode: "url" },
+    intro:
+      "A thumbnail is a separate image file, not a frame pulled out of the video. That is why the original is sharper than any screenshot of the player — and why asking for the largest size matters.",
+    sections: [
+      {
+        h2: "Where the full-size image lives",
+        body: [
+          "Each platform stores the cover as its own JPEG or WebP at several widths. YouTube publishes `maxresdefault` (1280×720) beside the smaller `hqdefault`; TikTok and Instagram keep a 1080-wide vertical version for the feed. A downloader asks for the largest one that exists rather than the one the page happened to load.",
+          "When a creator never uploaded a custom cover, YouTube falls back to a frame grab and `maxresdefault` can 404. The correct answer is then `sddefault` or `hqdefault` at 640×480 — a smaller real file beats a broken link.",
+        ],
+      },
+      {
+        h2: "Why a screenshot is softer",
+        body: [
+          "A phone screenshot captures the rendered player: the image has already been scaled to the screen, and the browser or app re-encodes it. Saving the stored file skips both steps, so the pixels you get are the pixels that were uploaded.",
+          "That difference is visible the moment you need the image larger than a phone: a screenshot of a 1080-wide cover on a 390-pixel screen holds roughly a third of the detail.",
+        ],
+      },
+      {
+        h2: "What to use it for",
+        body: [
+          "Reference boards, a client deck, a comparison grid, or a re-upload where you own the video and want its original cover. Attribution still belongs to the creator, and a cover is their work even when the video is yours to download.",
+        ],
+      },
+    ],
+    faqs: [
+      {
+        q: "How do I download a video thumbnail in full resolution?",
+        a: "Paste the video link into the thumbnail tool and pick the largest size offered. It returns the stored JPEG, not a screenshot of the player.",
+      },
+      {
+        q: "Why does the YouTube maxres thumbnail not load?",
+        a: "The uploader never set a custom cover, so no maxres image was generated. The 640×480 variant is the real fallback.",
+      },
+      {
+        q: "Is a thumbnail different from a video frame?",
+        a: "Yes. It is a separate image the creator chose, stored at its own resolution — so it can be sharper or entirely different from any frame in the clip.",
+      },
+    ],
+    related: ["tiktok-1080p-h264-downloader", "tiktok-caption-hashtag-extractor"],
+  },
+  {
+    slug: "tiktok-caption-hashtag-extractor",
+    title: "TikTok caption and hashtag extractor — copy the text without retyping it",
+    description:
+      "Pull a TikTok caption and its hashtags out as plain editable text: emoji, line breaks and the exact wording preserved, with no OCR and no retyping.",
+    h1: "The caption as text, not as a picture of text",
+    tool: { path: "/tiktok-caption-hashtag-extractor", label: "caption & hashtag extractor", mode: "url" },
+    intro:
+      "Captions are the only part of a post that is plain text, and they are the part people retype by hand. Extraction returns the string the creator actually published, emoji and line breaks included.",
+    sections: [
+      {
+        h2: "What comes back",
+        body: [
+          "The full caption, the hashtag list separated from the prose, and the @mentions, each on its own line so the text can go straight into a spreadsheet, a script or a note. Nothing is transcribed, so the wording cannot drift.",
+          "Emoji survive because they are characters in the string, not pixels. That is the difference between extraction and pointing a phone at the screen.",
+        ],
+      },
+      {
+        h2: "Why hashtags are worth separating",
+        body: [
+          "A caption's hashtags are the only structured signal in it. Once they are a clean list you can compare which tags a niche actually reuses, build a starter set for your own posts, or keep a record of what you published without scrolling back through the app.",
+          "Copying the whole caption keeps the hashtags glued to the sentence, which is why most people give up and retype them.",
+        ],
+      },
+      {
+        h2: "Language and right-to-left text",
+        body: [
+          "The extractor returns the caption in its original script, so Arabic, Urdu or Hindi captions stay readable instead of turning into boxes. Paste them somewhere that supports the same script and the text is unchanged.",
+        ],
+      },
+    ],
+    faqs: [
+      {
+        q: "How do I copy a TikTok caption with its hashtags?",
+        a: "Paste the post link into the extractor. It returns the caption and a separate hashtag list as plain text you can copy in one click.",
+      },
+      {
+        q: "Does it work for long captions?",
+        a: "Yes — the whole caption is returned, including line breaks, up to the platform's own limit.",
+      },
+      {
+        q: "Can I extract captions in bulk?",
+        a: "One link at a time, which keeps the tool free and avoids hammering the platform. A list of links is fine to work through.",
+      },
+    ],
+    related: ["video-thumbnail-downloader", "tiktok-1080p-h264-downloader"],
+  },
+  {
+    slug: "bajar-videos-tiktok-sin-marca-de-agua",
+    lang: "es",
+    title: "Bajar videos de TikTok sin marca de agua — online, gratis y en HD",
+    description:
+      "Cómo bajar un video de TikTok sin marca de agua en HD desde el navegador del móvil o del ordenador: sin app, sin cuenta y con el audio incluido.",
+    h1: "Bajar videos de TikTok sin marca de agua, en HD",
+    tool: { path: "/es", label: "descargador de TikTok sin marca de agua", mode: "url" },
+    intro:
+      "TikTok guarda dos archivos por cada video: el original limpio que reproduce su reproductor y una copia con el logo incrustado. Descargar sin marca de agua no es editar nada: es pedir el primero.",
+    sections: [
+      {
+        h2: "Por qué existe una versión sin marca de agua",
+        body: [
+          "El archivo `play` es el que se reproduce dentro de la aplicación y no lleva logo. El archivo `wmplay` es la copia que ofrece el botón de compartir, con la marca ya grabada en la imagen. Un descargador correcto pide `play`, así que el video que guardas nunca tuvo marca de agua que quitar.",
+          "Recortar o difuminar el logo no es la misma cosa: pierdes parte del encuadre y la calidad baja porque el archivo se vuelve a comprimir. Si el resultado tiene menos detalle que el original, se está recodificando.",
+        ],
+      },
+      {
+        h2: "En el móvil: iPhone y Android",
+        body: [
+          "En iPhone, Safari guarda el archivo en Archivos → En mi iPhone → Descargas. Desde ahí puedes abrirlo o moverlo a Fotos con Compartir → Guardar video; una web no puede escribir directamente en el carrete, es una regla de iOS.",
+          "En Android el MP4 aparece en Descargas y se abre con la galería o con cualquier reproductor. No hace falta instalar nada ni crear una cuenta.",
+        ],
+      },
+      {
+        h2: "HD de verdad, y con audio",
+        body: [
+          "La resolución máxima es la que subió el creador: si subió 1080×1920, eso es lo que hay; ningún descargador puede inventar detalle que nunca se grabó. Lo que sí debe comprobarse es que el archivo incluya pista de audio, porque algunos descargadores guardan solo la pista de video y el resultado se ve mudo en el editor.",
+        ],
+      },
+    ],
+    faqs: [
+      {
+        q: "¿Cómo bajo un video de TikTok sin marca de agua?",
+        a: "Copia el enlace del video (Compartir → Copiar enlace), pégalo en el descargador y elige la calidad. El archivo que se guarda es el original limpio, sin logo.",
+      },
+      {
+        q: "¿Se puede en HD y con sonido?",
+        a: "Sí. Se descarga el MP4 en la máxima resolución publicada, con la pista de audio incluida, sin recodificar.",
+      },
+      {
+        q: "¿Funciona en iPhone sin instalar apps?",
+        a: "Sí. Todo ocurre en Safari; el archivo cae en Descargas y desde ahí lo pasas a Fotos.",
+      },
+      {
+        q: "¿Es gratis?",
+        a: "Sí, sin registro y sin límite de descargas diarias más allá del uso razonable.",
+      },
+    ],
+    related: ["tiktok-1080p-h264-downloader", "instagram-reels-audio-mp3-extractor"],
+  },
 ];
 
 const SIBLINGS = [
@@ -425,7 +571,7 @@ function pageHtml(page) {
       url,
       name: page.title,
       description: page.description,
-      inLanguage: "en",
+      inLanguage: page.lang ?? "en",
       isPartOf: { "@id": `${SITE}/#site` },
     },
     {
@@ -458,7 +604,7 @@ function pageHtml(page) {
     <p class="hint">Runs in the browser on ${ORIGIN.replace("https://", "")} — nothing is uploaded from this page.</p>`;
 
   return `<!doctype html>
-<html lang="en">
+<html lang="${page.lang ?? "en"}">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />

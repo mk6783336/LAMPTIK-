@@ -10,8 +10,10 @@
  * it produced an empty report. This version reaches the same conversations
  * through four public endpoints and says exactly which one answered:
  *
- *   1. PullPush  — a free mirror of the Reddit archive
- *      (`api.pullpush.io/reddit/search/submission`), no auth, no key.
+ *   1. PullPush, then Arctic Shift — two free mirrors of the Reddit archive
+ *      (`api.pullpush.io`, `arctic-shift.photon-reddit.com`), no auth, no key.
+ *      PullPush has answered 526 since 2026-11-11, so the second is tried
+ *      rather than reporting an empty Reddit column.
  *   2. Bing RSS  — `bing.com/search?format=rss`, which returns machine-readable
  *      results for a `site:reddit.com` query instead of an HTML wall.
  *   3. Stack Exchange — the public `/2.3/search/advanced` API (video, superuser,
@@ -122,6 +124,19 @@ const TOPICS = [
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const log = (...parts) => console.log("[outreach]", ...parts);
 
+async function statusOf(url) {
+  try {
+    const response = await fetch(url, {
+      redirect: "follow",
+      headers: { "user-agent": UA, accept: "text/html,application/xhtml+xml" },
+      signal: AbortSignal.timeout(12_000),
+    });
+    return `HTTP ${response.status}`;
+  } catch (error) {
+    return `unreachable (${error.name === "TimeoutError" ? "timeout" : error.message})`;
+  }
+}
+
 async function getText(url, init) {
   const response = await fetch(url, {
     ...init,
@@ -162,6 +177,48 @@ async function pullPush(topic) {
     }
   }
   return { rows: [], error: "PullPush exhausted" };
+}
+
+/* ---------------------------- 1b. Arctic Shift ----------------------------- */
+
+/**
+ * Subreddits where the questions we can answer actually get asked. The API
+ * requires a `subreddit` (a bare `query` is rejected with 400), so the term
+ * filter runs here instead of on the server.
+ */
+const SUBREDDITS = ["TikTokHelp", "Tiktokhelp", "VideoEditing", "CapCut", "premiere", "NewTubers", "Instagram", "socialmedia"];
+
+async function arcticShift(topic) {
+  const rows = [];
+  let error = null;
+  const term = topic.reddit.split(/\s+/)[0].toLowerCase();
+  for (const subreddit of SUBREDDITS.slice(0, 5)) {
+    const url = `https://arctic-shift.photon-reddit.com/api/posts/search?subreddit=${encodeURIComponent(subreddit)}&limit=25&sort=desc`;
+    try {
+      const { status, ok, body } = await getText(url, { headers: { accept: "application/json" } });
+      if (!ok) {
+        error = `Arctic Shift HTTP ${status} (r/${subreddit})`;
+        continue;
+      }
+      const parsed = JSON.parse(body);
+      for (const item of parsed.data ?? []) {
+        if (!String(item.title ?? "").toLowerCase().includes(term)) continue;
+        rows.push({
+          title: item.title,
+          url: `https://www.reddit.com${item.permalink ?? `/comments/${item.id}/`}`,
+          platform: `reddit · r/${item.subreddit ?? subreddit}`,
+          created: (item.created_utc ?? 0) * 1000,
+          comments: item.num_comments ?? null,
+          source: "Arctic Shift (Reddit archive)",
+          topic: topic.key,
+        });
+      }
+    } catch (caught) {
+      error = `Arctic Shift ${caught.message}`;
+    }
+    await sleep(200);
+  }
+  return { rows, error: rows.length === 0 ? error ?? "Arctic Shift matched no thread" : null };
 }
 
 /* -------------------------------- 2. Bing RSS ----------------------------- */
@@ -266,8 +323,11 @@ async function devTo(topic) {
       .filter((word) => word.length > 4 && !platform.has(word));
     const rows = (Array.isArray(articles) ? articles : [])
       .filter((article) => {
-        const haystack = `${article.title} ${article.description ?? ""}`.toLowerCase();
-        return terms.some((term) => haystack.includes(term));
+        // Title only. Matching the description too is how "taking a SwiftUI app
+        // to 12 languages" passed as a TikTok thread: platform words were
+        // filtered out but the body still contained them.
+        const title = String(article.title ?? "").toLowerCase();
+        return terms.some((term) => term.length >= 5 && title.includes(term));
       })
       .map((article) => ({
         title: article.title,
@@ -331,6 +391,11 @@ function writeReport({ threads, sources, failures }) {
         "",
         `- ${thread.platform} · ${ageLabel(thread.created)} · ${thread.comments ?? "?"} comments`,
         `- Found via: ${thread.source}`,
+        `- Liveness: **${thread.status ?? "not checked"}**${
+          thread.status === "HTTP 403"
+            ? " — the site blocks this network; the thread is not necessarily dead, verify in a browser"
+            : ""
+        }`,
         `- Our page: ${ORIGIN}${topic.link.path}`,
         "",
         "<details><summary>Reply draft</summary>",
@@ -357,6 +422,7 @@ function writeReport({ threads, sources, failures }) {
 async function main() {
   const sources = [
     { name: "PullPush (Reddit archive)", rows: 0, error: null },
+    { name: "Arctic Shift (Reddit archive)", rows: 0, error: null },
     { name: "Bing Search RSS", rows: 0, error: null },
     { name: "Stack Exchange API", rows: 0, error: null },
     { name: "dev.to API", rows: 0, error: null },
@@ -376,6 +442,7 @@ async function main() {
   for (const topic of TOPICS) {
     for (const [name, fetcher] of [
       ["PullPush (Reddit archive)", pullPush],
+      ["Arctic Shift (Reddit archive)", arcticShift],
       ["Bing Search RSS", bingRss],
       ["Stack Exchange API", stackExchange],
       ["dev.to API", devTo],
@@ -406,6 +473,13 @@ async function main() {
   }
 
   collected.sort((a, b) => (b.created ?? 0) - (a.created ?? 0));
+
+  // Liveness, measured rather than assumed: a radar that prints a URL nobody
+  // checked is the thing this script exists to avoid. Reddit answers 403 to
+  // this network from its own CDN, so a 403 is recorded as a block, not as a
+  // dead thread.
+  for (const row of collected) row.status = await statusOf(row.url);
+
   writeReport({ threads: collected, sources, failures });
 
   for (const source of sources) {
