@@ -24,7 +24,7 @@
  *   - Bing caps submissions, so the quota is read *first* and the run aborts
  *     with the remaining allowance rather than half submitting a batch.
  *
- * Env:
+ * Env (read from `.env.local` via `scripts/load-env.mjs`):
  *   BING_WEBMASTER_API_KEY  required unless --skip-if-unconfigured
  *   INDEX_CHECK_ORIGIN      default https://www.lamptik.online
  *   BING_SUBMIT_STATE       default .bing-submit-state.json
@@ -40,8 +40,11 @@
  * 1 = failure.
  */
 
+import "./load-env.mjs";
+
 const ORIGIN = (process.env.INDEX_CHECK_ORIGIN ?? "https://www.lamptik.online").replace(/\/+$/, "");
-const KEY = (process.env.BING_WEBMASTER_API_KEY ?? "").trim();
+/** `BING_KEY` is the name the one-off scripts in `.scratch/` used; accept both. */
+const KEY = (process.env.BING_WEBMASTER_API_KEY ?? process.env.BING_KEY ?? "").trim();
 const DRY = process.env.BING_SUBMIT_DRY === "1";
 const STATE_PATH = process.env.BING_SUBMIT_STATE ?? ".bing-submit-state.json";
 const BASE = "https://ssl.bing.com/webmaster/api.svc/json";

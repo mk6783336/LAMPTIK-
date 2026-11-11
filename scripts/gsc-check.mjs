@@ -32,6 +32,8 @@
  * itself failed.
  */
 
+import "./load-env.mjs";
+
 import { appendFile, readFile, writeFile } from "node:fs/promises";
 import { createSign } from "node:crypto";
 import { pathToFileURL } from "node:url";
