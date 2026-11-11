@@ -54,6 +54,8 @@ const HISTORY_LIMIT = 26; // ~6 months of weekly runs
 const URL_LIMIT = Number(process.env.GSC_URL_LIMIT ?? 60);
 const API_BUDGET_MS = Number(process.env.GSC_API_BUDGET_MS ?? 240_000);
 const PACE_MS = Number(process.env.GSC_PACE_MS ?? 400);
+/** Per-request deadline. URL Inspection sometimes holds a request past 30s. */
+const REQUEST_TIMEOUT_MS = Number(process.env.GSC_TIMEOUT_MS ?? 30_000);
 const MAX_RETRIES = 2;
 
 const SKIP_IF_UNCONFIGURED = process.argv.includes("--skip-if-unconfigured");
@@ -171,7 +173,7 @@ async function googleFetch(url, token, { method = "GET", body } = {}) {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
   const text = await response.text();
   let data = null;
