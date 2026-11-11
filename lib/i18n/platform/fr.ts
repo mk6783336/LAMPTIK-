@@ -104,7 +104,7 @@ export const fr: Record<LocalizedPlatform, LandingCopy> = {
     dir: "ltr",
     title: "Télécharger une vidéo YouTube en MP4 HD ou MP3",
     description:
-      "Collez un lien YouTube et récupérez la vidéo en MP4 jusqu’à 1080p, ou seulement l’audio en MP3. Compatible watch, Shorts, youtu.be et playlists, sans application.",
+      "Collez un lien YouTube et récupérez la vidéo en MP4 jusqu’à 1080p, ou l’audio en MP3. Watch, Shorts, youtu.be et playlists, sans application.",
     keywords: [
       "télécharger vidéo youtube",
       "youtube mp3",

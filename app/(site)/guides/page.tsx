@@ -44,6 +44,20 @@ export default function GuidesPage() {
         inLanguage: "en",
         isPartOf: { "@id": `${siteUrl}/#website` },
         about: { "@id": `${siteUrl}/#software` },
+        // The ordered index. `hasPart` below lists the same guides, but a
+        // crawler reads it as prose; an ItemList is what says "this page is a
+        // category and these are its members in order" — the exact item Ahrefs
+        // reported on this hub and not on `/tools`, which already had one.
+        mainEntity: {
+          "@type": "ItemList",
+          numberOfItems: GUIDE_LIST.length,
+          itemListElement: GUIDE_LIST.map((guide, index) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            name: guide.title,
+            url: `${siteUrl}/guides/${guide.slug}`,
+          })),
+        },
         // `WebPage`, not `Article`: these entries describe the guide pages
         // without being the articles themselves. Typing them Article made
         // Google's validator demand datePublished, author and image on a hub

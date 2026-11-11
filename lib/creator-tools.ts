@@ -45,7 +45,7 @@ export const CREATOR_TOOLS: readonly CreatorTool[] = [
     name: "TikTok Money & Creator Rewards Calculator",
     title: "TikTok Money Calculator 2026 — Creator Rewards RPM by Country",
     description:
-      "Estimate what TikTok actually pays: Creator Rewards RPM per 1,000 qualified views by country and niche, brand deal rates, and the views you need for $1,000 a month.",
+      "Estimate what TikTok pays per 1,000 qualified views: Creator Rewards RPM by country and niche, brand deal rates, and the views behind $1,000 a month.",
     h1Lead: "What TikTok pays,",
     h1Accent: "per thousand views.",
     eyebrow: "Creator Rewards · 2026 rates",
@@ -124,7 +124,7 @@ export const CREATOR_TOOLS: readonly CreatorTool[] = [
     name: "9:16 Safe Zone Checker for TikTok, Reels & Shorts",
     title: "TikTok, Reels & Shorts Safe Zone Checker — 1080×1920 Overlay",
     description:
-      "Drop a frame and see exactly where TikTok, Instagram Reels and YouTube Shorts hide your text: pixel-accurate 9:16 overlays for captions, the right-side action rail and the top bar.",
+      "See exactly where TikTok, Reels and Shorts hide your text: a pixel-accurate 9:16 overlay for captions, the right-side action rail and the top bar.",
     h1Lead: "Where the interface",
     h1Accent: "eats your caption.",
     eyebrow: "9:16 · 1080 × 1920",
@@ -198,7 +198,7 @@ export const CREATOR_TOOLS: readonly CreatorTool[] = [
     name: "HD Video Thumbnail & Cover Downloader",
     title: "Video Thumbnail Downloader — TikTok, Reels, YouTube & X Covers",
     description:
-      "Paste a TikTok, Instagram, Facebook, YouTube or X link and download its cover image at the highest resolution the platform serves — plus the video itself, watermark-free.",
+      "Paste a TikTok, Instagram, YouTube or X link and save its cover image at the highest resolution the platform serves — plus the video, watermark-free.",
     h1Lead: "The cover image,",
     h1Accent: "at full resolution.",
     eyebrow: "TikTok · Reels · YouTube · X",

@@ -18,7 +18,7 @@ export const entry: SubTool = {
   socialTitle:
     "YouTube to MP3 at 320kbps? Here Is the Bitrate YouTube Actually Serves",
   description:
-    "YouTube's audio tops out near 128–160 kbps, so no tool can hand you a true 320. Convert honestly: source M4A plus one MP3 encode, with the real bitrate shown.",
+    "YouTube's audio tops out near 128–160 kbps, so no tool can give you a true 320. What it really serves, and an honest MP3 encode of it.",
   keywords: [
     "youtube to mp3 320kbps",
     "youtube mp3 320",

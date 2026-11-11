@@ -37,7 +37,7 @@ import { pageAlternates, siteUrl } from "@/lib/site";
  */
 const TITLE = "All 18 Download Tools — Video, Audio & Photos";
 const DESCRIPTION =
-  "All eighteen LAMP TIK downloaders in one place: YouTube MP4, MP3 and playlists, TikTok photos, Stories and CapCut-ready clips, Instagram Reels audio and Facebook HD.";
+  "All eighteen LAMP TIK downloaders in one place: YouTube MP4 and MP3, TikTok photos and Stories, Instagram Reels audio, Facebook HD and X video.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },

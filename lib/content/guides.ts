@@ -879,7 +879,7 @@ export const GUIDES: Guide[] = [
     title: "iPhone: Downloaded Videos Land in Files — Here’s How to Get Them Into Photos",
     metaTitle: "iPhone: Save Downloads to Photos",
     description:
-      "Safari saves downloads to Files, and Photos will not show them until you import. Exact steps for moving a video into your camera roll, plus the errors iOS throws.",
+      "Safari saves downloads to Files, and Photos will not show them until you import. The exact steps to move a video into your camera roll.",
     updatedAt: "2026-11-07",
     shortAnswer:
       "Safari writes every download into the Files app (On My iPhone → Downloads), not into Photos — iOS treats Photos as a library you add to deliberately. Open Files, long-press the video, tap Share, then Save to Photos (or Save Video on older iOS). That is the whole move, and it works offline.",
