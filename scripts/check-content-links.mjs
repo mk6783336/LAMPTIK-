@@ -574,6 +574,13 @@ for (const file of hygieneSources) {
   for (const match of source.matchAll(
     /[\"'\u0060]http:\/\/(?!localhost|127\.0\.0\.1|www\.w3\.org)[^\"'\u0060\s]+/g,
   )) {
+    // Any `xmlns` / `xmlns:prefix` declaration is the same kind of identifier —
+    // including the sitemap schema URL that `app/sitemap-priority.xml/route.ts`
+    // writes into its `<urlset>`. It names a namespace, it is never fetched.
+    // The match starts at the opening quote, so the text before it ends in `=`.
+    if (/xmlns(:[\w-]+)?=$/.test(source.slice(Math.max(0, match.index - 24), match.index))) {
+      continue;
+    }
     counts.hygiene += 1;
     fail(name, source, match.index, `plain-http URL "${match[0].slice(1)}" redirects on every request`);
   }

@@ -48,7 +48,14 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/api/"],
     })),
-    sitemap: `${siteUrl}/sitemap.xml`,
+    // Two sitemaps, announced to every crawler that honours robots.txt.
+    // `/sitemap.xml` is the full 88-URL inventory; `/sitemap-priority.xml`
+    // holds only the two tool pages Google has never crawled, so a crawler that
+    // reads it first spends its next fetch on them instead of on the 86 pages
+    // that are already indexed. Both are also submitted through the Search
+    // Console API, but the robots.txt entry is what Bing, Yandex, DuckDuckBot
+    // and the AI crawlers above actually read.
+    sitemap: [`${siteUrl}/sitemap.xml`, `${siteUrl}/sitemap-priority.xml`],
     // No `Host:` directive. It is a Yandex-only hint, and naming the host in
     // robots.txt is one more place a crawler can read the apex domain as the
     // canonical site — Ahrefs already lists the bare-apex root as an internal
