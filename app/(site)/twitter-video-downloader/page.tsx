@@ -23,10 +23,10 @@ import { pageAlternates, siteUrl } from "@/lib/site";
  */
 
 /** ≤60 chars, keyword first. */
-const TITLE = "Twitter Video Downloader - Save X Videos & GIFs in 1080p";
+const TITLE = "Twitter (X) Video Downloader — MP4 1080p, GIFs, No Login";
 const SOCIAL_TITLE = "Twitter (X) Video Downloader — MP4 in 1080p, No Login";
 const DESCRIPTION =
-  "Download Twitter (X) videos and GIFs as MP4 — pick 1080p, 720p or 480p and save straight to your device. Free, no login, no app, no watermark.";
+  "Save Twitter (X) videos and GIFs as MP4 — pick 1080p, 720p or 480p and download to your device. Free, no login, no app, and no watermark to remove.";
 
 const FAQS: ReadonlyArray<{ question: string; answer: string }> = [
   {

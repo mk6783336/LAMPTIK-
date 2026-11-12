@@ -27,7 +27,7 @@ import { GUIDE_LIST } from "@/lib/content/guides";
 import { LANDING_LANGUAGES, siteConfig, siteUrl } from "@/lib/site";
 
 /**
- * Brand first, keyword phrase intact: 52 chars, no truncation in a SERP.
+ * Brand first, keyword phrase intact: 51 chars, no truncation in a SERP.
  *
  * This replaced a title A/B that split visitors between a keyword-first and a
  * brand-first wording. The test could not conclude: Search Console shows 47
@@ -38,12 +38,12 @@ import { LANDING_LANGUAGES, siteConfig, siteUrl } from "@/lib/site";
  * 15 clicks are brand clicks from Pakistan at position 2.0 — so the brand-led
  * wording is the one that has to answer it.
  */
-const TITLE = "LAMP TIK — TikTok Video Downloader Without Watermark";
+const TITLE = "LAMP TIK — TikTok Video Downloader, No Watermark HD";
 /** Social cards have room; keep the richer, benefit-led version there. */
 const SOCIAL_TITLE =
   "TikTok Video Downloader Without Watermark — Full HD 1080p MP4 & MP3 (Free, Fast)";
 const DESCRIPTION =
-  "Download TikTok videos without a watermark in Full HD 1080p MP4 or MP3, and resolve vt/vm short links. Free, no app, no sign-up — saves to phone or PC.";
+  "Save TikTok videos in Full HD 1080p MP4 or MP3 without a watermark — vt/vm short links work too. Free, no app, no sign-up; saves to your phone or PC.";
 
 export const metadata: Metadata = {
   // `absolute` bypasses the layout template: this is the exact SERP title.

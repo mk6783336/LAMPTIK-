@@ -27,10 +27,10 @@ import { platformLanguageAlternates } from "@/lib/i18n/platform-landings";
 import { siteUrl } from "@/lib/site";
 
 /** ≤60 chars, keyword first. */
-const TITLE = "YouTube Video Downloader 1080p HD — Shorts & MP3";
+const TITLE = "YouTube Video Downloader 1080p HD — MP4, MP3, No App";
 const SOCIAL_TITLE = "YouTube Video Downloader 1080p HD — Shorts, Long Videos & MP3";
 const DESCRIPTION =
-  "Download YouTube videos in 1080p, 720p or 360p MP4 plus MP3 audio — Shorts and long uploads included. Free, unlimited, no app or sign-up.";
+  "Download YouTube videos and Shorts as 1080p, 720p or 360p MP4, plus MP3 audio. Paste a youtu.be link — free, no app, no sign-up, watermark-free.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },

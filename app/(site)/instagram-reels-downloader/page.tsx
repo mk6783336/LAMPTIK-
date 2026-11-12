@@ -5,11 +5,11 @@ import { platformLanguageAlternates } from "@/lib/i18n/platform-landings";
 import { siteConfig, siteUrl } from "@/lib/site";
 
 /** ≤60 chars, keyword first. */
-const TITLE = "Instagram Reels Downloader — Save Reels & Videos in HD";
+const TITLE = "Instagram Reels Downloader — HD MP4, No Watermark, No Login";
 const SOCIAL_TITLE =
   "Instagram Reels Downloader — Save IG Reels & Videos in Original HD MP4";
 const DESCRIPTION =
-  "Save Instagram Reels, IGTV and video posts in original 1080p MP4 with audio — no watermark, no login, no app. Paste a /reel/, /p/ or /tv/ link.";
+  "Save Instagram Reels and video posts in original 1080p MP4 with audio — no watermark, no login, no app. Paste a /reel/, /p/ or /tv/ link.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
