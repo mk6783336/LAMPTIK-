@@ -46,8 +46,9 @@ a download that died or a page that froze on a phone.
 
 - One `AdSlot` per section, inside `role="complementary"` with a single
   `Sponsored` disclosure. Never two unspaced slots in the same container, never
-  a duplicate "Sponsored" pill. The result panel's two sandwiches are separated
-  by the whole button stack, so they are two sections, not one.
+  a duplicate "Sponsored" pill. The result panel has exactly ONE banner, above
+  the button stack (2026-11-12): the second rectangle below the audio buttons
+  made the panel read as an ad page with a downloader attached.
 - Never serve a creative behind an opaque backdrop, and never mount one inside
   a dialog: no overlay is left that could hide an impression.
 - Reserve space, don't shift it: the slot keeps `height` from `AD_RESERVED` /

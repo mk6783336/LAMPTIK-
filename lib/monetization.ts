@@ -208,10 +208,7 @@ export type AdSlotId =
   | "hero" // platform hero column, 300×250 beside the tool
   | "hero-bar" // platform hero column, 728×90 beneath the rectangle
   | "under-tool" // single unit under the downloader card
-  | "result-top" // sandwich top: preview header → primary download
-  | "theater" // download hand-off theater
-  | "result-bottom" // sandwich bottom: under the audio buttons
-  | "modal" // post-download dialog
+  | "result-top" // the result panel's single banner: header → primary download
   | "rail-left" // desktop left rail
   | "rail-right" // desktop right rail
   | "article"; // in-page banner on content and guide pages
@@ -273,18 +270,6 @@ const AD_SLOT_ZONES: Record<AdSlotId, AdSlotZone> = {
   "result-top": {
     format: "rectangle",
     zone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_RESULT_TOP?.trim() || undefined,
-  },
-  theater: {
-    format: "rectangle",
-    zone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_THEATER?.trim() || undefined,
-  },
-  "result-bottom": {
-    format: "rectangle",
-    zone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_RESULT_BOTTOM?.trim() || undefined,
-  },
-  modal: {
-    format: "rectangle",
-    zone: process.env.NEXT_PUBLIC_ADSTERRA_ZONE_MODAL?.trim() || undefined,
   },
   "rail-left": {
     format: "leaderboard",

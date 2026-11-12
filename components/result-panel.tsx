@@ -617,22 +617,15 @@ export function ResultPanel({
               right under a visitor who has already saved a file. */}
           <CreatorToolkitBar className="mt-1" />
 
-          {/* SnapTik sandwich — BOTTOM slice. Deliberately AFTER the partner
-              link: the mirror CTA is a continuation of the save options, and
-              a 300×250 between the buttons and that link pushed it below the
-              fold of the card on a phone. Reserved exactly like the top
-              slice, so a late creative never moves the buttons above it. */}
-          <div className="mt-1">
-            <AdSlot
-              slot="result-bottom"
-              format="rectangle"
-              eager
-              alwaysReserve
-              refreshKey={refreshKey}
-              label="Sponsored — keeps LAMP TIK free"
-              sponsoredLabel={t.sponsored}
-            />
-          </div>
+          {/* ONE banner in this panel, above the button stack.
+
+              There used to be two 300×250s — "sandwiched" around the buttons
+              the way SnapTik does it. On a phone that put a second rectangle
+              between the save options and the partner card, so the panel read
+              as an ad page with a downloader attached. The top slice stays
+              because it sits on the line a thumb travels between "is this my
+              video?" and "save it"; the bottom one is gone and the creator
+              tools move straight up under the buttons. */}
 
           {/* Reset — instantly clears and re-focuses the link input. */}
           <button
