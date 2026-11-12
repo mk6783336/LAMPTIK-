@@ -686,34 +686,54 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
       return Math.max(0, Math.round(window.scrollY + rect.top - HEADER_OFFSET));
     };
 
-    timer = window.setTimeout(
-      () => {
-        if (cancelled) return;
-        const top = targetTop();
-        if (top === null || Math.abs(window.scrollY - top) < TOLERANCE) return;
-        window.scrollTo({ top, behavior: reduceMotion ? "auto" : "smooth" });
+    /**
+     * Keep the card at its place while the panel settles: up to four instant
+     * corrections over ~1.2s, only while it is still below the header line.
+     */
+    const settle = (round = 0) => {
+      if (cancelled) return;
+      const top = targetTop();
+      if (top !== null && Math.abs(window.scrollY - top) > TOLERANCE) {
+        window.scrollTo({ top, behavior: "instant" });
+      }
+      if (round < 4) timer = window.setTimeout(() => settle(round + 1), 300);
+    };
 
-        // The card can still move (a creative swapping row, a thumbnail
-        // landing). Re-assert instantly at most four times over ~1.2s, and only
-        // while the card is genuinely still below its place.
-        let checks = 0;
-        const settle = () => {
+    let attempts = 0;
+    const start = () => {
+      if (cancelled) return;
+      const top = targetTop();
+      // The reveal mounts a frame or two after `status` flips, so a missing
+      // ref is "not laid out yet", not "nothing to do".
+      if (top === null) {
+        attempts += 1;
+        if (attempts < 6) timer = window.setTimeout(start, 80);
+        return;
+      }
+      if (Math.abs(window.scrollY - top) < TOLERANCE) return;
+
+      window.scrollTo({ top, behavior: reduceMotion ? "instant" : "smooth" });
+
+      // Verification pass. Measured in the packaged Chromium, a programmatic
+      // `behavior: "smooth"` scroll on this page is silently dropped —
+      // `scrollY` stayed 0 while `behavior: "instant"` moved it to 900 — and
+      // the page's CSS `scroll-behavior: smooth` means `"auto"` inherits the
+      // same fate. So the card gets an instant correction when the smooth one
+      // did not actually move the page.
+      timer = window.setTimeout(
+        () => {
           if (cancelled) return;
-          checks += 1;
-          const node = resultRef.current;
-          if (node) {
-            const rect = node.getBoundingClientRect();
-            const wanted = Math.max(0, Math.round(window.scrollY + rect.top - HEADER_OFFSET));
-            if (rect.top - HEADER_OFFSET > 24 && Math.abs(window.scrollY - wanted) > TOLERANCE) {
-              window.scrollTo({ top: wanted, behavior: "auto" });
-            }
+          const wanted = targetTop();
+          if (wanted !== null && Math.abs(window.scrollY - wanted) > TOLERANCE) {
+            window.scrollTo({ top: wanted, behavior: "instant" });
           }
-          if (checks < 4) timer = window.setTimeout(settle, 300);
-        };
-        timer = window.setTimeout(settle, 320);
-      },
-      reduceMotion ? 0 : 380,
-    );
+          settle(1);
+        },
+        reduceMotion ? 0 : 420,
+      );
+    };
+
+    timer = window.setTimeout(start, reduceMotion ? 0 : 380);
 
     return () => {
       stop();
