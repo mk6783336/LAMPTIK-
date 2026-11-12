@@ -414,6 +414,8 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
   const [video, setVideo] = useState<VideoInfo | null>(null);
   const [media, setMedia] = useState<MediaPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** A YouTube provider block stays true for this video: retrying cannot help. */
+  const [providerBlocked, setProviderBlocked] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [seed, setSeed] = useState({ value: initialUrl?.trim() ?? "", nonce: 0 });
@@ -765,6 +767,7 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
     setVideo(null);
     setMedia(null);
     setError(null);
+    setProviderBlocked(false);
     clearLastResult();
     setAdRefreshKey((key) => key + 1);
     setSeed((current) => ({ value: "", nonce: current.nonce + 1 }));
@@ -865,6 +868,7 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
     // fresh resolve instead of replaying the error.
     const failed = lastFailureRef.current;
     setError(null);
+    setProviderBlocked(false);
     if (failed && failed.url === rawUrl.trim() && Date.now() - failed.at < 120_000) {
       void handleSubmitUrl(rawUrl, { force: true });
       return;
@@ -878,6 +882,7 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
     const url = lastFailureRef.current?.url ?? lastSubmittedUrlRef.current;
     if (!url) return;
     setError(null);
+    setProviderBlocked(false);
     void handleSubmitUrl(url, { force: true });
   }
 
@@ -896,6 +901,7 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
     abortRef.current?.abort();
 
     setError(null);
+    setProviderBlocked(false);
     setStatus("loading");
     setVideo(null);
     setMedia(null);
@@ -965,11 +971,10 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
         isYouTube &&
         (apiError?.code === "PROVIDER_UNAVAILABLE" || apiError?.code === "UPSTREAM_ERROR")
       ) {
-        // Name the real situation and the way out. "It usually clears" was
-        // false for label music videos, which are blocked from datacenter IPs
-        // permanently — the visitor needs one clear action, not a loop, and
-        // never a hand-off to a competitor downloader.
-        return "YouTube is blocking this video from our server network right now. Retry in a moment.";
+        // Label/music uploads stay blocked from datacenter IPs permanently, not
+        // "for a moment": promising a retry that cannot work is the loop this
+        // used to produce. Say what is true and point at another video.
+        return "YouTube won’t serve this video to our servers. Retrying won’t change that — try another video.";
       }
       return apiError?.message ?? "Couldn’t resolve this video.";
     };
@@ -979,6 +984,10 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
       lastFailureRef.current = { url, at: Date.now() };
       setStatus("idle");
       setBackupNote(null);
+      setProviderBlocked(
+        isYouTube &&
+          (apiError?.code === "PROVIDER_UNAVAILABLE" || apiError?.code === "UPSTREAM_ERROR"),
+      );
       setError(message);
       // One inline recovery action is enough: a provider block used to add a
       // toast on every retry, producing the stacked red banners users saw.
@@ -1091,6 +1100,7 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
       lastFailureRef.current = { url, at: Date.now() };
       setStatus("idle");
       setBackupNote(null);
+      setProviderBlocked(false);
       setError(message);
       notify({
         kind: "error",
@@ -1182,7 +1192,9 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
           error={error}
           platform={platform}
           onSubmitUrl={handleGateSubmit}
-          onRetry={retryLastResolve}
+          // A provider block is final for this video: no retry button, so the
+          // visitor is not sent round the loop the message just described.
+          onRetry={providerBlocked ? undefined : retryLastResolve}
           onNotify={notify}
           copy={t}
         />
