@@ -53,6 +53,20 @@ interface AdSlotProps {
    * A dead auction still collapses to the compact sponsor-card fallback.
    */
   alwaysReserve?: boolean;
+  /**
+   * Below 640px, render the compact sponsor line instead of a 300×250 creative:
+   * no auction, no 250px box, ~60px of one row.
+   *
+   * This is for the result panel only. Measured at 390×844, the rectangle there
+   * was 288px of the first screen (`result-top`), and after it moved below the
+   * buttons the panel still carried a quarter of a phone screen of reserved
+   * inventory while the visitor was trying to save a file. The compact line
+   * keeps a visible, clickable sponsor without the box.
+   *
+   * Desktop is untouched: the creative still runs above the buttons there,
+   * where there is room for it and viewability is highest.
+   */
+  compactOnMobile?: boolean;
 }
 
 /** Timestamp of the last global ad refresh across all slots on the page. */
@@ -154,7 +168,18 @@ export function AdSlot({
   eager,
   refreshKey,
   alwaysReserve,
+  compactOnMobile,
 }: AdSlotProps) {
+  /** `max-width: 639px`, the same band the leaderboard→rectangle swap uses. */
+  const [compactViewport, setCompactViewport] = useState(false);
+  useEffect(() => {
+    if (!compactOnMobile) return;
+    const query = window.matchMedia(MOBILE_RECT_QUERY);
+    const apply = () => setCompactViewport(query.matches);
+    apply();
+    query.addEventListener?.("change", apply);
+    return () => query.removeEventListener?.("change", apply);
+  }, [compactOnMobile]);
   // `slot` implies the size; an explicit `format` still wins, so every call
   // site stays literal and a zone-table edit can never silently resize a slot.
   const baseFormat: AdFormat = format ?? (slot ? adSlotFormat(slot) : "leaderboard");
@@ -406,6 +431,39 @@ export function AdSlot({
   }, [key, slotIdentity, visible, creativeState, reportOutcome]);
 
   if (!key) return null;
+
+  /**
+   * Compact mobile line: the disclosure plus one sponsor row, in the slot's own
+   * place in the document. No iframe is mounted, so no auction is requested and
+   * nothing is reserved beyond the row itself.
+   */
+  if (compactOnMobile && compactViewport) {
+    return (
+      <aside
+        role="complementary"
+        aria-label="Sponsored Advertisement"
+        className={cn("w-full", className)}
+        data-ad-slot="compact"
+        data-ad-state="compact"
+      >
+        <p className="mb-1 text-center text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-3)]">
+          {sponsoredLabel}
+        </p>
+        <a
+          href={directLinkUrl}
+          target="_blank"
+          rel="sponsored nofollow noopener"
+          aria-label="Sponsored partner offer — opens in a new tab"
+          className="flex items-center justify-between gap-2 rounded-xl border border-amber-500/20 bg-[#0b0c12] px-3 py-2.5 text-white transition-colors hover:border-amber-400/40"
+        >
+          <span className="text-xs font-medium text-slate-300">Recommended tools &amp; offers</span>
+          <span className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-200">
+            Open ↗
+          </span>
+        </a>
+      </aside>
+    );
+  }
 
   const isLeaderboard = effectiveFormat === "leaderboard";
   const scaled = { width: width * scale, height: height * scale };

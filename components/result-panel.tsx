@@ -424,6 +424,9 @@ export function ResultPanel({
           format="rectangle"
           eager
           alwaysReserve
+          /* ~60px sponsor row on a phone instead of a 288px rectangle: the
+             panel is the one place the visitor is mid-task. */
+          compactOnMobile
           refreshKey={refreshKey}
           label="Sponsored — keeps LAMP TIK free"
           sponsoredLabel={t.sponsored}
