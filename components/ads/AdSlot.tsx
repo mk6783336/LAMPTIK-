@@ -170,8 +170,17 @@ export function AdSlot({
   alwaysReserve,
   compactOnMobile,
 }: AdSlotProps) {
-  /** `max-width: 639px`, the same band the leaderboard→rectangle swap uses. */
-  const [compactViewport, setCompactViewport] = useState(false);
+  /**
+   * `max-width: 639px`, the same band the leaderboard→rectangle swap uses.
+   *
+   * Read synchronously on mount as well as subscribed afterwards: this slot's
+   * only compact caller is the result panel, which mounts after a resolve — by
+   * then `window` is guaranteed, and relying on a later `change` event meant a
+   * panel mounted at 1280 kept the 300×250 after the phone viewport arrived.
+   */
+  const [compactViewport, setCompactViewport] = useState(
+    () => Boolean(compactOnMobile) && typeof window !== "undefined" && window.matchMedia(MOBILE_RECT_QUERY).matches,
+  );
   useEffect(() => {
     if (!compactOnMobile) return;
     const query = window.matchMedia(MOBILE_RECT_QUERY);
