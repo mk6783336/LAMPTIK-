@@ -30,6 +30,7 @@ import { platformBlurb, TOOLS_HUB_CARD } from "@/lib/i18n/platform-blurbs";
 import { PLATFORM_LIST, PLATFORMS, type Platform } from "@/lib/platforms";
 import { siteUrl } from "@/lib/site";
 import { ToolBridge } from "@/components/seo/tool-bridge";
+import { EsClusterHub } from "@/components/seo/es-cluster-hub";
 import { TOOL_BRIDGES } from "@/lib/i18n/tool-bridges";
 
 /**
@@ -314,6 +315,11 @@ export function LocalizedLanding({
               </div>
             </div>
           </section>
+
+          {/* The Spanish cluster hub belongs on the locale root only: on
+              /es/facebook-video-downloader the same block would link the page
+              to itself, and its "this is the TikTok page" lead would be false. */}
+          {copy.code === "es" && pagePath === `/es` ? <EsClusterHub /> : null}
 
           <section className="section-pad border-t border-[var(--line)]">
             <div className="shell">

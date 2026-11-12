@@ -67,7 +67,10 @@ const REVISED = {
   subTools: "2026-11-09",
   // 2026-11-09: the Spanish root now answers the Telegram and HD wording it
   // was already getting impressions for.
-  localized: "2026-11-09",
+  // 2026-11-12: /es gained the cluster hub section that links the Facebook, X
+  // and Reels-audio pages. All locale roots render the same component, so the
+  // group moves together rather than pretending only /es changed.
+  localized: "2026-11-12",
   guidesHub: "2026-11-07",
   services: "2026-11-03",
   apps: "2026-11-03",
@@ -147,7 +150,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // assert "route exists ⇔ sitemap lists it" only for literals.
     {
       url: `${siteUrl}/es/twitter-video-downloader`,
-      lastModified: new Date("2026-11-11"),
+      lastModified: new Date("2026-11-12"),
       changeFrequency: "weekly",
       priority: 0.9,
       alternates: {
@@ -160,7 +163,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${siteUrl}/es/instagram-reels-audio`,
-      lastModified: new Date("2026-11-11"),
+      lastModified: new Date("2026-11-12"),
       changeFrequency: "weekly",
       priority: 0.9,
       alternates: {
