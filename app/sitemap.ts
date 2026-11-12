@@ -130,6 +130,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       alternates: {
         languages: absoluteLanguages({
           en: "/twitter-video-downloader",
+          es: "/es/twitter-video-downloader",
           "x-default": "/twitter-video-downloader",
         }),
       },
@@ -140,6 +141,35 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "daily",
       priority: 1,
       alternates: { languages: platformLanguages["youtube-downloader"] },
+    },
+    // The two Spanish twins. Written as literal URLs, like the creator tools:
+    // `scripts/check-content-links.mjs` reads this file structurally and can
+    // assert "route exists ⇔ sitemap lists it" only for literals.
+    {
+      url: `${siteUrl}/es/twitter-video-downloader`,
+      lastModified: new Date("2026-11-11"),
+      changeFrequency: "weekly",
+      priority: 0.9,
+      alternates: {
+        languages: absoluteLanguages({
+          en: "/twitter-video-downloader",
+          es: "/es/twitter-video-downloader",
+          "x-default": "/twitter-video-downloader",
+        }),
+      },
+    },
+    {
+      url: `${siteUrl}/es/instagram-reels-audio`,
+      lastModified: new Date("2026-11-11"),
+      changeFrequency: "weekly",
+      priority: 0.9,
+      alternates: {
+        languages: absoluteLanguages({
+          en: "/instagram-reels-audio",
+          es: "/es/instagram-reels-audio",
+          "x-default": "/instagram-reels-audio",
+        }),
+      },
     },
   ];
 

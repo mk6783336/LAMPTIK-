@@ -38,9 +38,8 @@ export const TOOL_BRIDGES: Partial<Record<LocaleCode, BridgeCopy>> = {
         label: "Descargar videos de Facebook en HD gratis",
       },
       {
-        href: "/instagram-reels-audio",
-        label: "Descargar audio de Reels de Instagram en MP3",
-        lang: "en",
+        href: "/es/instagram-reels-audio",
+        label: "Descargar el audio de un Reel de Instagram",
       },
       { href: "/tiktok-money-calculator", label: "Calculadora de ingresos de TikTok", lang: "en" },
       {
@@ -58,7 +57,7 @@ export const TOOL_BRIDGES: Partial<Record<LocaleCode, BridgeCopy>> = {
         label: "Extraer título y hashtags",
         lang: "en",
       },
-      { href: "/twitter-video-downloader", label: "Descargar videos de X / Twitter", lang: "en" },
+      { href: "/es/twitter-video-downloader", label: "Descargar videos de X / Twitter" },
     ],
   },
 

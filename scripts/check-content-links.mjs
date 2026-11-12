@@ -269,6 +269,41 @@ async function discoverRoutes() {
     // guides are not dynamic in this build
   }
 
+  /**
+   * Single-locale twins: `app/(i18n)/[lang]/<slug>/page.tsx`.
+   *
+   * `/es/twitter-video-downloader` and `/es/instagram-reels-audio` are real
+   * routes with a real `<link rel="alternate" hreflang="es">` partner, but
+   * they are files under a dynamic segment, so the walk above never sees them
+   * and the sitemap parity check called them 404s. The locale is read from the
+   * page's own `generateStaticParams` instead of assuming `/es`, so a second
+   * twin language is covered the day it is added.
+   *
+   * `[tool]` is skipped: it is the shared platform route, already expanded by
+   * `discoverLocaleTargets` below.
+   */
+  const localeRoot = path.join(root, "app/(i18n)/[lang]");
+  try {
+    for (const entry of await readdir(localeRoot, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      if (entry.name.startsWith("[") || entry.name.startsWith("(")) continue;
+
+      let source = "";
+      try {
+        source = await readFile(path.join(localeRoot, entry.name, "page.tsx"), "utf8");
+      } catch {
+        continue;
+      }
+
+      const params = source.match(/generateStaticParams[\s\S]*?\{([\s\S]*?)\}\s*\]/)?.[1] ?? "";
+      for (const match of params.matchAll(/lang:\s*"([^"]+)"/g)) {
+        add(`/${match[1]}/${entry.name}`);
+      }
+    }
+  } catch {
+    // no localized tree in this build
+  }
+
   return routes;
 }
 

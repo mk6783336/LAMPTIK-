@@ -8,14 +8,19 @@ export const siteUrl = (
 ).replace(/\/+$/, "");
 
 /**
- * Canonical + hreflang pair for a route. The site is English-only, so every
- * page declares `en` and an `x-default` — that is the correct signal for a
- * single-locale property and prevents Google from guessing.
+ * Canonical + hreflang pair for a route. A page that is English-only declares
+ * `en` and `x-default`, which is the correct signal for a single-locale
+ * document and stops Google from guessing.
+ *
+ * `translations` adds the locales that really carry the page — only the two
+ * Spanish twins use it today (`/es/twitter-video-downloader`,
+ * `/es/instagram-reels-audio`). An annotation has to be reciprocal, so the
+ * Spanish route declares the same cluster in the other direction.
  */
-export function pageAlternates(path: string) {
+export function pageAlternates(path: string, translations?: Record<string, string>) {
   return {
     canonical: path,
-    languages: { en: path, "x-default": path },
+    languages: { en: path, ...(translations ?? {}), "x-default": path },
   } as const;
 }
 

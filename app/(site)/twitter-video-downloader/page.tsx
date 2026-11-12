@@ -87,7 +87,9 @@ export const metadata: Metadata = {
     "save X video without login",
     "twitter video downloader no watermark",
   ],
-  alternates: pageAlternates("/twitter-video-downloader"),
+  alternates: pageAlternates("/twitter-video-downloader", {
+    es: "/es/twitter-video-downloader",
+  }),
   openGraph: {
     type: "website",
     url: `${siteUrl}/twitter-video-downloader`,

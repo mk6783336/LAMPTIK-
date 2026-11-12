@@ -14,7 +14,9 @@ export const metadata: Metadata = {
   title: { absolute: tool.title },
   description: tool.description,
   keywords: tool.keywords,
-  alternates: pageAlternates("/instagram-reels-audio"),
+  alternates: pageAlternates("/instagram-reels-audio", {
+    es: "/es/instagram-reels-audio",
+  }),
   openGraph: {
     type: "website",
     url: `${siteUrl}/instagram-reels-audio`,
