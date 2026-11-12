@@ -8,7 +8,7 @@ import { SiteHeader } from "@/components/site-header";
 import { siteConfig, siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "About",
+  title: "About LAMP TIK — Free Video Downloader, No Account",
   description:
     "LampTik (lamptik.online) is a free browser-based downloader for TikTok, YouTube, Instagram and Facebook. Not a store: no products, accounts or payments.",
   alternates: { canonical: "/about" },

@@ -236,7 +236,7 @@ export const GUIDES: Guide[] = [
     title: "TikTok Quality, Export Settings and Re-uploading Without Losing Detail",
     metaTitle: "TikTok Quality & Export Settings",
     description:
-      "Why crisp footage looks soft after upload, the export settings that survive TikTok's re-encode, how to cross-post to Shorts and Reels, and how to fix an MP4 an editor refuses.",
+      "Why footage looks soft after upload, the export settings that survive TikTok's re-encode, cross-posting to Shorts and Reels, and fixing an MP4 editors refuse.",
     updatedAt: "2026-11-12",
     shortAnswer:
       "TikTok re-encodes every upload to its own delivery ladder. If your file arrives low-bitrate, heavily compressed or at an awkward resolution, the second encode has nothing clean to work with and the result looks soft. Export 1080×1920, H.264, 30 or 60 fps, at 10–16 Mbps, and keep one master per project — every extra generation costs detail no setting can put back.",
