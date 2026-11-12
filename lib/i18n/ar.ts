@@ -24,7 +24,12 @@ export const ar: LandingCopy = {
     "تنزيل فيديو تيك توك بجودة عالية",
   ],
   eyebrow: "مجاني · بدون تطبيق · بدون علامة مائية",
-  h1Lead: "نزّل أي فيديو.",
+  // Platform-named on purpose. "نزّل أي فيديو" matched an Instagram query
+  // closely enough that Google served this TikTok landing for it at position 2
+  // while /ar/instagram-reels-downloader — the page written for that query —
+  // collected no impressions at all. The dedicated page only gets the query
+  // once this one stops claiming every platform.
+  h1Lead: "نزّل فيديوهات TikTok",
   h1Accent: "بجودة HD كاملة.",
   lede: "الصق الرابط واحصل على الملف الأصلي في ثوانٍ — بدون علامة مائية، وبدون حساب، ومن متصفح جوالك على Android أو iPhone.",
   chips: ["HD 1080p", "بدون علامة مائية", "صوت MP3"],
