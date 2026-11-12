@@ -5,11 +5,11 @@ import { platformLanguageAlternates } from "@/lib/i18n/platform-landings";
 import { siteConfig, siteUrl } from "@/lib/site";
 
 /** ≤60 chars, keyword first. */
-const TITLE = "Facebook Video Downloader — Private Video Links & HD MP4";
+const TITLE = "Facebook Video Downloader — HD MP4, Reels & fb.watch";
 const SOCIAL_TITLE =
   "Facebook Video Downloader HD — Download FB Reels & Public Videos to MP4";
 const DESCRIPTION =
-  "Download Facebook videos and Reels in HD MP4 — public posts and private video links you can open. fb.watch links resolve in one paste. No app, no login.";
+  "Download Facebook videos and Reels in HD MP4 from public posts — fb.watch and share links resolve in one paste. No app, no login, no watermark.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },

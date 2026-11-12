@@ -332,7 +332,7 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
       code: "ar",
       htmlLang: "ar",
       dir: "rtl",
-      title: "تنزيل ريلز انستقرام بجودة HD وبدون علامة مائية",
+      title: "تنزيل ريلز انستقرام بجودة HD — بدون علامة مائية أو حساب",
       description:
         "نزّل ريلز انستقرام بالجودة الأصلية 1080p مع الصوت، بدون علامة مائية وبدون تسجيل دخول. مجاني ومن متصفح الهاتف أو الكمبيوتر مباشرة.",
       keywords: [
@@ -415,7 +415,7 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
       code: "ar",
       htmlLang: "ar",
       dir: "rtl",
-      title: "تنزيل فيديوهات يوتيوب MP4 بجودة HD أو MP3",
+      title: "تنزيل فيديوهات يوتيوب MP4 بجودة HD أو MP3 — بدون تطبيق",
       description:
         "الصق رابط يوتيوب ونزّل الفيديو بصيغة MP4 حتى 1080p أو الصوت MP3. يدعم watch وShorts وyoutu.be وقوائم التشغيل، بلا تطبيق وبلا تسجيل.",
       keywords: [
@@ -498,7 +498,7 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
       code: "ar",
       htmlLang: "ar",
       dir: "rtl",
-      title: "تنزيل فيديوهات فيسبوك بجودة HD بدون تطبيق",
+      title: "تنزيل فيديوهات فيسبوك بجودة HD — بدون تطبيق أو حساب",
       description:
         "نزّل فيديوهات فيسبوك بجودة HD من المتصفح: منشورات الصفحات وWatch وReels وروابط fb.watch. بدون تثبيت وبدون حساب وبدون علامة مائية.",
       keywords: [
