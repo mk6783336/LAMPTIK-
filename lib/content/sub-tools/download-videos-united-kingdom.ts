@@ -110,11 +110,11 @@ export const entry: SubTool = {
   ],
   relatedHeading: "The same page for another country",
   guides: [
-    { slug: "how-to-download-instagram-reels-in-hd" },
+    { slug: "download-tiktok-video-without-watermark" },
     { slug: "is-downloading-tiktok-videos-legal", anchor: "Where the legal line sits" },
     {
-      slug: "browser-vs-app-tiktok-downloaders-safety",
-      anchor: "Browser downloaders vs apps that want your login",
+      slug: "why-tiktok-video-quality-drops-after-upload",
+      anchor: "What a re-encode costs on a long video",
     },
   ],
 };

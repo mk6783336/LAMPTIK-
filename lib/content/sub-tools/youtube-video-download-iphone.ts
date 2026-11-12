@@ -81,8 +81,8 @@ export const entry: SubTool = {
   ],
   related: ["youtube-to-mp4-1080p", "youtube-to-mp3", "youtube-shorts-downloader"],
   guides: [
-    { slug: "download-tiktok-without-logo-iphone-android", anchor: "Where files land on iPhone and Android" },
-    { slug: "browser-vs-app-tiktok-downloaders-safety", anchor: "Why browser downloaders are safer" },
+    { slug: "download-tiktok-video-without-watermark", anchor: "Where files land on iPhone and Android" },
+    { slug: "why-tiktok-video-quality-drops-after-upload", anchor: "Why browser downloaders are safer" },
     { slug: "is-downloading-tiktok-videos-legal", anchor: "Is downloading videos legal?" },
   ],
 };

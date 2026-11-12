@@ -5,8 +5,13 @@ import type { ToolId } from "@/lib/content/tool-seo";
  *
  * Every article points back at the one tool that satisfies the search intent
  * that brought the reader in, using the tool's exact-match anchor text. That
- * gives the twelve guides a real link path into the three money pages instead
- * of a generic "open the downloader" that lands everyone on TikTok.
+ * gives the four guides a real link path into the money pages instead of a
+ * generic "open the downloader" that lands everyone on TikTok.
+ *
+ * The map used to hold fourteen entries; the guides were consolidated by intent
+ * (see `lib/content/guides.ts`), so only the four hub slugs remain. The retired
+ * ones redirect, which means a stale entry here can no longer silently point at
+ * a 301 — `getGuide` would return null and the card would vanish.
  */
 export interface GuideToolLink {
   tool: ToolId;
@@ -35,14 +40,6 @@ export const GUIDE_TOOL: Record<string, GuideToolLink> = {
     body: "The tool follows the steps above exactly: paste a link, we probe the source stream, you save the file.",
     cta: "Open the TikTok downloader",
   },
-  "download-tiktok-without-logo-iphone-android": {
-    ...TIKTOK,
-    anchor: "download TikTok videos without a logo on iPhone and Android",
-    inline: "It works in Safari and Chrome with no app, and saves straight to Files or Gallery.",
-    heading: "Save a logo-free TikTok to your phone",
-    body: "The same clean stream works on iOS and Android — the file lands in Files on iPhone and Downloads or Gallery on Android.",
-    cta: "Open the TikTok downloader",
-  },
   "download-tiktok-audio-as-mp3": {
     ...TIKTOK,
     anchor: "TikTok to MP3 converter",
@@ -50,30 +47,6 @@ export const GUIDE_TOOL: Record<string, GuideToolLink> = {
     heading: "Extract the original sound as MP3",
     body: "One tap on the MP3 button pulls the audio track alone at roughly 128 kbps — no video data downloaded.",
     cta: "Convert TikTok to MP3",
-  },
-  "tiktok-short-links-not-working": {
-    ...TIKTOK,
-    anchor: "resolve a vt.tiktok.com short link",
-    inline: "If your short link is valid, the tool expands it server-side and finds the video in one request.",
-    heading: "Try your short link here",
-    body: "Paste the vt.tiktok.com or vm.tiktok.com link exactly as TikTok's share sheet gave it — the redirect is followed for you.",
-    cta: "Resolve a short link",
-  },
-  "is-downloading-tiktok-videos-legal": {
-    ...TIKTOK,
-    anchor: "download your own TikTok videos",
-    inline: "For your own uploads — the case that is unambiguously fine — this is the tool to use.",
-    heading: "Download the videos you own",
-    body: "Archiving your own uploads is the use case the tool is built for: original quality, no watermark, nothing stored.",
-    cta: "Open the TikTok downloader",
-  },
-  "repurpose-tiktok-videos-for-youtube-shorts-instagram-reels": {
-    ...TIKTOK,
-    anchor: "download TikTok videos in original quality",
-    inline: "Grab the watermark-free master first — every re-upload downstream inherits its quality.",
-    heading: "Start with a clean master file",
-    body: "Export from the highest-quality watermark-free source you can get, then trim and re-upload per platform.",
-    cta: "Download the master MP4",
   },
   "why-tiktok-video-quality-drops-after-upload": {
     ...TIKTOK,
@@ -83,64 +56,13 @@ export const GUIDE_TOOL: Record<string, GuideToolLink> = {
     body: "Save the file and compare it with your export — resolution, bitrate and frame rate are all visible before you download.",
     cta: "Download and compare",
   },
-  "tiktok-audio-bitrate-and-sound-quality": {
+  "is-downloading-tiktok-videos-legal": {
     ...TIKTOK,
-    anchor: "extract TikTok audio as MP3",
-    inline: "Hearing the served audio is the honest test of what compression cost you.",
-    heading: "Listen to the source audio",
-    body: "The MP3 is the video's own AAC track, repackaged — exactly what TikTok streams, with nothing added.",
-    cta: "Extract the audio",
-  },
-  "browser-vs-app-tiktok-downloaders-safety": {
-    ...TIKTOK,
-    anchor: "use a browser-based TikTok downloader",
-    inline: "Nothing to install, no permissions to grant — the smallest attack surface for a one-off save.",
-    heading: "Nothing to install",
-    body: "This runs entirely in your browser tab: no APK, no extension, no permissions, no sideloaded code.",
-    cta: "Open the browser downloader",
-  },
-  "how-to-download-instagram-reels-in-hd": {
-    tool: "instagram",
-    href: "/instagram-reels-downloader",
-    anchor: "download Instagram Reels in original HD",
-    inline: "Paste a /reel/ or /p/ link and you get the exact MP4 Instagram's player streams.",
-    heading: "Save a Reel in original quality",
-    body: "The Instagram downloader reads video_versions and hands you the progressive MP4 — picture and audio together.",
-    cta: "Open the Reels downloader",
-  },
-  "mp4-wont-import-capcut-premiere-pro": {
-    ...TIKTOK,
-    anchor: "download an H.264 MP4 your editor will import",
-    inline: "TikTok and Reels are served as H.264 with AAC — the pair Premiere and CapCut accept without a transcode.",
-    heading: "Start from a file that imports",
-    body: "The clean stream is H.264/AAC in an MP4 container: no HEVC, no VP9, no missing audio track, nothing to convert before you cut.",
-    cta: "Download an editor-ready MP4",
-  },
-  "iphone-safari-downloads-to-files-and-photos": {
-    tool: "tiktok",
-    href: "/tiktok-video-download-iphone",
-    anchor: "download a TikTok video on iPhone",
-    inline: "The Safari flow on that page ends exactly where this article does: the file in Files, then Save to Photos.",
-    heading: "Save it on the iPhone the short way",
-    body: "One tap resolves the MP4 in Safari — no app, no Shortcut, and the file is ready for the Files → Photos step above.",
-    cta: "Open the iPhone downloader",
-  },
-  "1080p-60fps-download-edit-upload-workflow": {
-    ...TIKTOK,
-    anchor: "download the highest-quality source stream",
-    inline: "The master you start from decides what survives the edit and the re-upload.",
-    heading: "Get the master first",
-    body: "The tool returns the stream the platform serves its own player, with the real resolution and file size shown before you commit.",
-    cta: "Download the source MP4",
-  },
-  "how-to-download-large-facebook-videos-in-1080p-hd": {
-    tool: "facebook",
-    href: "/facebook-video-downloader",
-    anchor: "download large Facebook videos in HD",
-    inline: "1GB+ Watch uploads stream through — no size ceiling, no restart from zero.",
-    heading: "Save a long Facebook video",
-    body: "Public Watch pages, page uploads and Reels resolve; long files stream straight to disk.",
-    cta: "Open the Facebook downloader",
+    anchor: "download your own TikTok videos",
+    inline: "For your own uploads — the case that is unambiguously fine — this is the tool to use.",
+    heading: "Download the videos you own",
+    body: "Archiving your own uploads is the use case the tool is built for: original quality, no watermark, nothing stored.",
+    cta: "Open the TikTok downloader",
   },
 };
 

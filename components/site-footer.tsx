@@ -139,24 +139,9 @@ const FOOTER_GROUPS: Array<{ id: FooterGroupId; label: string; links: FooterLink
         id: "guideTiktokMp3",
       },
       {
-        href: "/guides/tiktok-short-links-not-working",
-        label: "Short links",
+        href: "/guides/why-tiktok-video-quality-drops-after-upload",
+        label: "Quality & export",
         id: "guideShortLinks",
-      },
-      {
-        href: "/guides/how-to-download-instagram-reels-in-hd",
-        label: "IG Reels HD",
-        id: "guideIgReelsHd",
-      },
-      {
-        href: "/guides/how-to-download-large-facebook-videos-in-1080p-hd",
-        label: "Long FB videos",
-        id: "guideLongFb",
-      },
-      {
-        href: "/guides/browser-vs-app-tiktok-downloaders-safety",
-        label: "Safety",
-        id: "guideSafety",
       },
     ],
   },

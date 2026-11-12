@@ -74,30 +74,30 @@ const TOPICS = [
     reddit: "capcut mp4 import error",
     se: "mp4 import error premiere capcut",
     tag: "ffmpeg",
-    link: { path: "/guides/mp4-wont-import-capcut-premiere-pro", label: "MP4 won't import — the four causes" },
+    link: { path: "/guides/why-tiktok-video-quality-drops-after-upload", label: "MP4 won't import — the four causes" },
     reply:
       "Three causes cover most `media offline` / `unsupported format` errors: HEVC (H.265) in a container the NLE will not decode, a VP9/AV1 stream pulled out of a DASH manifest, or no audio track at all. Remux before importing:\n\n`ffmpeg -i in.mp4 -c:v libx264 -crf 18 -preset veryfast -c:a aac -b:a 192k out.mp4`\n\n" +
-      `Longer walkthrough with the codec table: ${ORIGIN}/guides/mp4-wont-import-capcut-premiere-pro`,
+      `Longer walkthrough with the codec table: ${ORIGIN}/guides/why-tiktok-video-quality-drops-after-upload`,
   },
   {
     key: "iphone",
     reddit: "iphone camera roll download",
     se: "safari download video to photos iphone",
     tag: "ios",
-    link: { path: "/guides/iphone-safari-downloads-to-files-and-photos", label: "iPhone: Files → Photos" },
+    link: { path: "/guides/download-tiktok-video-without-watermark", label: "iPhone: Files → Photos" },
     reply:
       "Safari cannot write into the camera roll from a website — that is an iOS limit, not the tool. The file lands in Files → On My iPhone → Downloads. Open it there, long-press the MP4, Share → Save Video, and it appears in Photos like a recorded clip.\n\n" +
-      `Step-by-step with screenshots of each screen: ${ORIGIN}/guides/iphone-safari-downloads-to-files-and-photos`,
+      `Step-by-step with screenshots of each screen: ${ORIGIN}/guides/download-tiktok-video-without-watermark`,
   },
   {
     key: "1080p",
     reddit: "1080p 60fps export settings",
     se: "1080p 60fps export settings",
     tag: "youtube",
-    link: { path: "/guides/1080p-60fps-download-edit-upload-workflow", label: "1080p60 workflow" },
+    link: { path: "/guides/why-tiktok-video-quality-drops-after-upload", label: "1080p60 workflow" },
     reply:
       "60 fps survives only if it is 60 fps the whole way: record at 60, export at 60 with a matching shutter (1/120), and keep the bitrate high enough — roughly 12–16 Mbps for 1080p60 H.264. A 30 fps export re-timed to 60 looks smeared, and that is what people usually blame the platform for.\n\n" +
-      `The full record → download → edit → upload chain: ${ORIGIN}/guides/1080p-60fps-download-edit-upload-workflow`,
+      `The full record → download → edit → upload chain: ${ORIGIN}/guides/why-tiktok-video-quality-drops-after-upload`,
   },
   {
     key: "safe-zone",

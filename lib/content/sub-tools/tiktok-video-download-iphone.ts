@@ -98,8 +98,8 @@ export const entry: SubTool = {
   ],
   related: ["tiktok-mp3-downloader", "vt-tiktok-com-downloader", "tiktok-story-downloader"],
   guides: [
-    { slug: "download-tiktok-without-logo-iphone-android", anchor: "TikTok without the logo on iPhone and Android" },
-    { slug: "download-tiktok-video-without-watermark" },
-    { slug: "browser-vs-app-tiktok-downloaders-safety", anchor: "Browser downloaders vs APK apps" },
+    { slug: "download-tiktok-video-without-watermark", anchor: "TikTok without the logo on iPhone and Android" },
+    { slug: "why-tiktok-video-quality-drops-after-upload" },
+    { slug: "is-downloading-tiktok-videos-legal", anchor: "Browser downloaders vs APK apps" },
   ],
 };

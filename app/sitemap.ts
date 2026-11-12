@@ -71,7 +71,8 @@ const REVISED = {
   // and Reels-audio pages. All locale roots render the same component, so the
   // group moves together rather than pretending only /es changed.
   localized: "2026-11-12",
-  guidesHub: "2026-11-07",
+  // 2026-11-12: fourteen guides became four hubs that absorb their copy.
+  guidesHub: "2026-11-12",
   services: "2026-11-03",
   apps: "2026-11-03",
   about: "2026-10-30",

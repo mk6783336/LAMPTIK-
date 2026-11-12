@@ -81,8 +81,8 @@ export const entry: SubTool = {
   ],
   related: ["tiktok-mp3-downloader", "tiktok-video-download-iphone", "tiktok-story-downloader"],
   guides: [
-    { slug: "tiktok-short-links-not-working", anchor: "Why short links stop working" },
-    { slug: "download-tiktok-video-without-watermark" },
-    { slug: "browser-vs-app-tiktok-downloaders-safety" },
+    { slug: "download-tiktok-video-without-watermark", anchor: "Why short links stop working" },
+    { slug: "why-tiktok-video-quality-drops-after-upload" },
+    { slug: "is-downloading-tiktok-videos-legal" },
   ],
 };

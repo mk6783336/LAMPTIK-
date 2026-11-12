@@ -326,7 +326,7 @@ const PAGES = [
     description:
       "Media offline, unsupported format, audio missing: the four reasons a downloaded MP4 fails to import, with the ffmpeg command that fixes each in seconds.",
     h1: "MP4 won't import? It is one of four things",
-    tool: { path: "/guides/mp4-wont-import-capcut-premiere-pro", label: "the full walkthrough", mode: "plain" },
+    tool: { path: "/guides/why-tiktok-video-quality-drops-after-upload", label: "the full walkthrough", mode: "plain" },
     intro:
       "The container says MP4, but the codecs inside decide whether an editor opens it. Four causes cover almost every “media offline” and “unsupported format” message.",
     sections: [

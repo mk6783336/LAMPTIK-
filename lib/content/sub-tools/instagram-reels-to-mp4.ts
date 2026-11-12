@@ -93,7 +93,10 @@ export const entry: SubTool = {
   ],
   related: ["instagram-reels-audio", "instagram-story-downloader"],
   guides: [
-    { slug: "how-to-download-instagram-reels-in-hd" },
-    { slug: "mp4-wont-import-capcut-premiere-pro", anchor: "if the MP4 will not import" },
+    {
+      slug: "download-tiktok-video-without-watermark",
+      anchor: "Download the Reel from its source stream",
+    },
+    { slug: "why-tiktok-video-quality-drops-after-upload", anchor: "if the MP4 will not import" },
   ],
 };

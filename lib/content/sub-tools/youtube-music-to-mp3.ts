@@ -100,8 +100,8 @@ export const entry: SubTool = {
   ],
   related: ["youtube-to-mp3", "youtube-to-mp4-1080p", "youtube-shorts-to-mp3"],
   guides: [
-    { slug: "tiktok-audio-bitrate-and-sound-quality", anchor: "What audio compression really costs" },
+    { slug: "download-tiktok-audio-as-mp3", anchor: "What audio compression really costs" },
     { slug: "is-downloading-tiktok-videos-legal", anchor: "Copyright and personal use" },
-    { slug: "repurpose-tiktok-videos-for-youtube-shorts-instagram-reels" },
+    { slug: "why-tiktok-video-quality-drops-after-upload" },
   ],
 };

@@ -93,6 +93,6 @@ export const entry: SubTool = {
   ],
   related: ["youtube-to-mp3", "youtube-shorts-to-mp3", "youtube-music-to-mp3"],
   guides: [
-    { slug: "tiktok-audio-bitrate-and-sound-quality", anchor: "why bitrate claims do not survive a check" },
+    { slug: "download-tiktok-audio-as-mp3", anchor: "why bitrate claims do not survive a check" },
   ],
 };

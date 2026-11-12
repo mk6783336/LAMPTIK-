@@ -118,7 +118,7 @@ export const entry: SubTool = {
     },
     { slug: "download-tiktok-video-without-watermark" },
     {
-      slug: "iphone-safari-downloads-to-files-and-photos",
+      slug: "why-tiktok-video-quality-drops-after-upload",
       anchor: "Where iPhone downloads actually land",
     },
   ],

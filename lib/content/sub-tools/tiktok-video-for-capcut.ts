@@ -93,7 +93,7 @@ export const entry: SubTool = {
   ],
   related: ["tiktok-mp3-downloader", "tiktok-photo-downloader", "youtube-to-mp4-1080p"],
   guides: [
-    { slug: "mp4-wont-import-capcut-premiere-pro", anchor: "why CapCut rejects an MP4" },
-    { slug: "1080p-60fps-download-edit-upload-workflow" },
+    { slug: "why-tiktok-video-quality-drops-after-upload", anchor: "why CapCut rejects an MP4" },
+    { slug: "download-tiktok-video-without-watermark" },
   ],
 };

@@ -53,7 +53,7 @@ const nextConfig: NextConfig = {
       // handing crawlers a 404.
       {
         source: "/guides/repurpose-short-videos-across-tiktok-reels-shorts",
-        destination: "/guides/repurpose-tiktok-videos-for-youtube-shorts-instagram-reels",
+        destination: "/guides/why-tiktok-video-quality-drops-after-upload",
         permanent: true,
       },
       // Four sub-tool pages restated a platform page with a modifier attached.
@@ -78,6 +78,62 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/fb-watch-downloader",
+        destination: "/facebook-video-downloader",
+        permanent: true,
+      },
+      // Fourteen guides earned 26 impressions and zero clicks in 28 days, and
+      // no single one of their queries reached two impressions. They were
+      // consolidated by intent into four hubs (see lib/content/guides.ts); the
+      // retired URLs 301 to the hub that absorbed their copy, and the two
+      // platform-specific ones go straight to the tool page their readers were
+      // looking for.
+      {
+        source: "/guides/download-tiktok-without-logo-iphone-android",
+        destination: "/guides/download-tiktok-video-without-watermark",
+        permanent: true,
+      },
+      {
+        source: "/guides/tiktok-short-links-not-working",
+        destination: "/guides/download-tiktok-video-without-watermark",
+        permanent: true,
+      },
+      {
+        source: "/guides/iphone-safari-downloads-to-files-and-photos",
+        destination: "/guides/download-tiktok-video-without-watermark",
+        permanent: true,
+      },
+      {
+        source: "/guides/tiktok-audio-bitrate-and-sound-quality",
+        destination: "/guides/download-tiktok-audio-as-mp3",
+        permanent: true,
+      },
+      {
+        source: "/guides/repurpose-tiktok-videos-for-youtube-shorts-instagram-reels",
+        destination: "/guides/why-tiktok-video-quality-drops-after-upload",
+        permanent: true,
+      },
+      {
+        source: "/guides/mp4-wont-import-capcut-premiere-pro",
+        destination: "/guides/why-tiktok-video-quality-drops-after-upload",
+        permanent: true,
+      },
+      {
+        source: "/guides/1080p-60fps-download-edit-upload-workflow",
+        destination: "/guides/why-tiktok-video-quality-drops-after-upload",
+        permanent: true,
+      },
+      {
+        source: "/guides/browser-vs-app-tiktok-downloaders-safety",
+        destination: "/guides/is-downloading-tiktok-videos-legal",
+        permanent: true,
+      },
+      {
+        source: "/guides/how-to-download-instagram-reels-in-hd",
+        destination: "/instagram-reels-downloader",
+        permanent: true,
+      },
+      {
+        source: "/guides/how-to-download-large-facebook-videos-in-1080p-hd",
         destination: "/facebook-video-downloader",
         permanent: true,
       },

@@ -111,10 +111,10 @@ export const entry: SubTool = {
   relatedHeading: "The same page for another country",
   guides: [
     {
-      slug: "tiktok-audio-bitrate-and-sound-quality",
+      slug: "download-tiktok-audio-as-mp3",
       anchor: "Why 320 kbps is a container, not detail",
     },
     { slug: "is-downloading-tiktok-videos-legal" },
-    { slug: "1080p-60fps-download-edit-upload-workflow" },
+    { slug: "why-tiktok-video-quality-drops-after-upload" },
   ],
 };

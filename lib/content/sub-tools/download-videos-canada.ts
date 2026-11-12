@@ -112,8 +112,8 @@ export const entry: SubTool = {
   ],
   relatedHeading: "The same page for another country",
   guides: [
-    { slug: "how-to-download-large-facebook-videos-in-1080p-hd" },
+    { slug: "download-tiktok-video-without-watermark" },
     { slug: "is-downloading-tiktok-videos-legal", anchor: "The legal question, in plain terms" },
-    { slug: "1080p-60fps-download-edit-upload-workflow" },
+    { slug: "why-tiktok-video-quality-drops-after-upload" },
   ],
 };
