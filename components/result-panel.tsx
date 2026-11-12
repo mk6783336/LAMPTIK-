@@ -354,9 +354,14 @@ export function ResultPanel({
   }
 
   return (
-    <div data-accent={platform} data-ad-guard="result" className="relative">
+    /* Order is CSS, not markup: on a phone the buttons come before the banner.
+       Measured at 390×844, the 300×250 sat between the title and the primary
+       button and put 288px of ad — a third of the screen — in front of the one
+       control the visitor came for. Desktop has the room, so there the banner
+       keeps its place above the buttons. */
+    <div data-accent={platform} data-ad-guard="result" className="relative flex flex-col">
       {/* Compact header: thumbnail left, title + @author right. */}
-      <div className="flex items-start gap-3">
+      <div className="order-1 flex items-start gap-3">
         <div className="relative size-[86px] shrink-0 overflow-hidden rounded-xl border border-[var(--glass-border)] bg-[var(--bg-sunken)] sm:size-24">
           {video.thumbnail && !thumbnailFailed ? (
             <img
@@ -413,7 +418,7 @@ export function ResultPanel({
           measured CLS on this exact panel. Reserving first means the creative
           paints INTO space that already exists and nothing below moves. A
           blocked auction still collapses to the 56px sponsor line at 20 s. */}
-      <div className="mt-4">
+      <div className="order-4 mt-4 sm:order-2">
         <AdSlot
           slot="result-top"
           format="rectangle"
@@ -433,7 +438,7 @@ export function ResultPanel({
         <div
           role="status"
           aria-live="polite"
-          className="mt-3 flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-[var(--glass-border)] bg-[var(--bg-sunken)] px-4 py-3"
+          className="order-2 mt-3 flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-[var(--glass-border)] bg-[var(--bg-sunken)] px-4 py-3 sm:order-3"
         >
           <div className="min-w-0">
             <p className="text-sm font-semibold">✅ {started.kind} is in your Downloads tray</p>
@@ -481,7 +486,7 @@ export function ResultPanel({
         </div>
       ) : null}
 
-      <div className="mt-4 grid gap-2">
+      <div className="order-3 mt-4 grid gap-2 sm:order-4">
           {/* SnapTik-style stacked action buttons: full-width. Each button
               routes through the same-origin proxy attachment — Chrome's own
               download manager does the receiving, never an inline tab. */}
@@ -639,7 +644,7 @@ export function ResultPanel({
       </div>
 
       {video.musicTitle ? (
-        <p className="mt-2 flex items-center gap-1.5 text-xs text-[var(--text-3)]">
+        <p className="order-5 mt-2 flex items-center gap-1.5 text-xs text-[var(--text-3)]">
           <Music2 className="size-3 shrink-0" />
           <span className="truncate" title={video.musicTitle}>
             {video.musicTitle}
@@ -647,11 +652,17 @@ export function ResultPanel({
         </p>
       ) : null}
 
-      <div className="mt-3">
-        <SocialShare />
+      <div className="order-6 mt-3">
+        {/* Compact: the chips alone. The titled card was 144px of a phone
+            screen asking for a share before the visitor had watched the file. */}
+        <SocialShare compact />
       </div>
 
-      <p className={cn("mt-2.5 flex items-start gap-1.5 text-xs leading-relaxed text-[var(--text-3)]")}>
+      <p
+        className={cn(
+          "order-7 mt-2.5 flex items-start gap-1.5 text-xs leading-relaxed text-[var(--text-3)]",
+        )}
+      >
         <ShieldCheck className="mt-px size-3.5 shrink-0 text-[var(--ok)]" />
         <span>
           Saves straight to your browser&apos;s Downloads — nothing is stored on our

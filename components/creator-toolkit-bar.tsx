@@ -59,7 +59,9 @@ export function CreatorToolkitBar({ className }: { className?: string }) {
                   <span className="block text-xs font-medium leading-snug tracking-tight text-[var(--text)]">
                     {short.label}
                   </span>
-                  <span className="mt-0.5 block text-xs leading-snug text-[var(--text-3)]">
+                  {/* The note is the second line that made this block 162px on a
+                      phone; the label alone still says which tool it is. */}
+                  <span className="mt-0.5 hidden text-xs leading-snug text-[var(--text-3)] sm:block">
                     {short.note}
                   </span>
                 </span>
