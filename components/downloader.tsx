@@ -640,31 +640,87 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Bring the expanded result into view on small screens, after the
-  // expand animation settles. Suppressed on the cached Back/refresh
-  // restore: the browser is already showing the exact spot the visitor
-  // left — yanking the page down to the card would read as a hijack.
+  // Bring the expanded result into view on small screens.
+  //
+  // Suppressed on the cached Back/refresh restore: the browser is already
+  // showing the exact spot the visitor left — yanking the page down to the card
+  // would read as a hijack.
+  //
+  // This used to be one `setTimeout(420)` shot that measured the card once and
+  // gave up if it looked visible. Measured on a 390×844 phone it landed or not
+  // depending on what had finished loading: the thumbnail, the webfont, the
+  // ad slot swapping to its compact row and the reveal transform each moved the
+  // card after the measurement, and a single smooth scroll that the browser was
+  // still animating could be dropped outright (measured `scrollY: 0` with the
+  // panel starting 1023px down). So: scroll once, then re-assert the position a
+  // few times while the panel settles, and stop the moment the visitor touches
+  // the page — a scroll correction must never fight a real gesture.
   useEffect(() => {
     if (status !== "success" || !video) return;
     if (skipNextResultScrollRef.current) {
       skipNextResultScrollRef.current = false;
       return;
     }
-    const timer = window.setTimeout(
+    if (typeof window === "undefined") return;
+
+    /** Where the card should sit: this far below the sticky header. */
+    const HEADER_OFFSET = 112;
+    /** How far off the target is still "in place". */
+    const TOLERANCE = 8;
+    let cancelled = false;
+    let timer = 0;
+
+    const stop = () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+    // A wheel, a finger or a key means the visitor has taken over.
+    window.addEventListener("wheel", stop, { passive: true, once: true });
+    window.addEventListener("touchmove", stop, { passive: true, once: true });
+    window.addEventListener("keydown", stop, { once: true });
+
+    const targetTop = (): number | null => {
+      const node = resultRef.current;
+      if (!node) return null;
+      const rect = node.getBoundingClientRect();
+      return Math.max(0, Math.round(window.scrollY + rect.top - HEADER_OFFSET));
+    };
+
+    timer = window.setTimeout(
       () => {
-        const node = resultRef.current;
-        if (!node) return;
-        const rect = node.getBoundingClientRect();
-        if (rect.bottom > window.innerHeight) {
-          window.scrollTo({
-            top: Math.max(0, window.scrollY + rect.top - 112),
-            behavior: reduceMotion ? "auto" : "smooth",
-          });
-        }
+        if (cancelled) return;
+        const top = targetTop();
+        if (top === null || Math.abs(window.scrollY - top) < TOLERANCE) return;
+        window.scrollTo({ top, behavior: reduceMotion ? "auto" : "smooth" });
+
+        // The card can still move (a creative swapping row, a thumbnail
+        // landing). Re-assert instantly at most four times over ~1.2s, and only
+        // while the card is genuinely still below its place.
+        let checks = 0;
+        const settle = () => {
+          if (cancelled) return;
+          checks += 1;
+          const node = resultRef.current;
+          if (node) {
+            const rect = node.getBoundingClientRect();
+            const wanted = Math.max(0, Math.round(window.scrollY + rect.top - HEADER_OFFSET));
+            if (rect.top - HEADER_OFFSET > 24 && Math.abs(window.scrollY - wanted) > TOLERANCE) {
+              window.scrollTo({ top: wanted, behavior: "auto" });
+            }
+          }
+          if (checks < 4) timer = window.setTimeout(settle, 300);
+        };
+        timer = window.setTimeout(settle, 320);
       },
-      reduceMotion ? 0 : 420,
+      reduceMotion ? 0 : 380,
     );
-    return () => window.clearTimeout(timer);
+
+    return () => {
+      stop();
+      window.removeEventListener("wheel", stop);
+      window.removeEventListener("touchmove", stop);
+      window.removeEventListener("keydown", stop);
+    };
   }, [status, video, reduceMotion]);
 
   // Global paste shortcut (⌘/Ctrl+V when the field isn't focused).
