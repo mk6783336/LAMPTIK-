@@ -14,26 +14,26 @@ import type { SubTool } from "@/lib/content/sub-tool-types";
 export const entry: SubTool = {
   slug: "download-videos-united-states",
   platform: "tiktok",
-  title: "Download Videos in the United States - No Watermark",
-  socialTitle: "Download Videos in the United States - TikTok, Reels, YouTube and Facebook",
+  title: "TikTok Video Downloader No Watermark HD - US",
+  socialTitle: "TikTok Video Downloader Without Watermark - HD MP4 and MP3",
   description:
-    "Save TikTok, Reels, YouTube and Facebook videos in the US: paste the link and the MP4 goes to your Downloads folder. No app, no account, no watermark.",
+    "Download TikTok videos in the US without a watermark: paste the link and save the HD MP4 TikTok serves, or an MP3 of the same sound. No app, no account.",
   keywords: [
-    "download tiktok video usa",
-    "tiktok downloader united states",
-    "download videos in the us",
-    "save instagram reels without app usa",
-    "youtube downloader usa no app",
-    "download facebook video usa",
-    "tiktok downloader no watermark us",
-    "how to download tiktok on iphone us",
+    "tiktok video downloader no watermark",
+    "tiktok downloader no watermark hd",
+    "download tiktok video no watermark hd",
+    "download tiktok video with link",
+    "tiktok video downloader online",
+    "tiktok downloader pc",
+    "tiktok mp3 download without watermark",
+    "tiktok video download 4k without watermark",
   ],
-  eyebrow: "United States · TikTok first, all four platforms",
-  h1Lead: "Downloading videos",
-  h1Accent: "in the United States.",
+  eyebrow: "United States · TikTok no watermark · HD MP4 + MP3",
+  h1Lead: "TikTok video downloader,",
+  h1Accent: "no watermark, in HD.",
   lede:
-    "TikTok first — this page mounts the TikTok downloader — with Reels, YouTube and Facebook one tap below. Paste a public link and the MP4 lands in your browser's Downloads folder: no App Store install, no account, no SMS check. English is the page's language because that is how the request is typed here; the resolver itself carries no US-only gate, so the same link behaves the same way when you travel.",
-  chips: ["US English", "MP4 + MP3", "No app"],
+    "The US phrasing of the request, answered literally: paste a tiktok.com link or a vt.tiktok.com short link and save the HD MP4 TikTok serves its own player — no username overlay, no app, no account, nothing to install on a PC or a phone. Reels, YouTube and Facebook sit one tap below on the same page. A 4K entry appears only when the creator actually uploaded 4K; nothing is upscaled to make a bigger file look better.",
+  chips: ["No watermark", "HD MP4 + MP3", "No app"],
   facts: [
     ["Copyright basis", "Fair use · 17 U.S.C. §107"],
     ["Notices", "DMCA · 17 U.S.C. §512"],
@@ -95,8 +95,13 @@ export const entry: SubTool = {
       answer:
         "No. Everything happens in the browser, so the SIM, the carrier and any device-financing lock are irrelevant — there is no app to install and no profile to trust. On a US iPhone the only step people get stuck on is Files → Downloads → Share → Save Video, which is an iOS rule rather than a download failure.",
     },
+    {
+      question: "Can I get a 4K TikTok download without a watermark?",
+      answer:
+        "Only if the creator uploaded in 4K and TikTok still serves that rendition. The result panel lists the resolutions the platform actually publishes, and the tool never upscales a 1080p source into a 4K-named file — the size grows, the detail does not. Most vertical uploads since 2022 are delivered at 1080p, which is also what TikTok's own player switches to on a phone.",
+    },
   ],
-  appName: "LAMP TIK - Video Downloader for the United States",
+  appName: "LAMP TIK - TikTok Video Downloader (No Watermark, HD)",
   features: [
     "TikTok, Reels, YouTube and Facebook from one page",
     "Watermark-free MP4 from the source stream",
@@ -119,7 +124,7 @@ export const entry: SubTool = {
     { slug: "download-tiktok-video-without-watermark" },
     {
       slug: "why-tiktok-video-quality-drops-after-upload",
-      anchor: "Where iPhone downloads actually land",
+      anchor: "Why a download cannot add detail",
     },
   ],
 };

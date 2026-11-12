@@ -13,25 +13,25 @@ import type { SubTool } from "@/lib/content/sub-tool-types";
 export const entry: SubTool = {
   slug: "download-videos-united-kingdom",
   platform: "instagram",
-  title: "Download Videos in the UK - Reels Without a Watermark",
-  socialTitle: "Download Videos in the United Kingdom - Reels, TikTok, YouTube, Facebook",
+  title: "Instagram Reels Downloader UK - No Watermark, Online",
+  socialTitle: "Instagram Reels Downloader for the UK - Original MP4, No Watermark",
   description:
-    "Save Instagram Reels, TikTok, YouTube and Facebook videos in the UK: paste the link, get the MP4 with its audio. No app, no login, no watermark.",
+    "Download Instagram Reels in the UK without a watermark: paste the link and the original 1080×1920 MP4, audio included, lands in Downloads. No login, no app.",
   keywords: [
-    "download instagram reels uk",
-    "instagram reels downloader united kingdom",
-    "download videos in the uk",
-    "save reels without app uk",
+    "instagram reels downloader uk",
+    "reels downloader online without watermark",
+    "download instagram reels without watermark",
+    "reels downloader online",
+    "save instagram reels uk",
+    "download reels with link",
     "tiktok downloader uk no watermark",
-    "youtube downloader uk free",
-    "download video from facebook uk",
   ],
-  eyebrow: "United Kingdom · Reels first, all four platforms",
-  h1Lead: "Downloading videos",
-  h1Accent: "in the United Kingdom.",
+  eyebrow: "United Kingdom · Reels without watermark · online",
+  h1Lead: "Instagram Reels downloader,",
+  h1Accent: "no watermark, online.",
   lede:
-    "Reels first — this page mounts the Reels downloader — with TikTok, YouTube and Facebook one tap below. Public links resolve without a login, and the MP4 arrives with its AAC audio already inside it, so it plays first time in QuickTime, VLC or Photos. British English throughout, but nothing here is gated to UK visitors: the country pages explain the local rules, they do not enforce them.",
-  chips: ["UK English", "1080×1920 Reels", "No login"],
+    "The UK spelling of the request: an online Reels downloader that needs no login and installs nothing. Paste an instagram.com/reel/ link and save the original 1080×1920 MP4 with its AAC audio already inside it, so it plays first time in QuickTime, VLC or Photos. TikTok, YouTube and Facebook sit one tap below. Nothing here is gated to UK visitors — the country wording explains the local copyright rules, it does not enforce them.",
+  chips: ["No watermark", "1080×1920 MP4", "No login"],
   facts: [
     ["Copyright basis", "CDPA 1988 · s.30"],
     ["DRM media", "Not supported"],
@@ -93,8 +93,13 @@ export const entry: SubTool = {
       answer:
         "No. Unlike TikTok's save button, Instagram does not burn the account handle into the Reels stream, so there is nothing to crop out — the file you get is the stream Instagram served its own player. Videos that do carry an on-screen handle were published that way by the creator.",
     },
+    {
+      question: "Do I need an app or an extension to download Reels in the UK?",
+      answer:
+        "No. The Reel resolves on the server, so Safari or Chrome saves the MP4 directly: no App Store install, no Chrome extension holding page permissions, and nothing that runs as your logged-in Instagram session. That is the practical difference from the extensions that add a download button to your feed — they read the page with your session, which is the thing worth avoiding.",
+    },
   ],
-  appName: "LAMP TIK - Video Downloader for the United Kingdom",
+  appName: "LAMP TIK - Instagram Reels Downloader (No Watermark)",
   features: [
     "Instagram Reels, TikTok, YouTube and Facebook",
     "Progressive MP4 with its AAC audio intact",

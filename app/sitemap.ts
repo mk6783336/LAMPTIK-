@@ -64,7 +64,10 @@ const REVISED = {
   twitter: "2026-11-09",
   youtube: "2026-11-08",
   toolsHub: "2026-11-08",
-  subTools: "2026-11-09",
+  // 2026-11-12: the US, UK and Germany pages were retargeted from the
+  // "download videos in <country>" phrasing (which nobody searches) onto the
+  // queries those markets actually type.
+  subTools: "2026-11-12",
   // 2026-11-09: the Spanish root now answers the Telegram and HD wording it
   // was already getting impressions for.
   // 2026-11-12: /es gained the cluster hub section that links the Facebook, X

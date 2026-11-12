@@ -13,25 +13,25 @@ import type { SubTool } from "@/lib/content/sub-tool-types";
 export const entry: SubTool = {
   slug: "download-videos-germany",
   platform: "youtube",
-  title: "Download Videos in Germany - YouTube 1080p and MP3",
-  socialTitle: "Download Videos in Germany - YouTube 1080p MP4, Shorts and Honest MP3",
+  title: "YouTube Video Downloader Germany - 1080p MP4 & MP3",
+  socialTitle: "YouTube Video herunterladen - 1080p MP4 and Honest MP3 for Germany",
   description:
-    "Save YouTube videos in Germany as 1080p MP4 or MP3, plus TikTok, Reels and Facebook: paste the link, no app. Region locks and DRM are named, not bypassed.",
+    "Download YouTube videos in Germany as 1080p MP4 or MP3: paste the link, no app. Region locks and DRM are named, not bypassed. TikTok video herunterladen too.",
   keywords: [
     "youtube downloader germany",
-    "download youtube video germany 1080p",
+    "youtube video herunterladen",
+    "youtube video download germany 1080p",
     "youtube to mp3 germany",
-    "download videos in germany",
-    "tiktok downloader germany no watermark",
-    "youtube video herunterladen ohne app",
-    "region locked youtube video download",
+    "tiktok video herunterladen",
+    "tiktok video download ohne wasserzeichen",
+    "youtube video downloader kostenlos",
   ],
-  eyebrow: "Germany · YouTube first, all four platforms",
-  h1Lead: "Downloading videos",
-  h1Accent: "in Germany.",
+  eyebrow: "Germany · YouTube herunterladen · 1080p + MP3",
+  h1Lead: "YouTube video downloader,",
+  h1Accent: "1080p MP4 and an honest MP3.",
   lede:
-    "YouTube first — this page mounts the YouTube downloader, where 1080p MP4 and an honest MP3 both matter — with TikTok, Reels and Facebook one tap below. In Germany the two things that actually stop a download are a licensing region lock and a DRM layer, and this page names which one you have hit instead of selling you a VPN. A German-language landing exists at /de for readers who prefer it.",
-  chips: ["English · DE readers", "1080p + MP3", "No app"],
+    "The request in Germany is usually typed as \"YouTube video herunterladen\" — this is the English answer, with the German-language landing at /de. Paste a watch, /shorts/, youtu.be or music.youtube.com link and save the MP4 YouTube published, or one honest MP3 of its audio with the bitrate actually received. TikTok, Reels and Facebook sit one tap below. Region locks and DRM are reported, not routed around.",
+  chips: ["YouTube first", "1080p + MP3", "No app"],
   facts: [
     ["Copyright basis", "UrhG · §53 private copies"],
     ["DRM", "§95a — not bypassed"],
@@ -93,8 +93,13 @@ export const entry: SubTool = {
       answer:
         "No. Those players use DRM and, for much of their catalogue, a time-limited availability window that is enforced server-side. This page handles public, unencrypted streams — YouTube, TikTok, Instagram and Facebook — and says so rather than offering a button that cannot work.",
     },
+    {
+      question: "Wie lade ich ein YouTube-Video in Deutschland herunter?",
+      answer:
+        "Link kopieren, oben einfügen, dann MP4 in 1080p oder MP3 wählen — ohne App, Konto oder Wasserzeichen. Regionalsperren und DRM werden gemeldet, nicht umgangen; die deutschsprachige Seite dafür ist /de.",
+    },
   ],
-  appName: "LAMP TIK - Video Downloader for Germany",
+  appName: "LAMP TIK - YouTube Video Downloader (1080p MP4 & MP3)",
   features: [
     "YouTube 1080p MP4, Shorts and youtu.be links",
     "MP3 with the bitrate actually received",
