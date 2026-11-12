@@ -8,6 +8,7 @@ import { EngagementIntent } from "@/components/ads/engagement-intent";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { articleNode } from "@/components/seo/JsonLd";
+import { PlatformBridge } from "@/components/seo/platform-bridge";
 import { GUIDE_LIST } from "@/lib/content/guides";
 import { siteConfig, siteUrl } from "@/lib/site";
 
@@ -201,6 +202,8 @@ export default function GuidesPage() {
                   </Link>
                 ))}
               </div>
+
+              <PlatformBridge host="guide" />
 
               {/* Bottom video + multi-slot ad unit — after the guide grid. */}
               <div className="mt-12">

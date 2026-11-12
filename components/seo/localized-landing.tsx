@@ -369,6 +369,18 @@ export function LocalizedLanding({
                 >
                   Twitter / X video downloader — MP4 up to 1080p (English)
                 </Link>
+                <span className="mx-2 text-[var(--text-3)]">·</span>
+                {/* The English Facebook page has no translated twin on these
+                    locales — they mount /<lang>/facebook-video-downloader — so
+                    the destination is English and the anchor says so. */}
+                <Link
+                  href="/facebook-video-downloader"
+                  hrefLang="en"
+                  lang="en"
+                  className="text-[var(--accent-text)] underline-offset-4 hover:underline"
+                >
+                  Facebook video downloader — Watch and fb.watch in HD (English)
+                </Link>
               </p>
 
               <div className="panel mt-8 flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">

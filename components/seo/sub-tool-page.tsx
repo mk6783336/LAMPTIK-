@@ -10,6 +10,7 @@ import { PhotoDownloader } from "@/components/photo-downloader";
 import { PlaylistBrowser } from "@/components/playlist-browser";
 import { PlatformIcon } from "@/components/platform-icons";
 import { Breadcrumb } from "@/components/seo/breadcrumb";
+import { PlatformBridge } from "@/components/seo/platform-bridge";
 import {
   articleNode,
   breadcrumbNode,
@@ -203,6 +204,10 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
               </dl>
             </div>
           </section>
+
+          {/* In flow, directly under the tool: the only in-content path from
+              these 22 indexed pages to the two Google has not crawled yet. */}
+          <PlatformBridge host={tool.platform} />
 
           {/* Same-platform + related sub-tools */}
           <section className="section-pad border-t border-[var(--line)]">

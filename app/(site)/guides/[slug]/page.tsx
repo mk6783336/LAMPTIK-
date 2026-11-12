@@ -9,6 +9,7 @@ import { AmbientBackground } from "@/components/ambient-background";
 import { EngagementIntent } from "@/components/ads/engagement-intent";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { PlatformBridge } from "@/components/seo/platform-bridge";
 import { guideTool } from "@/lib/content/guide-tool";
 import { getGuide, GUIDE_LIST } from "@/lib/content/guides";
 import { siteConfig, siteUrl } from "@/lib/site";
@@ -273,6 +274,8 @@ export default async function GuidePage({
                   </Link>
                 </div>
               </div>
+
+              <PlatformBridge host="guide" />
 
               {related.length > 0 ? (
                 <nav aria-label="Related guides" className="mt-12">
