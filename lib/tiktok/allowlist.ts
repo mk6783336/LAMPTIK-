@@ -84,6 +84,35 @@ export function safeFilenamePart(value: string | null, fallback: string): string
   return cleaned || fallback;
 }
 
+/**
+ * Title-based filename stem — the video's own name in the Downloads tray.
+ *
+ * Every file used to arrive as `lamptik-<platform>-<id>.mp4`, which tells the
+ * person who just saved a clip nothing about which clip it was; a phone
+ * Downloads folder full of them is unusable. The resolver already knows the
+ * title, so callers pass it and this turns it into a safe stem.
+ *
+ * Unicode is kept: `contentDisposition` emits the RFC 5987 `filename*` half
+ * (percent-encoded UTF-8) next to a flattened ASCII `filename`, so a Hindi,
+ * Arabic or Spanish title survives in the browsers that matter without ever
+ * putting a non-ASCII byte in the plain header. What IS removed is everything
+ * that can break a header, a path or a phone's filesystem: control characters,
+ * quotes, `/ \ : * ? " < > |`, and any run of separators. The result is capped
+ * at 80 code points so a 300-character TikTok caption cannot produce a filename
+ * that Windows truncates into a different name than the browser was told.
+ */
+export function safeTitlePart(value: string | null): string {
+  if (!value) return "";
+  const cleaned = value
+    .normalize("NFKC")
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .replace(/[\\/:*?"<>|#]/g, " ")
+    .replace(/\s+/g, "-")
+    .replace(/-{2,}/g, "-")
+    .replace(/^[-.]+|[-.]+$/g, "");
+  return Array.from(cleaned).slice(0, 80).join("").replace(/[-.]+$/, "");
+}
+
 const SAFE_PLATFORMS = ["tiktok", "instagram", "facebook", "youtube", "twitter"] as const;
 export type DownloadPlatform = (typeof SAFE_PLATFORMS)[number];
 

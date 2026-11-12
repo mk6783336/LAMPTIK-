@@ -10,6 +10,7 @@ import {
   contentDisposition,
   safeFilenamePart,
   safePlatform,
+  safeTitlePart,
   type DownloadPlatform,
 } from "@/lib/tiktok/allowlist";
 
@@ -606,7 +607,14 @@ function filenameFor(request: NextRequest, kind: DownloadKind, mediaType: string
   // same video from colliding in the browser's Downloads tray.
   const server = params.get("server");
   const serverTag = server === "1" || server === "2" ? `-s${server}` : "";
-  return `lamptik-${platform}-${id}${serverTag}.${extensionFor(mediaType, kind)}`;
+  // The visitor saved a video, not our brand: when the resolver passed a title
+  // the file is named after the clip (plus its id, so two videos with the same
+  // caption cannot overwrite each other). Without one — photo posts, direct API
+  // calls — the platform/id stem is kept, because a filename that says nothing
+  // is still better than one that says only "download".
+  const title = safeTitlePart(params.get("title"));
+  const stem = title ? `${title}-${id}` : `lamptik-${platform}-${id}`;
+  return `${stem}${serverTag}.${extensionFor(mediaType, kind)}`;
 }
 
 interface AttemptArgs {

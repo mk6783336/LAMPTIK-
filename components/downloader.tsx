@@ -31,7 +31,6 @@ import { PlatformSwitcher } from "@/components/platform-switcher";
 import { isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
 import { ResultPanel } from "@/components/result-panel";
 import { AdSlot } from "@/components/ads/AdSlot";
-import { VideoAdGate } from "@/components/ads/VideoAdGate";
 import { clientMirrorStreams, clientOembedMeta } from "@/lib/youtube-client";
 
 import { ToastStack, type ToastItem } from "@/components/toast";
@@ -423,9 +422,7 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
   const [adRefreshKey, setAdRefreshKey] = useState(0);
   /** Shown during the single silent auto-retry (attempt 2/2). */
   const [backupNote, setBackupNote] = useState<string | null>(null);
-  /** A user-submitted link waiting behind the HilltopAds video gate. */
-  const [gateUrl, setGateUrl] = useState<string | null>(null);
-  /** Last URL that actually failed, so the inline Retry can skip the gate. */
+  /** Last URL that actually failed, so the inline Retry can skip re-detecting. */
   const lastFailureRef = useRef<{ url: string; at: number } | null>(null);
   const lastSubmittedUrlRef = useRef<string | null>(null);
 
@@ -777,25 +774,26 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
    * directly, so an already-earned result never pays for a second gate.
    */
   function handleGateSubmit(rawUrl: string) {
-    if (isLoading || gateUrl) return;
-    // A retry of the URL that just failed is a recovery action, not a new
-    // video: run it immediately instead of charging another 10s/30s ad
-    // break. Every fresh submission still goes through the gate.
+    if (isLoading) return;
+    // The submit-time video gate is gone.
+    //
+    // It held every pasted link behind a full-screen card for 10 seconds on the
+    // first three videos of a session and for 30 seconds on every one after
+    // that — before the tool had even looked at the link. That wait, not the
+    // resolve, is what the site felt like on a phone: paste, then sit through an
+    // ad, then find out the clip is private. Submission now resolves
+    // immediately, so the banners and the sponsored card are the only ad
+    // surfaces and none of them block the tool.
+    //
+    // A retry of a URL that just failed is still a recovery action: it forces a
+    // fresh resolve instead of replaying the error.
     const failed = lastFailureRef.current;
+    setError(null);
     if (failed && failed.url === rawUrl.trim() && Date.now() - failed.at < 120_000) {
-      setError(null);
       void handleSubmitUrl(rawUrl, { force: true });
       return;
     }
-    setError(null);
-    setGateUrl(rawUrl);
-  }
-
-  function handleGateComplete() {
-    const pendingUrl = gateUrl;
-    setGateUrl(null);
-    if (!pendingUrl) return;
-    void handleSubmitUrl(pendingUrl);
+    void handleSubmitUrl(rawUrl);
   }
 
   /** Inline recovery action: force a fresh resolve without the ad gate. */
@@ -1193,10 +1191,6 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
       <div className="mt-3">
         <ToastStack toasts={toasts} onDismiss={dismissToast} />
       </div>
-
-      {/* HilltopAds VAST gate — opens on submit, closes on its own clock, then
-          hands the paused link to the resolver above. */}
-      <VideoAdGate open={gateUrl !== null} onComplete={handleGateComplete} />
 
       {/* Keyboard hint: desktop only — mobile users tap the Paste button. */}
       <p className="mt-3 hidden items-center gap-1.5 text-xs text-[var(--text-2)] sm:flex sm:text-sm">

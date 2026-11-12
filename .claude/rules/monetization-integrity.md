@@ -16,10 +16,13 @@ a download that died or a page that froze on a phone.
 
 - The Download CTA is always reachable with a plain tap while the visitor is
   working. No full-screen layer, no `backdrop-blur` bar, no fixed footer, no
-  ad-network modal. The single exception is the post-download dialog
-  (`components/ads/DownloadStartedModal.tsx`): it may only open from a download
-  click, after the file hand-off, once per resolved video, and every exit
-  (Escape, ✕, backdrop, CTA) must work without waiting on a creative.
+  ad-network modal — not even after a download. 2026-11-12: the post-download
+  dialog, the submit-time video gate (10 s on the first three videos of a
+  session, 30 s on every one after) and the auto-opened sponsor tab were all
+  removed. On a phone the flow had become a sequence of waits and pop-ups, and
+  the owner's own report was the clearest signal available. A completed
+  hand-off is now one in-flow line in `result-panel.tsx`, and every button
+  stays live.
 - **The Monetag Vignette script and the Adsterra Social Bar are banned.** Both
   inject invisible `position: fixed; inset: 0; z-index: 2147483647` layers whose
   tap-through depends on a remote creative rendering; when it hangs, the layer
@@ -29,13 +32,13 @@ a download that died or a page that froze on a phone.
 - The only sanctioned monetization surfaces are: in-flow `AdSlot` banners (the
   SnapTik ad-sandwich: one slot between the URL input and the result zone, one
   between the result header and the Download buttons, one immediately under the
-  audio buttons, the Stage-A unit inside the resolve/loading console, and the
-  countdown theater's center-stage unit), the click-triggered Direct Link
-  (`triggerDownloadDirectLink`), the inline 10-second download theater in
-  `result-panel.tsx`, and the post-download dialog above.
-- Ads are visible DURING the two natural waits — CDN resolving (`LoadingConsole`,
-  `downloader.tsx`) and the 10-second countdown (`result-panel.tsx`) — but the
-  file hand-off is never gated, awaited or delayed by any of them.
+  audio buttons, and the Stage-A unit inside the resolve/loading console) and
+  the click-triggered Direct Link / sponsored card under the result buttons.
+  Nothing timed, nothing that has to be waited out.
+- Ads are visible DURING the one natural wait — CDN resolving (`LoadingConsole`,
+  `downloader.tsx`) — but neither the resolve nor the file hand-off is ever
+  gated, awaited or delayed by an ad. There is no countdown in the flow and no
+  gate in front of a submission.
 - `data-ad-guard="tool"` / `data-ad-guard="result"` mark the protected regions;
   keep them on the downloader and result panel.
 
@@ -45,9 +48,8 @@ a download that died or a page that froze on a phone.
   `Sponsored` disclosure. Never two unspaced slots in the same container, never
   a duplicate "Sponsored" pill. The result panel's two sandwiches are separated
   by the whole button stack, so they are two sections, not one.
-- Only one 300×250 is ever live at a time: while the post-download dialog is
-  open the theater's center-stage unit stays unmounted, and the dialog mounts
-  none. Never serve a creative behind an opaque backdrop.
+- Never serve a creative behind an opaque backdrop, and never mount one inside
+  a dialog: no overlay is left that could hide an impression.
 - Reserve space, don't shift it: the slot keeps `height` from `AD_RESERVED` /
   the filled creative and shrinks to one compact sponsor line on fallback
   (`max-h-[72px]`), never a giant empty black card.
@@ -83,15 +85,12 @@ a download that died or a page that froze on a phone.
      `setTimeout` hand-offs, or in-page `fetch()`/Blob/IndexedDB buffering.
      The iframe must stay mounted ≥300 s (removing it aborts a still-streaming
      transfer).
-  2. *t = 0ms → 10s:* the panel becomes the 10-second POST-download sponsor
-     theater over a freshly keyed `alwaysReserve` 300×250 banner — ads run
-     while bytes already move in the tray. A ~6s same-origin HEAD probe flips
-     dead/expired streams to the failure card (Retry / Try Server 02 /
-     re-resolve) with the raw-CDN fallback link (`theater.fallbackUrl`), so a
-     silent bodyless 502 never impersonates a successful download.
-  3. The theater headline reads "✅ Download Started in Your Browser!" from
-     the first second, with "Download Another Video" and Server 01 / Server 02 /
-     MP3 re-click links appearing near/after 0s (each re-runs the same flow).
+  2. *t = 0ms+:* one in-flow line confirms the hand-off ("✅ … is in your
+     Downloads tray") with the raw-CDN fallback link and a re-resolve action, so
+     a silent bodyless 502 never impersonates a successful download.
+  3. No timer runs, no button is disabled and no tab opens: the visitor can
+     start the next download immediately, and the banners above and below the
+     button stack are the panel's whole ad surface.
 - A real user gesture must exist for the initial click; do not auto-start
   downloads on mount.
 

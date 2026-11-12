@@ -164,52 +164,16 @@ export const directLinkUrl =
   process.env.NEXT_PUBLIC_DIRECT_LINK_URL?.trim() || "https://idealistic-revenue.com/FtK1df";
 
 /**
- * HilltopAds VAST 3.0 video tag (Zone 7549085).
+ * The submit-time VAST video gate is retired (2026-11-12).
  *
- * The endpoint only fills when the request carries the site's Referer — a
- * bare curl answers 404, `Referer: https://lamptik.online/` answers the XML.
- * The browser supplies it automatically; when an ad-blocker strips it the
- * gate falls back to its house sponsor card and still counts down.
+ * It held every pasted link behind a full-screen card for 10 seconds on the
+ * first three videos of a session and 30 seconds on every one after that,
+ * before the tool had even looked at the link. Measured complaint on a phone:
+ * the site felt broken, not slow. Its tag, its session counter and the
+ * `components/ads/VideoAdGate.tsx` component were removed together; the
+ * remaining surfaces are the in-flow `AdSlot` banners and the click-triggered
+ * Direct Link, neither of which delays anything.
  */
-export const hilltopVastUrl =
-  process.env.NEXT_PUBLIC_HILLTOP_VAST_URL?.trim() ||
-  "https://faithfuloccasion.com/d/m.FQzwdHGNN_vWZPGnUf/SeVmw9VueZsUSlckLP/TWcu1UNxDgkYwcOnDMUntcNnzmU/0/ObTKAE4xOdQF";
-
-/** sessionStorage counter behind the gate's 10s → 30s step. */
-export const VIDEO_GATE_COUNT_KEY = "lamptik_video_count";
-
-/** The first N resolves of a session wait 10s; every one after waits 30s. */
-export const VIDEO_GATE_FIRST_RUNS = 3;
-export const VIDEO_GATE_SECONDS_FIRST = 10;
-export const VIDEO_GATE_SECONDS_REPEAT = 30;
-
-/** Countdown length for the current session video count. */
-export function videoGateSeconds(count: number): number {
-  return count < VIDEO_GATE_FIRST_RUNS ? VIDEO_GATE_SECONDS_FIRST : VIDEO_GATE_SECONDS_REPEAT;
-}
-
-/** Resolved-video count in this tab session (0 when storage is unavailable). */
-export function readVideoGateCount(): number {
-  if (typeof window === "undefined") return 0;
-  try {
-    const raw = Number(window.sessionStorage.getItem(VIDEO_GATE_COUNT_KEY) ?? 0);
-    return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 0;
-  } catch {
-    return 0;
-  }
-}
-
-/** Count one completed gate. Returns the new count. */
-export function bumpVideoGateCount(): number {
-  const next = readVideoGateCount() + 1;
-  if (typeof window === "undefined") return next;
-  try {
-    window.sessionStorage.setItem(VIDEO_GATE_COUNT_KEY, String(next));
-  } catch {
-    // Private mode / quota: the countdown still works for this resolve.
-  }
-  return next;
-}
 
 export const adsConfigured = Boolean(adsterraBannerKey || directLinkUrl);
 

@@ -11,19 +11,17 @@ import {
   ShieldCheck,
   Zap,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import { trackEvent, type DownloadEventMeta } from "@/lib/analytics";
 import { formatBytes, formatDuration } from "@/lib/format";
 import type { ToastItem } from "@/components/toast";
 import { AdSlot } from "@/components/ads/AdSlot";
-import { DownloadStartedModal } from "@/components/ads/DownloadStartedModal";
 import { CreatorToolkitBar } from "@/components/creator-toolkit-bar";
 import { PlatformIcon } from "@/components/platform-icons";
 import { cn } from "@/lib/cn";
 import { PLATFORMS } from "@/lib/platforms";
 import { directLinkUrl, smartlinkUrl } from "@/lib/monetization";
-import { openSmartlinkOnce } from "@/lib/smartlink";
 import { ENGLISH_DOWNLOADER_COPY, type DownloaderCopy } from "@/lib/i18n/ui";
 
 import { isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
@@ -49,22 +47,25 @@ interface ResultPanelProps {
   copy?: DownloaderCopy;
 }
 
-/** One click's worth of sponsor theater. */
-interface DownloadTheater {
+/**
+ * What the last click handed to the browser.
+ *
+ * This used to be a 10-second "sponsor theater": a countdown that replaced the
+ * download buttons and told the visitor to wait before the next download. On a
+ * phone that was the most complained-about surface on the site — the file was
+ * already moving in the Downloads tray, and the page still refused to show a
+ * button for ten seconds. A hand-off needs one line of feedback, not a gate.
+ */
+interface DownloadStarted {
   attemptId: number;
-  secondsLeft: number;
-  done: boolean;
   kind: string;
-  /** Same-origin `/api/download` attachment URL handed to Chrome AT 0s. */
-  href: string;
   /** Raw upstream CDN URL (the proxy's `u` param) for the never-stuck fallback link. */
   fallbackUrl: string | null;
 }
 
 /**
- * SnapTik-style result card — instant resolution, three servers, and a
- * 10-second sponsor theater that runs AFTER the file has been handed to
- * Chrome.
+ * SnapTik-style result card — instant resolution, three servers, and zero
+ * waiting after a click.
  *
  * The flow (identical on TikTok / Instagram / Facebook / YouTube — every
  * platform page renders this exact component):
@@ -75,9 +76,10 @@ interface DownloadTheater {
  *   the old 10-second delayed hand-off died to Chrome twice over: the user
  *   activation had expired and the cross-origin CDN refused iframe
  *   delivery. No post-timeout downloads, ever.
- *   0ms-10s — the panel transforms IN FLOW into the sponsor theater with a
- *   freshly keyed 300×250 banner on center stage, while bytes already move
- *   in the Downloads tray. IP-bound converter URLs (loader.to/pacific-cdn
+ *   0ms+ — a one-line "in your Downloads tray" confirmation appears in flow and
+ *   every button stays live: another format, another server, or the next
+ *   video. There is no countdown, no full-screen dialog and no sponsor tab
+ *   opened for the visitor. IP-bound converter URLs (loader.to/pacific-cdn
  *   and client-claimed googlevideo links are authorized for the USER'S OWN
  *   IP) open straight from the gesture via a real anchor click — never
  *   through the datacenter proxy, whose IP the CDN rejects (the exact
@@ -98,16 +100,7 @@ export function ResultPanel({
    *  mobile without any extra configuration. */
   const sponsorUrl = smartlinkUrl || directLinkUrl;
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
-  const [theater, setTheater] = useState<DownloadTheater | null>(null);
-  /**
-   * The post-download sponsor dialog. Session-once per resolved video: the
-   * first click on a card is the moment a visitor is watching the screen, so
-   * that is where the 300×250 is worth the most; the second click (often the
-   * audio of the same video) is left frictionless so one resolve can still
-   * produce both files.
-   */
-  const [startedModal, setStartedModal] = useState<{ attemptId: number } | null>(null);
-  const modalShownRef = useRef(false);
+  const [started, setStarted] = useState<DownloadStarted | null>(null);
 
   const platform = media.platform;
   const platformConfig = PLATFORMS[platform];
@@ -125,6 +118,9 @@ export function ResultPanel({
       author: media.author,
       platform,
       server,
+      // The saved file is named after the video, not after this site (see
+      // `filenameFor` in /api/download). The server sanitises and caps it.
+      title: media.title,
     }).toString()}`;
 
   /** Raw upstream CDN URL embedded in a same-origin proxy href (`u` param)
@@ -226,32 +222,14 @@ export function ResultPanel({
       </span>
     ) : null;
 
-  /* ------------------------------------------------------------------
-   * 10-second sponsor theater that runs AFTER the real download.
+    /* ------------------------------------------------------------------
+   * Hand-off, then one line of feedback. No timer, no gate, no second tab.
    *
  * t = 0ms → the hidden same-origin iframe hands the file to Chrome's
- *   download manager in the SAME gesture as the click — downloads never
- *   wait for the timer, and no second tab is opened: the file is the only
- *   thing this button produces.
-   * t = 0ms → 10s → sponsor theater in flow (fresh 300×250 banner),
-   *   while bytes move in the tray. A ~6s validity probe flips dead
-   *   streams to the retry/failure card with a raw-CDN fallback link.
-   * ---------------------------------------------------------------- */
-  const theaterAttemptId = theater?.attemptId;
-  useEffect(() => {
-    if (!theater || theater.done) return;
-    const interval = window.setInterval(() => {
-      setTheater((current) => {
-        if (!current || current.done) return current;
-        if (current.secondsLeft <= 1) return { ...current, secondsLeft: 0, done: true };
-        return { ...current, secondsLeft: current.secondsLeft - 1 };
-      });
-    }, 1_000);
-    return () => window.clearInterval(interval);
-    // The countdown restarts per attempt; theater state itself is read via
-    // the ref-free updater.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [theaterAttemptId]);
+ *   download manager in the SAME gesture as the click, and the buttons stay
+ *   live. There is nothing to wait for: the visitor can start the next
+ *   download, or the audio of this one, immediately.
+ * ---------------------------------------------------------------- */
 
   /**
    * Unlocks the push ad networks, which now load only after a real download
@@ -269,7 +247,7 @@ export function ResultPanel({
 
   function rejectKnownYouTubeInterstitial(url: string | null): boolean {
     if (platform !== "youtube" || !url || !isKnownLoaderInterstitialUrl(url)) return false;
-    setTheater(null);
+    setStarted(null);
     onNotify({
       kind: "error",
       title: "This YouTube stream is stale",
@@ -318,32 +296,22 @@ export function ResultPanel({
     );
     frame.src = href;
     document.body.appendChild(frame);
-    // The frame navigation has already been initiated above, so the sponsor
-    // tab below cannot cancel or delay the transfer — and the download is the
-    // only moment the visitor has been served. Once per session (lib/smartlink).
-    openSmartlinkOnce("download");
+    // No sponsor tab: a download click produces the file and nothing else. An
+    // auto-opened third-party tab is what every visitor reads as a redirect,
+    // and it is the pattern ad networks themselves classify as forced traffic.
     signalDownloadIntent(kind);
     // Live until the proxied stream has had its full 300s window — removing
     // the frame earlier aborts a still-streaming download.
     window.setTimeout(() => frame.remove(), 300_000);
-    setTheater({
+    setStarted({
       attemptId: Date.now(),
-      secondsLeft: 10,
-      done: false,
       kind,
-      href,
       fallbackUrl: fallbackUrl ?? rawUpstreamOf(href),
     });
-    // AFTER the hand-off, never before: the iframe above is already streaming
-    // into Chrome's download manager, so the dialog cannot delay the file.
-    if (!modalShownRef.current) {
-      modalShownRef.current = true;
-      setStartedModal({ attemptId: Date.now() });
-    }
     onNotify({
       kind: "success",
       title: "Download started",
-      description: `${kind} is already moving in your Downloads tray — 10s sponsor break runs alongside it.`,
+      description: `${kind} is already moving in your Downloads tray.`,
     });
   }
 
@@ -371,32 +339,19 @@ export function ResultPanel({
     anchor.style.display = "none";
     document.body.appendChild(anchor);
     anchor.click();
-    // Same order as the proxy path: the click has already dispatched, so the
-    // file hand-off precedes the sponsor tab.
-    openSmartlinkOnce("download-direct");
     signalDownloadIntent(kind);
     window.setTimeout(() => anchor.remove(), 30_000);
-    setTheater({
+    setStarted({
       attemptId: Date.now(),
-      secondsLeft: 10,
-      done: false,
       kind,
-      href: directUrl,
       fallbackUrl: directUrl,
     });
-    // Same order as the proxy path: the anchor click has already happened.
-    if (!modalShownRef.current) {
-      modalShownRef.current = true;
-      setStartedModal({ attemptId: Date.now() });
-    }
     onNotify({
       kind: "success",
       title: "Download requested",
       description: `${kind} was handed to your browser — check the Downloads tray for the file.`,
     });
   }
-
-  const theaterProgress = theater ? ((10 - theater.secondsLeft) / 10) * 100 : 0;
 
   return (
     <div data-accent={platform} data-ad-guard="result" className="relative">
@@ -458,171 +413,75 @@ export function ResultPanel({
           measured CLS on this exact panel. Reserving first means the creative
           paints INTO space that already exists and nothing below moves. A
           blocked auction still collapses to the 56px sponsor line at 20 s. */}
-      {!theater ? (
-        <div className="mt-4">
-          <AdSlot
-            slot="result-top"
-            format="rectangle"
-            eager
-            alwaysReserve
-            refreshKey={refreshKey}
-            label="Sponsored — keeps LAMP TIK free"
-            sponsoredLabel={t.sponsored}
-          />
-        </div>
-      ) : null}
+      <div className="mt-4">
+        <AdSlot
+          slot="result-top"
+          format="rectangle"
+          eager
+          alwaysReserve
+          refreshKey={refreshKey}
+          label="Sponsored — keeps LAMP TIK free"
+          sponsoredLabel={t.sponsored}
+        />
+      </div>
 
-      {theater ? (
-        /* ---------------- 10-second parallel download theater ----------------
-            In normal document flow (never an overlay, taps stay free), the
-            file is already in the browser's download manager. Center stage:
-            a freshly keyed 300×250 unit + the high-contrast sponsor CTA. */
+      {started ? (
+        /* One line of confirmation, in flow. This replaced a 10-second
+            countdown that hid every download button and told the visitor to
+            wait: the file was already in their tray, so the timer only cost
+            ten seconds of a phone screen. The buttons below never lock. */
         <div
           role="status"
           aria-live="polite"
-          className="mt-4 rounded-2xl border border-[var(--glass-border)] bg-[var(--bg-sunken)] px-4 py-4"
+          className="mt-3 flex flex-wrap items-start justify-between gap-3 rounded-2xl border border-[var(--glass-border)] bg-[var(--bg-sunken)] px-4 py-3"
         >
-          {/* Animated progress header. */}
-          <div className="flex items-center justify-between gap-3">
-            <p className="min-w-0 text-sm font-semibold sm:text-base">
-              <span>
-                ✅ Download Started in Your Browser!{" "}
-                <span className="font-normal text-[var(--text-3)]">
-                  ({theater.kind} is moving in your Downloads tray — please wait {theater.secondsLeft}s for the next download…)
-                </span>
-              </span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">✅ {started.kind} is in your Downloads tray</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-[var(--text-3)]">
+              Nothing is blocked — every button below works right now, for this video or the next one.
             </p>
-            <span className="micro shrink-0 tabular-nums">{theater.secondsLeft}s</span>
           </div>
+          <button
+            type="button"
+            onClick={() => setStarted(null)}
+            className="shrink-0 text-xs text-[var(--text-3)] underline-offset-4 hover:underline"
+          >
+            Hide
+          </button>
 
-          {/* Progress bar 0% → 100% over the 10 seconds. */}
-          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[var(--field)]">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-sky-500 to-indigo-500 transition-[width] duration-1000 ease-linear"
-              style={{ width: `${theaterProgress}%` }}
-            />
-          </div>
+          <div className="min-w-0 basis-full">
+            {/* Never-stuck fallback: if Chrome's tray shows nothing, one click
+                on the RAW CDN attachment URL still starts the file — handed
+                from a real user gesture, so no activation can block it. */}
+            {started.fallbackUrl ? (
+              <p className="text-center text-xs">
+                <a
+                  href={started.fallbackUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[var(--accent-text)] underline underline-offset-4 hover:underline"
+                >
+                  Didn&apos;t start automatically? Click here for Direct Stream ↗
+                </a>
+              </p>
+            ) : null}
 
-          {/* Center stage: fresh 300×250 on EVERY download attempt
-              (`key` remounts the unit so each click earns a new impression),
-              plus the high-contrast sponsored partner CTA below it.
-              While the post-download dialog is open this unit stays unmounted:
-              the dialog's own 300×250 is the one being looked at, and a
-              second creative painting behind an opaque backdrop would only
-              count an impression nobody can see. It mounts on dismiss. */}
-          {startedModal ? null : (
-            <div className="mt-3 flex justify-center">
-              <AdSlot
-                key={theater.attemptId}
-                slot="theater"
-                format="rectangle"
-                eager
-                alwaysReserve
-                label="Sponsored — keeps LAMP TIK free"
-                sponsoredLabel={t.sponsored}
-              />
-            </div>
-          )}
-
-          {/* Never-stuck fallback: if Chrome's tray shows nothing, one click
-              on the RAW CDN attachment URL still starts the file — handed
-              from a real user gesture, so no activation can block it. */}
-          {theater.fallbackUrl ? (
-            <p className="mt-2 text-center text-xs">
-              <a
-                href={theater.fallbackUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[var(--accent-text)] underline underline-offset-4 hover:underline"
-              >
-                Didn&apos;t start automatically? Click here for Direct Stream ↗
-              </a>
-            </p>
-          ) : null}
-
-          {theater.secondsLeft <= 3 || theater.done ? (
-            <div className="mt-3 grid gap-2">
-              <button
-                type="button"
-                onClick={onReset}
-                className="btn btn-primary tool-cta group h-12 w-full gap-2 px-4 text-sm font-semibold"
-              >
-                <RefreshCw className="size-4 shrink-0" />
-                {t.another}
-              </button>
-
-              {onReresolve ? (
+            {onReresolve ? (
+              <p className="mt-1 text-center text-xs">
                 <button
                   type="button"
                   onClick={() => onReresolve(media.canonicalUrl)}
-                  className="btn btn-ghost h-11 w-full gap-2 px-4 text-sm"
+                  className="text-[var(--text-3)] underline-offset-4 hover:underline"
                 >
-                  <RefreshCw className="size-3.5 shrink-0" />
-                  Re-resolve a fresh CDN stream &amp; retry
+                  Stream expired? Re-resolve a fresh CDN link
                 </button>
-              ) : null}
-
-              {/* Quick re-click links: each fires the same instant handler. */}
-              <p className="text-center text-xs text-[var(--text-3)]">
-                Want a different format? Tap again — instantly:
               </p>
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    youtubeDirectVideo
-                      ? startDownloadDirect("Server 01", youtubeDirectVideo, videoMeta)
-                      : startDownload("Server 01", server01Href, videoMeta, rawUpstreamOf(server01Href))
-                  }
-                  className="rounded-full border border-[var(--glass-border)] px-3 py-1.5 text-xs font-medium underline-offset-4 hover:underline"
-                >
-                  Server 01
-                </button>
-                {showServer02 ? (
-                  <button
-                    type="button"
-                    onClick={() => startDownload("Server 02", server02Href, server02Meta, rawUpstreamOf(server02Href))}
-                    className="rounded-full border border-[var(--glass-border)] px-3 py-1.5 text-xs font-medium underline-offset-4 hover:underline"
-                  >
-                    Server 02
-                  </button>
-                ) : null}
-                {mp3Url ? (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      youtubeDirectAudio
-                        ? startDownloadDirect(`${audioFormatLabel} audio`, youtubeDirectAudio, audioMeta)
-                        : startDownload(`${audioFormatLabel} audio`, mp3Href, audioMeta, rawUpstreamOf(mp3Href))
-                    }
-                    className="rounded-full border border-[var(--glass-border)] px-3 py-1.5 text-xs font-medium underline-offset-4 hover:underline"
-                  >
-                    {audioFormatLabel}
-                  </button>
-                ) : null}
-                {encodedMp3Url ? (
-                  <button
-                    type="button"
-                    onClick={() => startDownload("MP3 audio", encodedMp3Url, encodedMp3Meta, rawUpstreamOf(encodedMp3Url))}
-                    className="rounded-full border border-[var(--glass-border)] px-3 py-1.5 text-xs font-medium underline-offset-4 hover:underline"
-                  >
-                    MP3
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-
-          <button
-            type="button"
-            onClick={() => setTheater(null)}
-            className="mt-2 mx-auto block text-xs text-[var(--text-3)] underline-offset-4 hover:underline"
-          >
-            Back to download buttons
-          </button>
+            ) : null}
+          </div>
         </div>
-      ) : (
-        <div className="mt-4 grid gap-2">
+      ) : null}
+
+      <div className="mt-4 grid gap-2">
           {/* SnapTik-style stacked action buttons: full-width. Each button
               routes through the same-origin proxy attachment — Chrome's own
               download manager does the receiving, never an inline tab. */}
@@ -784,10 +643,9 @@ export function ResultPanel({
             <RefreshCw className="size-3.5 transition-transform duration-300 group-hover:rotate-180" />
             {t.another}
           </button>
-        </div>
-      )}
+      </div>
 
-      {video.musicTitle && !theater ? (
+      {video.musicTitle ? (
         <p className="mt-2 flex items-center gap-1.5 text-xs text-[var(--text-3)]">
           <Music2 className="size-3 shrink-0" />
           <span className="truncate" title={video.musicTitle}>
@@ -808,17 +666,6 @@ export function ResultPanel({
         </span>
       </p>
 
-      {/* Post-download sponsor dialog. Mounted by a download click only, after
-          the file hand-off, once per resolved video. */}
-      <DownloadStartedModal
-        open={startedModal !== null}
-        copy={t}
-        onClose={() => setStartedModal(null)}
-        onDownloadAnother={() => {
-          setStartedModal(null);
-          onReset();
-        }}
-      />
     </div>
   );
 }

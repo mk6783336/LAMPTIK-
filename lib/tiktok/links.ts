@@ -6,6 +6,12 @@ export interface LinkContext {
   username: string;
   /** Defaults to tiktok — the original behavior, unchanged. */
   platform?: PlatformType;
+  /**
+   * The video's own title, carried into `/api/download` so the saved file is
+   * named after the clip instead of after this site. Optional: photo posts,
+   * the X panel and older API clients simply fall back to the id.
+   */
+  title?: string;
 }
 
 /**
@@ -41,6 +47,10 @@ export function proxyDownloadLink(
   // path (`lamptik-…-s02.mp4`) so the visitor's Downloads tray never shows
   // two confusingly identical filenames for different servers.
   if (server !== null) params.set("server", String(server));
+  // Capped here as well as server-side: the title travels in a URL, and a
+  // 3,000-character caption would make the href itself unwieldy.
+  const title = context.title?.trim();
+  if (title) params.set("title", title.slice(0, 120));
   return `/api/download?${params.toString()}`;
 }
 
@@ -73,6 +83,10 @@ export function withDownloadLinks(video: ExtractedVideo): Omit<ExtractedVideo, "
   const { streams, ...meta } = video;
   return {
     ...meta,
-    downloads: buildDownloadLinks(streams, { id: meta.id, username: meta.author.username }),
+    downloads: buildDownloadLinks(streams, {
+      id: meta.id,
+      username: meta.author.username,
+      title: meta.title,
+    }),
   };
 }

@@ -12,8 +12,10 @@ import { hilltopMultitagSrc, monetagInPage } from "@/lib/monetization";
  * 2. The HilltopAds Direct Link (`idealistic-revenue.com/FtK1df`) as the href
  *    of a visible sponsored card — the side rail, the banner fallback and the
  *    result panel. Only where the visitor sees what they are clicking.
- * 3. The inline 10-second countdown in `result-panel.tsx` and the
- *    submit-time VAST gate in `VideoAdGate.tsx` — visible, timed cards.
+ * 3. Nothing else. The submit-time VAST gate and the 10-second post-download
+ *    countdown were removed on 2026-11-12 (owner feedback: on a phone the flow
+ *    was a sequence of waits), together with the post-download dialog and the
+ *    auto-opened sponsor tab. No ad surface here is timed or blocking.
  * 4. The Monetag In-Page Push and the HilltopAds MultiTag: **off**, and
  *    post-intent when enabled. Both are gated by `pushAdsEnabled` in
  *    `lib/monetization.ts`, which requires an explicit

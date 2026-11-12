@@ -45,6 +45,8 @@ function proxyHref(media: TwitterMedia, variant: TwitterVariant): string {
     platform: "twitter",
     u: variant.url,
     id: media.id,
+    // Named after the post, not after this site — /api/download sanitises it.
+    title: media.title,
   });
   return `/api/download?${params.toString()}`;
 }
