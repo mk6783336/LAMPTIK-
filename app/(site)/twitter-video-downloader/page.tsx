@@ -23,8 +23,11 @@ import { pageAlternates, siteUrl } from "@/lib/site";
  */
 
 /** ≤60 chars, keyword first. */
-const TITLE = "Twitter (X) Video Downloader — MP4 1080p, GIFs, No Login";
-const SOCIAL_TITLE = "Twitter (X) Video Downloader — MP4 in 1080p, No Login";
+// Intent-matched, not generic: the query this page answers is «save x video gif
+// to mp4» — an X GIF is already an MP4 variant, so the title names both the
+// object and the output instead of repeating "video downloader".
+const TITLE = "X Video & GIF to MP4 — HD Download, No Login, Free";
+const SOCIAL_TITLE = "Save X Videos and GIFs as MP4 — HD Renditions, No Login";
 const DESCRIPTION =
   "Save Twitter (X) videos and GIFs as MP4 — pick 1080p, 720p or 480p and download to your device. Free, no login, no app, and no watermark to remove.";
 
@@ -194,8 +197,8 @@ export default function TwitterVideoDownloaderPage() {
                     Twitter / X downloader
                   </p>
                   <h1 className="balance mt-4 text-4xl font-semibold leading-tight tracking-headline">
-                    Twitter video downloader,{" "}
-                    <span className="text-[var(--accent-text)]">straight to MP4.</span>
+                    X videos and GIFs,{" "}
+                    <span className="text-[var(--accent-text)]">straight to the MP4 X served.</span>
                   </h1>
                   <p className="pretty mt-4 max-w-xl text-sm leading-relaxed text-[var(--text-2)]">
                     Paste a link to any x.com or twitter.com post and download its video or

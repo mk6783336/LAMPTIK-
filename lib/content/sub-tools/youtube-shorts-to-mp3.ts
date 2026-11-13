@@ -8,7 +8,10 @@ import type { SubTool } from "@/lib/content/sub-tool-types";
 export const entry: SubTool = {
   slug: "youtube-shorts-to-mp3",
   platform: "youtube",
-  title: "YouTube Shorts to MP3 - Extract Shorts Audio",
+  // «download youtube shorts audio only 320kbps» is the query; the honest
+  // answer is the source track at the bitrate YouTube published, so the title
+  // promises audio-only rather than a number the platform may not serve.
+  title: "YouTube Shorts Audio to MP3 — Original Track, No App",
   socialTitle: "YouTube Shorts to MP3 - Pull the Sound Without Re-encoding the Video",
   description:
     "Turn a YouTube Short into audio: paste the /shorts/ link and save the sound as M4A, or as MP3 for a smaller file that plays anywhere. Free, no app.",

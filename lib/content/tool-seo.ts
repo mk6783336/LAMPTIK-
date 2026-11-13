@@ -488,6 +488,16 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
         anchor: "Twitter / X video downloader",
         note: "The fifth surface — same browser, no login, 1080p MP4.",
       },
+      {
+        href: "/download-facebook-live-video",
+        anchor: "Download a Facebook Live replay after it ends",
+        note: "A finished broadcast is an ordinary video object — full length, one MP4.",
+      },
+      {
+        href: "/facebook-reels-downloader",
+        anchor: "Facebook Reels downloader (9:16, own audio)",
+        note: "Vertical reels and fb.watch links, saved as the original rendition.",
+      },
     ],
   },
 };

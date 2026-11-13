@@ -4,6 +4,7 @@ import { entry as canada } from "./download-videos-canada";
 import { entry as germany } from "./download-videos-germany";
 import { entry as unitedKingdom } from "./download-videos-united-kingdom";
 import { entry as unitedStates } from "./download-videos-united-states";
+import { entry as facebookLiveReplay } from "./download-facebook-live-video";
 import { entry as facebookReels } from "./facebook-reels-downloader";
 import { entry as instagramReelsAudio } from "./instagram-reels-audio";
 import { entry as instagramReelsToMp4 } from "./instagram-reels-to-mp4";
@@ -79,6 +80,10 @@ export const SUB_TOOLS: readonly SubTool[] = [
   unitedKingdom,
   canada,
   germany,
+  // Batch six: one archival intent, not a format one. A finished Facebook
+  // Live is an ordinary video object, and the replay question ("after it
+  // ends") is the only live-stream phrasing that can be answered truthfully.
+  facebookLiveReplay,
 ];
 
 export const SUB_TOOL_MAP: Readonly<Record<string, SubTool>> = Object.fromEntries(

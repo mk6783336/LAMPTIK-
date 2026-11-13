@@ -67,7 +67,9 @@ const REVISED = {
   // 2026-11-12: the US, UK and Germany pages were retargeted from the
   // "download videos in <country>" phrasing (which nobody searches) onto the
   // queries those markets actually type.
-  subTools: "2026-11-12",
+  // 2026-11-13: new /download-facebook-live-video entry, the story page's new
+  // title and FAQ set, and the format-guide blocks on three tool pages.
+  subTools: "2026-11-13",
   // 2026-11-09: the Spanish root now answers the Telegram and HD wording it
   // was already getting impressions for.
   // 2026-11-12: /es gained the cluster hub section that links the Facebook, X

@@ -12,8 +12,11 @@ import type { SubTool } from "@/lib/content/sub-tool-types";
 export const entry: SubTool = {
   slug: "tiktok-video-download-iphone",
   platform: "tiktok",
-  title: "How to Download a TikTok Video on iPhone - No Watermark",
-  socialTitle: "How to Download a TikTok Video on iPhone - Clean MP4, Straight to Photos",
+  // Search Console / Tier-1 map: «download tiktok video without username tag
+  // iphone» and «tiktok download iphone no watermark» are the same intent with
+  // two names for one overlay, so both are in the title.
+  title: "TikTok Download on iPhone — No Watermark or Username Tag",
+  socialTitle: "TikTok Video on iPhone — Clean MP4, No Watermark or Username Tag",
   description:
     "Save a TikTok video on iPhone without a watermark: paste the link in Safari, tap Download, then Save Video from Photos. No app, no Shortcut, no login.",
   keywords: [
@@ -65,6 +68,11 @@ export const entry: SubTool = {
       question: "Where does the TikTok video go on iPhone?",
       answer:
         "Into Files → On My iPhone → Downloads, because Safari cannot write directly to the camera roll. From there, Share → Save Video copies it into Photos in two taps. If you cannot find Files, search for it in the App Store — it is free and made by Apple.",
+    },
+    {
+      question: "How do I download a TikTok without the username tag on iPhone?",
+      answer:
+        "The username tag and the bouncing logo are the same overlay: TikTok draws both while it plays the share-sheet copy of a post. Saving through Safari asks the resolver for the source file instead, so neither is in the MP4 — there is nothing to crop or blur afterwards. That is also why the file looks smaller than the version you see in the app: the overlay and its animation are not part of the media.",
     },
     {
       question: "Will it have the TikTok watermark?",
