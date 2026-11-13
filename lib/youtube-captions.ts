@@ -40,6 +40,8 @@ const VISITOR_TTL_MS = 30 * 60_000;
 const CLIENTS = [
   { name: "ANDROID", version: "20.10.38", ua: ANDROID_UA },
   { name: "IOS", version: "20.10.4", ua: "com.google.ios.youtube/20.10.4 (iPhone16,2; U; CPU iOS 18_1_0 like Mac OS X;)" },
+  { name: "ANDROID_VR", version: "1.60.19", ua: "com.google.android.apps.youtube.vr.oculus/1.60.19 (Linux; U; Android 12; GB) gzip" },
+  { name: "WEB_EMBEDDED_PLAYER", version: "1.20241126.01.00", ua: DESKTOP_UA },
   { name: "TVHTML5_SIMPLY_EMBEDDED_PLAYER", version: "2.0", ua: "Mozilla/5.0 (ChromiumStylePlatform) Cobalt/Version" },
   { name: "WEB", version: "2.20241126.01.00", ua: DESKTOP_UA },
 ] as const;
@@ -185,6 +187,30 @@ function visitorToken(videoId: string): Promise<string | null> {
     });
   }
   return visitorInFlight;
+}
+
+/**
+ * Per-client verdicts, exposed only for a `?debug=1` request. A datacenter IP
+ * gets `LOGIN_REQUIRED` on one client and something else on another, and the
+ * single aggregate message cannot tell which — this can.
+ */
+export async function debugCaptionClients(
+  videoId: string,
+): Promise<Array<{ client: string; status: string; reason: string; tracks: number }>> {
+  const visitor = await visitorToken(videoId).catch(() => null);
+  const out: Array<{ client: string; status: string; reason: string; tracks: number }> = [];
+
+  for (const client of CLIENTS) {
+    const payload = await fetchPlayerOnce(videoId, client, visitor);
+    out.push({
+      client: client.name,
+      status: payload?.playabilityStatus?.status ?? "NO_RESPONSE",
+      reason: (payload?.playabilityStatus?.reason ?? "").slice(0, 90),
+      tracks: payload ? tracksOf(payload).length : 0,
+    });
+  }
+
+  return out;
 }
 
 async function fetchPlayerOnce(

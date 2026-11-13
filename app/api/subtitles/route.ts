@@ -7,8 +7,10 @@ import { getClientIp } from "@/lib/request";
 import { readBoundedJson } from "@/lib/security";
 import { contentDisposition, safeTitlePart } from "@/lib/tiktok/allowlist";
 import {
+  debugCaptionClients,
   formatCaptions,
   listCaptionTracks,
+  parseVideoId,
   readCaptionCues,
   type CaptionFormat,
 } from "@/lib/youtube-captions";
@@ -45,13 +47,24 @@ export async function POST(request: NextRequest) {
   try {
     tooManyRequests(getClientIp(request.headers));
 
-    const body = await readBoundedJson<{ url?: unknown }>(request);
+    const body = await readBoundedJson<{ url?: unknown; debug?: unknown }>(request);
     const url = typeof body.url === "string" ? body.url : "";
     if (!url.trim()) {
       throw new AppError(
         "INVALID_URL",
         "No video link was sent.",
         "Paste a YouTube link first.",
+      );
+    }
+
+    // Diagnostics only: the per-client playability verdicts, so a refusal can
+    // be read instead of guessed at. Not linked from the page.
+    if (body.debug === true) {
+      const videoId = parseVideoId(url);
+      if (!videoId) throw new AppError("INVALID_URL", "That is not a YouTube video link.");
+      return NextResponse.json(
+        { ok: true, debug: await debugCaptionClients(videoId) },
+        { headers: { "Cache-Control": "no-store" } },
       );
     }
 
