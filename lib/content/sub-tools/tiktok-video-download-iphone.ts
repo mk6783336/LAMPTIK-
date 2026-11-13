@@ -33,7 +33,7 @@ export const entry: SubTool = {
   h1Lead: "How to save a TikTok",
   h1Accent: "to your iPhone.",
   lede:
-    "Copy the link in TikTok, paste it into Safari on this page, and tap Download HD MP4. The file lands in Files → Downloads, because iOS does not let a browser write to the camera roll directly; Share → Save Video moves it into Photos in two taps. TikTok's own Save button is not part of this: that copy has your username stamped on it.",
+    "Copy the link in TikTok, paste it into Safari on this page, and tap Download Video — the MP4 TikTok serves. The file lands in Files → Downloads, because iOS does not let a browser write to the camera roll directly; Share → Save Video moves it into Photos in two taps. TikTok's own Save button is not part of this: that copy has your username stamped on it.",
   chips: ["Safari on iOS", "No watermark", "MP4 + MP3"],
   facts: [
     ["Best quality", "576×1024 (measured)"],
@@ -102,7 +102,7 @@ export const entry: SubTool = {
   ],
   appName: "LAMP TIK TikTok Downloader for iPhone",
   features: [
-    "Watermark-free HD MP4 from the source stream",
+    "Watermark-free MP4 from the source stream",
     "MP3 audio extraction in the same page",
     "Accepts full and vt.tiktok.com short links",
     "Saves through Safari with no app or Shortcut",

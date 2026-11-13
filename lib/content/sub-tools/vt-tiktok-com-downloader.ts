@@ -74,7 +74,7 @@ export const entry: SubTool = {
   appName: "LAMP TIK vt.tiktok.com Downloader",
   features: [
     "Expands vt.tiktok.com and vm.tiktok.com redirects server-side",
-    "Watermark-free HD MP4 from the source stream",
+    "Watermark-free MP4 from the source stream",
     "MP3 audio from the video's own track",
     "Falls back to the full URL parser when a redirect is blocked",
     "Free, no account, no app",

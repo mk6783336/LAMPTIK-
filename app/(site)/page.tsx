@@ -38,12 +38,12 @@ import { LANDING_LANGUAGES, siteConfig, siteUrl } from "@/lib/site";
  * 15 clicks are brand clicks from Pakistan at position 2.0 — so the brand-led
  * wording is the one that has to answer it.
  */
-const TITLE = "LAMP TIK — TikTok Video Downloader, No Watermark HD";
+const TITLE = "LAMP TIK — TikTok Video Downloader, No Watermark MP4";
 /** Social cards have room; keep the richer, benefit-led version there. */
 const SOCIAL_TITLE =
-  "TikTok Video Downloader Without Watermark — HD MP4 & MP3 (Free, Fast)";
+  "TikTok Video Downloader Without Watermark — MP4 & MP3 (Free, Fast)";
 const DESCRIPTION =
-  "Save TikTok videos in HD MP4 or MP3 without a watermark — vt/vm short links work too. Free, no app, no sign-up; saves to your phone or PC.";
+  "Save TikTok videos as MP4 or MP3 without a watermark — vt/vm short links work too. Free, no app, no sign-up; saves to your phone or PC.";
 
 export const metadata: Metadata = {
   // `absolute` bypasses the layout template: this is the exact SERP title.
@@ -104,7 +104,7 @@ export default function HomePage() {
         description: DESCRIPTION,
         features: [
           "Download TikTok videos without a watermark",
-          "HD MP4 downloads at the quality TikTok published",
+          "MP4 downloads at the size TikTok serves (measured 576×1024)",
           "TikTok to MP3 — original sound audio",
           "Fast SD MP4 for slow connections",
           "Short link support (vt.tiktok.com, vm.tiktok.com)",
@@ -115,7 +115,7 @@ export default function HomePage() {
         id: `${siteUrl}/#howto`,
         name: "How to download a TikTok video without a watermark",
         description:
-          "Three steps to save any public TikTok video as a clean HD MP4 or MP3 — no app, no sign-up.",
+          "Three steps to save any public TikTok video as a clean MP4 or MP3 — no app, no sign-up.",
         steps: seo.steps,
         url: siteUrl,
         anchor: "how",
@@ -176,9 +176,9 @@ export default function HomePage() {
                 </h1>
 
                 <p className="pretty mt-2 line-clamp-2 max-w-lg text-sm leading-relaxed text-[var(--text-2)] sm:mt-5 sm:line-clamp-none sm:text-base">
-                  Download TikTok in HD MP4 — the resolution TikTok published for that
-                  post, no logo, no app — or convert to MP3 with the original sound. Paste
-                  any tiktok.com,
+                  Download TikTok as MP4 — the file TikTok serves, measured 576×1024, no
+                  logo, no app — or convert to MP3 with the original sound. Paste any
+                  tiktok.com,
                   vt.tiktok.com, or vm.tiktok.com link and the clean file saves straight
                   to your iPhone, Android, or PC.
                 </p>

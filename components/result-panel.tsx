@@ -514,7 +514,9 @@ export function ResultPanel({
                   resolver returns 720p-class or better, so their HD label
                   stays. */}
               <span>
-                {video.quality === "hd" && platform !== "youtube"
+                {video.quality === "hd" &&
+                platform !== "youtube" &&
+                platform !== "tiktok"
                   ? t.downloadHd
                   : t.downloadVideo}
               </span>

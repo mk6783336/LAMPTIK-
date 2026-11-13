@@ -11,9 +11,9 @@ export const pt: LandingCopy = {
   code: "pt",
   htmlLang: "pt-BR",
   dir: "ltr",
-  title: "Baixar vídeo do TikTok sem marca d'água — HD",
+  title: "Baixar vídeo do TikTok sem marca d'água — MP4",
   description:
-    "Baixe vídeos do TikTok sem marca d'água, Reels do Instagram, vídeos do Facebook e YouTube em MP4 HD ou MP3. Grátis, sem app e sem cadastro.",
+    "Baixe vídeos do TikTok sem marca d'água, Reels do Instagram, vídeos do Facebook e YouTube em MP4 ou MP3. Grátis, sem app e sem cadastro.",
   keywords: [
     "baixar vídeo do tiktok sem marca d'água",
     "baixar reels do instagram",
@@ -24,9 +24,9 @@ export const pt: LandingCopy = {
   ],
   eyebrow: "Grátis · Sem marca d'água · Sem instalar nada",
   h1Lead: "Baixe vídeos do TikTok",
-  h1Accent: "sem marca d'água, em HD.",
+  h1Accent: "sem marca d'água, em MP4.",
   lede:
-    "Cole o link e salve o arquivo original em MP4 HD ou MP3. Também funciona com Reels do Instagram, vídeos do Facebook e YouTube.",
+    "Cole o link e salve o arquivo original em MP4 ou MP3. Também funciona com Reels do Instagram, vídeos do Facebook e YouTube.",
   chips: ["TikTok, Reels, Facebook e YouTube", "MP4 e MP3", "Sem conta e sem app"],
   tool: {
     heading: "Cole o link e baixe",
@@ -52,9 +52,9 @@ export const pt: LandingCopy = {
         "O campo lê a área de transferência com um toque. A plataforma é detectada sozinha, então você não precisa escolher nada antes de colar.",
     },
     {
-      title: "Escolha MP4 HD ou MP3 e salve",
+      title: "Escolha MP4 ou MP3 e salve",
       body:
-        "Toque em Baixar HD MP4 para o vídeo completo ou em Baixar MP3 para o áudio original. O arquivo é salvo com o título real na galeria ou na pasta Downloads do celular.",
+        "Toque em Baixar MP4 para o vídeo completo ou em Baixar MP3 para o áudio original. O arquivo é salvo com o título real na galeria ou na pasta Downloads do celular.",
     },
   ],
   faqHeading: "Perguntas frequentes",
@@ -62,7 +62,7 @@ export const pt: LandingCopy = {
     {
       question: "Como baixar um vídeo do TikTok sem marca d'água?",
       answer:
-        "Copie o link do vídeo no TikTok, cole no campo acima e toque em Baixar HD MP4. Pedimos a versão original que o TikTok guarda na CDN dele, e não a cópia com logotipo que o menu Compartilhar gera — por isso o arquivo chega limpo e sem cortes.",
+        "Copie o link do vídeo no TikTok, cole no campo acima e toque em Baixar MP4. Pedimos a versão original que o TikTok guarda na CDN dele, e não a cópia com logotipo que o menu Compartilhar gera — por isso o arquivo chega limpo e sem cortes.",
     },
     {
       question: "Meus links ou meus vídeos ficam salvos?",
@@ -81,7 +81,7 @@ export const pt: LandingCopy = {
     },
   ],
   cta: {
-    heading: "Salve seu próximo vídeo em HD.",
+    heading: "Salve seu próximo vídeo em MP4.",
     body:
       "Sem conta, sem app e sem armazenamento: apenas o arquivo original, no seu aparelho.",
     button: "Abrir o baixador",

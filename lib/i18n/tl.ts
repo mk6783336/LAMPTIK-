@@ -14,7 +14,7 @@ export const tl: LandingCopy = {
   code: "tl",
   htmlLang: "tl",
   dir: "ltr",
-  title: "I-download ang TikTok Video na Walang Watermark HD",
+  title: "I-download ang TikTok Video na Walang Watermark MP4",
   description:
     "I-download ang video mula sa TikTok, Instagram Reels, Facebook at YouTube nang walang watermark sa MP4. Libre, walang app, walang sign-up.",
   keywords: [
@@ -29,7 +29,7 @@ export const tl: LandingCopy = {
   ],
   eyebrow: "Libre · Walang app · Walang watermark",
   h1Lead: "I-download ang kahit anong video.",
-  h1Accent: "Buong HD na kalidad.",
+  h1Accent: "Buong MP4 na file.",
   lede:
     "I-paste ang link at i-save ang orihinal na file sa ilang segundo — walang watermark, walang account, direkta sa browser ng Android o iPhone. Walang app na i-install at walang sign-up.",
   chips: ["MP4", "Walang watermark", "MP3 na audio"],
@@ -55,7 +55,7 @@ export const tl: LandingCopy = {
     },
     {
       title: "Piliin ang kalidad at i-save",
-      body: "I-tap ang Download MP4 HD, MP4 SD o MP3. Naka-save ang file sa Downloads folder gamit ang orihinal na pangalan, kaya malinis ang gallery at madaling hanapin mamaya. Sa iPhone, napupunta ang file sa Files app at maililipat sa Photos gamit ang Share → Save Video.",
+      body: "I-tap ang Download MP4, MP4 SD o MP3. Naka-save ang file sa Downloads folder gamit ang orihinal na pangalan, kaya malinis ang gallery at madaling hanapin mamaya. Sa iPhone, napupunta ang file sa Files app at maililipat sa Photos gamit ang Share → Save Video.",
     },
   ],
   faqHeading: "Mga madalas itanong",
@@ -63,7 +63,7 @@ export const tl: LandingCopy = {
     {
       question: "Libre ba talaga ito?",
       answer:
-        "Oo, libre at walang limitasyon ang lahat ng download — HD man o MP3 — walang subscription, walang card, walang daily limit. Naka-base sa ads ang site, hindi sa subscription, kaya walang billing na darating mamaya.",
+        "Oo, libre at walang limitasyon ang lahat ng download — MP4 man o MP3 — walang subscription, walang card, walang daily limit. Naka-base sa ads ang site, hindi sa subscription, kaya walang billing na darating mamaya.",
     },
     {
       question: "Kailangan ko bang mag-install ng app?",

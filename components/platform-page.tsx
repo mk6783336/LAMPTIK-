@@ -47,8 +47,8 @@ const PAGE_CONTENT: Record<
     crumb: "TikTok Downloader",
     headlineLead: "TikTok video downloader,",
     headlineAccent: "without the watermark.",
-    lede: "Download TikTok videos in HD MP4 — the resolution TikTok published for that post, no logo, no app — or convert to MP3 with the original sound. Paste any tiktok.com or vt/vm short link and the clean file saves straight to your device.",
-    chips: ["1080p source", "MP3 audio", "vt/vm links"],
+    lede: "Download TikTok videos as MP4 — the file TikTok serves, measured 576×1024, no logo, no app — or convert to MP3 with the original sound. Paste any tiktok.com or vt/vm short link and the clean file saves straight to your device.",
+    chips: ["MP4", "MP3 audio", "vt/vm links"],
     facts: [
       ["Price", "Free"],
       ["Account", "Not required"],
@@ -57,7 +57,7 @@ const PAGE_CONTENT: Record<
     ],
     appFeatures: [
       "Download TikTok videos without a watermark",
-      "HD MP4 video downloads at TikTok's own resolution",
+      "MP4 video downloads at the size TikTok serves",
       "TikTok to MP3 converter — original sound audio",
       "Short link support (vt.tiktok.com, vm.tiktok.com)",
     ],

@@ -20,7 +20,7 @@ import type { Platform } from "@/lib/platforms";
 export const PLATFORM_BLURBS: Record<LocaleCode, Record<Platform, string>> = {
   es: {
     tiktok:
-      "Vídeos de TikTok sin marca de agua en MP4 HD y el audio original en MP3 — también desde enlaces cortos vt/vm.",
+      "Vídeos de TikTok sin marca de agua en MP4 y el audio original en MP3 — también desde enlaces cortos vt/vm.",
     instagram:
       "Reels, vídeos de publicaciones e IGTV en calidad real — sin marca de agua y sin iniciar sesión.",
     facebook:
@@ -30,7 +30,7 @@ export const PLATFORM_BLURBS: Record<LocaleCode, Record<Platform, string>> = {
   },
   ar: {
     tiktok:
-      "فيديوهات تيك توك بدون علامة مائية بجودة MP4 HD والصوت الأصلي MP3 — حتى من روابط vt/vm القصيرة.",
+      "فيديوهات تيك توك بدون علامة مائية بجودة MP4 والصوت الأصلي MP3 — حتى من روابط vt/vm القصيرة.",
     instagram:
       "ريلز وفيديوهات المنشورات وIGTV بجودة الأصلية — بدون علامة مائية وبدون تسجيل دخول.",
     facebook:
@@ -40,7 +40,7 @@ export const PLATFORM_BLURBS: Record<LocaleCode, Record<Platform, string>> = {
   },
   de: {
     tiktok:
-      "TikTok-Videos ohne Wasserzeichen als HD-MP4 und der Originalton als MP3 — auch aus vt-/vm-Kurzlinks.",
+      "TikTok-Videos ohne Wasserzeichen als MP4 und der Originalton als MP3 — auch aus vt-/vm-Kurzlinks.",
     instagram:
       "Reels, Video-Posts und IGTV in voller MP4-Qualität — ohne Wasserzeichen, ohne Login.",
     facebook:
@@ -50,7 +50,7 @@ export const PLATFORM_BLURBS: Record<LocaleCode, Record<Platform, string>> = {
   },
   pt: {
     tiktok:
-      "Vídeos do TikTok sem marca d'água em MP4 HD e o áudio original em MP3 — inclusive links curtos vt/vm.",
+      "Vídeos do TikTok sem marca d'água em MP4 e o áudio original em MP3 — inclusive links curtos vt/vm.",
     instagram:
       "Reels, vídeos de posts e IGTV na qualidade original — sem marca d'água e sem login.",
     facebook:
@@ -60,7 +60,7 @@ export const PLATFORM_BLURBS: Record<LocaleCode, Record<Platform, string>> = {
   },
   id: {
     tiktok:
-      "Video TikTok tanpa watermark dalam MP4 HD dan audio asli MP3 — termasuk tautan pendek vt/vm.",
+      "Video TikTok tanpa watermark dalam MP4 dan audio asli MP3 — termasuk tautan pendek vt/vm.",
     instagram:
       "Reels, video postingan, dan IGTV dengan kualitas asli MP4 — tanpa watermark, tanpa login.",
     facebook:
@@ -70,7 +70,7 @@ export const PLATFORM_BLURBS: Record<LocaleCode, Record<Platform, string>> = {
   },
   hi: {
     tiktok:
-      "TikTok वीडियो बिना वॉटरमार्क HD MP4 में और ओरिजिनल साउंड MP3 में — vt/vm शॉर्ट लिंक से भी।",
+      "TikTok वीडियो बिना वॉटरमार्क MP4 में और ओरिजिनल साउंड MP3 में — vt/vm शॉर्ट लिंक से भी।",
     instagram:
       "Reels, पोस्ट वीडियो और IGTV असली MP4 क्वालिटी में — बिना वॉटरमार्क, बिना लॉगिन।",
     facebook:
@@ -80,7 +80,7 @@ export const PLATFORM_BLURBS: Record<LocaleCode, Record<Platform, string>> = {
   },
   vi: {
     tiktok:
-      "Video TikTok không logo dạng MP4 HD và âm thanh gốc MP3 — kể cả link rút gọn vt/vm.",
+      "Video TikTok không logo dạng MP4 và âm thanh gốc MP3 — kể cả link rút gọn vt/vm.",
     instagram:
       "Reels, video bài đăng và IGTV đúng chất lượng MP4 — không logo, không cần đăng nhập.",
     facebook:
@@ -90,7 +90,7 @@ export const PLATFORM_BLURBS: Record<LocaleCode, Record<Platform, string>> = {
   },
   th: {
     tiktok:
-      "วิดีโอ TikTok ไม่มีลายน้ำเป็น MP4 HD พร้อมเสียงต้นฉบับ MP3 รวมถึงลิงก์สั้น vt/vm",
+      "วิดีโอ TikTok ไม่มีลายน้ำเป็น MP4 พร้อมเสียงต้นฉบับ MP3 รวมถึงลิงก์สั้น vt/vm",
     instagram:
       "Reels วิดีโอโพสต์ และ IGTV คุณภาพเดิม MP4 ไม่มีลายน้ำ ไม่ต้องล็อกอิน",
     facebook:
@@ -100,7 +100,7 @@ export const PLATFORM_BLURBS: Record<LocaleCode, Record<Platform, string>> = {
   },
   tl: {
     tiktok:
-      "TikTok video na walang watermark sa MP4 HD at ang orihinal na tunog sa MP3 — pati na ang vt/vm short links.",
+      "TikTok video na walang watermark sa MP4 at ang orihinal na tunog sa MP3 — pati na ang vt/vm short links.",
     instagram:
       "Reels, video ng post, at IGTV sa tunay na MP4 — walang watermark, walang login.",
     facebook:
@@ -110,7 +110,7 @@ export const PLATFORM_BLURBS: Record<LocaleCode, Record<Platform, string>> = {
   },
   tr: {
     tiktok:
-      "TikTok videoları filigransız HD MP4 ve orijinal ses MP3 olarak — vt/vm kısa bağlantıları dahil.",
+      "TikTok videoları filigransız MP4 ve orijinal ses MP3 olarak — vt/vm kısa bağlantıları dahil.",
     instagram:
       "Reels, gönderi videoları ve IGTV gerçek MP4 kalitede — filigransız, giriş yapmadan.",
     facebook:
@@ -120,7 +120,7 @@ export const PLATFORM_BLURBS: Record<LocaleCode, Record<Platform, string>> = {
   },
   fr: {
     tiktok:
-      "Vidéos TikTok sans filigrane en MP4 HD et le son d'origine en MP3 — liens courts vt/vm compris.",
+      "Vidéos TikTok sans filigrane en MP4 et le son d'origine en MP3 — liens courts vt/vm compris.",
     instagram:
       "Reels, vidéos de publications et IGTV en vraie qualité MP4 — sans filigrane, sans connexion.",
     facebook:
@@ -130,7 +130,7 @@ export const PLATFORM_BLURBS: Record<LocaleCode, Record<Platform, string>> = {
   },
   ur: {
     tiktok:
-      "ٹک ٹاک ویڈیوز بغیر واٹر مارک HD MP4 میں اور اصل آواز MP3 میں — vt/vm چھوٹے لنک بھی۔",
+      "ٹک ٹاک ویڈیوز بغیر واٹر مارک MP4 میں اور اصل آواز MP3 میں — vt/vm چھوٹے لنک بھی۔",
     instagram:
       "ریلز، پوسٹ ویڈیوز اور IGTV اصل MP4 کوالٹی میں — بغیر واٹر مارک، بغیر لاگ اِن۔",
     facebook:

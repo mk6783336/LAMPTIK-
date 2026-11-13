@@ -69,7 +69,7 @@ const TIKTOK_ROWS: ComparisonRow[] = [
   },
   {
     label: "Best variant selection",
-    ours: "The highest H.264 variant TikTok publishes for that post — full HD and 60 fps whenever the creator uploaded it",
+    ours: "The single H.264 file TikTok's play address serves — 576×1024 on the three posts measured 2026-11-13",
     theirs: "A hard 720p30 cap, or the first rendition the API happens to list",
   },
   {
@@ -103,24 +103,24 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
       },
       {
         title: "Instant MP4 save",
-        body: "Tap Download HD MP4 and the file streams straight from the CDN to your device — never through a slow re-encode. It saves under the video's original title, so your gallery stays searchable.",
+        body: "Tap Download Video and the file streams straight from the CDN to your device — never through a slow re-encode. It saves under the video's original title, so your gallery stays searchable.",
       },
     ],
     faqs: [
       {
         question: "How do I download a TikTok video without a watermark?",
         answer:
-          "Copy the video link in TikTok, paste it into the field at the top of this page, and choose Download HD MP4. LAMP TIK requests the original source stream from TikTok's CDN rather than the watermarked copy the share sheet saves, so the file arrives clean.",
+          "Copy the video link in TikTok, paste it into the field at the top of this page, and choose Download Video. LAMP TIK requests the original source stream from TikTok's CDN rather than the watermarked copy the share sheet saves, so the file arrives clean.",
       },
       {
         question: "Is this TikTok downloader really free?",
         answer:
-          "Yes. Every download — HD MP4, SD MP4 and MP3 — is free and unlimited. There is no account, no trial, no credit card, and no download counter that runs out. The site is funded by advertising instead of subscriptions.",
+          "Yes. Every download — MP4, SD MP4 and MP3 — is free and unlimited. There is no account, no trial, no credit card, and no download counter that runs out. The site is funded by advertising instead of subscriptions.",
       },
       {
         question: "What video quality can I download?",
         answer:
-          "You get the highest resolution TikTok exposes for that post — its full-HD rendition for most uploads since 2022, lower for older or compressed ones. The result panel shows the exact quality, codec and byte size before you download, so there are no surprises.",
+          "You get the file TikTok's play address serves — 576×1024 on the three posts measured 2026-11-13 — whatever the upload's own size. The result panel shows the exact quality, codec and byte size before you download, so there are no surprises.",
       },
       {
         question: "Do vt.tiktok.com and vm.tiktok.com short links work?",
@@ -291,7 +291,7 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
       {
         href: "/",
         anchor: "TikTok video downloader without watermark",
-        note: "HD MP4 and MP3 from any TikTok link.",
+        note: "MP4 and MP3 from any TikTok link.",
       },
       {
         href: "/facebook-video-downloader",
@@ -470,7 +470,7 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
       {
         href: "/",
         anchor: "TikTok video downloader without watermark",
-        note: "HD MP4 and MP3 from any TikTok link.",
+        note: "MP4 and MP3 from any TikTok link.",
       },
       {
         href: "/instagram-reels-downloader",

@@ -29,7 +29,7 @@ export const vi: LandingCopy = {
   ],
   eyebrow: "Miễn phí · Không cần app · Không watermark",
   h1Lead: "Tải mọi video.",
-  h1Accent: "Chất lượng HD trọn vẹn.",
+  h1Accent: "File MP4 trọn vẹn.",
   lede:
     "Dán liên kết và lưu tệp gốc trong vài giây — không watermark, không tài khoản, ngay trên trình duyệt điện thoại Android hoặc iPhone. Không cần cài ứng dụng và không có quảng cáo nào che nút tải.",
   chips: ["MP4", "Không watermark", "Âm thanh MP3"],
@@ -55,7 +55,7 @@ export const vi: LandingCopy = {
     },
     {
       title: "Chọn chất lượng và lưu",
-      body: "Nhấn Tải MP4 HD, MP4 SD hoặc MP3. Tệp được lưu với tên gốc trong thư mục Tải xuống, nên thư viện vẫn gọn và dễ tìm lại. Trên iPhone, tệp vào ứng dụng Tệp và chuyển sang Ảnh bằng Chia sẻ → Lưu video.",
+      body: "Nhấn Tải MP4, MP4 SD hoặc MP3. Tệp được lưu với tên gốc trong thư mục Tải xuống, nên thư viện vẫn gọn và dễ tìm lại. Trên iPhone, tệp vào ứng dụng Tệp và chuyển sang Ảnh bằng Chia sẻ → Lưu video.",
     },
   ],
   faqHeading: "Câu hỏi thường gặp",
@@ -63,7 +63,7 @@ export const vi: LandingCopy = {
     {
       question: "Có thật sự miễn phí không?",
       answer:
-        "Có, mọi lượt tải đều miễn phí và không giới hạn — cả HD và MP3 — không thuê bao, không thẻ, không giới hạn số lượng mỗi ngày. Trang được duy trì bằng quảng cáo chứ không bằng thuê bao, nên sẽ không có hoá đơn nào xuất hiện sau đó.",
+        "Có, mọi lượt tải đều miễn phí và không giới hạn — cả MP4 và MP3 — không thuê bao, không thẻ, không giới hạn số lượng mỗi ngày. Trang được duy trì bằng quảng cáo chứ không bằng thuê bao, nên sẽ không có hoá đơn nào xuất hiện sau đó.",
     },
     {
       question: "Tôi có phải cài ứng dụng không?",

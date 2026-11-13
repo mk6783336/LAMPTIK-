@@ -11,9 +11,9 @@ export const de: LandingCopy = {
   code: "de",
   htmlLang: "de",
   dir: "ltr",
-  title: "TikTok Downloader ohne Wasserzeichen – HD & MP3",
+  title: "TikTok Downloader ohne Wasserzeichen – MP4 & MP3",
   description:
-    "TikTok, Instagram Reels, Facebook und YouTube in HD herunterladen – ohne Wasserzeichen, ohne App und ohne Anmeldung. Kostenlos, schnell, im Browser.",
+    "TikTok, Instagram Reels, Facebook und YouTube in als MP4 herunterladen – ohne Wasserzeichen, ohne App und ohne Anmeldung. Kostenlos, schnell, im Browser.",
   keywords: [
     "TikTok Video Downloader ohne Wasserzeichen",
     "TikTok Video herunterladen",
@@ -51,9 +51,9 @@ export const de: LandingCopy = {
         "Fügen Sie den Link oben ein. Die Plattform wird automatisch erkannt, damit Sie nichts auswählen müssen – das Feld akzeptiert jeden unterstützten Link.",
     },
     {
-      title: "In HD oder als MP3 speichern",
+      title: "Als MP4 oder MP3 speichern",
       body:
-        "Tippen Sie auf Download HD MP4, SD MP4 oder MP3. Die Originaldatei wird direkt auf Ihr Gerät gespeichert – ohne Logo und ohne Neukodierung.",
+        "Tippen Sie auf Download MP4, SD MP4 oder MP3. Die Originaldatei wird direkt auf Ihr Gerät gespeichert – ohne Logo und ohne Neukodierung.",
     },
   ],
   faqHeading: "Häufige Fragen",
@@ -61,7 +61,7 @@ export const de: LandingCopy = {
     {
       question: "Ist der Downloader wirklich kostenlos?",
       answer:
-        "Ja. Alle Downloads in HD, SD und MP3 sind kostenlos und unbegrenzt. Es gibt kein Abo, keine Anmeldung und keine versteckten Kosten – die Seite finanziert sich über Werbung.",
+        "Ja. Alle Downloads in MP4, SD und MP3 sind kostenlos und unbegrenzt. Es gibt kein Abo, keine Anmeldung und keine versteckten Kosten – die Seite finanziert sich über Werbung.",
     },
     {
       question: "Bekomme ich die Videos ohne Wasserzeichen?",

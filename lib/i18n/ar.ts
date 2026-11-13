@@ -12,7 +12,7 @@ export const ar: LandingCopy = {
   code: "ar",
   htmlLang: "ar",
   dir: "rtl",
-  title: "تنزيل فيديوهات TikTok بدون علامة مائية بجودة HD",
+  title: "تنزيل فيديوهات TikTok بدون علامة مائية بصيغة MP4",
   description:
     "نزّل فيديوهات TikTok وInstagram Reels وFacebook وYouTube بجودة MP4 بدون علامة مائية، وحوّل الصوت إلى MP3. مجاني، بلا تطبيق وبلا تسجيل.",
   keywords: [
@@ -30,7 +30,7 @@ export const ar: LandingCopy = {
   // collected no impressions at all. The dedicated page only gets the query
   // once this one stops claiming every platform.
   h1Lead: "نزّل فيديوهات TikTok",
-  h1Accent: "بجودة HD كاملة.",
+  h1Accent: "بصيغة MP4.",
   lede: "الصق الرابط واحصل على الملف الأصلي في ثوانٍ — بدون علامة مائية، وبدون حساب، ومن متصفح جوالك على Android أو iPhone.",
   chips: ["MP4", "بدون علامة مائية", "صوت MP3"],
   tool: {
@@ -55,7 +55,7 @@ export const ar: LandingCopy = {
     },
     {
       title: "اختر الجودة واحفظ الملف",
-      body: "اضغط «تنزيل HD MP4» أو «SD MP4» أو «MP3»، وسيُحفظ الملف باسمه الأصلي في مجلد التنزيلات على جهازك، لتبقى مكتبتك منظّمة وقابلة للبحث.",
+      body: "اضغط «تنزيل MP4» أو «SD MP4» أو «MP3»، وسيُحفظ الملف باسمه الأصلي في مجلد التنزيلات على جهازك، لتبقى مكتبتك منظّمة وقابلة للبحث.",
     },
   ],
   faqHeading: "أسئلة شائعة",
@@ -63,7 +63,7 @@ export const ar: LandingCopy = {
     {
       question: "هل التنزيل مجاني فعلًا؟",
       answer:
-        "نعم، كل التنزيلات مجانية وغير محدودة — HD وMP3 — بلا اشتراك وبلا بطاقة بنكية وبلا حد أقصى للعدد. الموقع يعتمد على الإعلانات بدلًا من الاشتراكات.",
+        "نعم، كل التنزيلات مجانية وغير محدودة — MP4 وMP3 — بلا اشتراك وبلا بطاقة بنكية وبلا حد أقصى للعدد. الموقع يعتمد على الإعلانات بدلًا من الاشتراكات.",
     },
     {
       question: "هل أحتاج إلى تثبيت تطبيق؟",

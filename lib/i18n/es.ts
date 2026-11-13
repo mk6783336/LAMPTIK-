@@ -12,9 +12,9 @@ export const es: LandingCopy = {
   code: "es",
   htmlLang: "es",
   dir: "ltr",
-  title: "Descargar videos de TikTok sin marca de agua — HD",
+  title: "Descargar videos de TikTok sin marca de agua — MP4",
   description:
-    "Descarga videos de TikTok sin marca de agua, Reels de Instagram, videos de Facebook y YouTube en MP4 HD o MP3. Gratis, sin app y sin registrarte.",
+    "Descarga videos de TikTok sin marca de agua, Reels de Instagram, videos de Facebook y YouTube en MP4 o MP3. Gratis, sin app y sin registrarte.",
   keywords: [
     "descargar videos de tiktok sin marca de agua",
     "tiktok sin marca",
@@ -30,9 +30,9 @@ export const es: LandingCopy = {
   ],
   eyebrow: "Gratis · Sin marca de agua · Sin instalar nada",
   h1Lead: "Descarga videos de TikTok",
-  h1Accent: "sin marca de agua, en HD.",
+  h1Accent: "sin marca de agua, en MP4.",
   lede:
-    "Pega el enlace y guarda el archivo original en MP4 HD o MP3. También funciona con Reels de Instagram, videos de Facebook y YouTube.",
+    "Pega el enlace y guarda el archivo original en MP4 o MP3. También funciona con Reels de Instagram, videos de Facebook y YouTube.",
   chips: ["TikTok, Reels, Facebook y YouTube", "MP4 y MP3", "Sin cuenta ni app"],
   tool: {
     heading: "Pega el enlace y descarga",
@@ -58,9 +58,9 @@ export const es: LandingCopy = {
         "El cuadro lee el enlace del portapapeles con un solo toque. La plataforma se detecta sola, así que no tienes que elegir nada antes de pegar.",
     },
     {
-      title: "Elige MP4 HD o MP3 y guarda",
+      title: "Elige MP4 o MP3 y guarda",
       body:
-        "Pulsa Descargar HD MP4 para el video completo o Descargar MP3 para el audio original. El archivo se guarda con su título real en tu galería o carpeta de Descargas.",
+        "Pulsa Descargar MP4 para el video completo o Descargar MP3 para el audio original. El archivo se guarda con su título real en tu galería o carpeta de Descargas.",
     },
   ],
   faqHeading: "Preguntas frecuentes",
@@ -68,7 +68,7 @@ export const es: LandingCopy = {
     {
       question: "¿Cómo descargo un video de TikTok sin marca de agua?",
       answer:
-        "Copia el enlace del video en TikTok, pégalo arriba y pulsa Descargar HD MP4. Solicitamos la versión original que TikTok guarda en su CDN en lugar de la copia con el logotipo que genera el menú Compartir, así que el archivo llega limpio y sin recortes.",
+        "Copia el enlace del video en TikTok, pégalo arriba y pulsa Descargar MP4. Solicitamos la versión original que TikTok guarda en su CDN en lugar de la copia con el logotipo que genera el menú Compartir, así que el archivo llega limpio y sin recortes.",
     },
     {
       question: "¿Puedo descargar un TikTok que me llegó por Telegram o WhatsApp?",
@@ -76,7 +76,7 @@ export const es: LandingCopy = {
         "Sí, siempre que el mensaje incluya el enlace del video (algo como tiktok.com/@usuario/video/… o vt.tiktok.com). Ese enlace es lo único que hace falta: cópialo del chat, pégalo arriba y el archivo se resuelve igual que cualquier otro. Lo que no se puede descargar es un video reenviado como archivo, porque al reenviarlo se pierde la dirección original y no queda nada público que pedir.",
     },
     {
-      question: "¿El video sale en HD de verdad?",
+      question: "¿El video sale en MP4 de verdad?",
       answer:
         "Se entrega la versión de mayor resolución que TikTok tenga publicada para ese video, normalmente 720p o MP4. No se reescala ni se recodifica: si el autor subió el video en 540p, el archivo será 540p y la ficha lo indica antes de descargar. Por eso dos videos distintos pueden dar archivos de distinto tamaño.",
     },
@@ -107,7 +107,7 @@ export const es: LandingCopy = {
     },
   ],
   cta: {
-    heading: "Guarda tu próximo video en HD.",
+    heading: "Guarda tu próximo video en MP4.",
     body:
       "Sin cuenta, sin app y sin almacenamiento: solo el archivo original, en tu dispositivo.",
     button: "Abrir el descargador",

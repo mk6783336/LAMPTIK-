@@ -15,9 +15,9 @@ export const fr: LandingCopy = {
   code: "fr",
   htmlLang: "fr",
   dir: "ltr",
-  title: "Télécharger une vidéo TikTok sans filigrane — HD",
+  title: "Télécharger une vidéo TikTok sans filigrane — MP4",
   description:
-    "Téléchargez les vidéos TikTok, Instagram Reels, Facebook et YouTube en HD, sans filigrane, sans application et sans compte. MP4 et MP3, c'est gratuit.",
+    "Téléchargez les vidéos TikTok, Instagram Reels, Facebook et YouTube en MP4, sans filigrane, sans application et sans compte. MP4 et MP3, c'est gratuit.",
   keywords: [
     "télécharger vidéo tiktok sans filigrane",
     "tiktok sans watermark",
@@ -53,8 +53,8 @@ export const fr: LandingCopy = {
       body: "La plateforme est détectée automatiquement : vous n'avez rien à sélectionner. Le serveur demande le flux d'origine au CDN de la plateforme — pas la copie partagée sur laquelle l'application imprime son logo — et vérifie qu'il s'agit bien d'une vidéo avant de vous proposer le fichier.",
     },
     {
-      title: "Enregistrez en HD ou en MP3",
-      body: "Touchez Télécharger HD MP4, SD MP4 ou MP3. Le fichier arrive dans vos téléchargements sous son nom d'origine, sans réencodage ; sur iPhone, utilisez Partager → Enregistrer dans Fichiers.",
+      title: "Enregistrez en MP4 ou en MP3",
+      body: "Touchez Télécharger MP4, SD MP4 ou MP3. Le fichier arrive dans vos téléchargements sous son nom d'origine, sans réencodage ; sur iPhone, utilisez Partager → Enregistrer dans Fichiers.",
     },
   ],
   faqHeading: "Questions fréquentes",
@@ -62,7 +62,7 @@ export const fr: LandingCopy = {
     {
       question: "Le téléchargement est-il vraiment gratuit ?",
       answer:
-        "Oui. Les téléchargements HD, SD et MP3 sont gratuits et illimités. Aucun abonnement, aucun compte, aucun frais caché : le site est financé par la publicité.",
+        "Oui. Les téléchargements MP4, SD et MP3 sont gratuits et illimités. Aucun abonnement, aucun compte, aucun frais caché : le site est financé par la publicité.",
     },
     {
       question: "Les vidéos arrivent-elles sans filigrane ?",

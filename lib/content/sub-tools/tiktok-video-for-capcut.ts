@@ -48,7 +48,7 @@ export const entry: SubTool = {
     {
       title: "Save the clean MP4 and import it",
       body:
-        "Download HD MP4 for the highest rendition the creator uploaded, or SD when you only need a light clip to cut against. In CapCut, New project → Import, and the file lands on the timeline with its audio already attached. No conversion step, and no separate audio file to line up.",
+        "Download Video for the MP4 TikTok serves — 576×1024 on the posts measured 2026-11-13 — or SD when you only need a light clip to cut against. In CapCut, New project → Import, and the file lands on the timeline with its audio already attached. No conversion step, and no separate audio file to line up.",
     },
   ],
   faqs: [

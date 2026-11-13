@@ -35,7 +35,7 @@ export const id: LandingCopy = {
   ],
   eyebrow: "Gratis · Tanpa aplikasi · Tanpa watermark",
   h1Lead: "Unduh video apa saja.",
-  h1Accent: "Kualitas HD penuh.",
+  h1Accent: "File MP4 apa adanya.",
   lede:
     "Tempel tautan dan simpan berkas aslinya dalam hitungan detik — tanpa watermark, tanpa akun, langsung dari browser ponsel Android atau iPhone. Tidak ada aplikasi yang perlu dipasang dan tidak ada iklan yang menghalangi tombol unduh.",
   chips: ["MP4", "Tanpa watermark", "Suara MP3"],
@@ -61,7 +61,7 @@ export const id: LandingCopy = {
     },
     {
       title: "Pilih kualitas, lalu simpan",
-      body: "Ketuk Unduh MP4 HD, MP4 SD, atau MP3. Berkas tersimpan dengan nama aslinya di folder Unduhan, jadi galeri tetap rapi dan mudah dicari lagi nanti. Di iPhone, berkasnya masuk ke aplikasi Files dan bisa dipindahkan ke Photos lewat menu Bagikan.",
+      body: "Ketuk Unduh MP4, MP4 SD, atau MP3. Berkas tersimpan dengan nama aslinya di folder Unduhan, jadi galeri tetap rapi dan mudah dicari lagi nanti. Di iPhone, berkasnya masuk ke aplikasi Files dan bisa dipindahkan ke Photos lewat menu Bagikan.",
     },
   ],
   faqHeading: "Pertanyaan yang sering diajukan",
@@ -69,7 +69,7 @@ export const id: LandingCopy = {
     {
       question: "Apakah benar-benar gratis?",
       answer:
-        "Ya, semua unduhan gratis dan tanpa batas — HD maupun MP3 — tanpa langganan, tanpa kartu bank, dan tanpa batas jumlah. Situs ini dibiayai iklan, bukan langganan, jadi tidak ada tagihan yang muncul di kemudian hari.",
+        "Ya, semua unduhan gratis dan tanpa batas — MP4 maupun MP3 — tanpa langganan, tanpa kartu bank, dan tanpa batas jumlah. Situs ini dibiayai iklan, bukan langganan, jadi tidak ada tagihan yang muncul di kemudian hari.",
     },
     {
       question: "Apakah saya harus memasang aplikasi?",

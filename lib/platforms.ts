@@ -39,11 +39,11 @@ export const PLATFORMS: Record<Platform, PlatformConfig> = {
     path: "/",
     detectedLabel: "TikTok Stream Detected ⚡",
     placeholder: "Paste a TikTok video link…",
-    panelTag: "TikTok · HD + MP3",
+    panelTag: "TikTok · MP4 + MP3",
     pillLabel: "TikTok",
     videoNoun: "TikTok video",
     dotHex: "#00f2fe",
-    blurb: "Watermark-free HD MP4 and original-sound MP3 from any TikTok or vt/vm short link.",
+    blurb: "Watermark-free MP4 and original-sound MP3 from any TikTok or vt/vm short link.",
   },
   instagram: {
     id: "instagram",

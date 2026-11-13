@@ -17,9 +17,9 @@ export const tr: LandingCopy = {
   code: "tr",
   htmlLang: "tr",
   dir: "ltr",
-  title: "TikTok Filigransız Video İndir — HD MP4 ve MP3",
+  title: "TikTok Filigransız Video İndir — MP4 MP4 ve MP3",
   description:
-    "TikTok, Instagram Reels, Facebook ve YouTube videolarını filigransız HD olarak indirin. MP4 ve MP3, uygulama yok, üyelik yok, tamamen ücretsiz.",
+    "TikTok, Instagram Reels, Facebook ve YouTube videolarını filigransız MP4 olarak indirin. MP4 ve MP3, uygulama yok, üyelik yok, tamamen ücretsiz.",
   keywords: [
     "tiktok filigransız video indir",
     "tiktok video indir hd",
@@ -30,7 +30,7 @@ export const tr: LandingCopy = {
   ],
   eyebrow: "Ücretsiz · Filigransız · Uygulamasız",
   h1Lead: "Videoları kaydedin.",
-  h1Accent: "Filigransız, tam HD.",
+  h1Accent: "Filigransız, tam MP4.",
   lede:
     "Bağlantıyı yapıştırın, kaliteyi seçin, indirin — TikTok, Instagram Reels, Facebook ve YouTube videoları saniyeler içinde telefonunuzda.",
   chips: ["MP4", "MP3 ses", "Üyelik yok"],
@@ -55,8 +55,8 @@ export const tr: LandingCopy = {
       body: "Platform otomatik algılanır, seçim yapmanız gerekmez. Sunucu videonun orijinal akışını platformun CDN'inden ister — uygulamanın üzerine logo bastığı paylaşım kopyasını değil — ve size dosyayı sunmadan önce gerçekten video olduğunu doğrular.",
     },
     {
-      title: "HD veya MP3 olarak kaydedin",
-      body: "HD MP4, SD MP4 ya da MP3 düğmesine dokunun. Dosya yeniden kodlanmadan, özgün adıyla telefonunuzun İndirilenler klasörüne iner; iPhone'da Dosyalar uygulamasına kaydetmek için paylaş menüsünü kullanabilirsiniz.",
+      title: "MP4 veya MP3 olarak kaydedin",
+      body: "MP4, SD MP4 ya da MP3 düğmesine dokunun. Dosya yeniden kodlanmadan, özgün adıyla telefonunuzun İndirilenler klasörüne iner; iPhone'da Dosyalar uygulamasına kaydetmek için paylaş menüsünü kullanabilirsiniz.",
     },
   ],
   faqHeading: "Sık sorulan sorular",
@@ -64,7 +64,7 @@ export const tr: LandingCopy = {
     {
       question: "İndirmek gerçekten ücretsiz mi?",
       answer:
-        "Evet. HD, SD ve MP3 indirmelerinin tamamı ücretsiz ve sınırsız. Abonelik, üyelik ya da gizli ücret yok; site reklamlarla ayakta kalıyor.",
+        "Evet. MP4, SD ve MP3 indirmelerinin tamamı ücretsiz ve sınırsız. Abonelik, üyelik ya da gizli ücret yok; site reklamlarla ayakta kalıyor.",
     },
     {
       question: "Videolar filigransız mı geliyor?",
