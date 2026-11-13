@@ -11,10 +11,14 @@ import type { SubTool } from "@/lib/content/sub-tool-types";
 export const entry: SubTool = {
   slug: "tiktok-story-downloader",
   platform: "tiktok",
-  title: "TikTok Story Downloader - Save Stories Without Watermark",
-  socialTitle: "TikTok Story Downloader - Save Photo and Video Stories Before They Expire",
+  // Search Console: «story saver tiktok» is the page's whole impression count
+  // (21 impressions, position 5.7, zero clicks) and the old title never used the
+  // word "saver" — the tools above it do. The exact wording people type now
+  // leads, and the downloader phrasing stays for the queries that already match.
+  title: "TikTok Story Saver — Download Stories Without Watermark",
+  socialTitle: "TikTok Story Saver - Save Photo and Video Stories Before They Expire",
   description:
-    "Download TikTok stories before they vanish: save photo and video slides without a watermark in original quality. Paste the story link — no app, no account.",
+    "TikTok story saver: download photo and video stories before they vanish, without a watermark, in original quality. Paste the story link — no app, no account.",
   keywords: [
     "tiktok story downloader",
     "save tiktok story",
