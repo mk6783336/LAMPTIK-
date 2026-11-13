@@ -72,7 +72,7 @@ export const siteConfig = {
   name: "LAMP TIK",
   title: "LAMP TIK — TikTok Video Downloader Without Watermark (HD MP4)",
   description:
-    "Free TikTok video downloader without watermark — save HD MP4 at 1080p, convert TikTok to MP3 original sound, and resolve vt/vm short links. No app or sign-up.",
+    "Free TikTok video downloader without watermark — save the HD MP4 TikTok published for the post, convert TikTok to MP3 original sound, and resolve vt/vm short links. No app or sign-up.",
   keywords: [
     "TikTok video downloader without watermark",
     "download TikTok video HD MP4",
