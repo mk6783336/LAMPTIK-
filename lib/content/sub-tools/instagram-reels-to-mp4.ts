@@ -13,11 +13,11 @@ import type { SubTool } from "@/lib/content/sub-tool-types";
 export const entry: SubTool = {
   slug: "instagram-reels-to-mp4",
   platform: "instagram",
-  title: "Instagram Reels to MP4 — Original File, 1080p",
+  title: "Instagram Reels to MP4 — The Original File, Saved As-Is",
   socialTitle:
-    "Instagram Reels to MP4 — Save the Original 1080p File With Its Audio",
+    "Instagram Reels to MP4 — Save the Original File With Its Audio",
   description:
-    "Instagram already serves Reels as MP4, so there is nothing to convert. Save the original 1080×1920 H.264 file with its audio intact — no login, no watermark.",
+    "Instagram already serves Reels as MP4, so there is nothing to convert. Save the original H.264 file with its audio intact — measured 720×1280 on 2026-11-13 — no login, no watermark.",
   keywords: [
     "instagram reels to mp4",
     "reels to mp4",
