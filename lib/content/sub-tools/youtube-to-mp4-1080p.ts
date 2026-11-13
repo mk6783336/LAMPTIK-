@@ -1,22 +1,23 @@
 import type { SubTool } from "@/lib/content/sub-tool-types";
 
 /**
- * Resolution intent: "youtube to mp4 1080p". The page has to answer the one
- * question that decides trust here — whether the 1080p label is real or an
- * upscaled 720p copy — so the copy is built around picking the tallest
- * rendition YouTube published instead of padding a smaller one.
+ * Resolution intent: "youtube to mp4 1080p".
+ *
+ * The page was written around picking the tallest rendition, which assumed a
+ * 1080p file existed to pick. It does not: YouTube ships 1080p as a video-only
+ * DASH track plus a separate audio track, and this site neither merges nor
+ * transcodes. Measured 2026-11-13 against the live resolver, three sources —
+ * "Me at the Zoo" (240p), a 1080p music video and a 4K 60 fps upload — all came
+ * back as the same 640×360 muxed MP4. So the page keeps the query in its
+ * keywords and answers it honestly instead of labelling the file 1080p.
  */
 export const entry: SubTool = {
   slug: "youtube-to-mp4-1080p",
   platform: "youtube",
-  // The title used to promise 1080p flat ("Download HD Video Free"), while
-  // the resolver keeps the tallest rendition the upload carries — 720p when
-  // that is the source ceiling. The keyword stays, the condition is now in
-  // the title itself instead of only in the paragraph below it.
-  title: "YouTube to MP4 1080p - When the Upload Really Has It",
-  socialTitle: "YouTube to MP4 - The Tallest Stream the Upload Carries",
+  title: "YouTube to MP4 1080p - What You Actually Get",
+  socialTitle: "YouTube to MP4 - Measured 640×360, Not 1080p",
   description:
-    "Convert a YouTube link to MP4 up to 1080p: paste a watch, share or Shorts URL and save the HD rendition YouTube published. Free, no app, no account.",
+    "Convert a YouTube link to MP4. Measured 2026-11-13: the resolver returns one muxed 640×360 file even for 1080p and 4K uploads. No fake 1080p label, no upscale.",
   keywords: [
     "youtube to mp4",
     "youtube to mp4 1080p",
@@ -25,15 +26,15 @@ export const entry: SubTool = {
     "youtube hd download",
     "youtube video to mp4",
   ],
-  eyebrow: "YouTube to MP4 - the published stream, not a screen recording",
+  eyebrow: "YouTube to MP4 - the file that arrives, measured",
   h1Lead: "YouTube to MP4.",
-  h1Accent: "Up to 1080p, straight from the source.",
+  h1Accent: "640×360, and here is why.",
   lede:
-    "A 1080p label means nothing if the file was recorded off a player. This page resolves the MP4 renditions YouTube publishes for the video, keeps the tallest one the upload actually carries, and saves it without an intermediate re-encode.",
-  chips: ["MP4 H.264", "Up to 1080p", "Shorts and watch links"],
+    "YouTube does not store 1080p as one file. It ships a video-only track and a separate audio track, and putting them together is a transcode this site does not run. What it can hand you is the muxed MP4 YouTube still serves to a plain player — and on 2026-11-13 that measured 640×360 for a 240p clip, a 1080p music video and a 4K 60 fps upload alike. This page labels the file with the height it has.",
+  chips: ["MP4 H.264", "640×360 measured", "Watch and /shorts/ links"],
   facts: [
-    ["Best height", "Up to 1080p"],
-    ["Container", "MP4 / H.264"],
+    ["Delivered height", "640×360 (measured 2026-11-13)"],
+    ["Why not 1080p", "1080p is a separate video track"],
     ["Audio", "AAC, muxed"],
     ["Price", "Free"],
   ],
@@ -44,31 +45,31 @@ export const entry: SubTool = {
         "All three URL shapes resolve to the same video ID, so a youtu.be share copied on a phone works without editing. Playlist and channel links are rejected up front because there is no single stream behind them.",
     },
     {
-      title: "Take the tallest published rendition",
+      title: "Take the one file the resolver returns",
       body:
-        "The resolver compares the video's MP4 renditions and keeps the highest one: 1080p when the upload carries it, 720p when that is the source ceiling. Nothing is upscaled, so a 720p video never arrives padded to a fake 1080p and bloated for it.",
+        "There is no quality picker because there is no second file. The resolver returns YouTube's muxed progressive MP4 — the only stream that already carries its own audio — and the panel labels it with the height it really has. Nothing is upscaled, so a small file never arrives wearing a 1080p name.",
     },
   ],
   faqs: [
     {
-      question: "Why is my downloaded '1080p' video only 720p?",
+      question: "Why is my downloaded video 640×360 and not 1080p?",
       answer:
-        "Because the upload itself tops out at 720p. YouTube stores each video in the renditions the creator's original allowed, and a 720p source has no 1080p pixels to hand out. The result panel shows the height and byte size you actually got, so the label always matches the file.",
+        "Because 1080p is not a single downloadable file on YouTube. Above 720p the platform publishes a video-only track and a separate audio track, and joining them means re-encoding on a server. This site does not do that, so it serves the muxed MP4 that already plays with sound — measured at 640×360 on 2026-11-13 for a 240p clip, a 1080p music video and a 4K 60 fps upload alike.",
     },
     {
       question: "Does it work for YouTube Shorts?",
       answer:
-        "Yes. A /shorts/ URL resolves exactly like a watch link, and the vertical 1080x1920 frame is preserved rather than cropped into a landscape box.",
+        "Yes. A /shorts/ URL resolves exactly like a watch link and returns the same muxed MP4. The frame is whatever that stream carries — 640×360 in the same measurement — so a vertical Short is not relabelled as 1080×1920.",
     },
     {
       question: "Is the audio included, or do I have to merge it?",
       answer:
-        "Included. The saved MP4 is a muxed file with its AAC audio track already inside, so it plays in QuickTime, VLC and every phone gallery without a second step.",
+        "Included. The saved MP4 is a muxed file with its AAC audio track already inside, so it plays in QuickTime, VLC and every phone gallery without a second step. That is the whole reason the file is 360p rather than 1080p: the audio is already in it.",
     },
     {
-      question: "Does a 1080p60 video stay at 60 fps?",
+      question: "Can I pick 1080p or 720p?",
       answer:
-        "Yes, when YouTube publishes a 60 fps rendition for that upload. The tool picks by resolution and bitrate, not by frame rate, and it never drops or blends frames, so motion stays as smooth as the source.",
+        "No, and no downloader can offer you a real 1080p file without merging tracks server-side. A page that shows a 1080p button for a file like this one has either re-encoded it or renamed a smaller stream. This page shows the single file it has, with its measured height, so what you see is what lands in your downloads folder.",
     },
     {
       question: "Do I need to install anything?",
@@ -78,8 +79,8 @@ export const entry: SubTool = {
   ],
   appName: "LAMP TIK YouTube to MP4 Converter",
   features: [
-    "Download YouTube videos as MP4 up to 1080p",
-    "Keeps the tallest rendition the upload exposes",
+    "Saves YouTube's muxed MP4 — 640×360 in the 2026-11-13 measurement",
+    "No 1080p label on a 360p file and no upscale",
     "Muxed AAC audio, no separate merge step",
     "Accepts watch, youtu.be and /shorts/ links",
     "Free with no account, app or extension",

@@ -406,18 +406,18 @@ export const SUB_TOOL_ANSWERS: Record<string, SubToolAnswer> = {
   },
 
   "youtube-shorts-downloader": {
-    query: "How do I download a YouTube Short in HD?",
+    query: "How do I download a YouTube Short?",
     answer:
-      "Paste the /shorts/ link and tap Download HD MP4. You get the vertical 1080×1920 stream with its audio track, at the highest quality YouTube exposes for that upload.",
+      "Paste the /shorts/ link and download the MP4. It is the single muxed stream YouTube serves — 640×360 when measured on 2026-11-13, even for a 4K source — with its audio already inside, so the page labels the file with the height it has rather than a 1080×1920 promise.",
     comparison: [
       {
-        label: "Aspect ratio",
-        ours: "The native 1080×1920 vertical stream, untouched",
-        theirs: "A letterboxed 16:9 conversion with black bars",
+        label: "Resolution claim",
+        ours: "The height the file actually has, 640×360 in our test",
+        theirs: "A 1080×1920 label on a letterboxed or smaller file",
       },
       {
         label: "Codec",
-        ours: "H.264 + AAC, verified by an MP4 probe before the button appears",
+        ours: "H.264 + AAC in a muxed MP4 that older phones and editors open",
         theirs: "AV1 or VP9 that older phones and editors cannot open",
       },
       {
@@ -431,12 +431,12 @@ export const SUB_TOOL_ANSWERS: Record<string, SubToolAnswer> = {
   "youtube-to-mp4-1080p": {
     query: "How do I download a YouTube video in 1080p?",
     answer:
-      "Paste the link and choose the tallest rendition listed. The resolver asks for the highest progressive H.264 stream with audio already muxed in — 1080p when the upload carries it, 720p otherwise — which is the format that plays everywhere: no separate video and audio tracks to merge.",
+      "You cannot get a real 1080p file from a link-based downloader without re-encoding: above 720p YouTube serves a video-only track plus a separate audio track. This site returns the muxed MP4 instead — 640×360 measured on 2026-11-13 for a 240p clip, a 1080p music video and a 4K upload alike — and says so on the page rather than renaming it.",
     comparison: [
       {
-        label: "Stream selection",
-        ours: "Progressive 1080p H.264 picked whenever YouTube offers it",
-        theirs: "The first rendition listed, often 360p",
+        label: "Labelling",
+        ours: "The height the file really has, printed on the page",
+        theirs: "A 1080p label on a 360p stream, or a server-side re-encode",
       },
       {
         label: "Audio",

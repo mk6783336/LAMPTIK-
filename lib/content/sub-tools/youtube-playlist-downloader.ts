@@ -11,9 +11,9 @@ export const entry: SubTool = {
   toolKind: "playlist",
   title: "YouTube Playlist Downloader - Save Videos in Order",
   socialTitle:
-    "YouTube Playlist Downloader - List a Playlist and Save Each Video in 1080p or MP3",
+    "YouTube Playlist Downloader - List a Playlist and Save Each Video as MP4 or MP3",
   description:
-    "Paste a public YouTube playlist and list its videos in order. Open any one in the 1080p or MP3 downloader. No sign-up, no install and no bulk ZIP.",
+    "Paste a public YouTube playlist and list its videos in order. Open any one in the MP4 or MP3 downloader — 640×360 measured 2026-11-13. No sign-up, no install and no bulk ZIP.",
   keywords: [
     "YouTube playlist downloader",
     "download YouTube playlist",
@@ -27,10 +27,10 @@ export const entry: SubTool = {
   h1Accent: "One clean file at a time.",
   lede:
     "A playlist is a list, not a single file, so a downloader that promises one ZIP is either building a second, fragile extractor or quietly dropping half your videos. This page reads the public playlist through YouTube's own browse data, keeps the creator's order, and opens each video in the same 1080p and MP3 downloader the rest of the site uses.",
-  chips: ["First 50 videos", "1080p MP4 or MP3", "No sign-in"],
+  chips: ["First 50 videos", "MP4 or MP3", "No sign-in"],
   facts: [
     ["Listing", "First 50 videos"],
-    ["Per video", "1080p, 720p, 360p, MP3"],
+    ["Per video", "MP4 (640×360 measured) or MP3"],
     ["Bulk ZIP", "Not offered"],
     ["Price", "Free"],
   ],
@@ -41,16 +41,16 @@ export const entry: SubTool = {
         "Any URL containing list= works: a /playlist?list=PL… link, a video shared from inside a playlist, or a music.youtube.com playlist. The page lists the first 50 public videos in the order they appear, with titles and thumbnails, so you can confirm it is the right mix before downloading anything.",
     },
     {
-      title: "Open a video and pick its format",
+      title: "Open a video and pick MP4 or MP3",
       body:
-        "Each row hands that video to the standard YouTube downloader with the link already filled in. Choose 1080p, 720p, 360p or MP3, save it, then come back for the next one. Nothing about the resolution, ad gate or file naming changes just because the video came from a playlist.",
+        "Each row hands that video to the standard YouTube downloader with the link already filled in. Choose MP4 or MP3, save it, then come back for the next one. There is no 720p/1080p picker: the MP4 is the single muxed stream the resolver returns — 640×360 in the 2026-11-13 measurement — and naming does not change just because the video came from a playlist.",
     },
   ],
   faqs: [
     {
       question: "Can I download the whole playlist as one ZIP?",
       answer:
-        "No, and it is a deliberate choice. A ZIP would force every video into one quality setting, multiply the chance that one blocked track breaks the batch, and make a 40-video playlist fail as a whole. One file at a time keeps each download independent and gives you the quality picker for every video.",
+        "No, and it is a deliberate choice. A ZIP would force every video into one setting, multiply the chance that one blocked track breaks the batch, and make a 40-video playlist fail as a whole. One file at a time keeps each download independent, so a single bad row never costs you the rest.",
     },
     {
       question: "Why are only the first 50 videos listed?",
@@ -82,7 +82,7 @@ export const entry: SubTool = {
   features: [
     "List the first 50 videos of any public YouTube playlist",
     "Keep the creator's order with titles and thumbnails",
-    "Open each video in the 1080p / 720p / 360p / MP3 downloader",
+    "Open each video in the MP4 / MP3 downloader",
     "Works with share links and music.youtube.com playlists",
     "No account, no install, no bulk ZIP",
   ],

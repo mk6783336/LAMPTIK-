@@ -27,10 +27,10 @@ import { platformLanguageAlternates } from "@/lib/i18n/platform-landings";
 import { siteUrl } from "@/lib/site";
 
 /** ≤60 chars, keyword first. */
-const TITLE = "YouTube Video Downloader 1080p HD — MP4, MP3, No App";
-const SOCIAL_TITLE = "YouTube Video Downloader 1080p HD — Shorts, Long Videos & MP3";
+const TITLE = "YouTube Video Downloader — MP4, MP3, No App";
+const SOCIAL_TITLE = "YouTube Video Downloader — Shorts, Long Videos & MP3";
 const DESCRIPTION =
-  "Download YouTube videos and Shorts as 1080p, 720p or 360p MP4, plus MP3 audio. Paste a youtu.be link — free, no app, no sign-up, watermark-free.";
+  "Download a YouTube video or Short as MP4 — the single muxed file YouTube serves, measured 640×360 on 2026-11-13 — plus MP3 audio. No app, no 1080p label.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
@@ -71,8 +71,8 @@ const STEPS = [
     body: "Copy the video in the YouTube app (Share → Copy link) and paste it above. Nothing to install and no account: youtube.com/watch, youtu.be, /shorts/, /embed/ and 1-hour+ videos all resolve through the multi-engine waterfall.",
   },
   {
-    title: "Pick the rendition that exists",
-    body: "The result lists every format the upload actually exposes: 1080p, 720p, 360p, or audio only. If the creator only published 720p, the panel says so instead of quietly labelling a smaller file as HD.",
+    title: "Take the file it actually returns",
+    body: "There is no quality list, because the resolver returns one file: YouTube's muxed H.264/AAC MP4, the only stream that already carries its own audio. Above 720p YouTube publishes video-only tracks, which would need a merge this site does not run, so the height you get is stated rather than renamed.",
   },
   {
     title: "Save with resume support",
@@ -84,7 +84,7 @@ const FAQS = [
   {
     question: "Is the YouTube downloader really free?",
     answer:
-      "Yes — unlimited 1080p, 720p, 360p and MP3 downloads at no cost, in any browser. No account, no app install and no sign-up are required.",
+      "Yes — unlimited MP4 and MP3 downloads at no cost, in any browser. No account, no app install and no sign-up are required.",
   },
   {
     question: "Do I need to install anything to download YouTube videos?",
@@ -99,12 +99,12 @@ const FAQS = [
   {
     question: "What quality do I get?",
     answer:
-      "Up to Full HD 1080p MP4 when the upload exposes it, plus 720p HD, 360p fast MP4, and the highest-bitrate audio track — all watermark-free by nature. The result panel shows the exact resolution, codec and size before you save.",
+      "One muxed MP4, measured at 640×360 on 2026-11-13 for a 240p clip, a 1080p music video and a 4K 60 fps upload alike, plus the original audio as M4A or MP3. Above 720p YouTube publishes video-only tracks, and merging those with audio is a server-side transcode this site does not run — so the page names the file you get instead of labelling it 1080p.",
   },
   {
-    question: "Why is 1080p missing on some videos?",
+    question: "Why is the file 640×360 instead of 1080p?",
     answer:
-      "Because the creator never uploaded 1080p, or YouTube only exposes it as a split video-only stream that would arrive without sound. The resolver prefers a muxed H.264/AAC file it can verify, so a 720p MP4 with audio is offered instead of a 1080p file that plays silently. Retry after a freshly uploaded video finishes processing; if the source is protected or split, the bridge tier can mux the highest verified pair.",
+      "Because YouTube does not serve 1080p as one downloadable file. High resolutions are published as a video-only DASH track with the audio separate, so a link-based downloader either merges them server-side — a re-encode — or returns the muxed stream that already plays with sound. This site does the second and says so: every test on 2026-11-13, from a 240p clip to a 4K upload, came back at 640×360.",
   },
   {
     question: "Does it work with YouTube Music and playlists?",
@@ -158,8 +158,8 @@ export default function YouTubeDownloaderPage() {
         url: pageUrl,
         description: DESCRIPTION,
         features: [
-          "YouTube videos in Full HD 1080p MP4",
-          "720p HD and 360p fast renditions",
+          "YouTube videos as one muxed MP4 — 640×360 measured 2026-11-13",
+          "MP3 and M4A audio from the same post",
           "YouTube Shorts downloader",
           "YouTube to MP3 — highest-bitrate audio",
           "Long videos with resumed, chunked streaming",
@@ -168,9 +168,9 @@ export default function YouTubeDownloaderPage() {
       }),
       howToNode({
         id: `${pageUrl}/#howto`,
-        name: "How to download a YouTube video in 1080p HD",
+        name: "How to download a YouTube video as MP4",
         description:
-          "Paste any YouTube link into LAMP TIK and save 1080p MP4 or MP3 — no app and no account required.",
+          "Paste any YouTube link into LAMP TIK and save the muxed MP4 it returns, plus MP3 — no app and no account required.",
         steps: STEPS,
         url: pageUrl,
         anchor: "how",
@@ -213,7 +213,7 @@ export default function YouTubeDownloaderPage() {
 
                 <h1 className="balance mt-4 text-4xl font-semibold leading-[1.02] tracking-headline sm:mt-5 sm:text-5xl">
                   YouTube videos.
-                  <span className="text-gradient mt-1 block">In full 1080p HD.</span>
+                  <span className="text-gradient mt-1 block">One muxed MP4. 640×360.</span>
                 </h1>
 
                 <p className="pretty mt-4 max-w-lg text-base leading-relaxed text-[var(--text-2)] sm:mt-5 sm:text-base">
@@ -223,7 +223,7 @@ export default function YouTubeDownloaderPage() {
                 {/* Facts, not controls — plain text, not pills (Clarity dead
                     clicks landed on these). */}
                 <ul className="mt-6 hidden flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--text-3)] sm:flex">
-                  {["1080p Full HD", "Shorts + long videos", "MP3 audio"].map((chip) => (
+                  {["640×360 measured", "Shorts + long videos", "MP3 audio"].map((chip) => (
                     <li key={chip} className="inline-flex items-center gap-1.5">
                       <Check aria-hidden="true" className="size-3 text-[var(--accent-text)]/80" />
                       {chip}
@@ -260,7 +260,7 @@ export default function YouTubeDownloaderPage() {
                 {[
                   ["Price", "Free"],
                   ["Account", "Not required"],
-                  ["Best quality", "1080p HD"],
+                  ["Delivered file", "640×360 measured"],
                   ["Videos", "Shorts + long"],
                 ].map(([term, value]) => (
                   <div
@@ -294,8 +294,8 @@ export default function YouTubeDownloaderPage() {
                 and some high-resolution renditions are published as video-only
                 streams with the audio in a separate file. A downloader that
                 grabs a video-only stream gives you a silent MP4. This page
-                requests a muxed H.264 file with AAC audio first, then falls back
-                to the highest verified pair the bridge can combine.
+                returns the muxed H.264/AAC file and nothing else — measured at
+                640×360 on 2026-11-13 — instead of merging tracks server-side.
               </p>
 
               <div className="mt-7 overflow-x-auto rounded-2xl border border-[var(--glass-border)]">
@@ -311,28 +311,22 @@ export default function YouTubeDownloaderPage() {
                   <tbody>
                     {[
                       [
-                        "1080p MP4",
+                        "Muxed MP4 (what you get)",
                         "MP4 · H.264 + AAC",
-                        "Full-screen playback, editing",
-                        "Offered when the upload has it. Typically 2–6 Mbps; a 10-minute clip is roughly 150–450 MB.",
+                        "Any playback, editing",
+                        "The single stream the resolver returns. Measured 640×360 on 2026-11-13 for 240p, 1080p and 4K sources alike.",
                       ],
                       [
-                        "720p MP4",
-                        "MP4 · H.264 + AAC",
-                        "Phones, slower connections",
-                        "Still HD, roughly half the size of 1080p. The safe choice when the 1080p rendition is missing.",
-                      ],
-                      [
-                        "360p MP4",
-                        "MP4 · H.264 + AAC",
-                        "Quick previews, low data",
-                        "Smallest video rendition. Useful for messaging or checking a clip before saving the HD file.",
+                        "1080p (not offered)",
+                        "DASH · video-only track",
+                        "—",
+                        "YouTube publishes it without audio. Merging it is a server-side transcode this site does not run, so it is not sold as a button here.",
                       ],
                       [
                         "M4A / MP3",
                         "AAC in M4A; true MP3 via bridge",
                         "Music, podcasts, samples",
-                        "The original audio track first; an optional ffmpeg MP3 for players that cannot open AAC. No fake 320 kbps upscale.",
+                        "The original audio track as served, plus MP3 from the bridge. No fake 320 kbps upscale.",
                       ],
                     ].map(([format, container, bestFor, expect]) => (
                       <tr key={format} className="border-t border-[var(--glass-border)] align-top">
@@ -347,16 +341,15 @@ export default function YouTubeDownloaderPage() {
               </div>
 
               <h3 className="mt-9 text-xl font-semibold tracking-tight">
-                Why 1080p is sometimes missing
+                Why 1080p is not offered
               </h3>
               <p className="pretty mt-2 text-sm leading-relaxed text-[var(--text-2)]">
-                Three things cause it. The creator may have uploaded at 720p, so
-                no 1080p rendition exists to fetch. YouTube may expose 1080p only
-                as VP9 or AV1 video without audio, which is not a file you can
-                save and play as-is. Or the video was published minutes ago and
-                the higher renditions are still processing. The resolver will
-                not label a 720p file as 1080p to make the page look better; it
-                tells you which rendition it actually found.
+                Above 720p YouTube stores a video-only track and an audio track
+                separately, and a downloader that hands you 1080p has merged
+                them — which is a re-encode. This site does not run one, so the
+                file that arrives is the muxed stream YouTube still serves.
+                Every test on 2026-11-13, from a 240p clip to a 4K upload,
+                returned it at 640×360, and the page says 640×360.
               </p>
 
               <h3 className="mt-7 text-xl font-semibold tracking-tight">
@@ -409,8 +402,8 @@ export default function YouTubeDownloaderPage() {
                   ],
                   [
                     "/youtube-to-mp4-1080p",
-                    "1080p MP4 guide",
-                    "What 1080p really means and when YouTube serves it.",
+                    "MP4 resolution guide",
+                    "What YouTube actually serves, measured on 2026-11-13.",
                   ],
                   [
                     "/youtube-shorts-to-mp3",
@@ -424,17 +417,17 @@ export default function YouTubeDownloaderPage() {
                   [
                     "/hi/youtube-downloader",
                     "YouTube downloader in Hindi",
-                    "यही टूल हिंदी में — 1080p MP4 और MP3, बिना ऐप।",
+                    "यही टूल हिंदी में — MP4 और MP3, बिना ऐप।",
                   ],
                   [
                     "/tl/youtube-downloader",
                     "YouTube downloader sa Filipino",
-                    "Parehong tool, 1080p MP4 at MP3 — walang app na kailangan.",
+                    "Parehong tool, MP4 at MP3 — walang app na kailangan.",
                   ],
                   [
                     "/ur/youtube-downloader",
                     "YouTube downloader in Urdu",
-                    "وہی ٹول اردو میں — 1080p MP4 اور MP3، بغیر ایپ کے۔",
+                    "وہی ٹول اردو میں — MP4 اور MP3، بغیر ایپ کے۔",
                   ],
                 ].map(([href, title, note]) => (
                   <Link key={href} href={href} className="bento-card group flex items-start gap-3">
@@ -502,7 +495,7 @@ export default function YouTubeDownloaderPage() {
                 How it works
               </p>
               <h2 className="balance mt-4 text-4xl font-semibold leading-tight tracking-headline">
-                YouTube HD in three steps
+                YouTube MP4 in three steps
               </h2>
               <ol className="mt-6 space-y-3">
                 {STEPS.map((step, i) => (

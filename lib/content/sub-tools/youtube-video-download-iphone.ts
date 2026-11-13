@@ -68,13 +68,13 @@ export const entry: SubTool = {
     {
       question: "Can I download over cellular data?",
       answer:
-        "Yes, though a 1080p file can be tens of megabytes. The result panel shows the exact size before you tap, so you can drop to 720p or grab the audio only if data is tight.",
+        "Yes, though a long video is still tens of megabytes. The video file is the single muxed MP4 the resolver returns — 640×360 when measured on 2026-11-13 — so if data is tight, the audio-only option is the smaller choice.",
     },
   ],
   appName: "LAMP TIK YouTube Downloader for iPhone",
   features: [
     "Saves YouTube MP4 to Files on iOS, then Photos",
-    "Up to 1080p where the upload exposes it",
+    "The single muxed MP4 the resolver returns — 640×360 measured 2026-11-13",
     "Audio-only M4A or MP3 option",
     "No app, Shortcut or profile to install",
     "Works in Safari on iPhone and iPad",

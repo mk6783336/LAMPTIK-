@@ -142,8 +142,8 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
     links: [
       {
         href: "/youtube-downloader",
-        anchor: "YouTube video downloader 1080p HD",
-        note: "Shorts, long videos & MP3 in full HD — no app needed.",
+        anchor: "YouTube video downloader",
+        note: "Shorts and long videos as MP4, plus MP3 — no app needed.",
       },
       {
         href: "/instagram-reels-downloader",
@@ -285,8 +285,8 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
     links: [
       {
         href: "/youtube-downloader",
-        anchor: "YouTube video downloader 1080p HD",
-        note: "Shorts, long videos & MP3 in full HD — no app needed.",
+        anchor: "YouTube video downloader",
+        note: "Shorts and long videos as MP4, plus MP3 — no app needed.",
       },
       {
         href: "/",
@@ -464,8 +464,8 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
     links: [
       {
         href: "/youtube-downloader",
-        anchor: "YouTube video downloader 1080p HD",
-        note: "Shorts, long videos & MP3 in full HD — no app needed.",
+        anchor: "YouTube video downloader",
+        note: "Shorts and long videos as MP4, plus MP3 — no app needed.",
       },
       {
         href: "/",
