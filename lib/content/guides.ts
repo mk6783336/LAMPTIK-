@@ -54,7 +54,7 @@ export const GUIDES: Guide[] = [
     title: "How to Download a TikTok Video Without a Watermark — on Any Device",
     metaTitle: "Download TikTok Without Watermark (Any Device)",
     description:
-      "Save any public TikTok as a clean HD MP4, on iPhone, Android or desktop: why watermarks exist, what a vt.tiktok.com link is, and where the file actually lands.",
+      "Save any public TikTok as a clean MP4, on iPhone, Android or desktop: why watermarks exist, what a vt.tiktok.com link is, and where the file actually lands.",
     updatedAt: "2026-11-12",
     shortAnswer:
       "Copy the video's link from TikTok's share menu, paste it into LAMP TIK, and tap Download Without Watermark. The tool resolves the original MP4 that TikTok's CDN serves to its own app — the same file, minus the animated username overlay that the share menu adds. On iPhone it lands in Files, on Android in Downloads or Gallery.",
