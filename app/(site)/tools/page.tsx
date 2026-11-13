@@ -330,8 +330,8 @@ export default function ToolsPage() {
                     Twitter / X
                   </h3>
                   <p className="pretty mt-2 text-sm leading-relaxed text-[var(--text-2)]">
-                    Videos and GIFs from any x.com or twitter.com post — up to 1080p MP4,
-                    no login.
+                    Videos and GIFs from any x.com or twitter.com post — MP4 at the
+                    resolution X published, no login.
                   </p>
                 </Link>
               </div>

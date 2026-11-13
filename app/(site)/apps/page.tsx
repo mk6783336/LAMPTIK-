@@ -81,7 +81,7 @@ const ANDROID_STEPS: ReadonlyArray<readonly [string, string]> = [
   ],
   [
     "Pick a quality, done",
-    "1080p MP4, 720p MP4 or MP3. The file saves to your Gallery and stays in the in-app history tab.",
+    "MP4 or MP3 — the resolutions the resolver lists for that link. The file saves to your Gallery and stays in the in-app history tab.",
   ],
 ];
 
@@ -320,8 +320,9 @@ export default function AppsPage() {
                 <p className="pretty text-sm leading-relaxed text-[var(--text-2)]">
                   Copy a link and it appears in the app before you switch to it — or tap{" "}
                   <span className="font-medium text-[var(--text)]">Share → LampTik</span> from inside
-                  YouTube, TikTok, Instagram or Facebook. Pick 1080p MP4, 720p MP4 or MP3 and the file
-                  lands in your gallery, with a history tab that remembers what you saved.
+                  YouTube, TikTok, Instagram or Facebook. Pick the MP4 or the MP3 the resolver
+                  lists and the file lands in your gallery, with a history tab that remembers
+                  what you saved.
                 </p>
 
                 <ul className="flex flex-col gap-2 text-sm text-[var(--text-2)]">

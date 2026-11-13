@@ -34,9 +34,9 @@ const EN_PATH = "/twitter-video-downloader";
 
 const TITLE = "Descargar videos de Twitter (X) en MP4 — gratis y sin cuenta";
 const DESCRIPTION =
-  "Descarga videos y GIF de X (Twitter) en MP4 hasta 1080p desde el navegador: sin iniciar sesión, sin app y sin marca de agua. Elige la calidad que publicó el autor.";
+  "Descarga videos y GIF de X (Twitter) en MP4 en su resolución original desde el navegador: sin iniciar sesión, sin app y sin marca de agua. Elige la calidad que publicó el autor.";
 
-const CHIPS = ["x.com y twitter.com", "hasta 1080p", "GIF como MP4", "sin cuenta"];
+const CHIPS = ["x.com y twitter.com", "en su resolución original", "GIF como MP4", "sin cuenta"];
 
 const STEPS: ReadonlyArray<readonly [string, string]> = [
   [
@@ -64,7 +64,7 @@ const FAQS: ReadonlyArray<readonly [string, string]> = [
   ],
   [
     "¿Qué calidad puedo obtener?",
-    "La que X haya publicado para esa publicación, hasta 1080p. Los clips cortos a veces solo existen en 480p o 720p, y en ese caso esos son los botones que aparecen, sin etiquetar un 720p como HD.",
+    "La que X haya publicado para esa publicación, en su resolución original. Los clips cortos a veces solo existen en 480p o 720p, y en ese caso esos son los botones que aparecen, sin etiquetar un 720p como HD.",
   ],
   [
     "¿Los GIF se descargan como GIF?",
@@ -223,7 +223,7 @@ export default function TwitterVideoDownloaderEsPage() {
                   </h1>
                   <p className="pretty mt-4 max-w-xl text-sm leading-relaxed text-[var(--text-2)]">
                     Pega el enlace de cualquier publicación de x.com o twitter.com y
-                    guarda su video o su GIF en la calidad que publicó X, hasta 1080p.
+                    guarda su video o su GIF en la calidad que publicó X, en su resolución original.
                     Sin marca de agua, sin cuenta y sin instalar nada: el archivo va al
                     gestor de descargas del navegador.
                   </p>

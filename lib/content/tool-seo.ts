@@ -68,8 +68,8 @@ const TIKTOK_ROWS: ComparisonRow[] = [
     theirs: "Download the MP4, then transcode it to audio: two lossy generations before you press play",
   },
   {
-    label: "1080p60 selection",
-    ours: "The highest H.264 variant offered — 1080p and 60 fps whenever the creator uploaded it",
+    label: "Best variant selection",
+    ours: "The highest H.264 variant TikTok publishes for that post — full HD and 60 fps whenever the creator uploaded it",
     theirs: "A hard 720p30 cap, or the first rendition the API happens to list",
   },
   {
@@ -120,7 +120,7 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
       {
         question: "What video quality can I download?",
         answer:
-          "You get the highest resolution TikTok exposes for that post, which is 1080p Full HD for most uploads since 2022 and 720p for older ones. The result panel shows the exact quality, codec and byte size before you download, so there are no surprises.",
+          "You get the highest resolution TikTok exposes for that post — its full-HD rendition for most uploads since 2022, lower for older or compressed ones. The result panel shows the exact quality, codec and byte size before you download, so there are no surprises.",
       },
       {
         question: "Do vt.tiktok.com and vm.tiktok.com short links work?",
@@ -181,7 +181,7 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
   instagram: {
     eyebrow: "How it works",
     heading: "How to download Instagram Reels in original HD",
-    lede: "Paste a Reel link, get the exact 1080p MP4 Instagram's player streams. No login required.",
+    lede: "Paste a Reel link, get the exact MP4 Instagram's player streams. No login required.",
     comparisonLede:
       "Instagram serves one master file per Reel. The differences between downloaders are about whether they hand you that master intact — resolution, audio track, and whether the file plays offline at all.",
     noun: "Instagram Reels",
@@ -335,7 +335,7 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
         // shortest path to it, so each one links it in prose.
         href: "/twitter-video-downloader",
         anchor: "Twitter / X video downloader",
-        note: "Videos and GIFs from any x.com post, up to 1080p.",
+        note: "Videos and GIFs from any x.com post, at the resolution X published.",
       },
     ],
   },
@@ -475,7 +475,7 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
       {
         href: "/instagram-reels-downloader",
         anchor: "Instagram Reels downloader",
-        note: "Original-quality Reels at full 1080p.",
+        note: "Original-quality Reels at the resolution Instagram published.",
       },
       {
         href: "/ur/facebook-video-downloader",
@@ -505,7 +505,7 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
       {
         href: "/twitter-video-downloader",
         anchor: "Twitter / X video downloader",
-        note: "The fifth surface — same browser, no login, 1080p MP4.",
+        note: "The fifth surface — same browser, no login, original MP4.",
       },
       {
         href: "/download-facebook-live-video",

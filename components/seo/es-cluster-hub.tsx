@@ -30,7 +30,7 @@ const CLUSTER: ReadonlyArray<{ href: string; anchor: string; body: string }> = [
   {
     href: "/es/twitter-video-downloader",
     anchor: "Descargar videos de Twitter (X) en MP4",
-    body: "El video o el GIF de cualquier publicación de x.com o twitter.com, hasta 1080p, eligiendo entre las calidades que publicó X.",
+    body: "El video o el GIF de cualquier publicación de x.com o twitter.com, en su resolución original, eligiendo entre las calidades que publicó X.",
   },
   {
     href: "/es/instagram-reels-audio",

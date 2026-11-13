@@ -41,9 +41,9 @@ import { LANDING_LANGUAGES, siteConfig, siteUrl } from "@/lib/site";
 const TITLE = "LAMP TIK — TikTok Video Downloader, No Watermark HD";
 /** Social cards have room; keep the richer, benefit-led version there. */
 const SOCIAL_TITLE =
-  "TikTok Video Downloader Without Watermark — Full HD 1080p MP4 & MP3 (Free, Fast)";
+  "TikTok Video Downloader Without Watermark — HD MP4 & MP3 (Free, Fast)";
 const DESCRIPTION =
-  "Save TikTok videos in Full HD 1080p MP4 or MP3 without a watermark — vt/vm short links work too. Free, no app, no sign-up; saves to your phone or PC.";
+  "Save TikTok videos in HD MP4 or MP3 without a watermark — vt/vm short links work too. Free, no app, no sign-up; saves to your phone or PC.";
 
 export const metadata: Metadata = {
   // `absolute` bypasses the layout template: this is the exact SERP title.
@@ -104,7 +104,7 @@ export default function HomePage() {
         description: DESCRIPTION,
         features: [
           "Download TikTok videos without a watermark",
-          "Full HD 1080p MP4 downloads",
+          "HD MP4 downloads at the quality TikTok published",
           "TikTok to MP3 — original sound audio",
           "Fast SD MP4 for slow connections",
           "Short link support (vt.tiktok.com, vm.tiktok.com)",
@@ -176,8 +176,9 @@ export default function HomePage() {
                 </h1>
 
                 <p className="pretty mt-2 line-clamp-2 max-w-lg text-sm leading-relaxed text-[var(--text-2)] sm:mt-5 sm:line-clamp-none sm:text-base">
-                  Download TikTok in HD MP4 — up to Full HD 1080p, no logo, no app — or
-                  convert to MP3 with the original sound. Paste any tiktok.com,
+                  Download TikTok in HD MP4 — the resolution TikTok published for that
+                  post, no logo, no app — or convert to MP3 with the original sound. Paste
+                  any tiktok.com,
                   vt.tiktok.com, or vm.tiktok.com link and the clean file saves straight
                   to your iPhone, Android, or PC.
                 </p>
@@ -189,7 +190,7 @@ export default function HomePage() {
                     removes the affordance instead of faking a target. */}
                 <ul className="mt-6 hidden flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--text-3)] sm:flex">
                   {[
-                    { label: "1080p source", Icon: MonitorPlay },
+                    { label: "TikTok's own file", Icon: MonitorPlay },
                     { label: "H.264 compatible", Icon: ShieldCheck },
                     { label: "MP3 audio", Icon: Music2 },
                   ].map(({ label, Icon }) => (

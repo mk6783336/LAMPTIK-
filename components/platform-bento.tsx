@@ -29,8 +29,8 @@ const BENTO: Record<Exclude<Platform, "youtube">, BentoContent> = {
       "The clean source stream — the same MP4 TikTok's own player uses, served straight to your device.",
     cards: [
       {
-        title: "1080p, no watermark burned in",
-        body: "The original upload at its highest resolution — never a re-encoded, logo-stamped share copy.",
+        title: "The file TikTok serves, no watermark burned in",
+        body: "The original upload at the resolution TikTok published for that post — never a re-encoded, logo-stamped share copy.",
         icon: <GlyphResolution className="size-5" />,
       },
       {
@@ -46,7 +46,7 @@ const BENTO: Record<Exclude<Platform, "youtube">, BentoContent> = {
     ],
     footer: [
       ["Format", "MP4 · MP3"],
-      ["Max quality", "1080p source"],
+      ["Max quality", "TikTok's source file"],
       ["Storage", "None"],
     ],
   },
@@ -56,7 +56,7 @@ const BENTO: Record<Exclude<Platform, "youtube">, BentoContent> = {
       "Everything Instagram exposes publicly, extracted cleanly — original quality, no watermark, no login.",
     cards: [
       {
-        title: "1080p original Reels",
+        title: "Original Reels, no re-encode",
         body: "The exact MP4 Instagram's player streams — original resolution, zero re-encoding, nothing burned into the frame.",
         icon: <GlyphResolution className="size-5" />,
       },

@@ -56,7 +56,7 @@ const TWITTER: Record<BridgeHost, Destination | null> = {
   tiktok: {
     href: "/twitter-video-downloader",
     anchor: "Twitter / X video downloader — a post link to MP4",
-    note: "Every MP4 X published for a post is listed best-first, up to 1080p, and GIFs arrive as the looping MP4 X stores them as.",
+    note: "Every MP4 X published for a post is listed best-first — a 4K upload offers a 4K file — and GIFs arrive as the looping MP4 X stores them as.",
   },
   instagram: {
     href: "/twitter-video-downloader",
@@ -70,7 +70,7 @@ const TWITTER: Record<BridgeHost, Destination | null> = {
   },
   youtube: {
     href: "/twitter-video-downloader",
-    anchor: "Twitter / X video downloader (MP4, up to 1080p)",
+    anchor: "Twitter / X video downloader (MP4, X's own resolutions)",
     note: "For the clips people quote from X: the post link resolves to the video or GIF without an account.",
   },
   guide: {

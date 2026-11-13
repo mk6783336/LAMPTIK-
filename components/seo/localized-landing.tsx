@@ -367,7 +367,7 @@ export function LocalizedLanding({
                   lang="en"
                   className="text-[var(--accent-text)] underline-offset-4 hover:underline"
                 >
-                  Twitter / X video downloader — MP4 up to 1080p (English)
+                  Twitter / X video downloader — MP4 in X&apos;s own resolutions (English)
                 </Link>
                 <span className="mx-2 text-[var(--text-3)]">·</span>
                 {/* The English Facebook page has no translated twin on these

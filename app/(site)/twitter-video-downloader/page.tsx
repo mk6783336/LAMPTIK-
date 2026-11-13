@@ -29,7 +29,7 @@ import { pageAlternates, siteUrl } from "@/lib/site";
 const TITLE = "X Video & GIF to MP4 — HD Download, No Login, Free";
 const SOCIAL_TITLE = "Save X Videos and GIFs as MP4 — HD Renditions, No Login";
 const DESCRIPTION =
-  "Save Twitter (X) videos and GIFs as MP4 — pick 1080p, 720p or 480p and download to your device. Free, no login, no app, and no watermark to remove.";
+  "Save Twitter (X) videos and GIFs as MP4 — every rendition X published is listed, so you pick the size and download it to your device. Free, no login, no app, and no watermark to remove.";
 
 const FAQS: ReadonlyArray<{ question: string; answer: string }> = [
   {
@@ -39,7 +39,7 @@ const FAQS: ReadonlyArray<{ question: string; answer: string }> = [
     // remove, which is the one thing we can answer honestly.
     question: "Is there a Twitter video downloader without a watermark in HD?",
     answer:
-      "X never stamps a watermark onto the MP4s it serves, so \"no watermark\" here is a property of the source rather than something removed afterwards — no crop, no blur, no re-encode. The quality list is ordered best-first, and the panel prints the exact resolution and bitrate beside each option, so a 720p fallback is never labelled HD. When the account uploaded a 1080p master, the 1920×1080 file is the one at the top of that list.",
+      "X never stamps a watermark onto the MP4s it serves, so \"no watermark\" here is a property of the source rather than something removed afterwards — no crop, no blur, no re-encode. The quality list is ordered best-first, and the panel prints the exact resolution and bitrate beside each option, so a 720p fallback is never labelled HD. When the account uploaded a 4K master, the 3840×2160 file is the one at the top of that list — measured on a public post on 2026-11-13.",
   },
   {
     question: "Do I need a Twitter video downloader APK or an app?",
@@ -59,7 +59,7 @@ const FAQS: ReadonlyArray<{ question: string; answer: string }> = [
   {
     question: "What quality is available?",
     answer:
-      "Whatever X published for that post, up to 1080p. Short clips are sometimes uploaded only at 480p or 720p, in which case those are the buttons shown — there is no higher stream to offer.",
+      "Whatever X published for that post. X keeps every rendition it encoded and the panel lists them best-first, so a 4K upload offers a 3840×2160 file (measured on a public post on 2026-11-13) while a clip uploaded at 480p offers only 480p — there is no higher stream to invent.",
   },
   {
     // Wording follows the query ("save x video gif to mp4") rather than the
@@ -204,13 +204,13 @@ export default function TwitterVideoDownloaderPage() {
                   </h1>
                   <p className="pretty mt-4 max-w-xl text-sm leading-relaxed text-[var(--text-2)]">
                     Paste a link to any x.com or twitter.com post and download its video or
-                    GIF in the quality X published it — up to 1080p, no watermark, no
-                    account, no app. The file goes straight to your browser&apos;s download
-                    manager.
+                    GIF at the resolution X published it — 4K when the account uploaded 4K — no
+                    watermark, no account, no app. The file goes straight to your
+                    browser&apos;s download manager.
                   </p>
 
                   <ul className="mt-6 flex flex-wrap gap-2">
-                    {["x.com + twitter.com", "up to 1080p", "GIFs as MP4", "no login"].map(
+                    {["x.com + twitter.com", "X's own renditions", "GIFs as MP4", "no login"].map(
                       (chip) => (
                         <li key={chip} className="tool-pill">
                           {chip}
