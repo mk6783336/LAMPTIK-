@@ -15,7 +15,7 @@ export const de: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     dir: "ltr",
     title: "Instagram Reels herunterladen in HD — ohne Wasserzeichen",
     description:
-      "Instagram Reels in Originalqualität als MP4 speichern: 1080p, mit Ton, ohne Wasserzeichen und ohne Login. Kostenlos im Browser auf Handy und PC.",
+      "Instagram Reels in Originalqualität als MP4 speichern: 720p, mit Ton, ohne Wasserzeichen und ohne Login. Kostenlos im Browser auf Handy und PC.",
     keywords: [
       "instagram reels herunterladen",
       "instagram video herunterladen",
@@ -37,7 +37,7 @@ export const de: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     facts: [
       ["Preis", "Kostenlos"],
       ["Konto", "Nicht nötig"],
-      ["Qualität", "1080 × 1920"],
+      ["Qualität", "720 × 1280"],
       ["Format", "MP4 mit Ton"],
     ],
     stepsHeading: "Reel in drei Schritten speichern",
@@ -93,7 +93,7 @@ export const de: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     dir: "ltr",
     title: "YouTube Videos herunterladen — MP4 in HD oder MP3",
     description:
-      "YouTube-Link einfügen und das Video als MP4 bis 1080p oder nur den Ton als MP3 speichern. Für watch-, Shorts- und youtu.be-Links, ohne App und ohne Konto.",
+      "YouTube-Link einfügen und das Video als MP4 (640×360) oder nur den Ton als MP3 speichern. Für watch-, Shorts- und youtu.be-Links, ohne App und ohne Konto.",
     keywords: [
       "youtube video herunterladen",
       "youtube zu mp3",
@@ -106,8 +106,8 @@ export const de: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     h1Lead: "YouTube-Videos herunterladen",
     h1Accent: "als MP4 in HD oder nur der Ton.",
     lede:
-      "Link einfügen und die Auflösung wählen, die es wirklich gibt: 1080p wenn vorhanden, sonst 720p, oder MP3 aus der Originaltonspur. Funktioniert mit watch-, Shorts- und youtu.be-Links im Browser.",
-    chips: ["MP4 1080p", "MP3 original", "Shorts und youtu.be"],
+      "Link einfügen und die Auflösung wählen, die es wirklich gibt: 640×360 (gemessen), oder MP3 aus der Originaltonspur. Funktioniert mit watch-, Shorts- und youtu.be-Links im Browser.",
+    chips: ["MP4", "MP3 original", "Shorts und youtu.be"],
     tool: {
       heading: "Video-Link einfügen",
       note: "YouTube wird automatisch erkannt — auch TikTok, Instagram und Facebook.",
@@ -115,7 +115,7 @@ export const de: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     facts: [
       ["Preis", "Kostenlos"],
       ["Konto", "Nicht nötig"],
-      ["Qualität", "1080p / 720p"],
+      ["Qualität", "640×360"],
       ["Formate", "MP4 und MP3"],
     ],
     stepsHeading: "YouTube-Video in drei Schritten speichern",
@@ -136,7 +136,7 @@ export const de: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     faqHeading: "Häufige Fragen",
     faqs: [
       {
-        question: "Geht 1080p?",
+        question: "Geht 640×360?",
         answer:
           "Ja, sofern YouTube diese Auflösung für das Video anbietet. Die Seite zeigt die verfügbaren Stufen vor dem Download, damit keine Datei mit weniger Pixeln ankommt als erwartet.",
       },

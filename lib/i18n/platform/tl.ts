@@ -15,7 +15,7 @@ export const tl: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     dir: "ltr",
     title: "I-download ang Reels sa Instagram — HD, Walang Watermark",
     description:
-      "I-download ang Instagram Reels sa orihinal na 1080p kasama ang audio, walang watermark at walang login. Libre sa browser, gamit ang phone o computer.",
+      "I-download ang Instagram Reels sa orihinal na 720p kasama ang audio, walang watermark at walang login. Libre sa browser, gamit ang phone o computer.",
     keywords: [
       "download instagram reels",
       "paano i-download ang reels",
@@ -37,7 +37,7 @@ export const tl: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     facts: [
       ["Presyo", "Libre"],
       ["Account", "Hindi kailangan"],
-      ["Resolution", "1080 × 1920"],
+      ["Resolution", "720 × 1280"],
       ["Format", "MP4 na may audio"],
     ],
     stepsHeading: "Paano i-download ang Reel sa tatlong hakbang",
@@ -93,7 +93,7 @@ export const tl: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     dir: "ltr",
     title: "I-download ang YouTube Video — MP4 HD o MP3",
     description:
-      "I-paste ang YouTube link at i-download ang video bilang MP4 hanggang 1080p, o ang audio lang bilang MP3. Gumagana ang watch, Shorts at playlist link.",
+      "I-paste ang YouTube link at i-download ang video bilang MP4 (640×360), o ang audio lang bilang MP3. Gumagana ang watch, Shorts at playlist link.",
     keywords: [
       "download youtube video",
       "paano mag download ng video sa youtube",
@@ -106,8 +106,8 @@ export const tl: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     h1Lead: "I-download ang YouTube video",
     h1Accent: "MP4 HD o audio lang.",
     lede:
-      "I-paste ang link at piliin ang quality na talagang available — 1080p kung meron, 720p kung wala, o MP3 mula sa orihinal na audio track. Lahat sa browser, walang app.",
-    chips: ["MP4 1080p", "Tunay na MP3", "Shorts at youtu.be"],
+      "I-paste ang link at piliin ang quality na talagang available — 640×360 (sinukat), o MP3 mula sa orihinal na audio track. Lahat sa browser, walang app.",
+    chips: ["MP4", "Tunay na MP3", "Shorts at youtu.be"],
     tool: {
       heading: "I-paste ang link ng video",
       note: "Awtomatikong nakikilala ang YouTube — gumagana rin ang TikTok, Instagram at Facebook.",
@@ -115,7 +115,7 @@ export const tl: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     facts: [
       ["Presyo", "Libre"],
       ["Account", "Hindi kailangan"],
-      ["Quality", "1080p / 720p"],
+      ["Quality", "640×360"],
       ["Format", "MP4 at MP3"],
     ],
     stepsHeading: "Paano i-download ang YouTube video sa tatlong hakbang",
@@ -136,7 +136,7 @@ export const tl: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     faqHeading: "Madalas itanong",
     faqs: [
       {
-        question: "May 1080p ba?",
+        question: "May 640×360 ba?",
         answer:
           "Meron, kung ibinibigay ng YouTube ang resolution na iyon para sa video. Nakikita ang mga pagpipilian bago mag-download, kaya hindi mas maliit ang resulta kaysa sa inaasahan.",
       },

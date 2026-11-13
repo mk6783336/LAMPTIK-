@@ -15,7 +15,7 @@ export const pt: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     dir: "ltr",
     title: "Baixar Reels do Instagram em HD — sem marca d'água",
     description:
-      "Baixe Reels do Instagram na qualidade original 1080p, com áudio, sem marca d'água e sem fazer login. Grátis, pelo navegador do celular ou do computador.",
+      "Baixe Reels do Instagram na qualidade original 720p, com áudio, sem marca d'água e sem fazer login. Grátis, pelo navegador do celular ou do computador.",
     keywords: [
       "baixar reels do instagram",
       "baixar video do instagram",
@@ -37,7 +37,7 @@ export const pt: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     facts: [
       ["Preço", "Grátis"],
       ["Conta", "Não precisa"],
-      ["Qualidade", "1080 × 1920"],
+      ["Qualidade", "720 × 1280"],
       ["Formato", "MP4 com áudio"],
     ],
     stepsHeading: "Como baixar um Reel em três passos",
@@ -93,7 +93,7 @@ export const pt: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     dir: "ltr",
     title: "Baixar vídeos do YouTube em MP4 HD ou MP3",
     description:
-      "Cole o link do YouTube e baixe o vídeo em MP4 até 1080p ou só o áudio em MP3. Funciona com watch, Shorts, youtu.be e playlists, sem app e sem cadastro.",
+      "Cole o link do YouTube e baixe o vídeo em MP4 (640×360) ou só o áudio em MP3. Funciona com watch, Shorts, youtu.be e playlists, sem app e sem cadastro.",
     keywords: [
       "baixar videos do youtube",
       "youtube para mp3",
@@ -106,8 +106,8 @@ export const pt: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     h1Lead: "Baixar vídeos do YouTube",
     h1Accent: "em MP4 HD ou só o áudio.",
     lede:
-      "Cole o link e escolha a qualidade que existe de verdade: 1080p quando disponível, 720p quando não, ou MP3 do áudio original. Aceita watch, Shorts, youtu.be e links de playlist.",
-    chips: ["MP4 1080p", "MP3 original", "Shorts e youtu.be"],
+      "Cole o link e escolha a qualidade que existe de verdade: 640×360 (medido), ou MP3 do áudio original. Aceita watch, Shorts, youtu.be e links de playlist.",
+    chips: ["MP4", "MP3 original", "Shorts e youtu.be"],
     tool: {
       heading: "Cole o link do vídeo",
       note: "O YouTube é detectado sozinho — TikTok, Instagram e Facebook também.",
@@ -115,7 +115,7 @@ export const pt: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     facts: [
       ["Preço", "Grátis"],
       ["Conta", "Não precisa"],
-      ["Qualidade", "1080p / 720p"],
+      ["Qualidade", "640×360"],
       ["Formatos", "MP4 e MP3"],
     ],
     stepsHeading: "Como baixar um vídeo do YouTube em três passos",
@@ -136,7 +136,7 @@ export const pt: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     faqHeading: "Perguntas frequentes",
     faqs: [
       {
-        question: "Dá para baixar em 1080p?",
+        question: "Dá para baixar em 640×360?",
         answer:
           "Sim, se o YouTube tiver essa resolução para o vídeo. A página mostra as opções antes do download, então você não termina com um arquivo de menos pixels do que esperava.",
       },

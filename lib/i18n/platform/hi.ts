@@ -15,7 +15,7 @@ export const hi: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     dir: "ltr",
     title: "Instagram Reels डाउनलोड — HD, बिना वॉटरमार्क",
     description:
-      "Instagram Reels को असली 1080p क्वालिटी में, आवाज़ के साथ डाउनलोड करें। बिना वॉटरमार्क, बिना लॉगिन, ब्राउज़र से सीधे — फ़ोन और कंप्यूटर, दोनों पर फ्री।",
+      "Instagram Reels को असली 720p क्वालिटी में, आवाज़ के साथ डाउनलोड करें। बिना वॉटरमार्क, बिना लॉगिन, ब्राउज़र से सीधे — फ़ोन और कंप्यूटर, दोनों पर फ्री।",
     keywords: [
       "instagram reels download",
       "instagram video download kaise kare",
@@ -37,7 +37,7 @@ export const hi: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     facts: [
       ["कीमत", "फ्री"],
       ["अकाउंट", "ज़रूरी नहीं"],
-      ["क्वालिटी", "1080 × 1920"],
+      ["क्वालिटी", "720 × 1280"],
       ["फ़ॉर्मैट", "MP4, आवाज़ के साथ"],
     ],
     stepsHeading: "रील डाउनलोड करने के तीन कदम",
@@ -93,7 +93,7 @@ export const hi: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     dir: "ltr",
     title: "YouTube वीडियो डाउनलोड — MP4 HD या MP3",
     description:
-      "YouTube लिंक पेस्ट करके वीडियो MP4 (1080p तक) या सिर्फ़ आवाज़ MP3 में डाउनलोड करें। watch, Shorts, youtu.be और प्लेलिस्ट लिंक चलते हैं। बिना ऐप।",
+      "YouTube लिंक पेस्ट करके वीडियो MP4 (640×360) या सिर्फ़ आवाज़ MP3 में डाउनलोड करें। watch, Shorts, youtu.be और प्लेलिस्ट लिंक चलते हैं। बिना ऐप।",
     keywords: [
       "youtube video download",
       "youtube video download kaise kare",
@@ -106,8 +106,8 @@ export const hi: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     h1Lead: "YouTube वीडियो डाउनलोड करें",
     h1Accent: "MP4 HD या सिर्फ़ आवाज़।",
     lede:
-      "लिंक पेस्ट करें और वही क्वालिटी चुनें जो सच में उपलब्ध है — 1080p हो तो 1080p, न हो तो 720p, या असली ऑडियो ट्रैक से MP3। सब ब्राउज़र में, बिना ऐप।",
-    chips: ["MP4 1080p", "असली MP3", "Shorts और youtu.be"],
+      "लिंक पेस्ट करें और वही क्वालिटी चुनें जो सच में उपलब्ध है — 640×360 (नापा गया), या असली ऑडियो ट्रैक से MP3। सब ब्राउज़र में, बिना ऐप।",
+    chips: ["MP4", "असली MP3", "Shorts और youtu.be"],
     tool: {
       heading: "वीडियो का लिंक पेस्ट करें",
       note: "YouTube अपने आप पहचाना जाता है — TikTok, Instagram और Facebook भी चलते हैं।",
@@ -115,7 +115,7 @@ export const hi: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     facts: [
       ["कीमत", "फ्री"],
       ["अकाउंट", "ज़रूरी नहीं"],
-      ["क्वालिटी", "1080p / 720p"],
+      ["क्वालिटी", "640×360"],
       ["फ़ॉर्मैट", "MP4 और MP3"],
     ],
     stepsHeading: "YouTube वीडियो डाउनलोड करने के तीन कदम",
@@ -136,7 +136,7 @@ export const hi: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     faqHeading: "अक्सर पूछे जाने वाले सवाल",
     faqs: [
       {
-        question: "1080p मिलेगा?",
+        question: "640×360 मिलेगा?",
         answer:
           "मिलेगा, अगर YouTube उस वीडियो के लिए वह रेज़ोल्यूशन देता है। डाउनलोड से पहले उपलब्ध विकल्प दिख जाते हैं, इसलिए नतीजा उम्मीद से छोटा नहीं निकलता।",
       },

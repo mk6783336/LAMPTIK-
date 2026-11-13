@@ -15,7 +15,7 @@ export const th: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     dir: "ltr",
     title: "ดาวน์โหลด Reels Instagram HD ไม่มีลายน้ำ",
     description:
-      "ดาวน์โหลด Reels Instagram คุณภาพต้นฉบับ 1080p พร้อมเสียง ไม่มีลายน้ำ ไม่ต้องเข้าสู่ระบบ ฟรี ใช้ได้บนมือถือและคอมพิวเตอร์",
+      "ดาวน์โหลด Reels Instagram คุณภาพต้นฉบับ 720p พร้อมเสียง ไม่มีลายน้ำ ไม่ต้องเข้าสู่ระบบ ฟรี ใช้ได้บนมือถือและคอมพิวเตอร์",
     keywords: [
       "ดาวน์โหลด reels instagram",
       "ดาวน์โหลดวิดีโอ instagram",
@@ -37,7 +37,7 @@ export const th: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     facts: [
       ["ราคา", "ฟรี"],
       ["บัญชี", "ไม่ต้องใช้"],
-      ["ความละเอียด", "1080 × 1920"],
+      ["ความละเอียด", "720 × 1280"],
       ["รูปแบบ", "MP4 พร้อมเสียง"],
     ],
     stepsHeading: "ดาวน์โหลด Reel ในสามขั้นตอน",
@@ -93,7 +93,7 @@ export const th: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     dir: "ltr",
     title: "ดาวน์โหลดวิดีโอ YouTube MP4 HD หรือ MP3",
     description:
-      "วางลิงก์ YouTube แล้วดาวน์โหลดวิดีโอเป็น MP4 สูงถึง 1080p หรือเอาเฉพาะเสียงเป็น MP3 รองรับ watch, Shorts, youtu.be และเพลย์ลิสต์ ไม่ต้องติดตั้งแอป",
+      "วางลิงก์ YouTube แล้วดาวน์โหลดวิดีโอเป็น MP4 (640×360) หรือเอาเฉพาะเสียงเป็น MP3 รองรับ watch, Shorts, youtu.be และเพลย์ลิสต์ ไม่ต้องติดตั้งแอป",
     keywords: [
       "ดาวน์โหลดวิดีโอ youtube",
       "วิธีดาวน์โหลด youtube",
@@ -106,8 +106,8 @@ export const th: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     h1Lead: "ดาวน์โหลดวิดีโอ YouTube",
     h1Accent: "MP4 HD หรือเอาแค่เสียง",
     lede:
-      "วางลิงก์แล้วเลือกคุณภาพที่มีจริง — 1080p ถ้ามี, 720p ถ้าไม่มี หรือ MP3 จากแทร็กเสียงต้นฉบับ ทั้งหมดทำในเบราว์เซอร์ ไม่ต้องติดตั้งอะไร",
-    chips: ["MP4 1080p", "MP3 ต้นฉบับ", "Shorts และ youtu.be"],
+      "วางลิงก์แล้วเลือกคุณภาพที่มีจริง — 640×360 (วัดแล้ว) หรือ MP3 จากแทร็กเสียงต้นฉบับ ทั้งหมดทำในเบราว์เซอร์ ไม่ต้องติดตั้งอะไร",
+    chips: ["MP4", "MP3 ต้นฉบับ", "Shorts และ youtu.be"],
     tool: {
       heading: "วางลิงก์วิดีโอ",
       note: "ระบบรู้จัก YouTube เอง — TikTok, Instagram และ Facebook ก็ใช้ได้",
@@ -115,7 +115,7 @@ export const th: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     facts: [
       ["ราคา", "ฟรี"],
       ["บัญชี", "ไม่ต้องใช้"],
-      ["คุณภาพ", "1080p / 720p"],
+      ["คุณภาพ", "640×360"],
       ["รูปแบบ", "MP4 และ MP3"],
     ],
     stepsHeading: "ดาวน์โหลดวิดีโอ YouTube ในสามขั้นตอน",
@@ -136,7 +136,7 @@ export const th: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     faqHeading: "คำถามที่พบบ่อย",
     faqs: [
       {
-        question: "ได้ 1080p ไหม",
+        question: "ได้ 640×360 ไหม",
         answer:
           "ได้ ถ้า YouTube ให้ความละเอียดนั้นกับวิดีโอนั้น ตัวเลือกจะแสดงก่อนดาวน์โหลด ผลลัพธ์จึงไม่เล็กกว่าที่เห็น",
       },

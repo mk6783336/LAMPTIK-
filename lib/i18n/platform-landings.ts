@@ -192,7 +192,7 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
         },
         {
           title: "Comprueba la calidad real",
-          body: "El servidor pide las versiones disponibles y muestra cuáles existen de verdad. No se inventa un 4K que el vídeo no tiene ni se reescala un 720p para llamarlo HD: si el autor subió 720p, verás 720p.",
+          body: "El servidor pide las versiones disponibles y muestra cuáles existen de verdad. No se inventa un 4K que el vídeo no tiene ni se reescala nada para llamarlo HD: en YouTube el servidor entrega un MP4 de 640×360 (medido el 2026-11-13).",
         },
         {
           title: "Elige MP4 o MP3 y guarda",
@@ -450,7 +450,7 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
         },
         {
           title: "تحقّق من الجودة الحقيقية",
-          body: "يطلب الخادم النسخ المتاحة ويعرض ما هو موجود فعلًا. لا نختلق 4K غير موجود ولا نكبّر 720p لنسمّيه HD: إن رفع صاحب الفيديو 720p فستحصل على 720p.",
+          body: "يطلب الخادم النسخ المتاحة ويعرض ما هو موجود فعلًا. لا نختلق 4K غير موجود ولا نكبّر الجودة لنسمّيها HD: في يوتيوب يسلّم الخادم ملف MP4 بدقة 640×360 (مقاس).",
         },
         {
           title: "اختر MP4 أو MP3 واحفظ",

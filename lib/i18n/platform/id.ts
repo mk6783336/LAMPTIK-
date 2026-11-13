@@ -14,7 +14,7 @@ export const id: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     dir: "ltr",
     title: "Unduh Reels Instagram HD — Tanpa Watermark",
     description:
-      "Unduh Reels Instagram kualitas asli 1080p lengkap dengan audio, tanpa watermark dan tanpa login. Gratis lewat browser di HP maupun komputer.",
+      "Unduh Reels Instagram kualitas asli 720p lengkap dengan audio, tanpa watermark dan tanpa login. Gratis lewat browser di HP maupun komputer.",
     keywords: [
       "unduh reels instagram",
       "download video instagram",
@@ -36,7 +36,7 @@ export const id: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     facts: [
       ["Harga", "Gratis"],
       ["Akun", "Tidak perlu"],
-      ["Kualitas", "1080 × 1920"],
+      ["Kualitas", "720 × 1280"],
       ["Format", "MP4 dengan audio"],
     ],
     stepsHeading: "Cara mengunduh Reel dalam tiga langkah",
@@ -92,7 +92,7 @@ export const id: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     dir: "ltr",
     title: "Unduh Video YouTube MP4 HD atau MP3",
     description:
-      "Tempel tautan YouTube lalu unduh videonya sebagai MP4 hingga 1080p atau ambil audionya saja sebagai MP3. Mendukung watch, Shorts, youtu.be, dan playlist.",
+      "Tempel tautan YouTube lalu unduh videonya sebagai MP4 (640×360) atau ambil audionya saja sebagai MP3. Mendukung watch, Shorts, youtu.be, dan playlist.",
     keywords: [
       "unduh video youtube",
       "download video youtube",
@@ -105,8 +105,8 @@ export const id: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     h1Lead: "Unduh video YouTube",
     h1Accent: "MP4 HD atau audionya saja.",
     lede:
-      "Tempel tautan dan pilih kualitas yang benar-benar tersedia: 1080p bila ada, 720p bila tidak, atau MP3 dari audio aslinya. Semua lewat browser, tanpa aplikasi.",
-    chips: ["MP4 1080p", "MP3 asli", "Shorts dan youtu.be"],
+      "Tempel tautan dan pilih kualitas yang benar-benar tersedia: 640×360 (terukur), atau MP3 dari audio aslinya. Semua lewat browser, tanpa aplikasi.",
+    chips: ["MP4", "MP3 asli", "Shorts dan youtu.be"],
     tool: {
       heading: "Tempel tautan video",
       note: "YouTube dikenali otomatis — TikTok, Instagram, dan Facebook juga bisa.",
@@ -114,7 +114,7 @@ export const id: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     facts: [
       ["Harga", "Gratis"],
       ["Akun", "Tidak perlu"],
-      ["Kualitas", "1080p / 720p"],
+      ["Kualitas", "640×360"],
       ["Format", "MP4 dan MP3"],
     ],
     stepsHeading: "Cara mengunduh video YouTube dalam tiga langkah",
@@ -135,7 +135,7 @@ export const id: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     faqHeading: "Pertanyaan umum",
     faqs: [
       {
-        question: "Bisa 1080p?",
+        question: "Bisa 640×360?",
         answer:
           "Bisa, selama YouTube menyediakan resolusi itu untuk video tersebut. Halaman ini menampilkan pilihan yang ada sebelum mengunduh, jadi hasilnya tidak lebih kecil dari yang diharapkan.",
       },

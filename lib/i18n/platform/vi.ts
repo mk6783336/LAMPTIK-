@@ -14,7 +14,7 @@ export const vi: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     dir: "ltr",
     title: "Tải Reels Instagram HD — Không Logo",
     description:
-      "Tải Reels Instagram chất lượng gốc 1080p kèm âm thanh, không logo và không cần đăng nhập. Miễn phí trên trình duyệt, dùng được cả điện thoại lẫn máy tính.",
+      "Tải Reels Instagram chất lượng gốc 720p kèm âm thanh, không logo và không cần đăng nhập. Miễn phí trên trình duyệt, dùng được cả điện thoại lẫn máy tính.",
     keywords: [
       "tải reels instagram",
       "tải video instagram",
@@ -36,7 +36,7 @@ export const vi: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     facts: [
       ["Giá", "Miễn phí"],
       ["Tài khoản", "Không cần"],
-      ["Độ phân giải", "1080 × 1920"],
+      ["Độ phân giải", "720 × 1280"],
       ["Định dạng", "MP4 có âm thanh"],
     ],
     stepsHeading: "Tải một Reel trong ba bước",
@@ -92,7 +92,7 @@ export const vi: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     dir: "ltr",
     title: "Tải Video YouTube MP4 HD hoặc MP3",
     description:
-      "Dán liên kết YouTube để tải video MP4 tới 1080p hoặc chỉ lấy âm thanh thành MP3. Hỗ trợ watch, Shorts, youtu.be và danh sách phát, không cần cài ứng dụng.",
+      "Dán liên kết YouTube để tải video MP4 (640×360) hoặc chỉ lấy âm thanh thành MP3. Hỗ trợ watch, Shorts, youtu.be và danh sách phát, không cần cài ứng dụng.",
     keywords: [
       "tải video youtube",
       "cách tải video youtube",
@@ -105,8 +105,8 @@ export const vi: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     h1Lead: "Tải video YouTube",
     h1Accent: "MP4 HD hoặc chỉ âm thanh.",
     lede:
-      "Dán liên kết rồi chọn đúng mức chất lượng đang có: 1080p nếu có, 720p nếu không, hoặc MP3 từ track âm thanh gốc. Tất cả chạy trong trình duyệt, không cần ứng dụng.",
-    chips: ["MP4 1080p", "MP3 gốc", "Shorts và youtu.be"],
+      "Dán liên kết rồi chọn đúng mức chất lượng đang có: 640×360 (đã đo), hoặc MP3 từ track âm thanh gốc. Tất cả chạy trong trình duyệt, không cần ứng dụng.",
+    chips: ["MP4", "MP3 gốc", "Shorts và youtu.be"],
     tool: {
       heading: "Dán liên kết video",
       note: "YouTube được nhận diện tự động — TikTok, Instagram và Facebook cũng dùng được.",
@@ -114,7 +114,7 @@ export const vi: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     facts: [
       ["Giá", "Miễn phí"],
       ["Tài khoản", "Không cần"],
-      ["Chất lượng", "1080p / 720p"],
+      ["Chất lượng", "640×360"],
       ["Định dạng", "MP4 và MP3"],
     ],
     stepsHeading: "Tải video YouTube trong ba bước",
@@ -135,7 +135,7 @@ export const vi: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     faqHeading: "Câu hỏi thường gặp",
     faqs: [
       {
-        question: "Có lấy được 1080p không?",
+        question: "Có lấy được 640×360 không?",
         answer:
           "Có, nếu YouTube cung cấp độ phân giải đó cho video ấy. Các lựa chọn hiện ra trước khi tải, nên kết quả không nhỏ hơn mức bạn thấy.",
       },

@@ -66,7 +66,7 @@ export const PLATFORM_BLURBS: Record<LocaleCode, Record<Platform, string>> = {
     facebook:
       "Video Watch panjang (1 GB lebih), unggahan halaman, dan tautan fb.watch yang langsung dibuka.",
     youtube:
-      "MP4 atau 720p, Shorts, dan audio MP3 dari tautan watch atau youtu.be — gratis, tanpa aplikasi.",
+      "MP4 (640×360), Shorts, dan audio MP3 dari tautan watch atau youtu.be — gratis, tanpa aplikasi.",
   },
   hi: {
     tiktok:
@@ -86,7 +86,7 @@ export const PLATFORM_BLURBS: Record<LocaleCode, Record<Platform, string>> = {
     facebook:
       "Video Watch dài (trên 1 GB), video từ trang và link fb.watch được mở ngay.",
     youtube:
-      "MP4 hoặc 720p, Shorts và âm thanh MP3 từ mọi link watch hay youtu.be — miễn phí, không cần app.",
+      "MP4 (640×360), Shorts và âm thanh MP3 từ mọi link watch hay youtu.be — miễn phí, không cần app.",
   },
   th: {
     tiktok:
@@ -96,7 +96,7 @@ export const PLATFORM_BLURBS: Record<LocaleCode, Record<Platform, string>> = {
     facebook:
       "วิดีโอ Watch ยาว ๆ (เกิน 1 GB) วิดีโอจากเพจ และลิงก์ fb.watch ที่เปิดทันที",
     youtube:
-      "MP4 หรือ 720p, Shorts และเสียง MP3 จากลิงก์ watch หรือ youtu.be ฟรี ไม่ต้องติดตั้งแอป",
+      "MP4 (640×360), Shorts และเสียง MP3 จากลิงก์ watch หรือ youtu.be ฟรี ไม่ต้องติดตั้งแอป",
   },
   tl: {
     tiktok:

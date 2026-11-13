@@ -20,7 +20,7 @@ export const fr: Record<LocalizedPlatform, LandingCopy> = {
     dir: "ltr",
     title: "Télécharger des Reels Instagram en HD — sans filigrane",
     description:
-      "Téléchargez un Reel Instagram dans sa qualité d’origine 1080p, audio inclus, sans filigrane et sans compte. Gratuit, depuis le téléphone ou le PC.",
+      "Téléchargez un Reel Instagram dans sa qualité d’origine 640×360, audio inclus, sans filigrane et sans compte. Gratuit, depuis le téléphone ou le PC.",
     keywords: [
       "télécharger reel instagram",
       "télécharger vidéo instagram",
@@ -43,7 +43,7 @@ export const fr: Record<LocalizedPlatform, LandingCopy> = {
     facts: [
       ["Prix", "Gratuit"],
       ["Compte", "Inutile"],
-      ["Qualité", "1080 × 1920"],
+      ["Qualité", "720 × 1280"],
       ["Format", "MP4 avec audio"],
     ],
     stepsHeading: "Télécharger un Reel en trois étapes",
@@ -104,22 +104,22 @@ export const fr: Record<LocalizedPlatform, LandingCopy> = {
     dir: "ltr",
     title: "Télécharger une vidéo YouTube en MP4 HD ou MP3",
     description:
-      "Collez un lien YouTube et récupérez la vidéo en MP4 jusqu’à 1080p, ou l’audio en MP3. Watch, Shorts, youtu.be et playlists, sans application.",
+      "Collez un lien YouTube et récupérez la vidéo en MP4 en 640×360, ou l’audio en MP3. Watch, Shorts, youtu.be et playlists, sans application.",
     keywords: [
       "télécharger vidéo youtube",
       "youtube mp3",
       "télécharger youtube en hd",
       "convertir youtube en mp3",
       "télécharger shorts youtube",
-      "youtube mp4 1080p",
+      "youtube mp4",
       "télécharger vidéo youtube sans logiciel",
     ],
     eyebrow: "YouTube · MP4 et MP3 · rien à installer",
     h1Lead: "Téléchargez une vidéo YouTube",
     h1Accent: "en MP4 HD ou en audio seul.",
     lede:
-      "Collez le lien et choisissez la qualité réellement disponible : 1080p quand elle existe, 720p sinon, ou MP3 de l’audio d’origine. Les liens watch, Shorts, youtu.be et les playlists sont acceptés, directement dans le navigateur.",
-    chips: ["MP4 1080p", "MP3 d’origine", "Shorts et youtu.be"],
+      "Collez le lien et choisissez la qualité réellement disponible : 640×360 (mesuré), ou MP3 de l’audio d’origine. Les liens watch, Shorts, youtu.be et les playlists sont acceptés, directement dans le navigateur.",
+    chips: ["MP4", "MP3 d’origine", "Shorts et youtu.be"],
     tool: {
       heading: "Collez le lien de la vidéo",
       note: "YouTube est détecté automatiquement ; TikTok, Instagram et Facebook aussi.",
@@ -127,7 +127,7 @@ export const fr: Record<LocalizedPlatform, LandingCopy> = {
     facts: [
       ["Prix", "Gratuit"],
       ["Compte", "Inutile"],
-      ["Qualité", "1080p / 720p"],
+      ["Qualité", "640×360"],
       ["Formats", "MP4 et MP3"],
     ],
     stepsHeading: "Télécharger une vidéo YouTube en trois étapes",
@@ -148,7 +148,7 @@ export const fr: Record<LocalizedPlatform, LandingCopy> = {
     faqHeading: "Questions fréquentes",
     faqs: [
       {
-        question: "Peut-on télécharger en 1080p ?",
+        question: "Peut-on télécharger en 640×360 ?",
         answer:
           "Oui, à condition que YouTube propose cette définition pour la vidéo. L’outil affiche les qualités disponibles avant le téléchargement : vous ne terminez pas avec un fichier moins défini que prévu.",
       },
