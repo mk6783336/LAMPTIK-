@@ -41,9 +41,9 @@ import { LANDING_LANGUAGES, siteConfig, siteUrl } from "@/lib/site";
 const TITLE = "LAMP TIK — TikTok Video Downloader, No Watermark MP4";
 /** Social cards have room; keep the richer, benefit-led version there. */
 const SOCIAL_TITLE =
-  "TikTok Video Downloader Without Watermark — MP4 & MP3 (Free, Fast)";
+  "TikTok Video Downloader Without Watermark — Direct MP4 & MP3 (Free, Fast)";
 const DESCRIPTION =
-  "Save TikTok videos as MP4 or MP3 without a watermark — vt/vm short links work too. Free, no app, no sign-up; saves to your phone or PC.";
+  "Save TikTok videos as the MP4 file TikTok serves — no watermark, plus MP3 of the original sound. vt/vm short links work too; free, no app, no sign-up.";
 
 export const metadata: Metadata = {
   // `absolute` bypasses the layout template: this is the exact SERP title.

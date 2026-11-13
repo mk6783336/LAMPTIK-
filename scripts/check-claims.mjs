@@ -397,6 +397,13 @@ const PAGE_FILES = [
 
 const SUB_TOOL_DIR = "lib/content/sub-tools";
 
+/**
+ * Translated copy, every locale. The gate used to read only the English
+ * registry, so a false number sat in `lib/i18n/platform/*.ts` for nine languages
+ * until someone grepped by hand for it.
+ */
+const LOCALE_DIR = "lib/i18n";
+
 /* ------------------------------------------------------------------ */
 
 const failures = [];
@@ -616,6 +623,31 @@ async function scanAllClaims() {
     }
     scanClaims(page.file, source, page.platform);
   }
+
+  // Localized copy, recursively: the platform landings, the home pages, the
+  // blurbs and the footer all print resolutions, and each one is a page a
+  // visitor reads in their own language.
+  const alreadyScanned = new Set(CONTENT_FILES);
+  for (const file of await listLocaleFiles()) {
+    if (alreadyScanned.has(file)) continue;
+    const source = await readFile(path.join(root, file), "utf8");
+    scanClaims(file, source, "any");
+  }
+}
+
+async function listLocaleFiles() {
+  const { readdir } = await import("node:fs/promises");
+  const files = [];
+  async function walk(relative) {
+    const entries = await readdir(path.join(root, relative), { withFileTypes: true });
+    for (const entry of entries) {
+      const child = `${relative}/${entry.name}`;
+      if (entry.isDirectory()) await walk(child);
+      else if (entry.name.endsWith(".ts")) files.push(child);
+    }
+  }
+  await walk(LOCALE_DIR);
+  return files.sort();
 }
 
 /* ---------------------------- live probes --------------------------- */
