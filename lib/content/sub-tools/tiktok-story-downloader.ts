@@ -13,12 +13,14 @@ export const entry: SubTool = {
   platform: "tiktok",
   // Search Console: «story saver tiktok» is the page's whole impression count
   // (21 impressions, position 5.7, zero clicks) and the old title never used the
-  // word "saver" — the tools above it do. The exact wording people type now
-  // leads, and the downloader phrasing stays for the queries that already match.
-  title: "TikTok Story Saver — Download Stories Without Watermark",
-  socialTitle: "TikTok Story Saver - Save Photo and Video Stories Before They Expire",
+  // word "saver" — the tools above it do. Both phrasings now lead, because the
+  // query is split almost evenly between "story saver" and "story downloader".
+  // Requested brand suffix kept as asked; measured at 64 characters, so a
+  // desktop SERP may clip the last word rather than the keyword.
+  title: "TikTok Story Saver & Downloader (Without Watermark) — Lamptik",
+  socialTitle: "TikTok Story Saver — Save Photo and Video Stories Before They Expire",
   description:
-    "TikTok story saver: download photo and video stories before they vanish, without a watermark, in original quality. Paste the story link — no app, no account.",
+    "Save TikTok stories, audio tracks, and expiring slides in HD MP4. Free online TikTok story saver with no watermark and fast processing.",
   keywords: [
     "tiktok story downloader",
     "save tiktok story",
@@ -63,9 +65,15 @@ export const entry: SubTool = {
         "Because a profile can hold several stories at once and the URL does not identify which one. Copy the link from the story itself: it contains an item id, and that id is what the resolver needs to return exactly the slide you are looking at.",
     },
     {
-      question: "Can I download a story after it has expired?",
+      question: "Can I save TikTok stories after 24 hours?",
       answer:
-        "No, and any tool that claims otherwise is guessing. Once the 24-hour window closes the media is no longer served to anyone outside the creator's own archive view. Save it while it is live.",
+        "No, and any tool that claims otherwise is guessing. TikTok stops serving the story media the moment the window closes, so there is nothing left to download — the file is not hidden behind a paywall or a login, it is simply gone from the public edge. Save it while the story is live: the link that worked yesterday answers with an empty item today.",
+    },
+    {
+      question:
+        "How do I download a TikTok story in original resolution without the username tag?",
+      answer:
+        "Paste the link to the story itself, not to the profile, and take the file this page returns. The username tag you see in a screenshot is drawn by the TikTok app while it plays the story; it is not part of the media file, so a download never carries it. Original resolution means the size the creator uploaded — if the story was recorded at 720p, the saved slide is 720p, and nothing here upscales it.",
     },
     {
       question: "Do I need to follow the account to save its story?",
@@ -87,4 +95,5 @@ export const entry: SubTool = {
     "No account and no app required",
   ],
   related: ["tiktok-video-download-iphone", "tiktok-mp3-downloader", "vt-tiktok-com-downloader"],
+  formatGuide: "story",
 };

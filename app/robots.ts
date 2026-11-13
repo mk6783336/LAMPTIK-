@@ -55,7 +55,15 @@ export default function robots(): MetadataRoute.Robots {
     // that are already indexed. Both are also submitted through the Search
     // Console API, but the robots.txt entry is what Bing, Yandex, DuckDuckBot
     // and the AI crawlers above actually read.
-    sitemap: [`${siteUrl}/sitemap.xml`, `${siteUrl}/sitemap-priority.xml`],
+    // Three files, three jobs: the full inventory, the two never-crawled tool
+    // pages, and the English commercial core at priority 1.0. A crawler that
+    // reads only the first still sees everything; one that reads all three
+    // knows which six URLs to fetch first.
+    sitemap: [
+      `${siteUrl}/sitemap.xml`,
+      `${siteUrl}/sitemap-priority.xml`,
+      `${siteUrl}/sitemap-en-core.xml`,
+    ],
     // No `Host:` directive. It is a Yandex-only hint, and naming the host in
     // robots.txt is one more place a crawler can read the apex domain as the
     // canonical site — Ahrefs already lists the bare-apex root as an internal

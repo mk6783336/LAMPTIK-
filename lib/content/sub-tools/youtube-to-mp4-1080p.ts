@@ -81,6 +81,7 @@ export const entry: SubTool = {
     "Free with no account, app or extension",
   ],
   related: ["youtube-to-mp3", "youtube-shorts-downloader", "youtube-video-download-iphone"],
+  formatGuide: "containers",
   guides: [
     { slug: "why-tiktok-video-quality-drops-after-upload", anchor: "Why video quality drops after upload" },
     { slug: "download-tiktok-video-without-watermark" },

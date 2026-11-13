@@ -5,6 +5,7 @@ import { useEffect } from "react";
 
 import { gaMeasurementIds, trackEvent } from "@/lib/analytics";
 import { gtagCommand as gtag } from "@/lib/gtag";
+import { whenIdle } from "@/lib/idle";
 
 /**
  * One Google tag for the whole site — gtag.js loaded once, then `config`d for
@@ -36,13 +37,32 @@ import { gtagCommand as gtag } from "@/lib/gtag";
  * production, cannot count the same first page view twice.
  */
 let configured = false;
+/** Guards against two effects queueing the same idle config before either runs. */
+let scheduled = false;
 
 export function GoogleAnalytics() {
   useEffect(() => {
-    if (!gaMeasurementIds.length || configured) return;
-    configured = true;
-    gtag("js", new Date());
-    for (const id of gaMeasurementIds) gtag("config", id);
+    if (!gaMeasurementIds.length || configured || scheduled) return;
+    scheduled = true;
+
+    // Deferred to idle: `config` is what makes gtag.js start collecting, and
+    // running it during hydration put a collect hit in the same long task as
+    // the URL field's first keystrokes. Nothing on the page reads GA, so the
+    // only cost is that the session is registered a few hundred ms later — the
+    // page view is still attributed to the same document.
+    const cancel = whenIdle(() => {
+      if (configured) return;
+      configured = true;
+      gtag("js", new Date());
+      for (const id of gaMeasurementIds) gtag("config", id);
+    });
+
+    return () => {
+      cancel();
+      // Cancelled before it ran (StrictMode's mount/unmount/mount): allow the
+      // next effect to queue it, or the site would ship with GA silent.
+      if (!configured) scheduled = false;
+    };
   }, []);
 
   /**

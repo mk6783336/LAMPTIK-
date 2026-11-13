@@ -10,6 +10,7 @@ import { PhotoDownloader } from "@/components/photo-downloader";
 import { PlaylistBrowser } from "@/components/playlist-browser";
 import { PlatformIcon } from "@/components/platform-icons";
 import { Breadcrumb } from "@/components/seo/breadcrumb";
+import { DownloaderGuides } from "@/components/seo/DownloaderGuides";
 import { PlatformBridge } from "@/components/seo/platform-bridge";
 import {
   articleNode,
@@ -316,6 +317,16 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
               </div>
             </div>
           </section>
+
+          {/* Format matrix + four-step list + phone troubleshooting, only on
+              the pages whose entry opts in (`guides`). */}
+          {tool.formatGuide ? (
+            <DownloaderGuides
+              variant={tool.formatGuide}
+              pageUrl={pageUrl}
+              updatedAt="2026-11-13"
+            />
+          ) : null}
 
           {/* Mechanism-by-mechanism comparison. Stacked cards, not a table:
               three columns at 390px is horizontal overflow, which the site

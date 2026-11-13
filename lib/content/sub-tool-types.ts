@@ -38,6 +38,15 @@ export interface SubToolGuide {
   anchor?: string;
 }
 
+/**
+ * Which comparison / troubleshooting silo the page renders under the tool.
+ * `audio` = bitrates and M4A vs MP3, `containers` = MP4 vs WebM, `story` =
+ * photo slides against video slides. The block itself lives in
+ * `components/seo/DownloaderGuides.tsx`; only pages whose query asks the
+ * question carry it, so three sibling URLs never show the same matrix.
+ */
+export type SubToolGuideVariant = "audio" | "containers" | "story";
+
 export interface SubTool {
   /** Route segment without a leading slash. */
   slug: string;
@@ -110,6 +119,8 @@ export interface SubTool {
   features: string[];
   /** Other sub-tool slugs to cross-link, in reading order. */
   related: string[];
+  /** Opt-in format matrix + troubleshooting block (see DownloaderGuides). */
+  formatGuide?: SubToolGuideVariant;
   /** Supporting guides for this query, in reading order. */
   guides?: SubToolGuide[];
 }

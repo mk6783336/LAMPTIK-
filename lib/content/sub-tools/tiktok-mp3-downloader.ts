@@ -85,4 +85,5 @@ export const entry: SubTool = {
     "No watermark, no account, no app required",
   ],
   related: ["tiktok-video-download-iphone", "vt-tiktok-com-downloader", "tiktok-story-downloader"],
+  formatGuide: "audio",
 };
