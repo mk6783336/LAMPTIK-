@@ -36,7 +36,7 @@ export const entry: SubTool = {
   facts: [
     ["Container", "MP4"],
     ["Video", "H.264 (AVC)"],
-    ["Aspect", "9:16, 1080×1920"],
+    ["Aspect", "9:16, 720×1280 class (measured)"],
     ["Cost", "Free"],
   ],
   steps: [

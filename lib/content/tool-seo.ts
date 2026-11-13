@@ -222,7 +222,7 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
       {
         question: "What quality do Instagram Reels download in?",
         answer:
-          "The original resolution Instagram stores, usually 1080×1920 (Full HD) for Reels posted after 2021. The panel shows the exact dimensions, codec and file size before you save, and the audio track is included.",
+          "The MP4 Instagram serves to the resolver: three public Reels measured on 2026-11-13 came back at 718×1276, 720×1280 and 576×1024 — 9:16 vertical, H.264, audio included. Instagram's own player draws 1080×1920, but that is not the file it hands out, so this page does not label it Full HD.",
       },
       {
         question: "Can I download IGTV videos, photo posts and carousels?",

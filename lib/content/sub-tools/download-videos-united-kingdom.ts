@@ -16,7 +16,7 @@ export const entry: SubTool = {
   title: "Instagram Reels Downloader UK - No Watermark, Online",
   socialTitle: "Instagram Reels Downloader for the UK - Original MP4, No Watermark",
   description:
-    "Download Instagram Reels in the UK without a watermark: paste the link and the original 1080×1920 MP4, audio included, lands in Downloads. No login, no app.",
+    "Download Instagram Reels in the UK without a watermark: paste the link and the MP4 Instagram serves — 720×1280 class when measured on 2026-11-13 — audio included. No login, no app.",
   keywords: [
     "instagram reels downloader uk",
     "reels downloader online without watermark",
@@ -30,8 +30,8 @@ export const entry: SubTool = {
   h1Lead: "Instagram Reels downloader,",
   h1Accent: "no watermark, online.",
   lede:
-    "The UK spelling of the request: an online Reels downloader that needs no login and installs nothing. Paste an instagram.com/reel/ link and save the original 1080×1920 MP4 with its AAC audio already inside it, so it plays first time in QuickTime, VLC or Photos. TikTok, YouTube and Facebook sit one tap below. Nothing here is gated to UK visitors — the country wording explains the local copyright rules, it does not enforce them.",
-  chips: ["No watermark", "1080×1920 MP4", "No login"],
+    "The UK spelling of the request: an online Reels downloader that needs no login and installs nothing. Paste an instagram.com/reel/ link and save the MP4 Instagram serves — 720×1280 class in our 2026-11-13 measurement, not the 1080×1920 the player displays — with its AAC audio already inside it, so it plays first time in QuickTime, VLC or Photos. TikTok, YouTube and Facebook sit one tap below. Nothing here is gated to UK visitors — the country wording explains the local copyright rules, it does not enforce them.",
+  chips: ["No watermark", "MP4, audio inside", "No login"],
   facts: [
     ["Copyright basis", "CDPA 1988 · s.30"],
     ["DRM media", "Not supported"],
@@ -84,9 +84,9 @@ export const entry: SubTool = {
         "The CDPA has no blanket private-copying exception, so the answer turns on purpose: fair dealing for criticism, review, quotation or news reporting is the narrow lawful ground, and republishing someone else's Reel is not covered by it. Personal saves are widely done and rarely pursued, which is not the same as being permitted. The legal guide linked below covers the distinction; neither page is legal advice.",
     },
     {
-      question: "Why does my Reel save as 1080×1920?",
+      question: "Why does my Reel save smaller than 1080×1920?",
       answer:
-        "Because that is the shape Instagram publishes Reels in: 9:16 vertical at 1080×1920, H.264 with AAC audio. Nothing is cropped or letterboxed on the way out. If an uploader posted at a lower resolution, the file matches what was published — the tool reports the real size rather than scaling it up.",
+        "Because Instagram's player shows a larger frame than the file the resolver receives. Three public reels measured on 2026-11-13 came back at 718×1276, 720×1280 and 576×1024 — 9:16 vertical, H.264 with AAC audio, nothing cropped or letterboxed. The page names that class instead of promising 1080×1920, and nothing is scaled up to reach it.",
     },
     {
       question: "Do Reels carry a watermark or username stamp?",

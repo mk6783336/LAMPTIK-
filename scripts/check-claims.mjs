@@ -227,6 +227,34 @@ const MEASUREMENTS = {
     mention: /\byoutube\b/i,
     numbers: "\\d{2,3}\\s?(?:kbps|kbit\\/s)",
   },
+  "instagram.height": {
+    // Three public reels measured 2026-11-13: 718×1276, 720×1280 and 576×1024.
+    // Instagram's player shows 1080×1920 for these; the resolver hands back the
+    // 720p-class rendition, so 1920 is a ceiling the file never reaches.
+    measured: "720×1280 class (718×1276, 720×1280, 576×1024)",
+    display: "720×1280",
+    max: 1280,
+    unit: "height",
+    date: "2026-11-13",
+    method: "bytes of the served MP4, tkhd box",
+    platforms: ["instagram"],
+    mention: /\binstagram\b/i,
+    numbers: "1080p|1080×1920|1080x1920|1920p|2160p|4k|720p",
+  },
+  "twitter.height": {
+    // Measured 2026-11-13 on an @NASA post: X published 3840×2160 and the
+    // resolver handed that variant back, so 1080p claims are understatements
+    // here, not lies.
+    measured: "3840×2160",
+    display: "3840×2160",
+    max: 2160,
+    unit: "height",
+    date: "2026-11-13",
+    method: "bytes of the served MP4, tkhd box",
+    platforms: ["twitter"],
+    mention: /\btwitter\b|\bx\.com\b|\btweets?\b/i,
+    numbers: "1080p|720p|2160p|4k",
+  },
   "tiktok.audio": {
     measured: "128–256 kbps",
     display: "128–256",
@@ -296,7 +324,11 @@ const CONTENT_FILES = [
 ];
 
 /** Route files whose copy renders directly (metadata + hero + FAQ). */
-const PAGE_FILES = [{ file: "app/(site)/youtube-downloader/page.tsx", platform: "youtube" }];
+const PAGE_FILES = [
+  { file: "app/(site)/youtube-downloader/page.tsx", platform: "youtube" },
+  { file: "app/(site)/instagram-reels-downloader/page.tsx", platform: "instagram" },
+  { file: "components/platform-page.tsx", platform: "any" },
+];
 
 const SUB_TOOL_DIR = "lib/content/sub-tools";
 
@@ -403,12 +435,16 @@ function scanClaims(file, source, platform) {
       if (!ownPlatform && !measurement.mention.test(text)) continue;
       if (/\?["'”’)\],]*\s*$/.test(text)) continue;
       if (NEGATION.test(text) || QUALIFIED.test(text)) continue;
+      // A resolution is a spec, not a verb: "Instagram serves Reels at 1080×1920"
+      // promises a height without saying "download". Shared component copy is
+      // judged the same way once the sentence names the platform.
+      const useBare = ownPlatform || measurement.unit === "height";
       // A sentence that already states the measured value is explaining the
       // ceiling, not promising past it.
       if (measurement.display && text.includes(measurement.display)) continue;
       // `related: ["youtube-to-mp4-1080p"]` is a link target, not a promise.
       if (/^\s*(?:related|guides|slug|href|anchor|canonical)\s*:/.test(text)) continue;
-      const hit = text.match(ownPlatform ? measurement.bare : measurement.pattern);
+      const hit = text.match(useBare ? measurement.bare : measurement.pattern);
       if (!hit) continue;
       // Only numbers ABOVE the measured ceiling are false. 160 kbps on a page
       // whose audio measures 128–160 is the honest figure, not a promise.
