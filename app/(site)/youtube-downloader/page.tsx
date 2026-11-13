@@ -142,9 +142,6 @@ export const dynamic = "force-static";
  * above the fold, where a crawler meets it on the same pass.
  */
 const CRAWL_BRIDGE = [
-  // The captions route is new and unlinked from the footer; this strip is the
-  // one place a crawler reaches it from a page Google recrawls every day.
-  { href: "/youtube-subtitles", label: "YouTube subtitles & transcript (SRT, VTT, TXT)" },
   { href: "/facebook-video-downloader", label: "Facebook video downloader (HD, fb.watch)" },
   { href: "/twitter-video-downloader", label: "X / Twitter video downloader (MP4)" },
 ];

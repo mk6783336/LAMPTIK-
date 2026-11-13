@@ -63,8 +63,6 @@ const REVISED = {
   facebook: "2026-11-09",
   twitter: "2026-11-09",
   youtube: "2026-11-08",
-  // 2026-11-13: new route — captions and transcripts, sibling of the video page.
-  subtitles: "2026-11-13",
   toolsHub: "2026-11-08",
   // 2026-11-12: the US, UK and Germany pages were retargeted from the
   // "download videos in <country>" phrasing (which nobody searches) onto the
@@ -150,12 +148,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "daily",
       priority: 1,
       alternates: { languages: platformLanguages["youtube-downloader"] },
-    },
-    {
-      url: `${siteUrl}/youtube-subtitles`,
-      lastModified: revised(REVISED.subtitles),
-      changeFrequency: "weekly",
-      priority: 0.9,
     },
     // The two Spanish twins. Written as literal URLs, like the creator tools:
     // `scripts/check-content-links.mjs` reads this file structurally and can
