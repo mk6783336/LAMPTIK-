@@ -54,9 +54,14 @@ export const entry: SubTool = {
         "Yes. Shorts expose the same audio track as a regular upload, so the extraction works exactly the same way. Only the delivery URL shape differs.",
     },
     {
-      question: "Is the MP3 really 320 kbps?",
+      question: "Is the MP3 really 320 kbps, and can you make it 320?",
       answer:
-        "It is the best rate the upload carries, and YouTube normally stores 128 to 256 kbps AAC. A converter that promises a flat 320 kbps is padding a lower-rate source, which adds file size without adding detail. The panel shows the real size so you can judge it.",
+        "No, and neither can anyone else honestly. YouTube stores a Short's audio as AAC or Opus at roughly 128–160 kbps for the muxed stream, sometimes up to 256 kbps on high-bitrate uploads — there is no 320 kbps master to fetch. Encoding that source at 320 kbps is upsampling: the file grows, the waveform gains nothing, and the encoder simply has more bits to describe the same detail. This page takes the best rate the upload actually carries and prints the real size, so you can see what you got instead of trusting a label.",
+    },
+    {
+      question: "Opus or AAC — which one is the Short's audio stored as?",
+      answer:
+        "It depends on the stream YouTube serves for that Short: WebM renditions carry Opus, MP4 renditions carry AAC. Both are lossy and both are limited by the same source. M4A here is the untouched AAC track when one exists (no generation loss, smallest file); MP3 is a single encode for older car stereos and software that refuses AAC. If your editor accepts M4A, take it — that is the closest thing to the original.",
     },
     {
       question: "What is the difference between the M4A and MP3 buttons?",

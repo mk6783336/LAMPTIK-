@@ -1312,7 +1312,10 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
           <span className="min-w-0 flex-1">
             <span className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-[var(--text)]">
               High-speed download partner
-              <span className="rounded-full border border-amber-500/30 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-200/90">
+              {/* 12px is the site's type floor: at 10px this disclosure was the
+                  smallest text on the page and unreadable on a phone, which is
+                  the opposite of what a sponsorship label is for. */}
+              <span className="rounded-full border border-amber-500/30 px-1.5 py-0.5 text-xs font-medium uppercase tracking-wider text-amber-200/80">
                 {t.sponsored}
               </span>
             </span>

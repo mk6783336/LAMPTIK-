@@ -70,6 +70,11 @@ export const entry: SubTool = {
         "No, and any tool that claims otherwise is guessing. TikTok stops serving the story media the moment the window closes, so there is nothing left to download — the file is not hidden behind a paywall or a login, it is simply gone from the public edge. Save it while the story is live: the link that worked yesterday answers with an empty item today.",
     },
     {
+      question: "Why does the story link stop working after a few hours?",
+      answer:
+        "The story itself lives for 24 hours, but the media URL behind it lives for a much shorter window: TikTok signs each CDN address with an expiry, so a link copied into a note today answers with nothing by tonight. This page does not store those addresses — it re-resolves the story on every request and returns a freshly signed one, which is why the same story link pastes in fine hours later while a saved media URL does not. Once the file is in your download manager it is yours; the expiry applies to TikTok's address, not to your copy.",
+    },
+    {
       question:
         "How do I download a TikTok story in original resolution without the username tag?",
       answer:

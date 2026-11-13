@@ -62,9 +62,11 @@ const FAQS: ReadonlyArray<{ question: string; answer: string }> = [
       "Whatever X published for that post, up to 1080p. Short clips are sometimes uploaded only at 480p or 720p, in which case those are the buttons shown — there is no higher stream to offer.",
   },
   {
-    question: "Do GIFs download as GIF files?",
+    // Wording follows the query ("save x video gif to mp4") rather than the
+    // format question someone would only ask after they already knew the answer.
+    question: "Why does X save GIFs as MP4 instead of GIF?",
     answer:
-      "X converts GIFs to looping MP4 before it stores them, so a GIF downloads as an MP4 that loops with no sound. That is the exact file the platform serves; a real .gif would be a re-encode.",
+      "Because X re-encodes every uploaded GIF to a looping H.264 MP4 before it stores it — a real GIF repeats whole frames with no inter-frame compression, so a five-second loop could weigh more than the whole page. What you save here is that exact MP4: it loops silently in QuickTime, VLC, Photos and every editor, and it uploads to platforms that reject .gif. Asking for a real .gif would mean decoding the MP4 and re-palettising it, which is a lossy round trip for a larger file.",
   },
   {
     question: "Is there a watermark or do I need an account?",

@@ -299,6 +299,11 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
         note: "Reels, Watch uploads and fb.watch links.",
       },
       {
+        href: "/instagram-reels-audio",
+        anchor: "Instagram Reels audio to MP3 (M4A original or MP3)",
+        note: "Rip the audio track on its own — for re-edits, samples and trending sounds.",
+      },
+      {
         href: "/ur/instagram-reels-downloader",
         anchor: "Instagram Reels downloader in Urdu",
         note: "The same Reels tool with Urdu instructions — same original HD file.",
@@ -408,6 +413,20 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
         question: "What if the fb.watch link no longer opens?",
         answer:
           "fb.watch is a shortener, so the link points at the post rather than at the video itself, and a shortener can expire or stop resolving once the original post is deleted. Open the video in Facebook and share it again for a fresh link — a full /videos/ URL pasted from the address bar works too.",
+      },
+      {
+        // Tier-1 map #11: «save facebook reel to camera roll iphone shortcut».
+        // The shortcut in the query is an iOS Shortcuts recipe; the point of
+        // the answer is that Safari needs no recipe at all.
+        question: "How do I save a Facebook reel to my iPhone Camera Roll without a Shortcut?",
+        answer:
+          "Paste the reel's share link here and tap Download — Safari writes the MP4 into Files → On My iPhone → Downloads, and two taps in Files (long-press the file → Share → Save Video) put it in the Camera Roll. No Shortcuts app, no profile to install and no extension: iOS shortens a website's reach into Photos on purpose, which is why every downloader ends in the same Files step. If the reel is vertical, keep the file as it arrives — cropping it before saving only loses pixels.",
+      },
+      {
+        // Tier-1 map #12: «download facebook video high bitrate original quality».
+        question: "Does the download keep the bitrate Facebook served, or is it re-compressed?",
+        answer:
+          "It keeps it. The file is the rendition Meta's own CDN hands to its player — the resolver probes every candidate stream, keeps the highest muxed H.264 + AAC one, and the bytes are proxied to your browser without an encoder in the path. Nothing is re-compressed, so the bitrate you get is the bitrate Facebook published; if the uploader only ever sent a 360p source, that is the ceiling and no tool can lift it. The panel prints the resolution and bitrate of each rendition so an SD fallback is never labelled HD.",
       },
     ],
     comparison: [

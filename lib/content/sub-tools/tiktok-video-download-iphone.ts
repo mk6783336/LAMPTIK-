@@ -80,6 +80,11 @@ export const entry: SubTool = {
         "No. The tool requests the source stream TikTok's player uses, not the stamped copy the share menu produces. Nothing is cropped or blurred out — the watermark was simply never in the file.",
     },
     {
+      question: "Why did the same TikTok link stop working the next day?",
+      answer:
+        "Because TikTok signs its CDN addresses with a short expiry — minutes, rarely more than a few hours — so a link that resolved yesterday is dead today even though the video is still online. This page never stores those addresses: it re-resolves the post on every request and asks TikTok for a freshly signed one, which is why pasting the same tiktok.com link a week later still works. Your saved MP4 is unaffected — Safari wrote the file, not the link.",
+    },
+    {
       question: "Do I need an app or a Shortcut?",
       answer:
         "No. Everything happens in Safari. There is no profile to trust, no shortcut to install, and no app that needs broad photo-library permissions — which is the main reason people go looking for one and regret it.",

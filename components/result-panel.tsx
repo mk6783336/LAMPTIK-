@@ -609,7 +609,9 @@ export function ResultPanel({
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-[var(--text)]">
                   High-speed download partner
-                  <span className="rounded-full border border-amber-500/30 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-200/90">
+                  {/* Same 12px floor as the loader's disclosure — a sponsor
+                      badge nobody can read is not a disclosure. */}
+                  <span className="rounded-full border border-amber-500/30 px-1.5 py-0.5 text-xs font-medium uppercase tracking-wider text-amber-200/80">
                     {t.sponsored}
                   </span>
                 </span>
