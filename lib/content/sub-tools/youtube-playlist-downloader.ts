@@ -26,7 +26,7 @@ export const entry: SubTool = {
   h1Lead: "A whole playlist.",
   h1Accent: "One clean file at a time.",
   lede:
-    "A playlist is a list, not a single file, so a downloader that promises one ZIP is either building a second, fragile extractor or quietly dropping half your videos. This page reads the public playlist through YouTube's own browse data, keeps the creator's order, and opens each video in the same 1080p and MP3 downloader the rest of the site uses.",
+    "A playlist is a list, not a single file, so a downloader that promises one ZIP is either building a second, fragile extractor or quietly dropping half your videos. This page reads the public playlist through YouTube's own browse data, keeps the creator's order, and opens each video in the same MP4 and MP3 downloader the rest of the site uses.",
   chips: ["First 50 videos", "MP4 or MP3", "No sign-in"],
   facts: [
     ["Listing", "First 50 videos"],

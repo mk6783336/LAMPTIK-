@@ -13,10 +13,10 @@ import type { SubTool } from "@/lib/content/sub-tool-types";
 export const entry: SubTool = {
   slug: "download-videos-germany",
   platform: "youtube",
-  title: "YouTube Video Downloader Germany - 1080p MP4 & MP3",
-  socialTitle: "YouTube Video herunterladen - 1080p MP4 and Honest MP3 for Germany",
+  title: "YouTube Video Downloader Germany - MP4 & MP3",
+  socialTitle: "YouTube Video herunterladen - MP4 and Honest MP3 for Germany",
   description:
-    "Download YouTube videos in Germany as 1080p MP4 or MP3: paste the link, no app. Region locks and DRM are named, not bypassed. TikTok video herunterladen too.",
+    "Download YouTube videos in Germany as MP4 or MP3: paste the link, no app. Region locks and DRM are named, not bypassed. TikTok video herunterladen too.",
   keywords: [
     "youtube downloader germany",
     "youtube video herunterladen",
@@ -26,12 +26,12 @@ export const entry: SubTool = {
     "tiktok video download ohne wasserzeichen",
     "youtube video downloader kostenlos",
   ],
-  eyebrow: "Germany · YouTube herunterladen · 1080p + MP3",
+  eyebrow: "Germany · YouTube herunterladen · MP4 + MP3",
   h1Lead: "YouTube video downloader,",
-  h1Accent: "1080p MP4 and an honest MP3.",
+  h1Accent: "One MP4, and an honest MP3.",
   lede:
     "The request in Germany is usually typed as \"YouTube video herunterladen\" — this is the English answer, with the German-language landing at /de. Paste a watch, /shorts/, youtu.be or music.youtube.com link and save the MP4 YouTube published, or one honest MP3 of its audio with the bitrate actually received. TikTok, Reels and Facebook sit one tap below. Region locks and DRM are reported, not routed around.",
-  chips: ["YouTube first", "1080p + MP3", "No app"],
+  chips: ["YouTube first", "MP4 + MP3", "No app"],
   facts: [
     ["Copyright basis", "UrhG · §53 private copies"],
     ["DRM", "§95a — not bypassed"],
@@ -47,7 +47,7 @@ export const entry: SubTool = {
     {
       title: "Pick MP4 or MP3, and read the bitrate",
       body:
-        "MP4 gives you the video rendition YouTube published, up to 1080p. MP3 gives you one encode from the source audio track, and the tool reports the bitrate it actually received — typically around 128 to 160 kbps, because that is what YouTube uploads carry. A converter advertising a fixed 320 kbps is padding the same audio into a larger container: more bytes, no more detail.",
+        "MP4 gives you the muxed rendition YouTube serves; measured on 2026-11-13 that was 640×360 even for a 4K upload, because above 720p the platform splits video and audio into separate tracks. MP3 gives you one encode from the source audio track, and the tool reports the bitrate it actually received — typically around 128 to 160 kbps, because that is what YouTube uploads carry. A converter advertising a fixed 320 kbps is padding the same audio into a larger container: more bytes, no more detail.",
     },
   ],
   notes: [
@@ -96,12 +96,12 @@ export const entry: SubTool = {
     {
       question: "Wie lade ich ein YouTube-Video in Deutschland herunter?",
       answer:
-        "Link kopieren, oben einfügen, dann MP4 in 1080p oder MP3 wählen — ohne App, Konto oder Wasserzeichen. Regionalsperren und DRM werden gemeldet, nicht umgangen; die deutschsprachige Seite dafür ist /de.",
+        "Link kopieren, oben einfügen, dann MP4 oder MP3 wählen — ohne App, Konto oder Wasserzeichen. Regionalsperren und DRM werden gemeldet, nicht umgangen; die deutschsprachige Seite dafür ist /de.",
     },
   ],
-  appName: "LAMP TIK - YouTube Video Downloader (1080p MP4 & MP3)",
+  appName: "LAMP TIK - YouTube Video Downloader (MP4 & MP3)",
   features: [
-    "YouTube 1080p MP4, Shorts and youtu.be links",
+    "YouTube MP4, Shorts and youtu.be links",
     "MP3 with the bitrate actually received",
     "music.youtube.com recognised without rewriting",
     "TikTok, Reels and Facebook from one page",

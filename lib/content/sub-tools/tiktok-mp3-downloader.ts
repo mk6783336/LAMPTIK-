@@ -82,7 +82,7 @@ export const entry: SubTool = {
   appName: "LAMP TIK TikTok to MP3 Converter",
   features: [
     "Extract the original TikTok audio track",
-    "MP3 and M4A output, up to 320 kbps",
+    "MP3 and M4A at the rate the post carries (128–256 kbps measured)",
     "No video re-encode, no added noise",
     "Works with vt.tiktok.com and vm.tiktok.com short links",
     "No watermark, no account, no app required",

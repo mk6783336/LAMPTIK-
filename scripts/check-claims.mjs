@@ -192,11 +192,111 @@ const CLAIM_RULES = [
 const NEGATION =
   /\b(?:no|not|never|cannot|can't|doesn't|don't|isn't|aren't|refuse[sd]?|unsupported|impossible|no longer)\b/i;
 
+/**
+ * Measured ceilings: numbers a page may promise only up to.
+ *
+ * These are the claims that survive a capability review because they look like
+ * specs rather than features. "Full HD 1080p" is a spec the resolver cannot
+ * meet when it serves a 640×360 file, and "up to 320 kbps" is not a hedge — it
+ * is the shape the false claim usually takes.
+ *
+ * `mention` is what makes the rule work across files: a YouTube number inside a
+ * TikTok country page is still a YouTube claim, so the sentence decides which
+ * measurement applies, not the file's `platform` field alone.
+ */
+const MEASUREMENTS = {
+  "youtube.height": {
+    measured: "640×360",
+    display: "640×360",
+    max: 640,
+    unit: "height",
+    date: "2026-11-13",
+    method: "bytes of the served MP4, tkhd box",
+    platforms: ["youtube"],
+    mention: /\byoutube\b/i,
+    numbers: "1080p|2160p|4k|1080×1920|1080x1920|720p",
+  },
+  "youtube.audio": {
+    measured: "128–160 kbps (256 for Shorts)",
+    display: "128–160",
+    max: 256,
+    unit: "kbps",
+    date: "2026-11-13",
+    method: "published AAC rate",
+    platforms: ["youtube"],
+    mention: /\byoutube\b/i,
+    numbers: "\\d{2,3}\\s?(?:kbps|kbit\\/s)",
+  },
+  "tiktok.audio": {
+    measured: "128–256 kbps",
+    display: "128–256",
+    max: 256,
+    unit: "kbps",
+    date: "2026-11-13",
+    method: "source AAC rate TikTok serves",
+    platforms: ["tiktok"],
+    mention: /\btiktok\b/i,
+    numbers: "\\d{2,3}\\s?(?:kbps|kbit\\/s)",
+  },
+};
+
+/** Height or rate carried by a matched number, or null when it is not one. */
+function measuredValue(text, unit) {
+  if (unit === "height") {
+    if (/\b4k\b/i.test(text)) return 2160;
+    const pair = text.match(/(\d{3,4})\s?[×x]\s?(\d{3,4})/);
+    if (pair) return Number(pair[2]);
+    const single = text.match(/(\d{3,4})p/i);
+    return single ? Number(single[1]) : null;
+  }
+  const rate = text.match(/(\d{2,3})/);
+  return rate ? Number(rate[1]) : null;
+}
+
+/**
+ * Verbs that hand a file to the visitor, and quantifiers that turn a number
+ * into a promise. "Above 720p YouTube stores…" has neither, so the honest
+ * explanation of the ceiling stays readable.
+ */
+const DELIVERY_VERBS =
+  "download|save|get|grab|convert|stream|deliver|offer|export|pick|choose|select|request|watch|record";
+const ABSOLUTE_QUANTIFIERS = "up to|full|fixed|guaranteed|always|every file|every download";
+
+/** Words that make a number conditional or measured instead of promised. */
+/**
+ * Cues that the sentence is *about* a number rather than selling it: refusing
+ * it ("a 320 kbps file is padded"), explaining the merge ("has re-encoded"),
+ * quoting a label, or reporting the test that measured the ceiling.
+ */
+const QUALIFIED =
+  /\b(?:when|if|where|only|measured|tests?|testing|actually|really|instead|depends|ceiling|cap|capped|below|above|except|conditional|rather than|labels?|labell?ed|upsampl\w*|re-encod\w*|encod\w*|container|padded|padding|merg\w*|claims?|advertis\w*)\b/i;
+
+function numericPromise(numbers) {
+  return new RegExp(
+    `\\b(?:${DELIVERY_VERBS})\\b(?:\\s+[\\w'’-]+){0,2}\\s+(?:${numbers})\\b` +
+      `|\\b(?:${ABSOLUTE_QUANTIFIERS})\\b[^.\\n]{0,20}\\b(?:${numbers})\\b`,
+    "i",
+  );
+}
+
+for (const [id, measurement] of Object.entries(MEASUREMENTS)) {
+  measurement.pattern = numericPromise(measurement.numbers);
+  // On a page that is about this platform, the bare number is the claim: a
+  // title reading "…Germany - 1080p MP4 & MP3" promises 1080p without needing
+  // a verb. Cross-platform sentences still need one, so a TikTok page saying
+  // "YouTube tops out at 1080p" is judged by what the sentence says.
+  measurement.bare = new RegExp(`(?<![–-])\\b(?:${measurement.numbers})\\b`, "i");
+  measurement.id = id;
+}
+
 /** Content that renders as page copy. */
 const CONTENT_FILES = [
   "lib/content/tool-seo.ts",
   "lib/i18n/platform-landings.ts",
 ];
+
+/** Route files whose copy renders directly (metadata + hero + FAQ). */
+const PAGE_FILES = [{ file: "app/(site)/youtube-downloader/page.tsx", platform: "youtube" }];
 
 const SUB_TOOL_DIR = "lib/content/sub-tools";
 
@@ -236,6 +336,17 @@ function platformOf(source) {
  * copy wraps mid-thought and a refusal often follows on the same line.
  */
 function scanClaims(file, source, platform) {
+  // Keyword lists are invisible metadata, not copy: "youtube mp4 1080p" there is
+  // a query this page answers, not a resolution it claims. Blank them out while
+  // keeping offsets, so reported line numbers still point at the code.
+  // Comments are notes to the next editor, not sentences a visitor reads. The
+  // honest ones explain why the site refuses a number ("…against sites
+  // advertising a fixed 320 kbps"), so scanning them reports the opposite of
+  // the truth. Masked line-by-line to preserve offsets.
+  const masked = source
+    .replace(/keywords:\s*\[[^\]]*\]/g, (block) => block.replace(/[^\n]/g, " "))
+    .replace(/^[ \t]*(?:\/\/|\*|\/\*).*$/gm, (line) => " ".repeat(line.length));
+  source = masked;
   const sentences = [];
   // Each line is its own unit as well as each sentence: the registry is one
   // string per line, and a long paragraph that happens to contain "cannot"
@@ -280,6 +391,42 @@ function scanClaims(file, source, platform) {
         });
         break;
       }
+    }
+  }
+
+  // Measured numbers: a resolution or bitrate above what the platform serves is
+  // a false spec, and it reads as trustworthy precisely because it is precise.
+  for (const measurement of Object.values(MEASUREMENTS)) {
+    for (const sentence of sentences) {
+      const text = sentence.text;
+      const ownPlatform = measurement.platforms.includes(platform);
+      if (!ownPlatform && !measurement.mention.test(text)) continue;
+      if (/\?["'”’)\],]*\s*$/.test(text)) continue;
+      if (NEGATION.test(text) || QUALIFIED.test(text)) continue;
+      // A sentence that already states the measured value is explaining the
+      // ceiling, not promising past it.
+      if (measurement.display && text.includes(measurement.display)) continue;
+      // `related: ["youtube-to-mp4-1080p"]` is a link target, not a promise.
+      if (/^\s*(?:related|guides|slug|href|anchor|canonical)\s*:/.test(text)) continue;
+      const hit = text.match(ownPlatform ? measurement.bare : measurement.pattern);
+      if (!hit) continue;
+      // Only numbers ABOVE the measured ceiling are false. 160 kbps on a page
+      // whose audio measures 128–160 is the honest figure, not a promise.
+      // A quoted label is being discussed, not sold: "a page showing ‘1080p’".
+      const at = sentence.at + (hit.index ?? 0);
+      const quoted = /["'‘’“”«»]/.test(source.charAt(at - 1)) &&
+        /["'‘’“”«»]/.test(source.charAt(at + hit[0].length));
+      if (quoted) continue;
+      const value = measuredValue(hit[0], measurement.unit);
+      if (value === null || value <= measurement.max) continue;
+      failures.push({
+        kind: "measurement",
+        file,
+        line: lineAt(source, sentence.at + (hit.index ?? 0)),
+        message:
+          `promises "${hit[0].trim().slice(0, 70)}" but ${measurement.id} measured ` +
+          `${measurement.measured} on ${measurement.date} (${measurement.method})`,
+      });
     }
   }
 }
@@ -357,6 +504,16 @@ async function scanAllClaims() {
       continue;
     }
     scanClaims(file, source, "any");
+  }
+  for (const page of PAGE_FILES) {
+    let source;
+    try {
+      source = await readFile(path.join(root, page.file), "utf8");
+    } catch {
+      notes.push(`${page.file} not found — skipped`);
+      continue;
+    }
+    scanClaims(page.file, source, page.platform);
   }
 }
 
@@ -530,7 +687,8 @@ const liveNote = liveResults.length
   : "";
 console.log(
   `claim audit: ${capabilityIds.length} capabilities (${supported} supported, ${unsupported} refused), ` +
-    `${CLAIM_RULES.length} promise rule(s), ${LIVE_PROBES.length} probe shape(s)${liveNote}`,
+    `${CLAIM_RULES.length} promise rule(s), ${Object.keys(MEASUREMENTS).length} measured ceiling(s), ` +
+    `${LIVE_PROBES.length} probe shape(s)${liveNote}`,
 );
 
 if (liveMode && liveResults.some((result) => result.state === "unreachable")) {
