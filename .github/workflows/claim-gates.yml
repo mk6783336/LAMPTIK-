@@ -1,0 +1,74 @@
+name: Claim and metadata gates
+
+# Two gates that only mean something against a real page, run on every push.
+#
+# `npm run check:claims` is static: it reads the content registry, the route
+# copy and the resolver sources, and fails when a page promises a capability or
+# a resolution the code cannot deliver. It needs no server, so it runs first and
+# fails the job in seconds.
+#
+# `npm run check:metadata` reads rendered `<head>` tags — canonical, hreflang,
+# x-default, FAQ schema, one h1 — so it needs a build. It is pointed at the
+# build it just made (`--local=http://127.0.0.1:3100`) rather than at
+# lamptik.online, because a push that breaks a canonical must fail here, not
+# pass by measuring production. The pages still declare production canonical
+# URLs: `META_CANONICAL_ORIGIN` stays the default, which is the point of the
+# check.
+#
+# The claim gate never touches the network in this mode. `--live` probes the
+# deployed API and belongs to a scheduled job, not to a pull request.
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: claim-gates-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Claim gate (static)
+        run: npm run check:claims
+
+      - name: Build
+        run: npm run build
+
+      - name: Start the built site
+        run: |
+          nohup npx next start -p 3100 > /tmp/next.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3100/api/version > /dev/null; then
+              echo "server ready after ${attempt} attempt(s)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "server did not become ready"
+          cat /tmp/next.log
+          exit 1
+
+      - name: Metadata gate (local build)
+        run: npm run check:metadata -- --local=http://127.0.0.1:3100
+
+      - name: Server log on failure
+        if: failure()
+        run: cat /tmp/next.log || true
