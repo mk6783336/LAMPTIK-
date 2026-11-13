@@ -88,7 +88,7 @@ export const entry: SubTool = {
     {
       question: "Why is my file 720p when TikTok plays sharper?",
       answer:
-        "Because that is what was uploaded. TikTok exposes up to 1080p for uploads that were posted at that size; older posts, screen-recorded reposts and some re-encoded videos top out lower. The tool reports the rendition the platform actually serves and does not upscale a smaller file to a larger one — a 720p source relabelled 1080p is a bigger file with the same detail.",
+        "Because the tool hands you TikTok's play address, not its in-app upscale. Three posts measured on 2026-11-13 — a 2019 upload, a 2022 one and a 2025 one — all served 576×1024 through that address, while the app played them sharper. The file is reported at that size and never upscaled: a smaller source relabelled 1080p is a bigger file with the same detail.",
     },
     {
       question: "Does a carrier-locked iPhone change anything?",

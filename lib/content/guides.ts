@@ -104,7 +104,7 @@ export const GUIDES: Guide[] = [
       {
         heading: "What determines the quality",
         paragraphs: [
-          "You always get the highest resolution the creator uploaded and TikTok still serves publicly. Most uploads since 2022 are 1080p or higher; older or heavily re-shared videos may be 720p. The result panel shows the file size before you download, which is the quickest honest signal of quality — a 15-second HD clip is typically 3–8 MB, while the same clip at low resolution is under 1 MB.",
+          "You get the file TikTok's play address serves, at the size it serves it: three posts measured on 2026-11-13 (2019, 2022 and 2025 uploads) all came back 576×1024, even though the app played them sharper. The result panel shows the file size before you download, which is the quickest honest signal of quality — a 15-second clip at that size is typically 1–3 MB.",
           "Audio is separate. The MP3 button extracts the video's sound track — the original sound, or the licensed music TikTok mixed in — so you don't need to download a video to get a ringtone or sample.",
         ],
       },

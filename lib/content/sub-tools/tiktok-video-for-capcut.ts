@@ -17,7 +17,7 @@ export const entry: SubTool = {
   socialTitle:
     "Download a TikTok Video for CapCut — Watermark-Free H.264 MP4 That Imports",
   description:
-    "Get a watermark-free TikTok clip CapCut actually imports: H.264 MP4 with AAC audio, up to 1080p. Paste the link, save the file, drop it on the timeline.",
+    "Get a watermark-free TikTok clip CapCut actually imports: H.264 MP4 with AAC audio, 576×1024 as measured on 2026-11-13. Paste the link, save the file, drop it on the timeline.",
   keywords: [
     "tiktok video for capcut",
     "download tiktok video to edit",
@@ -32,7 +32,7 @@ export const entry: SubTool = {
   h1Accent: "The file CapCut opens.",
   lede:
     "CapCut imports H.264 video with AAC audio, and that is exactly what TikTok serves to its own player — so the clean download is editable as-is, on desktop and on mobile. What usually breaks an import is not the download: it is HEVC from a phone recording, or a re-uploaded clip that was already compressed twice.",
-  chips: ["H.264 + AAC", "No watermark", "Up to 1080p"],
+  chips: ["H.264 + AAC", "No watermark", "576×1024 measured"],
   facts: [
     ["Container", "MP4"],
     ["Video", "H.264 (AVC)"],
