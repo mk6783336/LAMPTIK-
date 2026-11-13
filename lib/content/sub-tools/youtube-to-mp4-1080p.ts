@@ -9,8 +9,12 @@ import type { SubTool } from "@/lib/content/sub-tool-types";
 export const entry: SubTool = {
   slug: "youtube-to-mp4-1080p",
   platform: "youtube",
-  title: "YouTube to MP4 1080p - Download HD Video Free",
-  socialTitle: "YouTube to MP4 - Save the Real 1080p Stream, Not an Upscale",
+  // The title used to promise 1080p flat ("Download HD Video Free"), while
+  // the resolver keeps the tallest rendition the upload carries — 720p when
+  // that is the source ceiling. The keyword stays, the condition is now in
+  // the title itself instead of only in the paragraph below it.
+  title: "YouTube to MP4 1080p - When the Upload Really Has It",
+  socialTitle: "YouTube to MP4 - The Tallest Stream the Upload Carries",
   description:
     "Convert a YouTube link to MP4 up to 1080p: paste a watch, share or Shorts URL and save the HD rendition YouTube published. Free, no app, no account.",
   keywords: [
