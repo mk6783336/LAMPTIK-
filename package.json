@@ -16,6 +16,8 @@
     "check:sitemap": "node scripts/check-sitemap.mjs",
     "check:i18n": "node scripts/check-i18n-seo.mjs",
     "check:metadata": "node scripts/check-metadata.mjs",
+    "check:claims": "node scripts/check-claims.mjs",
+    "check:claims:live": "node scripts/check-claims.mjs --live",
     "watch:index": "node scripts/watch-unindexed.mjs",
     "ads:health": "node scripts/ads-health.mjs",
     "twitter:health": "node scripts/twitter-health.mjs",
@@ -31,7 +33,7 @@
     "seo:gsc": "node scripts/gsc-pages.mjs",
     "seo:scoreboard": "node scripts/seo-scoreboard.mjs",
     "site:build": "node scripts/build-pages-site.mjs",
-    "verify": "tsc --noEmit && next lint --max-warnings=0 && node scripts/check-content-links.mjs && next build"
+    "verify": "tsc --noEmit && next lint --max-warnings=0 && node scripts/check-content-links.mjs && node scripts/check-claims.mjs && next build"
   },
   "dependencies": {
     "@distube/ytdl-core": "^4.16.12",
