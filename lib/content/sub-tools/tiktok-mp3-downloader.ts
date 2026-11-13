@@ -87,6 +87,6 @@ export const entry: SubTool = {
     "Works with vt.tiktok.com and vm.tiktok.com short links",
     "No watermark, no account, no app required",
   ],
-  related: ["tiktok-video-download-iphone", "vt-tiktok-com-downloader", "tiktok-story-downloader"],
+  related: ["tiktok-video-download-iphone", "vt-tiktok-com-downloader", "tiktok-photo-downloader"],
   formatGuide: "audio",
 };

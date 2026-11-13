@@ -10,7 +10,6 @@ import { entry as instagramReelsAudio } from "./instagram-reels-audio";
 import { entry as instagramReelsToMp4 } from "./instagram-reels-to-mp4";
 import { entry as tiktokMp3 } from "./tiktok-mp3-downloader";
 import { entry as tiktokPhoto } from "./tiktok-photo-downloader";
-import { entry as tiktokStory } from "./tiktok-story-downloader";
 import { entry as tiktokVideoForCapcut } from "./tiktok-video-for-capcut";
 import { entry as tiktokVideoIphone } from "./tiktok-video-download-iphone";
 import { entry as vtTiktok } from "./vt-tiktok-com-downloader";
@@ -45,7 +44,6 @@ import { entry as youtubeVideoIphone } from "./youtube-video-download-iphone";
 export const SUB_TOOLS: readonly SubTool[] = [
   tiktokMp3,
   youtubeToMp3,
-  tiktokStory,
   facebookReels,
   youtubeShorts,
   youtubeToMp4,

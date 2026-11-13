@@ -109,7 +109,7 @@ export const entry: SubTool = {
     "Works when TikTok has hidden the Save button",
     "Free, unlimited, no account",
   ],
-  related: ["tiktok-mp3-downloader", "vt-tiktok-com-downloader", "tiktok-story-downloader"],
+  related: ["tiktok-mp3-downloader", "vt-tiktok-com-downloader", "tiktok-photo-downloader"],
   guides: [
     { slug: "download-tiktok-video-without-watermark", anchor: "TikTok without the logo on iPhone and Android" },
     { slug: "why-tiktok-video-quality-drops-after-upload" },

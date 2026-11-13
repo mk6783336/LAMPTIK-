@@ -85,7 +85,6 @@ const FOOTER_GROUPS: Array<{ id: FooterGroupId; label: string; links: FooterLink
       { href: "/tiktok-photo-downloader", label: "TikTok Photos", id: "tiktokPhotos" },
       { href: "/youtube-to-mp3", label: "YouTube to MP3", id: "youtubeMp3" },
       { href: "/youtube-playlist-downloader", label: "YouTube Playlist", id: "youtubePlaylist" },
-      { href: "/tiktok-story-downloader", label: "TikTok Story", id: "tiktokStory" },
       // No Instagram Story entry: that route 301s to /instagram-reels-downloader
       // (the resolver never parsed story URLs), and a footer link to a redirect
       // is one more hop for a crawler to spend.

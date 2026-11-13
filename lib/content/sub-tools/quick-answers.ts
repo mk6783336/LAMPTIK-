@@ -215,29 +215,6 @@ export const SUB_TOOL_ANSWERS: Record<string, SubToolAnswer> = {
     ],
   },
 
-  "tiktok-story-downloader": {
-    query: "Can I download a TikTok story before it expires?",
-    answer:
-      "Yes, while it is still live. A story is public for 24 hours and only then disappears, so paste its link during that window — the panel resolves the video slides in the story; photo-only story posts have no video stream to save.",
-    comparison: [
-      {
-        label: "Story vs post",
-        ours: "The link is inspected and the story's media type reported before you commit",
-        theirs: "One generic \"download\" path that fails silently on stories",
-      },
-      {
-        label: "Expiry",
-        ours: "States the 24-hour window plainly, so a failure is never misread as a bug",
-        theirs: "Promises story downloads that stopped being possible",
-      },
-      {
-        label: "Watermark",
-        ours: "The source stream, no overlay",
-        theirs: "A re-shared copy with the account handle burned in",
-      },
-    ],
-  },
-
   "tiktok-video-download-iphone": {
     query: "How do I download a TikTok video on iPhone without an app?",
     answer:

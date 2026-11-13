@@ -3,7 +3,7 @@ import type { SubTool } from "@/lib/content/sub-tool-types";
 import { SUB_TOOL_MAP } from "./index";
 
 /**
- * The eighteen sub-tools, arranged by the task a visitor arrives with.
+ * The sub-tools, arranged by the task a visitor arrives with.
  *
  * Alphabetical or platform-ordered lists make sense to the person who built
  * the site; a visitor searching "youtube mp3" does not care that Story
@@ -73,17 +73,6 @@ export const TOOL_GROUPS: readonly ToolGroup[] = [
     intent:
       "A playlist is a list, not a file. This page lists the videos in order and opens each one in the same single-video downloader.",
     slugs: ["youtube-playlist-downloader"],
-  },
-  {
-    id: "stories",
-    title: "Beat the 24-hour expiry",
-    // Instagram used to sit here. It is not a story tool in this codebase: the
-    // Instagram resolver accepts /reel/, /p/ and /tv/ only, so the story route
-    // 301s to the Reels tool (next.config.ts) and the group carries the one
-    // page that really saves a frame before it expires.
-    intent:
-      "A story deletes itself a day after posting. This page saves the frame before it disappears — no watermark, no login.",
-    slugs: ["tiktok-story-downloader"],
   },
   {
     // The crawl path for the country cluster. Without a group the four pages

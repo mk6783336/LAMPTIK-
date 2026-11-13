@@ -79,7 +79,7 @@ export const entry: SubTool = {
     "Falls back to the full URL parser when a redirect is blocked",
     "Free, no account, no app",
   ],
-  related: ["tiktok-mp3-downloader", "tiktok-video-download-iphone", "tiktok-story-downloader"],
+  related: ["tiktok-mp3-downloader", "tiktok-video-download-iphone", "tiktok-photo-downloader"],
   guides: [
     { slug: "download-tiktok-video-without-watermark", anchor: "Why short links stop working" },
     { slug: "why-tiktok-video-quality-drops-after-upload" },

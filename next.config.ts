@@ -78,6 +78,19 @@ const nextConfig: NextConfig = {
         destination: "/instagram-reels-downloader",
         permanent: true,
       },
+      // /tiktok-story-downloader, retired for the same measured reason. The
+      // resolver reads /video/ and /photo/ ids only, so the live API answers
+      // INVALID_URL for `/@user/story/<id>`; tiktok.com itself 302s that path
+      // to /foryou because Stories have no web view, and TikTok's own support
+      // pages list the app's profile, inbox and feeds as the only surfaces.
+      // A story link therefore cannot be resolved by anything on this site.
+      // The TikTok downloader is the home page, so that is where the URL goes.
+      // Search Console, 30 days: 21 impressions, 0 clicks, position 5.7.
+      {
+        source: "/tiktok-story-downloader",
+        destination: "/",
+        permanent: true,
+      },
       {
         source: "/instagram-reels-download-without-login",
         destination: "/instagram-reels-downloader",
