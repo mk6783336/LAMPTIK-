@@ -14,7 +14,7 @@ export const ar: LandingCopy = {
   dir: "rtl",
   title: "تنزيل فيديوهات TikTok بدون علامة مائية بجودة HD",
   description:
-    "نزّل فيديوهات TikTok وInstagram Reels وFacebook وYouTube بجودة 1080p HD بدون علامة مائية، وحوّل الصوت إلى MP3. مجاني، بلا تطبيق وبلا تسجيل.",
+    "نزّل فيديوهات TikTok وInstagram Reels وFacebook وYouTube بجودة MP4 بدون علامة مائية، وحوّل الصوت إلى MP3. مجاني، بلا تطبيق وبلا تسجيل.",
   keywords: [
     "تنزيل فيديو تيك توك بدون علامة مائية",
     "تحميل ريلز انستقرام",
@@ -32,7 +32,7 @@ export const ar: LandingCopy = {
   h1Lead: "نزّل فيديوهات TikTok",
   h1Accent: "بجودة HD كاملة.",
   lede: "الصق الرابط واحصل على الملف الأصلي في ثوانٍ — بدون علامة مائية، وبدون حساب، ومن متصفح جوالك على Android أو iPhone.",
-  chips: ["HD 1080p", "بدون علامة مائية", "صوت MP3"],
+  chips: ["MP4", "بدون علامة مائية", "صوت MP3"],
   tool: {
     heading: "أداة التنزيل",
     note: "الصق رابط TikTok أو Instagram أو Facebook أو YouTube في الأعلى.",
@@ -40,7 +40,7 @@ export const ar: LandingCopy = {
   facts: [
     ["السعر", "مجاني بالكامل"],
     ["الحساب", "غير مطلوب"],
-    ["أفضل جودة", "1080p HD"],
+    ["أفضل جودة", "MP4"],
     ["المنصات", "TikTok وInstagram وFacebook"],
   ],
   stepsHeading: "كيف تنزّل الفيديو في ثلاث خطوات",

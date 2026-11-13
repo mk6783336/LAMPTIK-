@@ -27,7 +27,7 @@ export const de: LandingCopy = {
   h1Accent: "Ganz ohne Wasserzeichen.",
   lede:
     "Link einfügen, Qualität wählen, speichern – TikTok, Instagram Reels, Facebook und YouTube in Sekunden auf Ihrem Gerät.",
-  chips: ["Full HD 1080p", "MP3-Audio", "Keine Anmeldung"],
+  chips: ["MP4", "MP3-Audio", "Keine Anmeldung"],
   tool: {
     heading: "Video-Link einfügen",
     note: "Funktioniert in jedem Browser – auch auf iPhone und Android.",
@@ -35,7 +35,7 @@ export const de: LandingCopy = {
   facts: [
     ["Preis", "Kostenlos"],
     ["Anmeldung", "Nicht nötig"],
-    ["Qualität", "Bis 1080p"],
+    ["Qualität", "MP4"],
     ["Audio", "MP3 & M4A"],
   ],
   stepsHeading: "So funktioniert es",

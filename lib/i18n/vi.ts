@@ -14,9 +14,9 @@ export const vi: LandingCopy = {
   code: "vi",
   htmlLang: "vi",
   dir: "ltr",
-  title: "Tải video TikTok không watermark HD 1080p",
+  title: "Tải video TikTok không watermark MP4",
   description:
-    "Tải video TikTok, Instagram Reels, Facebook và YouTube không watermark, chất lượng HD 1080p. Miễn phí, không cần ứng dụng, không cần đăng ký.",
+    "Tải video TikTok, Instagram Reels, Facebook và YouTube không watermark, chất lượng MP4. Miễn phí, không cần ứng dụng, không cần đăng ký.",
   keywords: [
     "tải video tiktok không watermark",
     "tải video tiktok không logo",
@@ -32,7 +32,7 @@ export const vi: LandingCopy = {
   h1Accent: "Chất lượng HD trọn vẹn.",
   lede:
     "Dán liên kết và lưu tệp gốc trong vài giây — không watermark, không tài khoản, ngay trên trình duyệt điện thoại Android hoặc iPhone. Không cần cài ứng dụng và không có quảng cáo nào che nút tải.",
-  chips: ["HD 1080p", "Không watermark", "Âm thanh MP3"],
+  chips: ["MP4", "Không watermark", "Âm thanh MP3"],
   tool: {
     heading: "Công cụ tải xuống",
     note: "Dán liên kết TikTok, Instagram, Facebook hoặc YouTube ở trên.",
@@ -40,7 +40,7 @@ export const vi: LandingCopy = {
   facts: [
     ["Giá", "Hoàn toàn miễn phí"],
     ["Tài khoản", "Không cần"],
-    ["Chất lượng", "1080p HD"],
+    ["Chất lượng", "MP4"],
     ["Nền tảng", "TikTok, Instagram, Facebook"],
   ],
   stepsHeading: "Tải video trong ba bước",

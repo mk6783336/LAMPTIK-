@@ -27,7 +27,7 @@ export const pt: LandingCopy = {
   h1Accent: "sem marca d'água, em HD.",
   lede:
     "Cole o link e salve o arquivo original em MP4 HD ou MP3. Também funciona com Reels do Instagram, vídeos do Facebook e YouTube.",
-  chips: ["TikTok, Reels, Facebook e YouTube", "MP4 1080p e MP3", "Sem conta e sem app"],
+  chips: ["TikTok, Reels, Facebook e YouTube", "MP4 e MP3", "Sem conta e sem app"],
   tool: {
     heading: "Cole o link e baixe",
     note:
@@ -36,7 +36,7 @@ export const pt: LandingCopy = {
   facts: [
     ["Preço", "Grátis"],
     ["Conta", "Não precisa"],
-    ["Qualidade máxima", "1080p HD"],
+    ["Qualidade máxima", "MP4"],
     ["Formatos", "MP4 e MP3"],
   ],
   stepsHeading: "Como baixar um vídeo em três passos",

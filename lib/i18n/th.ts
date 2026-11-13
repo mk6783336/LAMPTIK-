@@ -14,9 +14,9 @@ export const th: LandingCopy = {
   code: "th",
   htmlLang: "th",
   dir: "ltr",
-  title: "ดาวน์โหลดวิดีโอ TikTok ไม่มีลายน้ำ HD 1080p",
+  title: "ดาวน์โหลดวิดีโอ TikTok ไม่มีลายน้ำ MP4",
   description:
-    "ดาวน์โหลดวิดีโอ TikTok, Instagram Reels, Facebook และ YouTube แบบไม่มีลายน้ำ คุณภาพ HD 1080p ฟรี ไม่ต้องติดตั้งแอป ไม่ต้องสมัครสมาชิก",
+    "ดาวน์โหลดวิดีโอ TikTok, Instagram Reels, Facebook และ YouTube แบบไม่มีลายน้ำ คุณภาพ MP4 ฟรี ไม่ต้องติดตั้งแอป ไม่ต้องสมัครสมาชิก",
   keywords: [
     "ดาวน์โหลดวิดีโอ tiktok ไม่มีลายน้ำ",
     "โหลดวิดีโอ tiktok",
@@ -32,7 +32,7 @@ export const th: LandingCopy = {
   h1Accent: "คุณภาพ HD เต็มรูปแบบ",
   lede:
     "วางลิงก์แล้วบันทึกไฟล์ต้นฉบับได้ในไม่กี่วินาที — ไม่มีลายน้ำ ไม่ต้องสมัครบัญชี ใช้ได้เลยบนเบราว์เซอร์มือถือ Android หรือ iPhone และไม่มีโฆษณาบังปุ่มดาวน์โหลด",
-  chips: ["HD 1080p", "ไม่มีลายน้ำ", "เสียง MP3"],
+  chips: ["MP4", "ไม่มีลายน้ำ", "เสียง MP3"],
   tool: {
     heading: "เครื่องมือดาวน์โหลด",
     note: "วางลิงก์ TikTok, Instagram, Facebook หรือ YouTube ด้านบน",
@@ -40,7 +40,7 @@ export const th: LandingCopy = {
   facts: [
     ["ราคา", "ฟรีทั้งหมด"],
     ["บัญชี", "ไม่ต้องใช้"],
-    ["คุณภาพ", "1080p HD"],
+    ["คุณภาพ", "MP4"],
     ["แพลตฟอร์ม", "TikTok, Instagram, Facebook"],
   ],
   stepsHeading: "ดาวน์โหลดในสามขั้นตอน",

@@ -31,7 +31,7 @@ export const fr: LandingCopy = {
   h1Accent: "Sans aucun filigrane.",
   lede:
     "Collez un lien, choisissez la qualité, téléchargez — TikTok, Instagram Reels, Facebook et YouTube en quelques secondes sur votre téléphone.",
-  chips: ["Full HD 1080p", "Audio MP3", "Sans compte"],
+  chips: ["MP4", "Audio MP3", "Sans compte"],
   tool: {
     heading: "Collez le lien de la vidéo",
     note: "Fonctionne dans tous les navigateurs, iPhone et Android compris.",
@@ -39,7 +39,7 @@ export const fr: LandingCopy = {
   facts: [
     ["Prix", "Gratuit"],
     ["Compte", "Inutile"],
-    ["Qualité", "Jusqu'à 1080p"],
+    ["Qualité", "MP4"],
     ["Audio", "MP3 et M4A"],
   ],
   stepsHeading: "Télécharger en trois étapes",

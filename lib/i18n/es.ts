@@ -33,7 +33,7 @@ export const es: LandingCopy = {
   h1Accent: "sin marca de agua, en HD.",
   lede:
     "Pega el enlace y guarda el archivo original en MP4 HD o MP3. También funciona con Reels de Instagram, videos de Facebook y YouTube.",
-  chips: ["TikTok, Reels, Facebook y YouTube", "MP4 1080p y MP3", "Sin cuenta ni app"],
+  chips: ["TikTok, Reels, Facebook y YouTube", "MP4 y MP3", "Sin cuenta ni app"],
   tool: {
     heading: "Pega el enlace y descarga",
     note:
@@ -42,7 +42,7 @@ export const es: LandingCopy = {
   facts: [
     ["Precio", "Gratis"],
     ["Cuenta", "No hace falta"],
-    ["Calidad máxima", "1080p HD"],
+    ["Calidad máxima", "MP4"],
     ["Formatos", "MP4 y MP3"],
   ],
   stepsHeading: "Cómo descargar un video en tres pasos",
@@ -78,7 +78,7 @@ export const es: LandingCopy = {
     {
       question: "¿El video sale en HD de verdad?",
       answer:
-        "Se entrega la versión de mayor resolución que TikTok tenga publicada para ese video, normalmente 720p o 1080p. No se reescala ni se recodifica: si el autor subió el video en 540p, el archivo será 540p y la ficha lo indica antes de descargar. Por eso dos videos distintos pueden dar archivos de distinto tamaño.",
+        "Se entrega la versión de mayor resolución que TikTok tenga publicada para ese video, normalmente 720p o MP4. No se reescala ni se recodifica: si el autor subió el video en 540p, el archivo será 540p y la ficha lo indica antes de descargar. Por eso dos videos distintos pueden dar archivos de distinto tamaño.",
     },
     {
       question: "¿Se guardan mis enlaces o mis videos?",

@@ -16,7 +16,7 @@ export const tl: LandingCopy = {
   dir: "ltr",
   title: "I-download ang TikTok Video na Walang Watermark HD",
   description:
-    "I-download ang video mula sa TikTok, Instagram Reels, Facebook at YouTube nang walang watermark sa HD 1080p. Libre, walang app, walang sign-up.",
+    "I-download ang video mula sa TikTok, Instagram Reels, Facebook at YouTube nang walang watermark sa MP4. Libre, walang app, walang sign-up.",
   keywords: [
     "paano mag download ng video sa tiktok",
     "tiktok video download without watermark",
@@ -32,7 +32,7 @@ export const tl: LandingCopy = {
   h1Accent: "Buong HD na kalidad.",
   lede:
     "I-paste ang link at i-save ang orihinal na file sa ilang segundo — walang watermark, walang account, direkta sa browser ng Android o iPhone. Walang app na i-install at walang sign-up.",
-  chips: ["HD 1080p", "Walang watermark", "MP3 na audio"],
+  chips: ["MP4", "Walang watermark", "MP3 na audio"],
   tool: {
     heading: "Download tool",
     note: "I-paste ang link ng TikTok, Instagram, Facebook o YouTube sa itaas.",
@@ -40,7 +40,7 @@ export const tl: LandingCopy = {
   facts: [
     ["Presyo", "Libreng-libre"],
     ["Account", "Hindi kailangan"],
-    ["Kalidad", "1080p HD"],
+    ["Kalidad", "MP4"],
     ["Platform", "TikTok, Instagram, Facebook"],
   ],
   stepsHeading: "Tatlong hakbang lang",

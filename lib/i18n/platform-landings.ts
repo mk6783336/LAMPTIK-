@@ -68,7 +68,7 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
       dir: "ltr",
       title: "Descargar Reels de Instagram en HD — Sin Marca de Agua",
       description:
-        "Descarga Reels de Instagram en su calidad original 1080p con el audio incluido, sin marca de agua y sin iniciar sesión. Gratis, desde el móvil o el PC.",
+        "Descarga Reels de Instagram en su calidad original con el audio incluido, sin marca de agua y sin iniciar sesión. Gratis, desde el móvil o el PC.",
       keywords: [
         "descargar reels de instagram",
         "descargar video de instagram",
@@ -92,7 +92,7 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
       facts: [
         ["Precio", "Gratis"],
         ["Cuenta", "No hace falta"],
-        ["Calidad", "1080 × 1920"],
+        ["Calidad", "720 × 1280 (medido)"],
         ["Formatos", "MP4 con audio"],
       ],
       stepsHeading: "Cómo descargar un Reel en tres pasos",
@@ -172,8 +172,8 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
       h1Lead: "Descarga videos de YouTube",
       h1Accent: "en MP4 HD o solo el audio.",
       lede:
-        "Pega el enlace del vídeo y elige la calidad que YouTube realmente tiene: 1080p cuando existe, 720p si no, y MP3 del audio original. Acepta watch, Shorts, youtu.be y enlaces de playlist, todo desde el navegador.",
-      chips: ["MP4 1080p", "MP3 original", "Shorts y youtu.be"],
+        "Pega el enlace del vídeo: el resolutor devuelve un MP4 de 640×360 (medido el 2026-11-13) o un MP3 del audio original. Acepta watch, Shorts, youtu.be y enlaces de playlist, todo desde el navegador.",
+      chips: ["MP4", "MP3 original", "Shorts y youtu.be"],
       tool: {
         heading: "Pega el enlace del vídeo",
         note: "YouTube se detecta solo; también acepta TikTok, Instagram y Facebook.",
@@ -181,7 +181,7 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
       facts: [
         ["Precio", "Gratis"],
         ["Cuenta", "No hace falta"],
-        ["Calidad", "1080p / 720p"],
+        ["Calidad", "MP4"],
         ["Formatos", "MP4 y MP3"],
       ],
       stepsHeading: "Cómo descargar un video de YouTube en tres pasos",
@@ -202,7 +202,7 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
       faqHeading: "Preguntas frecuentes",
       faqs: [
         {
-          question: "¿Puedo descargar un video en 1080p?",
+          question: "¿Puedo descargar un video en MP4?",
           answer:
             "Sí, siempre que YouTube tenga esa resolución para ese vídeo. La herramienta muestra las calidades disponibles antes de descargar, así que no acabas con un archivo de menos píxeles de los que esperabas.",
         },
@@ -334,7 +334,7 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
       dir: "rtl",
       title: "تنزيل ريلز انستقرام بجودة HD — بدون علامة مائية أو حساب",
       description:
-        "نزّل ريلز انستقرام بالجودة الأصلية 1080p مع الصوت، بدون علامة مائية وبدون تسجيل دخول. مجاني ومن متصفح الهاتف أو الكمبيوتر مباشرة.",
+        "نزّل ريلز انستقرام بالجودة الأصلية MP4 مع الصوت، بدون علامة مائية وبدون تسجيل دخول. مجاني ومن متصفح الهاتف أو الكمبيوتر مباشرة.",
       keywords: [
         "تنزيل ريلز انستقرام",
         "تحميل فيديو انستقرام",
@@ -356,7 +356,7 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
       facts: [
         ["السعر", "مجاني"],
         ["الحساب", "غير مطلوب"],
-        ["الجودة", "1080 × 1920"],
+        ["الجودة", "720 × 1280 (مقاس)"],
         ["الصيغة", "MP4 مع الصوت"],
       ],
       stepsHeading: "كيف تنزّل ريل انستقرام في ثلاث خطوات",
@@ -417,7 +417,7 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
       dir: "rtl",
       title: "تنزيل فيديوهات يوتيوب MP4 بجودة HD أو MP3 — بدون تطبيق",
       description:
-        "الصق رابط يوتيوب ونزّل الفيديو بصيغة MP4 حتى 1080p أو الصوت MP3. يدعم watch وShorts وyoutu.be وقوائم التشغيل، بلا تطبيق وبلا تسجيل.",
+        "الصق رابط يوتيوب ونزّل الفيديو بصيغة MP4 أو الصوت MP3. يدعم watch وShorts وyoutu.be وقوائم التشغيل، بلا تطبيق وبلا تسجيل.",
       keywords: [
         "تنزيل فيديوهات يوتيوب",
         "تحميل فيديو من يوتيوب",
@@ -430,8 +430,8 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
       h1Lead: "نزّل فيديوهات يوتيوب",
       h1Accent: "بصيغة MP4 أو الصوت فقط.",
       lede:
-        "الصق رابط الفيديو واختر الجودة الموجودة فعلًا: 1080p إن توفّرت، و720p إن لم تكن، أو MP3 من الصوت الأصلي. يدعم watch وShorts وyoutu.be وروابط قوائم التشغيل من داخل المتصفح.",
-      chips: ["MP4 1080p", "MP3 أصلي", "Shorts وyoutu.be"],
+        "الصق رابط الفيديو واختر الجودة الموجودة فعلًا: MP4 إن توفّرت، و720p إن لم تكن، أو MP3 من الصوت الأصلي. يدعم watch وShorts وyoutu.be وروابط قوائم التشغيل من داخل المتصفح.",
+      chips: ["MP4", "MP3 أصلي", "Shorts وyoutu.be"],
       tool: {
         heading: "الصق رابط الفيديو",
         note: "يتعرّف على يوتيوب تلقائيًا، ويقبل أيضًا TikTok وInstagram وFacebook.",
@@ -439,7 +439,7 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
       facts: [
         ["السعر", "مجاني"],
         ["الحساب", "غير مطلوب"],
-        ["الجودة", "1080p / 720p"],
+        ["الجودة", "MP4"],
         ["الصيغة", "MP4 وMP3"],
       ],
       stepsHeading: "كيف تنزّل فيديو يوتيوب في ثلاث خطوات",
@@ -460,7 +460,7 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
       faqHeading: "أسئلة شائعة",
       faqs: [
         {
-          question: "هل يمكن التنزيل بجودة 1080p؟",
+          question: "هل يمكن التنزيل بجودة MP4؟",
           answer:
             "نعم، إذا كان الفيديو منشورًا بهذه الدقة على يوتيوب. تعرض الأداة الدقات المتاحة قبل التنزيل، فلا تنتهي بملف أقل دقة مما توقّعت.",
         },

@@ -19,7 +19,7 @@ export const hi: LandingCopy = {
   dir: "ltr",
   title: "TikTok वीडियो बिना वॉटरमार्क डाउनलोड करें HD",
   description:
-    "TikTok, Instagram Reels, Facebook और YouTube के वीडियो बिना वॉटरमार्क HD 1080p में डाउनलोड करें। मुफ़्त, बिना ऐप, बिना साइन-अप।",
+    "TikTok, Instagram Reels, Facebook और YouTube के वीडियो बिना वॉटरमार्क MP4 में डाउनलोड करें। मुफ़्त, बिना ऐप, बिना साइन-अप।",
   keywords: [
     "tiktok video download kaise kare",
     "tiktok video without watermark download",
@@ -35,7 +35,7 @@ export const hi: LandingCopy = {
   h1Accent: "पूरी HD क्वालिटी में।",
   lede:
     "लिंक पेस्ट करें और कुछ सेकंड में ओरिजिनल फ़ाइल सेव कर लें — बिना वॉटरमार्क, बिना अकाउंट, सीधे Android या iPhone के ब्राउज़र से। कोई ऐप इंस्टॉल नहीं करना, कोई साइन-अप नहीं।",
-  chips: ["HD 1080p", "बिना वॉटरमार्क", "MP3 ऑडियो"],
+  chips: ["MP4", "बिना वॉटरमार्क", "MP3 ऑडियो"],
   tool: {
     heading: "डाउनलोड टूल",
     note: "ऊपर TikTok, Instagram, Facebook या YouTube का लिंक पेस्ट करें।",
@@ -43,7 +43,7 @@ export const hi: LandingCopy = {
   facts: [
     ["कीमत", "पूरी तरह मुफ़्त"],
     ["अकाउंट", "ज़रूरत नहीं"],
-    ["क्वालिटी", "1080p HD"],
+    ["क्वालिटी", "MP4"],
     ["प्लेटफ़ॉर्म", "TikTok, Instagram, Facebook"],
   ],
   stepsHeading: "तीन स्टेप में वीडियो डाउनलोड करें",

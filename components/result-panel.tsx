@@ -507,7 +507,17 @@ export function ResultPanel({
           >
             <Download className="size-4 shrink-0" />
             <span className="flex min-w-0 flex-1 flex-col items-start">
-              <span>{video.quality === "hd" ? t.downloadHd : t.downloadVideo}</span>
+              {/* The label has to describe the file, not the intent. YouTube
+                  hands back a 640×360 muxed stream (measured 2026-11-13, see
+                  scripts/check-claims.mjs), so "HD" there is a false claim on
+                  the one control every visitor reads. Every other platform's
+                  resolver returns 720p-class or better, so their HD label
+                  stays. */}
+              <span>
+                {video.quality === "hd" && platform !== "youtube"
+                  ? t.downloadHd
+                  : t.downloadVideo}
+              </span>
               <span className="text-xs font-normal text-white/75">
                 Server 01 — Fast{directUpstream ? " direct CDN" : ""}
               </span>

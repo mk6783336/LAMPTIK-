@@ -33,7 +33,7 @@ export const tr: LandingCopy = {
   h1Accent: "Filigransız, tam HD.",
   lede:
     "Bağlantıyı yapıştırın, kaliteyi seçin, indirin — TikTok, Instagram Reels, Facebook ve YouTube videoları saniyeler içinde telefonunuzda.",
-  chips: ["Full HD 1080p", "MP3 ses", "Üyelik yok"],
+  chips: ["MP4", "MP3 ses", "Üyelik yok"],
   tool: {
     heading: "Video bağlantısını yapıştırın",
     note: "Her tarayıcıda çalışır — iPhone ve Android dahil.",
@@ -41,7 +41,7 @@ export const tr: LandingCopy = {
   facts: [
     ["Ücret", "Ücretsiz"],
     ["Üyelik", "Gerekmez"],
-    ["Kalite", "1080p'ye kadar"],
+    ["Kalite", "MP4"],
     ["Ses", "MP3 ve M4A"],
   ],
   stepsHeading: "Üç adımda nasıl indirilir",

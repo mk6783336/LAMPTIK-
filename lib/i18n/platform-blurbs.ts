@@ -22,121 +22,121 @@ export const PLATFORM_BLURBS: Record<LocaleCode, Record<Platform, string>> = {
     tiktok:
       "Vídeos de TikTok sin marca de agua en MP4 HD y el audio original en MP3 — también desde enlaces cortos vt/vm.",
     instagram:
-      "Reels, vídeos de publicaciones e IGTV en 1080p real — sin marca de agua y sin iniciar sesión.",
+      "Reels, vídeos de publicaciones e IGTV en calidad real — sin marca de agua y sin iniciar sesión.",
     facebook:
       "Vídeos largos de Watch (más de 1 GB), subidas de páginas y enlaces fb.watch resueltos al instante.",
     youtube:
-      "MP4 en 1080p o 720p, Shorts y audio MP3 desde cualquier enlace watch o youtu.be — gratis y sin app.",
+      "MP4 en MP4, Shorts y audio MP3 desde cualquier enlace watch o youtu.be — gratis y sin app.",
   },
   ar: {
     tiktok:
       "فيديوهات تيك توك بدون علامة مائية بجودة MP4 HD والصوت الأصلي MP3 — حتى من روابط vt/vm القصيرة.",
     instagram:
-      "ريلز وفيديوهات المنشورات وIGTV بجودة 1080p الأصلية — بدون علامة مائية وبدون تسجيل دخول.",
+      "ريلز وفيديوهات المنشورات وIGTV بجودة الأصلية — بدون علامة مائية وبدون تسجيل دخول.",
     facebook:
       "فيديوهات Watch الطويلة (أكثر من 1 غيغابايت) ورفعات الصفحات وروابط fb.watch تُفتح فورًا.",
     youtube:
-      "MP4 بجودة 1080p أو 720p وShorts وصوت MP3 من أي رابط watch أو youtu.be — مجانًا وبدون تطبيق.",
+      "MP4 بجودة MP4 وShorts وصوت MP3 من أي رابط watch أو youtu.be — مجانًا وبدون تطبيق.",
   },
   de: {
     tiktok:
       "TikTok-Videos ohne Wasserzeichen als HD-MP4 und der Originalton als MP3 — auch aus vt-/vm-Kurzlinks.",
     instagram:
-      "Reels, Video-Posts und IGTV in voller 1080p-Qualität — ohne Wasserzeichen, ohne Login.",
+      "Reels, Video-Posts und IGTV in voller MP4-Qualität — ohne Wasserzeichen, ohne Login.",
     facebook:
       "Lange Watch-Videos (über 1 GB), Seiten-Uploads und fb.watch-Links, die sofort aufgelöst werden.",
     youtube:
-      "MP4 in 1080p oder 720p, Shorts und MP3-Audio aus jedem watch- oder youtu.be-Link — kostenlos, ohne App.",
+      "MP4 in MP4, Shorts und MP3-Audio aus jedem watch- oder youtu.be-Link — kostenlos, ohne App.",
   },
   pt: {
     tiktok:
       "Vídeos do TikTok sem marca d'água em MP4 HD e o áudio original em MP3 — inclusive links curtos vt/vm.",
     instagram:
-      "Reels, vídeos de posts e IGTV na qualidade original 1080p — sem marca d'água e sem login.",
+      "Reels, vídeos de posts e IGTV na qualidade original — sem marca d'água e sem login.",
     facebook:
       "Vídeos longos do Watch (1 GB ou mais), uploads de páginas e links fb.watch resolvidos na hora.",
     youtube:
-      "MP4 em 1080p ou 720p, Shorts e áudio MP3 de qualquer link watch ou youtu.be — grátis e sem app.",
+      "MP4 em MP4, Shorts e áudio MP3 de qualquer link watch ou youtu.be — grátis e sem app.",
   },
   id: {
     tiktok:
       "Video TikTok tanpa watermark dalam MP4 HD dan audio asli MP3 — termasuk tautan pendek vt/vm.",
     instagram:
-      "Reels, video postingan, dan IGTV dengan kualitas asli 1080p — tanpa watermark, tanpa login.",
+      "Reels, video postingan, dan IGTV dengan kualitas asli MP4 — tanpa watermark, tanpa login.",
     facebook:
       "Video Watch panjang (1 GB lebih), unggahan halaman, dan tautan fb.watch yang langsung dibuka.",
     youtube:
-      "MP4 1080p atau 720p, Shorts, dan audio MP3 dari tautan watch atau youtu.be — gratis, tanpa aplikasi.",
+      "MP4 atau 720p, Shorts, dan audio MP3 dari tautan watch atau youtu.be — gratis, tanpa aplikasi.",
   },
   hi: {
     tiktok:
       "TikTok वीडियो बिना वॉटरमार्क HD MP4 में और ओरिजिनल साउंड MP3 में — vt/vm शॉर्ट लिंक से भी।",
     instagram:
-      "Reels, पोस्ट वीडियो और IGTV असली 1080p क्वालिटी में — बिना वॉटरमार्क, बिना लॉगिन।",
+      "Reels, पोस्ट वीडियो और IGTV असली MP4 क्वालिटी में — बिना वॉटरमार्क, बिना लॉगिन।",
     facebook:
       "लंबे Watch वीडियो (1 GB से ज़्यादा), पेज अपलोड और fb.watch लिंक तुरंत खुलते हैं।",
     youtube:
-      "किसी भी watch या youtu.be लिंक से 1080p/720p MP4, Shorts और MP3 ऑडियो — मुफ़्त, बिना ऐप।",
+      "किसी भी watch या youtu.be लिंक से MP4, Shorts और MP3 ऑडियो — मुफ़्त, बिना ऐप।",
   },
   vi: {
     tiktok:
       "Video TikTok không logo dạng MP4 HD và âm thanh gốc MP3 — kể cả link rút gọn vt/vm.",
     instagram:
-      "Reels, video bài đăng và IGTV đúng chất lượng 1080p — không logo, không cần đăng nhập.",
+      "Reels, video bài đăng và IGTV đúng chất lượng MP4 — không logo, không cần đăng nhập.",
     facebook:
       "Video Watch dài (trên 1 GB), video từ trang và link fb.watch được mở ngay.",
     youtube:
-      "MP4 1080p hoặc 720p, Shorts và âm thanh MP3 từ mọi link watch hay youtu.be — miễn phí, không cần app.",
+      "MP4 hoặc 720p, Shorts và âm thanh MP3 từ mọi link watch hay youtu.be — miễn phí, không cần app.",
   },
   th: {
     tiktok:
       "วิดีโอ TikTok ไม่มีลายน้ำเป็น MP4 HD พร้อมเสียงต้นฉบับ MP3 รวมถึงลิงก์สั้น vt/vm",
     instagram:
-      "Reels วิดีโอโพสต์ และ IGTV คุณภาพเดิม 1080p ไม่มีลายน้ำ ไม่ต้องล็อกอิน",
+      "Reels วิดีโอโพสต์ และ IGTV คุณภาพเดิม MP4 ไม่มีลายน้ำ ไม่ต้องล็อกอิน",
     facebook:
       "วิดีโอ Watch ยาว ๆ (เกิน 1 GB) วิดีโอจากเพจ และลิงก์ fb.watch ที่เปิดทันที",
     youtube:
-      "MP4 1080p หรือ 720p, Shorts และเสียง MP3 จากลิงก์ watch หรือ youtu.be ฟรี ไม่ต้องติดตั้งแอป",
+      "MP4 หรือ 720p, Shorts และเสียง MP3 จากลิงก์ watch หรือ youtu.be ฟรี ไม่ต้องติดตั้งแอป",
   },
   tl: {
     tiktok:
       "TikTok video na walang watermark sa MP4 HD at ang orihinal na tunog sa MP3 — pati na ang vt/vm short links.",
     instagram:
-      "Reels, video ng post, at IGTV sa tunay na 1080p — walang watermark, walang login.",
+      "Reels, video ng post, at IGTV sa tunay na MP4 — walang watermark, walang login.",
     facebook:
       "Mahahabang Watch video (1 GB pataas), upload ng page, at fb.watch link na agad bumubukas.",
     youtube:
-      "MP4 sa 1080p o 720p, Shorts, at MP3 audio mula sa anumang watch o youtu.be link — libre, walang app.",
+      "MP4 sa MP4, Shorts, at MP3 audio mula sa anumang watch o youtu.be link — libre, walang app.",
   },
   tr: {
     tiktok:
       "TikTok videoları filigransız HD MP4 ve orijinal ses MP3 olarak — vt/vm kısa bağlantıları dahil.",
     instagram:
-      "Reels, gönderi videoları ve IGTV gerçek 1080p kalitede — filigransız, giriş yapmadan.",
+      "Reels, gönderi videoları ve IGTV gerçek MP4 kalitede — filigransız, giriş yapmadan.",
     facebook:
       "Uzun Watch videoları (1 GB üzeri), sayfa yüklemeleri ve fb.watch bağlantıları anında açılır.",
     youtube:
-      "Her watch veya youtu.be bağlantısından 1080p/720p MP4, Shorts ve MP3 ses — ücretsiz, uygulamasız.",
+      "Her watch veya youtu.be bağlantısından MP4, Shorts ve MP3 ses — ücretsiz, uygulamasız.",
   },
   fr: {
     tiktok:
       "Vidéos TikTok sans filigrane en MP4 HD et le son d'origine en MP3 — liens courts vt/vm compris.",
     instagram:
-      "Reels, vidéos de publications et IGTV en vraie qualité 1080p — sans filigrane, sans connexion.",
+      "Reels, vidéos de publications et IGTV en vraie qualité MP4 — sans filigrane, sans connexion.",
     facebook:
       "Vidéos Watch longues (plus de 1 Go), uploads de pages et liens fb.watch ouverts instantanément.",
     youtube:
-      "MP4 en 1080p ou 720p, Shorts et audio MP3 depuis n'importe quel lien watch ou youtu.be — gratuit, sans application.",
+      "MP4 en MP4, Shorts et audio MP3 depuis n'importe quel lien watch ou youtu.be — gratuit, sans application.",
   },
   ur: {
     tiktok:
       "ٹک ٹاک ویڈیوز بغیر واٹر مارک HD MP4 میں اور اصل آواز MP3 میں — vt/vm چھوٹے لنک بھی۔",
     instagram:
-      "ریلز، پوسٹ ویڈیوز اور IGTV اصل 1080p کوالٹی میں — بغیر واٹر مارک، بغیر لاگ اِن۔",
+      "ریلز، پوسٹ ویڈیوز اور IGTV اصل MP4 کوالٹی میں — بغیر واٹر مارک، بغیر لاگ اِن۔",
     facebook:
       "Watch کی لمبی ویڈیوز (1 GB سے زیادہ)، پیج اپلوڈز اور fb.watch لنک فوراً کھلتے ہیں۔",
     youtube:
-      "کسی بھی watch یا youtu.be لنک سے 1080p/720p MP4، Shorts اور MP3 آواز — مفت، بغیر ایپ۔",
+      "کسی بھی watch یا youtu.be لنک سے MP4، Shorts اور MP3 آواز — مفت، بغیر ایپ۔",
   },
 };
 

@@ -19,9 +19,9 @@ export const id: LandingCopy = {
   code: "id",
   htmlLang: "id",
   dir: "ltr",
-  title: "Unduh Video TikTok Tanpa Watermark HD 1080p",
+  title: "Unduh Video TikTok Tanpa Watermark MP4",
   description:
-    "Unduh video TikTok, Instagram Reels, Facebook, dan YouTube tanpa watermark dalam kualitas HD 1080p. Gratis, tanpa aplikasi, tanpa mendaftar.",
+    "Unduh video TikTok, Instagram Reels, Facebook, dan YouTube tanpa watermark dalam kualitas MP4. Gratis, tanpa aplikasi, tanpa mendaftar.",
   keywords: [
     "unduh video tiktok tanpa watermark",
     "download video tiktok tanpa watermark",
@@ -38,7 +38,7 @@ export const id: LandingCopy = {
   h1Accent: "Kualitas HD penuh.",
   lede:
     "Tempel tautan dan simpan berkas aslinya dalam hitungan detik — tanpa watermark, tanpa akun, langsung dari browser ponsel Android atau iPhone. Tidak ada aplikasi yang perlu dipasang dan tidak ada iklan yang menghalangi tombol unduh.",
-  chips: ["HD 1080p", "Tanpa watermark", "Suara MP3"],
+  chips: ["MP4", "Tanpa watermark", "Suara MP3"],
   tool: {
     heading: "Alat unduh",
     note: "Tempel tautan TikTok, Instagram, Facebook, atau YouTube di atas.",
@@ -46,7 +46,7 @@ export const id: LandingCopy = {
   facts: [
     ["Harga", "Gratis sepenuhnya"],
     ["Akun", "Tidak diperlukan"],
-    ["Kualitas", "1080p HD"],
+    ["Kualitas", "MP4"],
     ["Platform", "TikTok, Instagram, Facebook"],
   ],
   stepsHeading: "Cara mengunduh dalam tiga langkah",
