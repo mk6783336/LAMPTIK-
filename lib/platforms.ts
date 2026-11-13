@@ -57,7 +57,7 @@ export const PLATFORMS: Record<Platform, PlatformConfig> = {
     pillLabel: "Instagram Reel",
     videoNoun: "Instagram Reel",
     dotHex: "#dc2743",
-    blurb: "Original-quality Reels, photo-post videos, and IGTV at full 1080p — no watermark, no login.",
+    blurb: "Original-quality Reels, photo-post videos, and IGTV at the resolution Instagram published — no watermark, no login.",
   },
   youtube: {
     id: "youtube",

@@ -47,7 +47,7 @@ const PAGE_CONTENT: Record<
     crumb: "TikTok Downloader",
     headlineLead: "TikTok video downloader,",
     headlineAccent: "without the watermark.",
-    lede: "Download TikTok videos in HD MP4 — up to Full HD 1080p, no logo, no app — or convert to MP3 with the original sound. Paste any tiktok.com or vt/vm short link and the clean file saves straight to your device.",
+    lede: "Download TikTok videos in HD MP4 — the resolution TikTok published for that post, no logo, no app — or convert to MP3 with the original sound. Paste any tiktok.com or vt/vm short link and the clean file saves straight to your device.",
     chips: ["1080p source", "MP3 audio", "vt/vm links"],
     facts: [
       ["Price", "Free"],
@@ -57,7 +57,7 @@ const PAGE_CONTENT: Record<
     ],
     appFeatures: [
       "Download TikTok videos without a watermark",
-      "HD MP4 video downloads up to 1080p",
+      "HD MP4 video downloads at TikTok's own resolution",
       "TikTok to MP3 converter — original sound audio",
       "Short link support (vt.tiktok.com, vm.tiktok.com)",
     ],
@@ -67,7 +67,7 @@ const PAGE_CONTENT: Record<
     crumb: "Instagram Reels Downloader",
     headlineLead: "Instagram Reels",
     headlineAccent: "downloader, in original HD.",
-    lede: "Save any public Reel as the exact 1080p MP4 Instagram's own player streams — no watermark, no login, no app. Paste a /reel/, /p/, /tv/ or instagr.am link and the clean file lands straight in your iPhone or Android gallery.",
+    lede: "Save any public Reel as the exact MP4 Instagram's own player streams — no watermark, no login, no app. Paste a /reel/, /p/, /tv/ or instagr.am link and the clean file lands straight in your iPhone or Android gallery.",
     chips: ["Original HD", "Reels & posts", "No login"],
     facts: [
       ["Price", "Free"],
@@ -77,7 +77,7 @@ const PAGE_CONTENT: Record<
     ],
     appFeatures: [
       "Download Instagram Reels without watermark",
-      "Original 1080p HD MP4 quality",
+      "Original MP4, zero re-encode",
       "Supports instagram.com/reel, /reels, /p, /tv and instagr.am links",
       "No login, no app, no sign-up",
     ],

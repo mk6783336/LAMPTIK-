@@ -16,7 +16,7 @@ const SUGGESTIONS = [
   {
     href: "/instagram-reels-downloader",
     title: "Instagram Reels",
-    body: "Original-quality Reels, photo-post videos, and IGTV at full 1080p.",
+    body: "Original-quality Reels, photo-post videos, and IGTV at the resolution Instagram published.",
   },
   {
     href: "/facebook-video-downloader",
