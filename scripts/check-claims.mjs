@@ -300,13 +300,15 @@ const MEASUREMENTS = {
     numbers: "1080p|1080×1920|1080x1920|1920p|2160p|4k|720p|1280p",
   },
   "facebook.height": {
-    // Three public reels measured 2026-11-13: 720×1280 twice and 360×640 once.
-    // Facebook publishes a higher rendition than it hands a logged-out
-    // resolver, so 1920 is a ceiling the file never reaches.
+    // Three public reels measured 2026-11-13. Facebook is the one platform whose
+    // rendition changes per request: the same reel came back 1080×1920 once and
+    // 360×640 on the next read. "Up to 1080p" therefore stays true, and only a
+    // file *above* the ceiling is drift — a smaller one is the range, not a lie.
     measured: "1080×1920 (3 sample(s), 2026-11-13)",
     display: "1080×1920",
     max: 1920,
     unit: "height",
+    volatile: true,
     date: "2026-11-13",
     method: "bytes of the served MP4, tkhd box",
     samples: [
@@ -918,8 +920,9 @@ async function runMeasurements() {
     const display = `${largest.width}×${largest.height}`;
     // A rendition may be a few pixels under the ceiling (Instagram serves
     // 718×1276 against a 720p ceiling), so only a real gap counts as drift.
+    const under = largest.height < measurement.max;
     const slack = Math.abs(largest.height - measurement.max) / measurement.max;
-    if (slack <= (measurement.tolerance ?? 0.05)) {
+    if (slack <= (measurement.tolerance ?? 0.05) || (measurement.volatile && under)) {
       console.log(`  ${id.padEnd(17)} ceiling ${measurement.max} still matches`);
       continue;
     }
