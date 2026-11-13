@@ -1,11 +1,12 @@
-name: Claim and metadata gates
+name: Verify gates
 
 # Two gates that only mean something against a real page, run on every push.
 #
-# `npm run check:claims` is static: it reads the content registry, the route
-# copy and the resolver sources, and fails when a page promises a capability or
-# a resolution the code cannot deliver. It needs no server, so it runs first and
-# fails the job in seconds.
+# The static half is `npm run verify` minus its build: typecheck, lint, the
+# content-link resolver and the claim gate. All four need no server, so they run
+# before the build and fail the job in seconds. `check:claims` reads the content
+# registry, the route copy and the resolver sources, and fails when a page
+# promises a capability or a resolution the code cannot deliver.
 #
 # `npm run check:metadata` reads rendered `<head>` tags — canonical, hreflang,
 # x-default, FAQ schema, one h1 — so it needs a build. It is pointed at the
@@ -45,6 +46,15 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint -- --max-warnings=0
+
+      - name: Content links
+        run: npm run check:links
 
       - name: Claim gate (static)
         run: npm run check:claims
