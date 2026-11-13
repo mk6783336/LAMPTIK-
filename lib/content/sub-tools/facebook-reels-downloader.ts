@@ -81,7 +81,7 @@ export const entry: SubTool = {
     "Free and unlimited downloads",
   ],
   related: [
-    "instagram-story-downloader",
+    "instagram-reels-to-mp4",
     "instagram-reels-audio",
   ],
 };

@@ -8,7 +8,6 @@ import { entry as facebookLiveReplay } from "./download-facebook-live-video";
 import { entry as facebookReels } from "./facebook-reels-downloader";
 import { entry as instagramReelsAudio } from "./instagram-reels-audio";
 import { entry as instagramReelsToMp4 } from "./instagram-reels-to-mp4";
-import { entry as instagramStory } from "./instagram-story-downloader";
 import { entry as tiktokMp3 } from "./tiktok-mp3-downloader";
 import { entry as tiktokPhoto } from "./tiktok-photo-downloader";
 import { entry as tiktokStory } from "./tiktok-story-downloader";
@@ -32,7 +31,7 @@ import { entry as youtubeVideoIphone } from "./youtube-video-download-iphone";
  * shape, or a login concern — and each one links back to the related tools
  * and to the guides that explain its mechanics.
  *
- * This array is the single source for the eighteen routes, the sitemap entries
+ * This array is the single source for every route, the sitemap entries
  * and the cross-links — a page that exists but is not listed here would be an
  * orphan, and an entry here without a route file would 404 in the sitemap.
  *
@@ -47,7 +46,6 @@ export const SUB_TOOLS: readonly SubTool[] = [
   tiktokMp3,
   youtubeToMp3,
   tiktokStory,
-  instagramStory,
   facebookReels,
   youtubeShorts,
   youtubeToMp4,

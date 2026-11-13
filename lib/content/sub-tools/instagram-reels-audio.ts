@@ -113,6 +113,6 @@ export const entry: SubTool = {
     "No Instagram login and no app",
     "Clear, offline route from the saved MP4 to MP3",
   ],
-  related: ["instagram-reels-to-mp4", "instagram-story-downloader", "tiktok-mp3-downloader"],
+  related: ["instagram-reels-to-mp4", "tiktok-mp3-downloader", "youtube-mp3-320kbps"],
   guides: [{ slug: "download-tiktok-audio-as-mp3", anchor: "M4A, MP3 and the bitrate ceiling" }],
 };

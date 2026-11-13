@@ -91,7 +91,7 @@ export const entry: SubTool = {
     "Works with /reel/, /p/, /tv/ and instagr.am links",
     "No login, no app, nothing stored after the session",
   ],
-  related: ["instagram-reels-audio", "instagram-story-downloader"],
+  related: ["instagram-reels-audio", "tiktok-video-for-capcut"],
   guides: [
     {
       slug: "download-tiktok-video-without-watermark",

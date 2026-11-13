@@ -35,6 +35,8 @@ export const TOOL_GROUPS: readonly ToolGroup[] = [
       "youtube-shorts-downloader",
       "facebook-reels-downloader",
       "instagram-reels-to-mp4",
+      // A finished live broadcast is the same job with a longer file.
+      "download-facebook-live-video",
     ],
   },
   {
@@ -75,9 +77,13 @@ export const TOOL_GROUPS: readonly ToolGroup[] = [
   {
     id: "stories",
     title: "Beat the 24-hour expiry",
+    // Instagram used to sit here. It is not a story tool in this codebase: the
+    // Instagram resolver accepts /reel/, /p/ and /tv/ only, so the story route
+    // 301s to the Reels tool (next.config.ts) and the group carries the one
+    // page that really saves a frame before it expires.
     intent:
-      "Stories delete themselves a day after posting. These two save the frame before it disappears — no watermark, no login.",
-    slugs: ["tiktok-story-downloader", "instagram-story-downloader"],
+      "A story deletes itself a day after posting. This page saves the frame before it disappears — no watermark, no login.",
+    slugs: ["tiktok-story-downloader"],
   },
   {
     // The crawl path for the country cluster. Without a group the four pages

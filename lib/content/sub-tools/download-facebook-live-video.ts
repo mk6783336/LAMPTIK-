@@ -106,5 +106,5 @@ export const entry: SubTool = {
     "Share links and /videos/ links both resolve",
     "No account, no app and no screen recording",
   ],
-  related: ["facebook-reels-downloader", "instagram-story-downloader", "youtube-to-mp4-1080p"],
+  related: ["facebook-reels-downloader", "instagram-reels-to-mp4", "youtube-to-mp4-1080p"],
 };

@@ -313,29 +313,6 @@ export const SUB_TOOL_ANSWERS: Record<string, SubToolAnswer> = {
     ],
   },
 
-  "instagram-story-downloader": {
-    query: "How do I save an Instagram story or highlight?",
-    answer:
-      "Paste the story or highlight link from a public account and pick the item you want. Stories expire after 24 hours and highlights are albums, so the tool lists what the link actually contains instead of promising a single file.",
-    comparison: [
-      {
-        label: "Highlights",
-        ours: "Album contents enumerated, one item at a time",
-        theirs: "Only the first slide, silently",
-      },
-      {
-        label: "Private accounts",
-        ours: "Refused, with the reason stated — no session is ever used",
-        theirs: "A login form that asks for your Instagram password",
-      },
-      {
-        label: "Resolution",
-        ours: "The source image or video Instagram serves",
-        theirs: "A downscaled screen capture",
-      },
-    ],
-  },
-
   "facebook-reels-downloader": {
     query: "How do I download a Facebook Reel?",
     answer:

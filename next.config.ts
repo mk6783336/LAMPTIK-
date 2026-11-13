@@ -66,6 +66,18 @@ const nextConfig: NextConfig = {
         destination: "/instagram-reels-downloader",
         permanent: true,
       },
+      // /instagram-story-downloader promised stories and highlight albums, but
+      // `parseInstagramUrl` accepts only /reel/, /p/ and /tv/ — the live API
+      // answered INVALID_URL for a real story link. That is a doorway page by
+      // definition, so the URL 301s to the Instagram tool that does work
+      // rather than staying indexed while saying it cannot deliver.
+      // Search Console, 30 days: 3 impressions, 0 clicks, position 28.3, and
+      // the destination has no rows at all — nothing is being taken away here.
+      {
+        source: "/instagram-story-downloader",
+        destination: "/instagram-reels-downloader",
+        permanent: true,
+      },
       {
         source: "/instagram-reels-download-without-login",
         destination: "/instagram-reels-downloader",
