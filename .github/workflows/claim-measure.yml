@@ -1,0 +1,45 @@
+name: Claim measurement
+
+# The claim gate compares page copy with the ceilings recorded in
+# scripts/check-claims.mjs. Those numbers come from real files, and a platform
+# can start serving a different rendition without a commit — YouTube's mirrors
+# come and go, Facebook varies by reel. This job re-reads the streams the
+# deployment serves and fails when a recorded ceiling no longer matches, so the
+# drift shows up as a red run instead of an unread number. Manual runs and
+# `npm run check:claims:measure` locally do the same thing.
+
+on:
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: claim-measure-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  measure:
+    name: measure the deployed streams
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Reads each sample through the deployed resolver and parses the first
+      # tkhd box. Exits 1 on drift, 2 when a platform serves nothing readable —
+      # both mean the recorded ceiling is not backed by today's files.
+      - name: Measure the streams
+        run: npm run check:claims:measure

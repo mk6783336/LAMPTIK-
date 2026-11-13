@@ -17,6 +17,8 @@
     "check:i18n": "node scripts/check-i18n-seo.mjs",
     "check:metadata": "node scripts/check-metadata.mjs",
     "check:claims": "node scripts/check-claims.mjs",
+    "check:claims:measure": "node scripts/check-claims.mjs --measure",
+    "check:claims:measure:update": "node scripts/check-claims.mjs --measure=update",
     "check:claims:live": "node scripts/check-claims.mjs --live",
     "watch:index": "node scripts/watch-unindexed.mjs",
     "ads:health": "node scripts/ads-health.mjs",

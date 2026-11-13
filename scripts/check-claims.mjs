@@ -23,16 +23,29 @@
  * and asserts the accepted/rejected answer each page depends on. Offline mode
  * (the default, and the one wired into `npm run verify`) touches no network.
  *
+ * `--measure` adds the fifth: it resolves one sample per height ceiling, reads
+ * the first bytes of the stream each resolver returns and parses the `tkhd`
+ * box, so a ceiling is compared with the file a visitor actually receives
+ * rather than with the number a previous run typed. `--measure=update` records
+ * the measured numbers back into this file. Both are opt-in: `verify` and CI
+ * must not depend on four CDNs being reachable.
+ *
  * Exit codes: 0 = claims match capabilities, 1 = at least one does not,
  * 2 = --live ran but the target was unreachable (inconclusive, not a pass).
  */
 
-import { readFile, stat } from "node:fs/promises";
+import { readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const root = process.cwd();
 const args = process.argv.slice(2);
 const liveMode = args.includes("--live");
+// `--measure` reads the deployed streams and compares their real dimensions to
+// the ceilings below; `--measure=update` also rewrites those numbers. Off by
+// default: `verify` must not depend on four CDNs being reachable.
+const measureArg = args.find((arg) => arg === "--measure" || arg.startsWith("--measure="));
+const measureMode = Boolean(measureArg);
+const measureWrite = measureArg === "--measure=update";
 const baseArg = args.find((arg) => arg.startsWith("--base="));
 const baseUrl = (baseArg ? baseArg.slice("--base=".length) : "https://www.lamptik.online").replace(
   /\/+$/,
@@ -203,15 +216,25 @@ const NEGATION =
  * `mention` is what makes the rule work across files: a YouTube number inside a
  * TikTok country page is still a YouTube claim, so the sentence decides which
  * measurement applies, not the file's `platform` field alone.
+ *
+ * `samples` are the links `--measure` resolves; `tolerance` is how far a
+ * rendition may sit under the ceiling before the mismatch is called drift.
  */
 const MEASUREMENTS = {
   "youtube.height": {
-    measured: "640×360",
+    measured: "640×360 (3 sample(s), 2026-11-13)",
     display: "640×360",
-    max: 640,
+    max: 360,
     unit: "height",
     date: "2026-11-13",
     method: "bytes of the served MP4, tkhd box",
+    // Three uploads on purpose: the ceiling is only meaningful against sources
+    // the platform actually stored above it (240p, 1080p and a 4K master).
+    samples: [
+      { url: "https://www.youtube.com/watch?v=jNQXAC9IVRw", route: "/api/youtube" },
+      { url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", route: "/api/youtube" },
+      { url: "https://www.youtube.com/watch?v=LXb3EKWsInQ", route: "/api/youtube" },
+    ],
     platforms: ["youtube"],
     mention: /\byoutube\b/i,
     numbers: "1080p|2160p|4k|1080×1920|1080x1920|720p",
@@ -237,6 +260,7 @@ const MEASUREMENTS = {
     unit: "height",
     date: "2026-11-13",
     method: "bytes of the served MP4, tkhd box",
+    samples: [{ url: "https://www.instagram.com/reel/DeTUk4sDSp-/" }],
     platforms: ["instagram"],
     mention: /\binstagram\b/i,
     numbers: "1080p|1080×1920|1080x1920|1920p|2160p|4k|720p",
@@ -251,6 +275,7 @@ const MEASUREMENTS = {
     unit: "height",
     date: "2026-11-13",
     method: "bytes of the served MP4, tkhd box",
+    samples: [{ url: "https://x.com/NASA/status/2042791040516845925", route: "/api/twitter" }],
     platforms: ["twitter"],
     mention: /\btwitter\b|\bx\.com\b|\btweets?\b/i,
     numbers: "1080p|720p|2160p|4k",
@@ -265,6 +290,11 @@ const MEASUREMENTS = {
     unit: "height",
     date: "2026-11-13",
     method: "bytes of the served MP4, tkhd box",
+    samples: [
+      { url: "https://www.tiktok.com/@scout2015/video/6718335390845095173" },
+      { url: "https://www.tiktok.com/@tiktok/video/7106594312292453675" },
+      { url: "https://www.tiktok.com/@leokellr/video/7554076781209242902" },
+    ],
     platforms: ["tiktok"],
     mention: /\btiktok\b/i,
     numbers: "1080p|1080×1920|1080x1920|1920p|2160p|4k|720p|1280p",
@@ -273,12 +303,17 @@ const MEASUREMENTS = {
     // Three public reels measured 2026-11-13: 720×1280 twice and 360×640 once.
     // Facebook publishes a higher rendition than it hands a logged-out
     // resolver, so 1920 is a ceiling the file never reaches.
-    measured: "720×1280 (360×640 on one short reel)",
-    display: "720×1280",
-    max: 1280,
+    measured: "1080×1920 (3 sample(s), 2026-11-13)",
+    display: "1080×1920",
+    max: 1920,
     unit: "height",
     date: "2026-11-13",
     method: "bytes of the served MP4, tkhd box",
+    samples: [
+      { url: "https://www.facebook.com/reel/2166091230582141/" },
+      { url: "https://www.facebook.com/reel/1135388781826524" },
+      { url: "https://www.facebook.com/reel/1370060038398465" },
+    ],
     platforms: ["facebook"],
     mention: /\bfacebook\b|\bfb\b|fb\.watch/i,
     numbers: "1080p|1080×1920|1080x1920|1920p|2160p|4k",
@@ -714,6 +749,193 @@ async function runLive() {
   return results;
 }
 
+/* --------------------------- stream measurement --------------------------- */
+
+/**
+ * Reads the streams the deployed resolver actually hands back and compares
+ * their dimensions with the ceilings recorded above.
+ *
+ * A ceiling is wrong in both directions: too high and the copy promises a file
+ * nobody receives, too low and honest numbers get flagged as lies. Neither
+ * shows up without reading the bytes, which is what this does — resolve the
+ * sample, Range-request the stream, parse the first `tkhd` box.
+ */
+function tkhdDims(buffer) {
+  let index = buffer.indexOf("tkhd");
+  while (index >= 0) {
+    const version = buffer[index + 4];
+    const offset = index + 4 + (version === 1 ? 88 : 76);
+    if (buffer.length >= offset + 8) {
+      const width = buffer.readUInt32BE(offset) / 65536;
+      const height = buffer.readUInt32BE(offset + 4) / 65536;
+      if (width && height) return { width, height };
+    }
+    index = buffer.indexOf("tkhd", index + 4);
+  }
+  return null;
+}
+
+async function readTkhd(streamUrl) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 45_000);
+  try {
+    const response = await fetch(streamUrl, {
+      headers: {
+        range: "bytes=0-2000000",
+        "user-agent": "Mozilla/5.0 (compatible; lamp-tik-claim-gate)",
+      },
+      signal: controller.signal,
+    });
+    if (!response.body) return { state: "unreadable", detail: `http ${response.status}` };
+    const reader = response.body.getReader();
+    let buffer = Buffer.alloc(0);
+    while (buffer.length <= 2_000_000) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer = Buffer.concat([buffer, Buffer.from(value)]);
+      const dims = tkhdDims(buffer);
+      if (dims) {
+        await reader.cancel().catch(() => {});
+        return { state: "measured", ...dims };
+      }
+    }
+    await reader.cancel().catch(() => {});
+    return { state: "unreadable", detail: `no tkhd in ${buffer.length} bytes` };
+  } catch (error) {
+    return { state: "unreachable", detail: error instanceof Error ? error.message : String(error) };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function resolveStream(sample) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 45_000);
+  const route = sample.route ?? "/api/fetch";
+  // /api/fetch and /api/youtube take a JSON body; /api/twitter takes ?url=.
+  const post = route === "/api/fetch" || route === "/api/youtube";
+  try {
+    const response = await fetch(
+      post ? `${baseUrl}${route}` : `${baseUrl}${route}?url=${encodeURIComponent(sample.url)}`,
+      {
+        method: post ? "POST" : "GET",
+        headers: post ? { "content-type": "application/json" } : undefined,
+        body: post ? JSON.stringify({ url: sample.url }) : undefined,
+        signal: controller.signal,
+      },
+    );
+    const raw = await response.text();
+    let payload = null;
+    try {
+      payload = JSON.parse(raw);
+    } catch {
+      return { state: "unreachable", detail: `http ${response.status}, ${raw.length} byte body` };
+    }
+    if (!payload?.ok) {
+      return { state: "rejected", detail: payload?.error?.code ?? `http ${response.status}` };
+    }
+    const media = payload.media ?? {};
+    // Shape differs per route: /api/fetch hands a single play address, /api/twitter
+    // returns the rendition list, /api/youtube one muxed file. Take the largest
+    // rendition each route offers, because that is the file a visitor can pick.
+    let stream = null;
+    // /api/twitter names the rendition list `variants`; older shapes used `videos`.
+    const renditions = Array.isArray(media.variants)
+      ? media.variants
+      : Array.isArray(media.videos)
+        ? media.videos
+        : [];
+    if (renditions.length > 0) {
+      const largest = [...renditions].sort((a, b) => (b?.height ?? 0) - (a?.height ?? 0));
+      stream = largest.find((video) => typeof video?.url === "string")?.url ?? null;
+    }
+    // videoHd first: when the YouTube mirrors hand a 1080p file back, that is the
+    // one the panel offers, and a ceiling that ignored it would stay flattering.
+    stream ??= media.videoHd ?? media.videoDirect ?? media.video ?? media.videoUrl ?? null;
+    if (typeof stream !== "string") return { state: "rejected", detail: "no stream in the response" };
+    // Fetch-platform streams can be same-origin proxy paths (/api/download?k=…),
+    // which are only URLs once the deployment origin is put back in front.
+    if (stream.startsWith("/")) stream = `${baseUrl}${stream}`;
+    return await readTkhd(stream);
+  } catch (error) {
+    return { state: "unreachable", detail: error instanceof Error ? error.message : String(error) };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Rewrites one measurement block with the numbers just measured. */
+async function recordMeasurement(id, { display, height, samples }) {
+  const file = path.join(root, "scripts/check-claims.mjs");
+  const source = await readFile(file, "utf8");
+  const start = source.indexOf(`  "${id}": {`);
+  if (start < 0) return false;
+  const end = source.indexOf("\n  },", start);
+  if (end < 0) return false;
+  const today = new Date().toISOString().slice(0, 10);
+  const block = source
+    .slice(start, end)
+    .replace(/measured: "[^"]*"/, `measured: "${display} (${samples} sample(s), ${today})"`)
+    .replace(/display: "[^"]*"/, `display: "${display}"`)
+    .replace(/max: \d+/, `max: ${height}`)
+    .replace(/date: "[^"]*"/, `date: "${today}"`);
+  await writeFile(file, source.slice(0, start) + block + source.slice(end));
+  return true;
+}
+
+async function runMeasurements() {
+  console.log(`claim audit (measure): reading the streams ${baseUrl} serves`);
+  const drift = [];
+  const unreachable = [];
+  let measuredCount = 0;
+  let written = 0;
+  for (const [id, measurement] of Object.entries(MEASUREMENTS)) {
+    if (!measurement.samples || measurement.unit !== "height") continue;
+    const results = [];
+    for (const sample of measurement.samples) {
+      // One retry: a cold serverless function or a provider hiccup is not a
+      // measurement, and reporting it as one would drop a real sample.
+      let result = await resolveStream(sample);
+      if (result.state !== "measured") {
+        await new Promise((resolve) => setTimeout(resolve, 2_000));
+        result = await resolveStream(sample);
+      }
+      results.push(result);
+      const label = sample.url.replace(/^https?:\/\/(www\.)?/, "").slice(0, 44);
+      const shown =
+        result.state === "measured"
+          ? `${result.width}×${result.height}`
+          : `${result.state}: ${String(result.detail).slice(0, 40)}`;
+      console.log(`  ${id.padEnd(17)} ${shown.padEnd(28)} ${label}`);
+    }
+    const readable = results.filter((result) => result.state === "measured");
+    if (readable.length === 0) {
+      unreachable.push(`${id}: no sample could be read (${results.map((r) => r.state).join(", ")})`);
+      continue;
+    }
+    measuredCount += readable.length;
+    const largest = readable.reduce((best, next) => (next.height > best.height ? next : best));
+    const display = `${largest.width}×${largest.height}`;
+    // A rendition may be a few pixels under the ceiling (Instagram serves
+    // 718×1276 against a 720p ceiling), so only a real gap counts as drift.
+    const slack = Math.abs(largest.height - measurement.max) / measurement.max;
+    if (slack <= (measurement.tolerance ?? 0.05)) {
+      console.log(`  ${id.padEnd(17)} ceiling ${measurement.max} still matches`);
+      continue;
+    }
+    drift.push({ id, recorded: measurement.max, height: largest.height, display });
+    if (measureWrite) {
+      const ok = await recordMeasurement(id, {
+        display,
+        height: largest.height,
+        samples: readable.length,
+      });
+      if (ok) written += 1;
+    }
+  }
+  return { drift, unreachable, measuredCount, written, samples: Object.values(MEASUREMENTS).filter((m) => m.samples).length };
+}
+
 /* ------------------------------- main ------------------------------- */
 
 await checkEvidence();
@@ -721,8 +943,31 @@ await scanAllClaims();
 
 let liveResults = [];
 if (liveMode) liveResults = await runLive();
+const measureResults = measureMode ? await runMeasurements() : null;
 
 for (const note of notes) console.warn(`note: ${note}`);
+
+if (measureResults) {
+  for (const message of measureResults.unreachable) console.warn(`measure: ${message}`);
+  if (measureResults.drift.length > 0 && measureWrite) {
+    console.log(
+      `\nclaim audit: refreshed ${measureResults.written} ceiling(s) from the measured streams — ` +
+        "re-read the copy that relied on the old numbers.",
+    );
+  } else if (measureResults.drift.length > 0) {
+    console.error("\nclaim audit: a ceiling no longer matches the streams the resolver serves:");
+    for (const item of measureResults.drift) {
+      console.error(
+        `  - ${item.id}: recorded max ${item.recorded}, measured ${item.display} (max ${item.height})`,
+      );
+    }
+    console.error(
+      "\nRun `npm run check:claims:measure:update` to record the measured numbers, then re-read" +
+        "\nthe copy that relied on the old ceiling — and the copy that could not claim the new one.\n",
+    );
+    process.exitCode = 1;
+  }
+}
 
 if (stale.length > 0) {
   console.error("\nclaim audit: the capability table is stale — resolve one side or the other:");
@@ -749,13 +994,23 @@ const unsupported = capabilityIds.length - supported;
 const liveNote = liveResults.length
   ? `, ${liveResults.filter((result) => result.state === "match").length}/${liveResults.length} live probe(s) matched`
   : "";
+const measureNote = measureResults
+  ? `, ${measureResults.measuredCount} stream byte(s) measured`
+  : "";
 console.log(
   `claim audit: ${capabilityIds.length} capabilities (${supported} supported, ${unsupported} refused), ` +
     `${CLAIM_RULES.length} promise rule(s), ${Object.keys(MEASUREMENTS).length} measured ceiling(s), ` +
-    `${LIVE_PROBES.length} probe shape(s)${liveNote}`,
+    `${LIVE_PROBES.length} probe shape(s)${liveNote}${measureNote}`,
 );
 
 if (liveMode && liveResults.some((result) => result.state === "unreachable")) {
   console.error("claim audit: at least one probe could not reach the target — result is inconclusive.");
+  process.exit(2);
+}
+
+if (measureResults && measureResults.unreachable.length > 0) {
+  console.error(
+    "claim audit: at least one platform served no readable stream — the measured ceiling is incomplete.",
+  );
   process.exit(2);
 }
