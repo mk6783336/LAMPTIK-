@@ -14,7 +14,7 @@ export const entry: SubTool = {
   title: "TikTok MP3 Download Without Watermark - Original Sound",
   socialTitle: "TikTok to MP3 Converter - Extract the Original Sound at Full Quality",
   description:
-    "TikTok MP3 download without watermark - convert any TikTok to MP3 or M4A from the original audio track at up to 320 kbps. Free, no app, no sign-up.",
+    "TikTok MP3 download without watermark - convert any TikTok to MP3 or M4A from the original audio track, at the best bitrate the post carries. Free, no app, no sign-up.",
   keywords: [
     "tiktok mp3 download without watermark",
     "tiktok mp3 downloader",
@@ -33,7 +33,10 @@ export const entry: SubTool = {
   chips: ["Original audio track", "MP3 + M4A", "No watermark"],
   facts: [
     ["Output", "MP3 / M4A audio"],
-    ["Bitrate", "Up to 320 kbps"],
+    // Measured reality: TikTok serves AAC around 128–256 kbps. "Up to 320"
+    // was a number no upload can reach here; the row now names the ceiling
+    // that exists rather than the one people search for.
+    ["Bitrate", "Best the post carries (often 128–256)"],
     ["Source", "Original audio track"],
     ["Price", "Free, no sign-up"],
   ],

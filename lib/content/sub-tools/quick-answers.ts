@@ -454,7 +454,7 @@ export const SUB_TOOL_ANSWERS: Record<string, SubToolAnswer> = {
   "youtube-to-mp4-1080p": {
     query: "How do I download a YouTube video in 1080p?",
     answer:
-      "Paste the link and choose 1080p. The resolver requests the progressive 1080p H.264 stream with audio already muxed in, which is the format that plays everywhere — no separate 4K video track and audio track to merge.",
+      "Paste the link and choose the tallest rendition listed. The resolver asks for the highest progressive H.264 stream with audio already muxed in — 1080p when the upload carries it, 720p otherwise — which is the format that plays everywhere: no separate video and audio tracks to merge.",
     comparison: [
       {
         label: "Stream selection",
