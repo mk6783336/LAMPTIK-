@@ -37,7 +37,7 @@ export const entry: SubTool = {
   facts: [
     ["Copyright basis", "Fair use · 17 U.S.C. §107"],
     ["Notices", "DMCA · 17 U.S.C. §512"],
-    ["Best quality", "1080p where offered"],
+    ["Best quality", "576×1024 (measured)"],
     ["Price", "Free"],
   ],
   steps: [
@@ -98,7 +98,7 @@ export const entry: SubTool = {
     {
       question: "Can I get a 4K TikTok download without a watermark?",
       answer:
-        "Only if the creator uploaded in 4K and TikTok still serves that rendition. The result panel lists the resolutions the platform actually publishes, and the tool never upscales a 1080p source into a 4K-named file — the size grows, the detail does not. Most vertical uploads since 2022 are delivered at 1080p, which is also what TikTok's own player switches to on a phone.",
+        "No. The file this tool hands back is the single MP4 TikTok's play address serves, and three posts measured on 2026-11-13 — 2019, 2022 and 2025 uploads — all came back 576×1024. A 4K label here would describe a file nobody received, so the page says 576×1024 and nothing else.",
     },
   ],
   appName: "LAMP TIK - TikTok Video Downloader (No Watermark, HD)",

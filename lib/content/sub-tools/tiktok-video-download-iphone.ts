@@ -36,7 +36,7 @@ export const entry: SubTool = {
     "Copy the link in TikTok, paste it into Safari on this page, and tap Download HD MP4. The file lands in Files → Downloads, because iOS does not let a browser write to the camera roll directly; Share → Save Video moves it into Photos in two taps. TikTok's own Save button is not part of this: that copy has your username stamped on it.",
   chips: ["Safari on iOS", "No watermark", "MP4 + MP3"],
   facts: [
-    ["Best quality", "1080p where offered"],
+    ["Best quality", "576×1024 (measured)"],
     ["Lands in", "Files → Downloads"],
     ["To Photos", "Share → Save Video"],
     ["Price", "Free"],

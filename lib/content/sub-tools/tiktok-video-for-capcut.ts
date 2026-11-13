@@ -65,7 +65,7 @@ export const entry: SubTool = {
     {
       question: "Does the download keep the original resolution and frame rate?",
       answer:
-        "It keeps what TikTok serves publicly — commonly 720×1280 or 1080×1920, at the clip's own frame rate. TikTok re-encodes every upload, so the file is the platform's rendition rather than the creator's camera master; there is no higher-quality copy available from the link, and no tool can invent one.",
+        "It keeps what TikTok's play address serves — 576×1024 on all three posts measured 2026-11-13 (2019, 2022 and 2025 uploads) — at the clip's own frame rate. TikTok re-encodes every upload, so the file is the platform's rendition rather than the creator's camera master; there is no higher-quality copy available from the link, and no tool can invent one.",
     },
     {
       question: "Is it really watermark-free, and is that fine for editing?",
@@ -87,7 +87,7 @@ export const entry: SubTool = {
   features: [
     "Watermark-free H.264 MP4 that CapCut imports without converting",
     "AAC audio muxed in — no separate track to sync",
-    "Up to 1080p, the highest rendition TikTok publishes",
+    "576×1024 — the file measured on 2026-11-13",
     "SD alternative for light proxy clips",
     "Short links (vt.tiktok.com, vm.tiktok.com) resolved server-side",
   ],

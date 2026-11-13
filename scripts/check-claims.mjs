@@ -255,6 +255,34 @@ const MEASUREMENTS = {
     mention: /\btwitter\b|\bx\.com\b|\btweets?\b/i,
     numbers: "1080p|720p|2160p|4k",
   },
+  "tiktok.height": {
+    // Three public posts measured 2026-11-13 — a 2019 upload, a 2022 one and a
+    // 2025 one. The resolver's play address served 576×1024 every time, so
+    // every 720p/1080p claim on a TikTok page is above the real file.
+    measured: "576×1024 (2019, 2022 and 2025 posts)",
+    display: "576×1024",
+    max: 1024,
+    unit: "height",
+    date: "2026-11-13",
+    method: "bytes of the served MP4, tkhd box",
+    platforms: ["tiktok"],
+    mention: /\btiktok\b/i,
+    numbers: "1080p|1080×1920|1080x1920|1920p|2160p|4k|720p|1280p",
+  },
+  "facebook.height": {
+    // Three public reels measured 2026-11-13: 720×1280 twice and 360×640 once.
+    // Facebook publishes a higher rendition than it hands a logged-out
+    // resolver, so 1920 is a ceiling the file never reaches.
+    measured: "720×1280 (360×640 on one short reel)",
+    display: "720×1280",
+    max: 1280,
+    unit: "height",
+    date: "2026-11-13",
+    method: "bytes of the served MP4, tkhd box",
+    platforms: ["facebook"],
+    mention: /\bfacebook\b|\bfb\b|fb\.watch/i,
+    numbers: "1080p|1080×1920|1080x1920|1920p|2160p|4k",
+  },
   "tiktok.audio": {
     measured: "128–256 kbps",
     display: "128–256",

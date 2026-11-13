@@ -9,9 +9,9 @@ export const entry: SubTool = {
   slug: "facebook-reels-downloader",
   platform: "facebook",
   title: "Facebook Reels Downloader — Save FB Reels MP4 HD",
-  socialTitle: "Facebook Reels Downloader — Save FB Reels to MP4 in 1080p",
+  socialTitle: "Facebook Reels Downloader — Save FB Reels to MP4",
   description:
-    "Download Facebook Reels in 1080p MP4 with the original audio. Paste a reel or fb.watch link and save it watermark-free — free, no login, phone or desktop.",
+    "Download Facebook Reels as MP4 with the original audio — the reel file measured 720×1280 on 2026-11-13. Paste a reel or fb.watch link and save it watermark-free, no login.",
   keywords: [
     "facebook reels downloader",
     "download facebook reels",
@@ -29,7 +29,7 @@ export const entry: SubTool = {
   facts: [
     ["Cost", "Free"],
     ["Aspect", "9:16 vertical"],
-    ["Quality", "Up to 1080p"],
+    ["Quality", "Measured 720×1280"],
     ["Links", "Reels + fb.watch"],
   ],
   steps: [
@@ -41,7 +41,7 @@ export const entry: SubTool = {
     {
       title: "Save the reel rendition",
       body:
-        "You get the reel's own MP4: 9:16, up to 1080p, with the audio track the creator attached. There is no Facebook logo burned in, so the file drops cleanly into Shorts, Reels or TikTok if you are reposting your own content.",
+        "You get the reel's own MP4: 9:16, 720×1280 as measured on 2026-11-13, with the audio track the creator attached. There is no Facebook logo burned in, so the file drops cleanly into Shorts, Reels or TikTok if you are reposting your own content.",
     },
   ],
   faqs: [
@@ -68,12 +68,12 @@ export const entry: SubTool = {
     {
       question: "Will the file still be vertical?",
       answer:
-        "Yes. Reels are stored as 9:16 and the download preserves that aspect ratio at the source resolution, up to 1080x1920. No letterboxing or cropping is applied on our side.",
+        "Yes. Reels are stored as 9:16 and the download preserves that aspect ratio at the resolution the resolver receives — 720×1280 on the three reels measured 2026-11-13 (360×640 on one short one). No letterboxing or cropping is applied on our side.",
     },
   ],
   appName: "LAMP TIK Facebook Reels Downloader",
   features: [
-    "Facebook Reels saved as 9:16 MP4 up to 1080p",
+    "Facebook Reels saved as 9:16 MP4 (measured 720×1280)",
     "fb.watch and share short links resolved automatically",
     "Original reel audio preserved",
     "No Facebook login required",

@@ -232,7 +232,7 @@ export const SUB_TOOL_ANSWERS: Record<string, SubToolAnswer> = {
       },
       {
         label: "Quality",
-        ours: "Up to 1080p, the highest H.264 variant TikTok exposes",
+        ours: "One H.264 MP4 at 576×1024, the file TikTok's play address served on 2026-11-13",
         theirs: "A 720p re-encode of the watermarked copy",
       },
     ],
