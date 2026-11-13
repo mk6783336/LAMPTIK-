@@ -23,8 +23,26 @@ import { AppError } from "@/lib/errors";
 const INNERTUBE_KEY = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
 const INNERTUBE_URL = `https://www.youtube.com/youtubei/v1/player?key=${INNERTUBE_KEY}&prettyPrint=false`;
 const ANDROID_UA = "com.google.android.youtube/20.10.38 (Linux; U; Android 11) gzip";
-const PLAYER_TIMEOUT_MS = 9_000;
+const DESKTOP_UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+const PLAYER_TIMEOUT_MS = 7_000;
 const CAPTION_TIMEOUT_MS = 9_000;
+const VISITOR_TTL_MS = 30 * 60_000;
+
+/**
+ * Player clients tried in order. Measured from a residential IP on
+ * 2026-11-13: ANDROID and IOS each return 6 tracks for dQw4w9WgXcQ, WEB
+ * returns `UNPLAYABLE` and zero. From Vercel's datacenter IP the ANDROID call
+ * alone answers `LOGIN_REQUIRED` — the same bot-check the stream resolver hits
+ * — which is why every client also carries the session `visitorData` tokens the
+ * resolver loads from the embed page, and why two more clients are tried here.
+ */
+const CLIENTS = [
+  { name: "ANDROID", version: "20.10.38", ua: ANDROID_UA },
+  { name: "IOS", version: "20.10.4", ua: "com.google.ios.youtube/20.10.4 (iPhone16,2; U; CPU iOS 18_1_0 like Mac OS X;)" },
+  { name: "TVHTML5_SIMPLY_EMBEDDED_PLAYER", version: "2.0", ua: "Mozilla/5.0 (ChromiumStylePlatform) Cobalt/Version" },
+  { name: "WEB", version: "2.20241126.01.00", ua: DESKTOP_UA },
+] as const;
 
 /** Timedtext hosts we accept after a caption track hands us its signed URL. */
 const CAPTION_HOSTS = ["www.youtube.com", "youtube.com", "m.youtube.com", "music.youtube.com"];
@@ -106,42 +124,157 @@ export function parseVideoId(raw: string): string | null {
   return null;
 }
 
-async function fetchPlayer(videoId: string): Promise<PlayerPayload> {
+interface VisitorCache {
+  value: string | null;
+  expiresAt: number;
+}
+
+let visitorCache: VisitorCache | null = null;
+let visitorInFlight: Promise<string | null> | null = null;
+
+/** Same `ytcfg.visitorData` the stream resolver reads, from the embed page. */
+function extractVisitorData(html: string): string | null {
+  const at = html.indexOf("visitorData");
+  if (at < 0) return null;
+  const colon = html.indexOf(":", at);
+  if (colon < 0) return null;
+  const start = html.indexOf('"', colon);
+  if (start < 0) return null;
+  const end = html.indexOf('"', start + 1);
+  if (end < 0) return null;
+  const value = html.slice(start + 1, end);
+  return /^[A-Za-z0-9_%=-]{20,200}$/.test(value) ? value : null;
+}
+
+async function loadVisitorData(videoId: string): Promise<string | null> {
+  for (const page of [
+    `https://www.youtube.com/embed/${encodeURIComponent(videoId)}`,
+    "https://www.youtube.com/",
+  ]) {
+    try {
+      const response = await fetch(page, {
+        headers: {
+          "User-Agent": DESKTOP_UA,
+          Accept: "text/html,application/xhtml+xml",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(3_500),
+      });
+      if (!response.ok) {
+        await response.body?.cancel().catch(() => undefined);
+        continue;
+      }
+      const token = extractVisitorData(await response.text());
+      if (token) {
+        visitorCache = { value: token, expiresAt: Date.now() + VISITOR_TTL_MS };
+        return token;
+      }
+    } catch {
+      // A missing session token is a soft downgrade, not a failure.
+    }
+  }
+  return null;
+}
+
+function visitorToken(videoId: string): Promise<string | null> {
+  if (visitorCache && visitorCache.expiresAt > Date.now()) return Promise.resolve(visitorCache.value);
+  if (!visitorInFlight) {
+    visitorInFlight = loadVisitorData(videoId).finally(() => {
+      visitorInFlight = null;
+    });
+  }
+  return visitorInFlight;
+}
+
+async function fetchPlayerOnce(
+  videoId: string,
+  client: (typeof CLIENTS)[number],
+  visitor: string | null,
+): Promise<PlayerPayload | null> {
   const response = await fetch(INNERTUBE_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Origin: "https://www.youtube.com",
       Referer: "https://www.youtube.com/",
-      "User-Agent": ANDROID_UA,
+      "User-Agent": client.ua,
+      ...(visitor ? { "X-Goog-Visitor-Id": visitor } : {}),
     },
     body: JSON.stringify({
       videoId,
       context: {
-        client: { clientName: "ANDROID", clientVersion: "20.10.38", hl: "en", gl: "US" },
+        client: { clientName: client.name, clientVersion: client.version, hl: "en", gl: "US" },
+        ...(visitor ? { visitorData: visitor } : {}),
       },
     }),
     signal: AbortSignal.timeout(PLAYER_TIMEOUT_MS),
     cache: "no-store",
-  }).catch(() => {
+  }).catch(() => null);
+
+  if (!response || !response.ok) {
+    await response?.body?.cancel().catch(() => undefined);
+    return null;
+  }
+
+  return (await response.json().catch(() => null)) as PlayerPayload | null;
+}
+
+function tracksOf(payload: PlayerPayload) {
+  return payload.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? [];
+}
+
+/**
+ * The first client that answers `OK` with caption tracks wins. A video that
+ * genuinely has no captions answers `OK` with an empty list, so that verdict is
+ * only trusted once every client has been asked — otherwise a bot-checked
+ * client would be reported as "no subtitles" and the page would blame the
+ * creator for a YouTube refusal.
+ */
+async function fetchPlayer(videoId: string): Promise<PlayerPayload> {
+  const visitor = await visitorToken(videoId).catch(() => null);
+  let okPayload: PlayerPayload | null = null;
+  let lastReason = "";
+  let lastStatus = "";
+  let reachable = false;
+
+  for (const client of CLIENTS) {
+    const payload = await fetchPlayerOnce(videoId, client, visitor);
+    if (!payload) continue;
+    reachable = true;
+
+    const status = payload.playabilityStatus?.status ?? "";
+    const tracks = tracksOf(payload);
+    if (status === "OK" && tracks.length > 0) return payload;
+    if (status === "OK" && !okPayload) okPayload = payload;
+    lastStatus = status || lastStatus;
+    lastReason = payload.playabilityStatus?.reason ?? lastReason;
+  }
+
+  // OK with no tracks is a real answer: the video has no captions at all.
+  if (okPayload) return okPayload;
+
+  if (!reachable) {
     throw new AppError(
       "PROVIDER_UNAVAILABLE",
       "YouTube did not answer the caption request.",
       "Try again in a moment — the player response is usually back within seconds.",
     );
-  });
+  }
 
-  if (!response.ok) {
+  if (lastStatus === "ERROR" || lastStatus === "UNPLAYABLE") {
     throw new AppError(
-      "UPSTREAM_ERROR",
-      `YouTube answered ${response.status} for this video.`,
-      "This is on YouTube's side; retrying usually works.",
+      "VIDEO_PRIVATE",
+      "YouTube will not serve this video to the server.",
+      "Private, members-only and age-restricted videos have no readable captions here.",
     );
   }
 
-  return (await response.json().catch(() => {
-    throw new AppError("UPSTREAM_ERROR", "YouTube sent a response this page could not read.");
-  })) as PlayerPayload;
+  throw new AppError(
+    "PROVIDER_UNAVAILABLE",
+    "YouTube asked the server to verify itself before answering for this video.",
+    `${lastReason ? `${lastReason} ` : ""}Retrying usually clears it; the captions themselves are unchanged.`,
+  );
 }
 
 function sortTracks(tracks: InternalTrack[]): InternalTrack[] {
@@ -181,24 +314,8 @@ async function resolveCaptionTracks(rawUrl: string): Promise<ResolvedCaptions> {
   }
 
   const player = await fetchPlayer(videoId);
-  const status = player.playabilityStatus?.status;
 
-  if (status === "ERROR" || status === "UNPLAYABLE") {
-    throw new AppError(
-      "VIDEO_PRIVATE",
-      "YouTube will not serve this video to the server.",
-      "Private, members-only and age-restricted videos have no readable captions here.",
-    );
-  }
-  if (status && status !== "OK") {
-    throw new AppError(
-      "VIDEO_NOT_FOUND",
-      "This video is not available any more.",
-      "Check the link — deleted and region-blocked videos answer like this.",
-    );
-  }
-
-  const raw = player.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? [];
+  const raw = tracksOf(player);
   const tracks: InternalTrack[] = [];
 
   for (const track of raw) {
