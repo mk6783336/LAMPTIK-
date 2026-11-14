@@ -28,7 +28,7 @@ import { pageAlternates, siteUrl } from "@/lib/site";
 const TITLE = "X Video Downloader — MP4 up to 4K, No Login";
 const SOCIAL_TITLE = "Save X Videos and GIFs as MP4 — up to 3840×2160";
 const DESCRIPTION =
-  "Save Twitter (X) videos and GIFs as MP4 up to 3840×2160 — every rendition X published is listed, so you pick the size and download it to your device. Free, no login, no app, and no watermark to remove.";
+  "Save X (Twitter) videos and GIFs as MP4 up to 3840×2160. Pick the rendition you want and download it — free, no login, no app, no watermark.";
 
 const FAQS: ReadonlyArray<{ question: string; answer: string }> = [
   {
