@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
+import { Glyph } from "@/components/glyph";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
 
 import { AmbientBackground } from "@/components/ambient-background";
 import { Breadcrumb } from "@/components/seo/breadcrumb";
@@ -302,7 +302,7 @@ export default function TwitterVideoDownloaderEsPage() {
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center justify-between gap-2">
                         <span className="text-base font-semibold tracking-tight">{title}</span>
-                        <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)]" />
+                        <Glyph name="arrow-up-right" className="size-4 shrink-0 text-[var(--text-3)]" />
                       </span>
                       <span className="pretty mt-1.5 block text-sm leading-relaxed text-[var(--text-2)]">
                         {note}

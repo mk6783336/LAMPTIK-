@@ -1,16 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import {
-  AlertTriangle,
-  ArrowUpRight,
-  Clock3,
-  Download,
-  Music2,
-  RefreshCw,
-  ShieldCheck,
-  Zap,
-} from "lucide-react";
+import { AlertTriangle, Clock3, Download, Music2, RefreshCw, ShieldCheck, Zap } from "lucide-react";
+import { Glyph } from "@/components/glyph";
 import { useState } from "react";
 
 import { trackEvent, type DownloadEventMeta } from "@/lib/analytics";
@@ -627,7 +619,7 @@ export function ResultPanel({
                   Opens a partner offer in a new tab — your file above is already downloading.
                 </span>
               </span>
-              <ArrowUpRight aria-hidden="true" className="size-4 shrink-0 text-[var(--text-3)]" />
+              <Glyph name="arrow-up-right" aria-hidden="true" className="size-4 shrink-0 text-[var(--text-3)]" />
             </a>
           ) : null}
 

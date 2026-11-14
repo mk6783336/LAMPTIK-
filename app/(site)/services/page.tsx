@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowUpRight, Check, Chrome, Server, Smartphone, Zap } from "lucide-react";
+import { Chrome, Server, Smartphone, Zap } from "lucide-react";
+import { Glyph } from "@/components/glyph";
 
 import { AmbientBackground } from "@/components/ambient-background";
 import { SiteFooter } from "@/components/site-footer";
@@ -196,7 +197,7 @@ export default function ServicesPage() {
               <div className="mt-7 flex flex-wrap items-center gap-3">
                 <Link href="/contact" className="btn btn-primary h-11 gap-2 px-5 text-sm font-semibold">
                   Start a project
-                  <ArrowUpRight className="size-4" />
+                  <Glyph name="arrow-up-right" className="size-4" />
                 </Link>
                 <Link href="/#tool" className="btn btn-secondary h-11 px-5 text-sm font-medium">
                   See what I built
@@ -239,7 +240,7 @@ export default function ServicesPage() {
                   <ul className="mt-4 space-y-2">
                     {offering.points.map((point) => (
                       <li key={point} className="flex gap-2 text-sm text-[var(--text-2)]">
-                        <Check className="mt-0.5 size-4 shrink-0 text-[var(--ok)]" aria-hidden="true" />
+                        <Glyph name="check" className="mt-0.5 size-4 shrink-0 text-[var(--ok)]" aria-hidden="true" />
                         <span>{point}</span>
                       </li>
                     ))}
@@ -277,7 +278,7 @@ export default function ServicesPage() {
                 <ul className="mt-3 space-y-2.5">
                   {FIT_YES.map((item) => (
                     <li key={item} className="flex gap-2 text-sm leading-relaxed text-[var(--text-2)]">
-                      <Check className="mt-0.5 size-4 shrink-0 text-[var(--ok)]" aria-hidden="true" />
+                      <Glyph name="check" className="mt-0.5 size-4 shrink-0 text-[var(--ok)]" aria-hidden="true" />
                       <span>{item}</span>
                     </li>
                   ))}
@@ -318,7 +319,7 @@ export default function ServicesPage() {
                 <div className="mt-6 flex flex-wrap items-center gap-3">
                   <Link href="/contact" className="btn btn-primary h-11 gap-2 px-5 text-sm font-semibold">
                     Send a brief
-                    <ArrowUpRight className="size-4" />
+                    <Glyph name="arrow-up-right" className="size-4" />
                   </Link>
                   <a
                     href="mailto:support@lamptik.online?subject=Project%20brief"

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { Glyph } from "@/components/glyph";
 
 import type { BridgeLink } from "@/lib/i18n/tool-bridges";
 
@@ -33,7 +33,7 @@ export function ToolBridge({ heading, links }: { heading: string; links: BridgeL
               className="inline-flex items-center gap-1 text-sm text-[var(--accent-text)] underline-offset-4 hover:underline"
             >
               {link.label}
-              <ArrowUpRight aria-hidden="true" className="size-3.5 shrink-0" />
+              <Glyph name="arrow-up-right" aria-hidden="true" className="size-3.5 shrink-0" />
             </Link>
           </li>
         ))}

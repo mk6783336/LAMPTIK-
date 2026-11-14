@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowUpRight, Check, Youtube } from "lucide-react";
+import { Youtube } from "lucide-react";
+import { Glyph } from "@/components/glyph";
 
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
@@ -223,7 +224,7 @@ export default function YouTubeDownloaderPage() {
                 <ul className="mt-6 hidden flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--text-3)] sm:flex">
                   {["640×360 measured", "Shorts + long videos", "MP3 audio"].map((chip) => (
                     <li key={chip} className="inline-flex items-center gap-1.5">
-                      <Check aria-hidden="true" className="size-3 text-[var(--accent-text)]/80" />
+                      <Glyph name="check" aria-hidden="true" className="size-3 text-[var(--accent-text)]/80" />
                       {chip}
                     </li>
                   ))}
@@ -429,7 +430,7 @@ export default function YouTubeDownloaderPage() {
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center justify-between gap-2">
                         <span className="text-base font-semibold tracking-tight">{title}</span>
-                        <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
+                        <Glyph name="arrow-up-right" className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
                       </span>
                       <span className="pretty mt-1.5 block text-sm leading-relaxed text-[var(--text-2)]">
                         {note}
@@ -464,7 +465,7 @@ export default function YouTubeDownloaderPage() {
                         <span className="text-base font-semibold tracking-tight">
                           {PLATFORMS[id].switcherLabel}
                         </span>
-                        <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
+                        <Glyph name="arrow-up-right" className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
                       </span>
                       <span className="pretty mt-1.5 block text-sm leading-relaxed text-[var(--text-2)]">
                         {PLATFORMS[id].blurb}

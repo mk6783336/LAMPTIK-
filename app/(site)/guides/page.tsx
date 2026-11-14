@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowUpRight, BookOpen } from "lucide-react";
+import { BookOpen } from "lucide-react";
+import { Glyph } from "@/components/glyph";
 
 import { AmbientBackground } from "@/components/ambient-background";
 import { SiteFooter } from "@/components/site-footer";
@@ -163,7 +164,7 @@ export default function GuidesPage() {
                   </time>
                   <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent-text)]">
                     Read the guide
-                    <ArrowUpRight className="size-3.5 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                    <Glyph name="arrow-up-right" className="size-3.5 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                   </span>
                 </div>
               </Link>
@@ -194,7 +195,7 @@ export default function GuidesPage() {
                         aria-hidden="true"
                         className="grid size-7 place-items-center rounded-full border border-[var(--glass-border)] bg-[var(--field)] text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:translate-x-0.5 group-hover:text-[var(--accent-text)]"
                       >
-                        <ArrowUpRight className="size-3.5" />
+                        <Glyph name="arrow-up-right" className="size-3.5" />
                       </span>
                     </div>
                   </Link>

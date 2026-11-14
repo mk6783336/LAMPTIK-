@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowUpRight, Compass, SearchX } from "lucide-react";
+import { Compass, SearchX } from "lucide-react";
+import { Glyph } from "@/components/glyph";
 
 import { AmbientBackground } from "@/components/ambient-background";
 import { PlatformIcon } from "@/components/platform-icons";
@@ -93,7 +94,7 @@ export function NotFoundView() {
                           <span className="text-base font-semibold tracking-tight">
                             {item.title}
                           </span>
-                          <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
+                          <Glyph name="arrow-up-right" className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
                         </span>
                         <span className="pretty mt-2 block text-sm leading-relaxed text-[var(--text-2)]">
                           {item.body}

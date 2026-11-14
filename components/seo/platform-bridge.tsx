@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { Glyph } from "@/components/glyph";
 
 /**
  * In-content links to the two pages Google has never crawled.
@@ -102,7 +102,7 @@ export function PlatformBridge({ host }: { host: BridgeHost }) {
             <Link href={link.href} className="bento-card group flex h-full flex-col">
               <span className="flex items-start justify-between gap-2 text-sm font-semibold leading-snug tracking-tight">
                 {link.anchor}
-                <ArrowUpRight className="mt-0.5 size-4 shrink-0 text-[var(--text-3)] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                <Glyph name="arrow-up-right" className="mt-0.5 size-4 shrink-0 text-[var(--text-3)] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
               </span>
               <span className="pretty mt-1.5 block text-sm leading-relaxed text-[var(--text-2)]">
                 {link.note}

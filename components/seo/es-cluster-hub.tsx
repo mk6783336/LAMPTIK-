@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { Glyph } from "@/components/glyph";
 
 /**
  * The Spanish cluster, as a section on `/es`.
@@ -62,7 +62,7 @@ export function EsClusterHub() {
               <Link href={tool.href} className="bento-card group flex h-full flex-col">
                 <span className="flex items-start justify-between gap-2 text-base font-semibold leading-snug tracking-tight">
                   {tool.anchor}
-                  <ArrowUpRight className="mt-0.5 size-4 shrink-0 text-[var(--text-3)] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                  <Glyph name="arrow-up-right" className="mt-0.5 size-4 shrink-0 text-[var(--text-3)] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </span>
                 <span className="pretty mt-2 block text-sm leading-relaxed text-[var(--text-2)]">
                   {tool.body}

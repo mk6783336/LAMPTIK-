@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowUpRight, Globe } from "lucide-react";
+import { Globe } from "lucide-react";
+import { Glyph } from "@/components/glyph";
 
 import { PlatformIcon } from "@/components/platform-icons";
 import { LANGUAGE_LABELS } from "@/lib/i18n/language-labels";
@@ -89,7 +90,7 @@ export function PlatformLanguages({ platform }: { platform: LocalizedPlatform })
                       {anchorText(copy.title)}
                     </span>
                   </span>
-                  <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
+                  <Glyph name="arrow-up-right" className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
                 </Link>
               </li>
             );
@@ -138,7 +139,7 @@ function HubLanguageCard({ code }: { code: PlatformLocale }) {
                   className="size-3.5 shrink-0 text-[var(--text-3)]"
                 />
                 <span className="pretty min-w-0 flex-1">{anchorText(copy.title)}</span>
-                <ArrowUpRight className="size-3 shrink-0 text-[var(--text-3)] transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                <Glyph name="arrow-up-right" className="size-3 shrink-0 text-[var(--text-3)] transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
               </Link>
             </li>
           );

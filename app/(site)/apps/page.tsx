@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowUpRight, Chrome, Download, ShieldCheck, Smartphone, Sparkles } from "lucide-react";
+import { Chrome, Download, ShieldCheck, Smartphone, Sparkles } from "lucide-react";
+import { Glyph } from "@/components/glyph";
 
 import { AmbientBackground } from "@/components/ambient-background";
 import { SiteFooter } from "@/components/site-footer";
@@ -292,7 +293,7 @@ export default function AppsPage() {
                     className="btn btn-secondary h-11 flex-1 gap-2 px-5 text-sm font-semibold"
                   >
                     How to install
-                    <ArrowUpRight className="size-4" />
+                    <Glyph name="arrow-up-right" className="size-4" />
                   </Link>
                 </div>
               </article>
@@ -351,7 +352,7 @@ export default function AppsPage() {
                     className="btn btn-secondary h-11 flex-1 gap-2 px-5 text-sm font-semibold"
                   >
                     How to install
-                    <ArrowUpRight className="size-4" />
+                    <Glyph name="arrow-up-right" className="size-4" />
                   </Link>
                 </div>
 
@@ -414,7 +415,7 @@ export default function AppsPage() {
                   className="btn btn-ghost group h-11 shrink-0 gap-2 px-4 text-sm font-semibold"
                 >
                   Use it in the browser
-                  <ArrowUpRight className="size-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                  <Glyph name="arrow-up-right" className="size-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </Link>
               </div>
             </div>

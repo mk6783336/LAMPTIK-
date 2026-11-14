@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
+import { Glyph } from "@/components/glyph";
 import Link from "next/link";
-import { ArrowUpRight, Check } from "lucide-react";
 
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
@@ -135,7 +135,7 @@ export default function ToolsPage() {
                     key={chip}
                     className="inline-flex items-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--glass-bg)] px-2.5 py-1 text-xs text-[var(--text-2)]"
                   >
-                    <Check className="size-3 text-[var(--accent-text)]" />
+                    <Glyph name="check" className="size-3 text-[var(--accent-text)]" />
                     {chip}
                   </span>
                 ))}
@@ -188,7 +188,7 @@ export default function ToolsPage() {
                         <span className="text-base font-semibold leading-snug tracking-tight">
                           {tool.name}
                         </span>
-                        <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
+                        <Glyph name="arrow-up-right" className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
                       </span>
                       <span className="pretty mt-2 block text-sm leading-relaxed text-[var(--text-2)]">
                         {tool.description}
@@ -240,7 +240,7 @@ export default function ToolsPage() {
                               />
                               {platform.name}
                             </span>
-                            <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
+                            <Glyph name="arrow-up-right" className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
                           </div>
                           <h3 className="mt-4 text-base font-semibold leading-snug tracking-tight">
                             {toolLabel(tool)}
@@ -293,7 +293,7 @@ export default function ToolsPage() {
                         <span className="bento-icon">
                           <PlatformIcon platform={id} className="size-5" />
                         </span>
-                        <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
+                        <Glyph name="arrow-up-right" className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
                       </div>
                       <h3 className="mt-6 text-base font-semibold tracking-tight">
                         {platform.switcherLabel}
@@ -319,7 +319,7 @@ export default function ToolsPage() {
                         X
                       </span>
                     </span>
-                    <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
+                    <Glyph name="arrow-up-right" className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
                   </div>
                   <h3 className="mt-6 text-base font-semibold tracking-tight">
                     Twitter / X

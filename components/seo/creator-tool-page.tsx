@@ -1,6 +1,6 @@
 import Link from "next/link";
+import { Glyph } from "@/components/glyph";
 import type { ReactNode } from "react";
-import { ArrowUpRight, Check } from "lucide-react";
 
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
@@ -111,7 +111,7 @@ export function CreatorToolPage({
                 <ul className="mt-5 hidden flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--text-3)] sm:flex">
                   {tool.features.slice(0, 3).map((feature) => (
                     <li key={feature} className="inline-flex items-center gap-1.5">
-                      <Check aria-hidden="true" className="size-3 text-[var(--accent-text)]/80" />
+                      <Glyph name="check" aria-hidden="true" className="size-3 text-[var(--accent-text)]/80" />
                       {feature}
                     </li>
                   ))}
@@ -217,7 +217,7 @@ export function CreatorToolPage({
                   >
                     <span className="flex items-start justify-between gap-3">
                       <span className="text-base font-semibold tracking-tight">{entry.name}</span>
-                      <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
+                      <Glyph name="arrow-up-right" className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
                     </span>
                     <span className="pretty mt-2 block text-sm leading-relaxed text-[var(--text-2)]">
                       {entry.description}
@@ -237,7 +237,7 @@ export function CreatorToolPage({
                 </span>
                 <span className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-[var(--accent-text)]">
                   All tools
-                  <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                  <Glyph name="arrow-up-right" className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </span>
               </Link>
             </div>

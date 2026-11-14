@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowUpRight, BookOpen, Sparkles } from "lucide-react";
+import { BookOpen, Sparkles } from "lucide-react";
+import { Glyph } from "@/components/glyph";
 
 import { AmbientBackground } from "@/components/ambient-background";
 import { SiteFooter } from "@/components/site-footer";
@@ -265,7 +266,7 @@ export default async function GuidePage({
                   >
                     <Sparkles className="size-3.5" />
                     {tool.cta}
-                    <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                    <Glyph name="arrow-up-right" className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                   </Link>
                 </div>
               </div>
@@ -285,7 +286,7 @@ export default async function GuidePage({
                           <span className="min-w-0 text-sm font-medium transition-colors duration-200 group-hover:text-[var(--accent-text)]">
                             {entry.title}
                           </span>
-                          <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--accent-text)]" />
+                          <Glyph name="arrow-up-right" className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--accent-text)]" />
                         </Link>
                       </li>
                     ))}

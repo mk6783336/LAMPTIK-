@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, Check } from "lucide-react";
+import { Glyph } from "@/components/glyph";
 
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
@@ -210,7 +210,7 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
                 <ul className="mt-6 hidden flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--text-3)] sm:flex">
                   {content.chips.map((chip) => (
                     <li key={chip} className="inline-flex items-center gap-1.5">
-                      <Check aria-hidden="true" className="size-3 text-[var(--accent-text)]/80" />
+                      <Glyph name="check" aria-hidden="true" className="size-3 text-[var(--accent-text)]/80" />
                       {chip}
                     </li>
                   ))}
@@ -221,7 +221,7 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
                   className="group mt-7 hidden items-center gap-1.5 text-sm text-[var(--text-2)] transition-colors duration-200 hover:text-[var(--text)] sm:inline-flex"
                 >
                   Read the download guides
-                  <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                  <Glyph name="arrow-up-right" className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </Link>
 
                 {/* Result mode only (lg+): the sponsor showcase takes over the
@@ -287,7 +287,7 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
                   className="group inline-flex items-center gap-1.5 text-sm text-[var(--accent-text)] transition-opacity duration-200 hover:opacity-80"
                 >
                   Read the guides
-                  <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                  <Glyph name="arrow-up-right" className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
                 </Link>
               </div>
 
@@ -308,7 +308,7 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
                         <span className="text-base font-semibold tracking-tight">
                           {PLATFORMS[id].switcherLabel}
                         </span>
-                        <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
+                        <Glyph name="arrow-up-right" className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
                       </span>
                       <span className="pretty mt-1.5 block text-sm leading-relaxed text-[var(--text-2)]">
                         {PLATFORMS[id].blurb}
