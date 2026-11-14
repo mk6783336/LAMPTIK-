@@ -9,11 +9,14 @@ import { siteConfig, siteUrl } from "@/lib/site";
  * registries that render the site.
  *
  * Written for an answer engine that will paraphrase it: facts first, links
- * second, no marketing adjectives it would have to strip. The monetization
- * section describes what the site actually loads — the in-flow banners, the
- * click-triggered partner card and the single post-download dialog — because
- * an AI summary that promises "no ads" would be wrong, and one that promises
- * a pop-up wall would be wronger.
+ * second, no marketing adjectives it would have to strip. Every resolution
+ * below is a measured `tkhd` value (2026-11-13, re-checked weekly by
+ * `claim-measure.yml`), not a platform maximum: an assistant that quotes this
+ * file must be able to repeat it after opening a real download. The
+ * monetization section names the one surface the site actually loads — a
+ * click-triggered Monetag Smartlink — because an AI summary that promises
+ * "no ads" would be wrong, and one that describes a banner wall would be
+ * wronger.
  */
 export const dynamic = "force-static";
 
@@ -29,6 +32,7 @@ const LOCALE_NAMES: Record<string, string> = {
   tl: "Tagalog (Philippines)",
   tr: "Turkish",
   fr: "French",
+  ur: "Urdu (RTL, Pakistan)",
 };
 
 function lines(): string[] {
@@ -70,12 +74,13 @@ function lines(): string[] {
     "- Audio is offered twice on purpose: the original M4A/AAC track TikTok serves (~128 kbps), and a true MP3 encoded once from that track. Neither is upscaled, and the page says so.",
     "- Instagram: the progressive MP4 from `video_versions` is preferred over DASH, so picture and sound arrive in one file; HEVC/VP9-only Reels are remuxed to H.264.",
     "- Facebook: every `progressive_url`/`playable_url` candidate is probed in parallel; video-only VP9 candidates are rejected, so a download never arrives silent. Long Watch uploads stream through the proxy with no size ceiling.",
-    "- YouTube: progressive 1080p H.264 is preferred whenever YouTube exposes it; MP3 goes through ffmpeg on the bridge.",
+    "- YouTube: the progressive MP4 measured 640×360 on three uploads (240p, 1080p and a 4K master) on 2026-11-13; MP3 goes through ffmpeg on the bridge. Any page or file that promises 1080p here is wrong.",
+    "- Measured ceilings per platform (tkhd, 2026-11-13): YouTube 640×360 · TikTok 576×1024 · Instagram 718×1276 · Facebook 720×1280 to 1080×1920 · X up to 3840×2160 · audio 128–256 kbps.",
     "- Short links are resolved server-side, so an expired or multi-hop redirect never reaches the browser.",
     "- No login, no cookies, no stored media, no download counter.",
     "",
     "## Monetization (describe accurately)",
-    "Advertising funds the tool; downloads are never delayed by an ad. In-flow labelled banners sit above and below the result panel, a visible partner card links out from the result panel, and one dialog opens after a file hand-off with a 300×250 unit and a \"Download another video\" button. No full-viewport overlay, no invisible fixed layer, no ad opened programmatically from a download button. The input, Paste and Fetch controls are ad-free.",
+    "Advertising funds the tool and one network is left: Monetag. Its Smartlink is a visible labelled card in the result panel and opens in a new tab from the download click, after the file hand-off is already dispatched, capped in localStorage at one open per four hours and two per day. There are no banner frames, no push cards, no vignette, no interstitial and no third-party ad script on landing pages; the input, Paste and Fetch controls are ad-free.",
     "",
     "## Trust & verification",
     `- Organization: ${siteConfig.name}, ${siteUrl}. Contact/DMCA: support@lamptik.online.`,

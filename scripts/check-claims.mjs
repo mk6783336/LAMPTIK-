@@ -739,6 +739,12 @@ async function scanAllClaims() {
     scanClaims(file, source, platformOfPath(file));
   }
 
+  // Crawler-facing documents: llms.txt, llms-full.txt, robots and sitemaps.
+  for (const file of await listAppRoutes()) {
+    const source = await readFile(path.join(root, file), "utf8");
+    scanClaims(file, source, "any");
+  }
+
   // Localized copy, recursively: the platform landings, the home pages, the
   // blurbs and the footer all print resolutions, and each one is a page a
   // visitor reads in their own language.
@@ -759,6 +765,75 @@ function platformOfPath(file) {
     }
   }
   return "any";
+}
+
+/**
+ * Crawler-facing route handlers (`/llms.txt`, `/robots.txt`, the sitemaps)
+ * are documents too: an assistant quotes them, so a stale resolution there is
+ * the same lie as one on a page — and the page gate never read them, which is
+ * how a "progressive 1080p" line survived in llms-full.txt.
+ */
+async function listAppRoutes() {
+  const { readdir } = await import("node:fs/promises");
+  const files = [];
+  async function walk(relative) {
+    const entries = await readdir(path.join(root, relative), { withFileTypes: true });
+    for (const entry of entries) {
+      const child = `${relative}/${entry.name}`;
+      if (entry.isDirectory()) await walk(child);
+      else if (/^(route|sitemap|robots|manifest)\.ts$/.test(entry.name)) files.push(child);
+    }
+  }
+  await walk("app");
+  return files.sort();
+}
+
+/**
+ * The ad purge is a decision, not a phase: these hosts and loaders must never
+ * come back. Comments are stripped before the scan so history can still be
+ * explained in prose without tripping the guard.
+ */
+const BANNED_AD_STRINGS = [
+  "bellnewyork.org",
+  "quarrelsomebitter.com",
+  "idealistic-revenue.com",
+  "adsterra",
+  "hilltopads",
+];
+
+async function checkBannedAds() {
+  const { readdir } = await import("node:fs/promises");
+  const files = [];
+  async function walk(relative) {
+    const entries = await readdir(path.join(root, relative), { withFileTypes: true });
+    for (const entry of entries) {
+      const child = `${relative}/${entry.name}`;
+      if (entry.isDirectory()) await walk(child);
+      else if (/\.(ts|tsx|js|mjs)$/.test(entry.name)) files.push(child);
+    }
+  }
+  for (const dir of ["app", "components", "lib", "public"]) {
+    try {
+      await walk(dir);
+    } catch {
+      // Directory absent: nothing to guard there.
+    }
+  }
+  for (const file of files) {
+    const source = await readFile(path.join(root, file), "utf8");
+    const code = source
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/(^|[^:])\/\/.*$/gm, "$1")
+      .toLowerCase();
+    for (const banned of BANNED_AD_STRINGS) {
+      if (!code.includes(banned)) continue;
+      failures.push({
+        kind: "banned-ad",
+        file: rel(path.join(root, file)),
+        message: `references ${banned}, which was removed on purpose (one ad network: Monetag)`,
+      });
+    }
+  }
 }
 
 /** Shared UI: the strings in components/ render on the pages that import them. */
@@ -1132,6 +1207,7 @@ async function runMeasurements() {
 /* ------------------------------- main ------------------------------- */
 
 await checkEvidence();
+await checkBannedAds();
 await scanAllClaims();
 
 let liveResults = [];

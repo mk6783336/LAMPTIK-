@@ -54,30 +54,41 @@ function absoluteLanguages(languages: Record<string, string>): Record<string, st
  * page keeps the date honest and still leaves one place to update.
  */
 const REVISED = {
-  home: "2026-11-08",
+  // 2026-11-14: the internal-link row to X and the three Tier-1 country pages
+  // replaced the banner stack, and the result panel gained its stream spec.
+  home: "2026-11-14",
   // 2026-11-09: the FAQ copy these three pages render changed (LOW-KD phrases
   // answered on facebook, instagram and twitter). An older `lastmod` tells
   // Google the page it should recrawl is unchanged, which is the opposite of
   // what two not-yet-indexed URLs need.
   instagram: "2026-11-09",
   facebook: "2026-11-09",
-  twitter: "2026-11-09",
+  // 2026-11-14: title, social title and description rewritten around "up to 4K"
+  // (a claim 3840×2160 backs), so the old date would tell Google the page it
+  // should recrawl is unchanged.
+  twitter: "2026-11-14",
   youtube: "2026-11-08",
-  toolsHub: "2026-11-08",
+  // 2026-11-14: the tools index lost its "Facebook HD" phrase and the homepage
+  // gained the Tier-1 internal-link row where the banner stack used to sit.
+  toolsHub: "2026-11-14",
   // 2026-11-12: the US, UK and Germany pages were retargeted from the
   // "download videos in <country>" phrasing (which nobody searches) onto the
   // queries those markets actually type.
   // 2026-11-13: new /download-facebook-live-video entry, the story page's new
   // title and FAQ set, and the format-guide blocks on three tool pages.
-  subTools: "2026-11-13",
+  subTools: "2026-11-14",
   // 2026-11-09: the Spanish root now answers the Telegram and HD wording it
   // was already getting impressions for.
   // 2026-11-12: /es gained the cluster hub section that links the Facebook, X
   // and Reels-audio pages. All locale roots render the same component, so the
   // group moves together rather than pretending only /es changed.
-  localized: "2026-11-12",
+  // 2026-11-14: the Spanish FAQ stopped promising "normalmente 720p", and both
+  // es and ar lost their superlative quality chips.
+  localized: "2026-11-14",
   // 2026-11-12: fourteen guides became four hubs that absorb their copy.
-  guidesHub: "2026-11-12",
+  // 2026-11-14: the TikTok quality guide replaced its unmeasured 1080p
+  // delivery-ladder sentence with the measured 576×1024 file.
+  guidesHub: "2026-11-14",
   services: "2026-11-03",
   apps: "2026-11-03",
   about: "2026-10-30",
