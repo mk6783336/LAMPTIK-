@@ -11,7 +11,7 @@ export const entry: SubTool = {
   title: "Facebook Reels Downloader — Save FB Reels MP4 HD",
   socialTitle: "Facebook Reels Downloader — Save FB Reels to MP4 in 1080p",
   description:
-    "Download Facebook Reels in up to 1080p MP4 with the original audio — a reel measured 1080×1920 on 2026-11-13. Paste a reel or fb.watch link and save it watermark-free, no login.",
+    "Download Facebook Reels in up to 1080p MP4 with the original audio — a reel measured 1080×1920 on 2026-11-13. Paste a reel or fb.watch link, no login.",
   keywords: [
     "facebook reels downloader",
     "download facebook reels",

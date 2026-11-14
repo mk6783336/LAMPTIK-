@@ -159,7 +159,7 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
       dir: "ltr",
       title: "Descargar videos de YouTube en MP4 y MP3 — Gratis",
       description:
-        "Pega un enlace de YouTube y guarda el MP4 que sirve el resolutor (640×360 medido el 2026-11-13) o el audio en MP3. Funciona con watch, Shorts, youtu.be y playlists, sin app ni registro.",
+        "Pega un enlace de YouTube y guarda el MP4 que sirve el resolutor (640×360 medido) o el audio en MP3. Watch, Shorts, youtu.be y playlists, sin app ni registro.",
       keywords: [
         "descargar videos de youtube",
         "youtube a mp3",

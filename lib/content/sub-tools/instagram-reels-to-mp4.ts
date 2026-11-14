@@ -17,7 +17,7 @@ export const entry: SubTool = {
   socialTitle:
     "Instagram Reels to MP4 — Save the Original File With Its Audio",
   description:
-    "Instagram already serves Reels as MP4, so there is nothing to convert. Save the original H.264 file with its audio intact — measured 720×1280 on 2026-11-13 — no login, no watermark.",
+    "Instagram already serves Reels as MP4, so there is nothing to convert. Save the original H.264 file with its audio — measured 720×1280 — no login, no watermark.",
   keywords: [
     "instagram reels to mp4",
     "reels to mp4",

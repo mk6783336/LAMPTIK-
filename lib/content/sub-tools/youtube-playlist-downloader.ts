@@ -13,7 +13,7 @@ export const entry: SubTool = {
   socialTitle:
     "YouTube Playlist Downloader - List a Playlist and Save Each Video as MP4 or MP3",
   description:
-    "Paste a public YouTube playlist and list its videos in order. Open any one in the MP4 or MP3 downloader — 640×360 measured 2026-11-13. No sign-up, no install and no bulk ZIP.",
+    "Paste a public YouTube playlist and list its videos in order. Open any one in the MP4 or MP3 downloader — 640×360 measured 2026-11-13. No sign-up, no ZIP.",
   keywords: [
     "YouTube playlist downloader",
     "download YouTube playlist",

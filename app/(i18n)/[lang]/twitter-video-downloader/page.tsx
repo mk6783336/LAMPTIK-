@@ -33,7 +33,7 @@ const EN_PATH = "/twitter-video-downloader";
 
 const TITLE = "Descargar videos de Twitter (X) en MP4 — gratis y sin cuenta";
 const DESCRIPTION =
-  "Descarga videos y GIF de X (Twitter) en MP4 en su resolución original desde el navegador: sin iniciar sesión, sin app y sin marca de agua. Elige la calidad que publicó el autor.";
+  "Descarga videos y GIF de X (Twitter) en MP4 desde el navegador: sin iniciar sesión, sin app y sin marca de agua. Elige la calidad que publicó el autor.";
 
 const CHIPS = ["x.com y twitter.com", "en su resolución original", "GIF como MP4", "sin cuenta"];
 

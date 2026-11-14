@@ -14,7 +14,7 @@ export const entry: SubTool = {
   title: "TikTok MP3 Download Without Watermark - Original Sound",
   socialTitle: "TikTok to MP3 Converter - Extract the Original Sound at Full Quality",
   description:
-    "TikTok MP3 download without watermark - convert any TikTok to MP3 or M4A from the original audio track, at the best bitrate the post carries. Free, no app, no sign-up.",
+    "TikTok MP3 download without watermark: convert any TikTok to MP3 or M4A from the original audio track. Free, no app, no sign-up.",
   keywords: [
     "tiktok mp3 download without watermark",
     "tiktok mp3 downloader",

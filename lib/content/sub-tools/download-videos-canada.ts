@@ -18,7 +18,7 @@ export const entry: SubTool = {
   title: "Download Videos in Canada - Facebook HD Without an App",
   socialTitle: "Download Videos in Canada - Facebook, Reels, TikTok and YouTube",
   description:
-    "Save Facebook videos in HD in Canada. Reels, TikTok and YouTube links save the MP4 each platform serves, audio included, straight to Downloads. No app, no login.",
+    "Save Facebook videos in HD in Canada. Reels, TikTok and YouTube links save the MP4 each platform serves, with its audio. No app, no login.",
   keywords: [
     "download facebook video canada",
     "facebook video downloader canada hd",

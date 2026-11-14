@@ -8,7 +8,7 @@ import { SiteHeader } from "@/components/site-header";
 import { JsonLd, breadcrumbNode } from "@/components/seo/JsonLd";
 import { siteConfig, siteUrl } from "@/lib/site";
 
-const TITLE = "App & Extension — download with one click, anywhere";
+const TITLE = "App & Extension — One-Click Downloads";
 const DESCRIPTION =
   "LampTik outside the browser tab: a Chrome extension with a Download button for YouTube, TikTok, Instagram and Facebook, plus an Android share app.";
 

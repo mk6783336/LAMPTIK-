@@ -10,7 +10,7 @@ export const entry: SubTool = {
   title: "YouTube Shorts Downloader - Save the MP4 You Get",
   socialTitle: "YouTube Shorts Downloader - Measured 640×360, Not 1080p",
   description:
-    "Download a YouTube Short as MP4, no watermark: paste a /shorts/ or youtu.be link. Measured 2026-11-13 the file is 640×360, so this page does not sell you a 1080p label.",
+    "Download a YouTube Short as MP4, no watermark: paste a /shorts/ or youtu.be link. The file measured 640×360 on 2026-11-13 — no 1080p label here.",
   keywords: [
     "YouTube Shorts downloader",
     "YouTube Shorts download free",

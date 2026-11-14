@@ -17,7 +17,7 @@ export const entry: SubTool = {
   socialTitle:
     "Download a TikTok Video for CapCut — Watermark-Free H.264 MP4 That Imports",
   description:
-    "Get a watermark-free TikTok clip CapCut actually imports: H.264 MP4 with AAC audio, 576×1024 as measured on 2026-11-13. Paste the link, save the file, drop it on the timeline.",
+    "Get a watermark-free TikTok clip CapCut imports: H.264 MP4 with AAC audio, 576×1024 measured 2026-11-13. Paste the link, save it, drop it on the timeline.",
   keywords: [
     "tiktok video for capcut",
     "download tiktok video to edit",

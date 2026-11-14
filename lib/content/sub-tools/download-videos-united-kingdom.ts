@@ -16,7 +16,7 @@ export const entry: SubTool = {
   title: "Instagram Reels Downloader UK - No Watermark, Online",
   socialTitle: "Instagram Reels Downloader for the UK - Original MP4, No Watermark",
   description:
-    "Download Instagram Reels in the UK without a watermark: paste the link and the MP4 Instagram serves — 720×1280 class when measured on 2026-11-13 — audio included. No login, no app.",
+    "Download Instagram Reels in the UK without a watermark: paste the link and save the 720×1280 MP4 Instagram serves, measured 2026-11-13. No login, no app.",
   keywords: [
     "instagram reels downloader uk",
     "reels downloader online without watermark",

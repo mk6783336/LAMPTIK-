@@ -9,13 +9,13 @@ import { SiteHeader } from "@/components/site-header";
 import { siteConfig, siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Contact & DMCA",
+  title: "Contact & DMCA — Support & Takedowns",
   description:
     "Contact LAMP TIK at support@lamptik.online — general support, privacy questions, and a clear DMCA copyright takedown process for rights holders.",
   alternates: { canonical: "/contact" },
   openGraph: {
     images: ["/opengraph-image"],
-    title: `Contact & DMCA · ${siteConfig.name}`,
+    title: `Contact & DMCA — Support & Takedowns · ${siteConfig.name}`,
     description:
       "Reach the LAMP TIK team for support and submit DMCA takedown notices at support@lamptik.online.",
     url: "/contact",

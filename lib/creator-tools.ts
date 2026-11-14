@@ -43,7 +43,7 @@ export const CREATOR_TOOLS: readonly CreatorTool[] = [
   {
     slug: "tiktok-money-calculator",
     name: "TikTok Money & Creator Rewards Calculator",
-    title: "TikTok Money Calculator 2026 — Creator Rewards RPM by Country",
+    title: "TikTok Money Calculator 2026 — Creator RPM by Country",
     description:
       "Estimate what TikTok pays per 1,000 qualified views: Creator Rewards RPM by country and niche, brand deal rates, and the views behind $1,000 a month.",
     h1Lead: "What TikTok pays,",
@@ -196,7 +196,7 @@ export const CREATOR_TOOLS: readonly CreatorTool[] = [
   {
     slug: "video-thumbnail-downloader",
     name: "HD Video Thumbnail & Cover Downloader",
-    title: "Video Thumbnail Downloader — TikTok, Reels, YouTube & X Covers",
+    title: "Video Thumbnail Downloader — TikTok, Reels, YouTube, X",
     description:
       "Paste a TikTok, Instagram, YouTube or X link and save its cover image at the highest resolution the platform serves — plus the video, watermark-free.",
     h1Lead: "The cover image,",
@@ -270,7 +270,7 @@ export const CREATOR_TOOLS: readonly CreatorTool[] = [
   {
     slug: "tiktok-caption-hashtag-extractor",
     name: "TikTok & Reels Caption and Hashtag Extractor",
-    title: "TikTok Caption & Hashtag Extractor — Copy Any Post's Metadata",
+    title: "TikTok Caption & Hashtag Extractor — Copy Post Metadata",
     description:
       "Paste a TikTok, Reel or Short and get the full caption, author handle, every hashtag, the audio track and clean MP4/MP3 downloads — with one-click copy.",
     h1Lead: "The caption, the tags,",
