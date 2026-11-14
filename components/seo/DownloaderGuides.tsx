@@ -20,7 +20,7 @@ import { siteUrl } from "@/lib/site";
  * particular upload.
  */
 
-export type GuideVariant = "audio" | "containers" | "story";
+export type GuideVariant = "audio" | "containers";
 
 interface Matrix {
   heading: string;
@@ -119,47 +119,6 @@ const GUIDES: Record<GuideVariant, GuideContent> = {
       [
         "The video plays but has no sound",
         "That means the chosen file is a video-only rendition. Progressive MP4s carry both tracks; the separate video-only stream does not. Pick the MP4 that lists an audio codec rather than the highest video-only resolution.",
-      ],
-    ],
-  },
-  story: {
-    anchor: "story-format",
-    heading: "Photo slides, video slides, and the 24-hour window",
-    lede:
-      "A story is not one file. It is a sequence of slides that each expire, and a photo slide and a video slide leave the platform by different routes — which is why a link that works for one can return nothing for the other.",
-    matrix: {
-      heading: "Photo slide against video slide",
-      lead:
-        "Both are saved at the resolution the creator uploaded. Neither carries the username tag, because the tag is drawn by the app when it renders a story, not baked into the media file.",
-      columns: ["Photo slide", "Video slide"],
-      rows: [
-        ["Saved as", "JPEG/WebP at upload size", "MP4 with its own audio"],
-        ["Watermark / username tag", "none in the file", "none in the file"],
-        ["Expires after", "24 hours from posting", "24 hours from posting"],
-        ["Stickers and text", "part of the uploaded image", "part of the uploaded video"],
-        ["Multiple slides", "one link per slide", "one link per slide"],
-      ],
-      footnote:
-        "“Original resolution” means the file the creator's phone uploaded. If the story was recorded at 720p, the download is 720p — nothing here upscales, and a tool that claims otherwise is resampling pixels it does not have.",
-    },
-    steps: [
-      ["Copy the story link", "Open the story and use Share → Copy link. A profile link (tiktok.com/@name) has no item id and cannot identify which slide you meant."],
-      ["Paste it above", "The resolver expands the short link and reads the story item, so the slide you were looking at is the one that comes back."],
-      ["Choose the slide's file", "Video slides arrive as MP4 with their audio; photo slides arrive as the original image, without playback UI or overlay burned in."],
-      ["Save before the window closes", "Once the 24 hours are up the media is no longer served to anyone outside the creator's archive — no tool can recover it after that."],
-    ],
-    troubleshooting: [
-      [
-        "iPhone: where a saved story actually goes",
-        "Files → On My iPhone → Downloads for both photos and video. Photos needs Share → Save Video (or Save Image) from there; a JPEG saved through Safari does not appear in the camera roll by itself. If the story is a photo, saving it from Files into Photos keeps the original pixels — screenshots do not.",
-      ],
-      [
-        "Android: Downloads first, Gallery second",
-        "Chrome stores the file in /Download and the Files app lists it immediately; the Gallery picks it up on the next media scan. A story video that “did not download” is usually sitting there already.",
-      ],
-      [
-        "The link worked minutes ago and now returns nothing",
-        "That is the 24-hour window closing, not a broken tool. Expired stories answer with an empty item rather than an error, because the platform stops serving the media entirely. Save while the story is live.",
       ],
     ],
   },

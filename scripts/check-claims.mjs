@@ -677,6 +677,16 @@ async function scanAllClaims() {
     scanClaims(file, source, platformOfPath(file));
   }
 
+  // Shared components: hero, bento, FAQ and CTA copy is written here once and
+  // printed on every page that uses it, so it reaches more visitors than any
+  // single route.
+  const listedComponents = new Set(PAGE_FILES.map((page) => page.file));
+  for (const file of await listComponentFiles()) {
+    if (listedComponents.has(file)) continue;
+    const source = await readFile(path.join(root, file), "utf8");
+    scanClaims(file, source, platformOfPath(file));
+  }
+
   // Localized copy, recursively: the platform landings, the home pages, the
   // blurbs and the footer all print resolutions, and each one is a page a
   // visitor reads in their own language.
@@ -697,6 +707,22 @@ function platformOfPath(file) {
     }
   }
   return "any";
+}
+
+/** Shared UI: the strings in components/ render on the pages that import them. */
+async function listComponentFiles() {
+  const { readdir } = await import("node:fs/promises");
+  const files = [];
+  async function walk(relative) {
+    const entries = await readdir(path.join(root, relative), { withFileTypes: true });
+    for (const entry of entries) {
+      const child = `${relative}/${entry.name}`;
+      if (entry.isDirectory()) await walk(child);
+      else if (entry.name.endsWith(".tsx") || entry.name.endsWith(".ts")) files.push(child);
+    }
+  }
+  await walk("components");
+  return files.sort();
 }
 
 /** Route copy: every page.tsx under app/(site) is a document a visitor reads. */

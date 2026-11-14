@@ -45,7 +45,7 @@ export interface SubToolGuide {
  * `components/seo/DownloaderGuides.tsx`; only pages whose query asks the
  * question carry it, so three sibling URLs never show the same matrix.
  */
-export type SubToolGuideVariant = "audio" | "containers" | "story";
+export type SubToolGuideVariant = "audio" | "containers";
 
 export interface SubTool {
   /** Route segment without a leading slash. */
