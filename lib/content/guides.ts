@@ -493,7 +493,7 @@ export const GUIDES: Guide[] = [
         paragraphs: [
           "The result panel prints the width, height and file size of the stream the resolver returned, before you commit to saving it. If a platform serves a smaller rendition, the panel says so; nothing is upscaled to make the number look better.",
           "Every platform page states the measured class instead of the ladder's ceiling: 576×1024 on TikTok, 640×360 on YouTube, a 720p-class rendition on Instagram, up to 1080×1920 on Facebook, and 3840×2160 on X. Those sentences are checked at build time, so a copy edit cannot quietly upgrade them.",
-          "The site also refuses the annoyances that make downloader pages feel hostile: nothing third-party loads before you ask for a file, no overlay covers the download button, and the one sponsored surface opens after a hand-off — at most once every four hours, and only on a click.",
+          "The site also refuses the annoyances that make downloader pages feel hostile: nothing third-party loads before you ask for a file, no overlay covers the download button, and the automatic sponsored trigger opens at most once every 90 seconds and ten times a day. A click you make yourself on a labelled partner button is never throttled.",
         ],
       },
       {

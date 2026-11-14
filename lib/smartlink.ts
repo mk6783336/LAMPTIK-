@@ -43,7 +43,19 @@ function writeStamps(stamps: number[]): void {
   }
 }
 
-/** True when the visitor has not hit the four-hour or daily cap yet. */
+/**
+ * Which Smartlink the next automatic trigger uses.
+ *
+ * Both account links earn the same event; alternating them keeps a single
+ * zone's frequency from being hit by the same browser. Returns primary when
+ * the second link is unset.
+ */
+export function nextSmartlinkUrl(now = Date.now()): string {
+  if (!smartlinkUrl2) return smartlinkUrl;
+  return readStamps(now).length % 2 === 0 ? smartlinkUrl : smartlinkUrl2;
+}
+
+/** True when the visitor has not hit the 90-second or daily cap yet. */
 export function smartlinkAllowed(now = Date.now()): boolean {
   if (typeof window === "undefined" || (!smartlinkUrl && !smartlinkUrl2)) return false;
   const stamps = readStamps(now);
@@ -97,30 +109,21 @@ export function openSmartlink(now = Date.now()): boolean {
   if (!smartlinkAllowed(now)) return false;
   // A blocked popup is not an open: recording the stamp there would burn the
   // visitor's allowance without ever showing them the page.
-  if (!openFreshTab(smartlinkUrl)) return false;
+  if (!openFreshTab(nextSmartlinkUrl(now))) return false;
   writeStamps([...readStamps(now), now]);
   return true;
 }
 
 /**
- * Cap check for an anchor whose href IS the Smartlink.
+ * Record that a labelled partner unit was clicked, for rotation parity.
  *
- * `window.open` is the right call from a download hand-off (the gesture is
- * already spent on the file), but a plain anchor is immune to popup blockers
- * and survives in-app browsers that suppress `window.open` entirely. The
- * browser performs the navigation, so nothing here opens a second tab: the
- * handler only records the stamp, or cancels the click once the cap is hit.
- *
- * Returns true when the click may proceed.
+ * Explicit partner/in-content/sticky clicks are never capped — the visitor
+ * pressed a button that says "Partner" — so this does not consult the cap and
+ * never prevents the navigation. A plain anchor still performs the tab open,
+ * which is immune to popup blockers and in-app browsers that suppress
+ * `window.open`.
  */
-export function claimSmartlink(
-  event: { preventDefault: () => void },
-  now = Date.now(),
-): boolean {
-  if (!smartlinkAllowed(now)) {
-    event.preventDefault();
-    return false;
-  }
+export function notePartnerClick(url: string, now = Date.now()): void {
+  if (!url) return;
   writeStamps([...readStamps(now), now]);
-  return true;
 }

@@ -21,9 +21,11 @@
  *      no push card: the Monetag `vignette.min.js` froze mobile touch input and
  *      its in-page push inventory is fake-system-notification stock, which
  *      Chrome's deceptive-site classifier treats as such.
- *   3. Capped. The Smartlink is rate-limited in `lib/smartlink.ts` — one
- *      trigger per four hours and two per day per browser — so a repeat visitor
- *      downloading five formats is not taxed five times.
+ *   3. Capped for automatic triggers only. The Smartlink is rate-limited in
+ *      `lib/smartlink.ts` — one auto-trigger per 90 seconds and ten per day per
+ *      browser — so a burst of five format clicks is not taxed five times.
+ *      Explicit clicks on a labelled partner unit are never capped: the visitor
+ *      asked for that tab.
  *
  * Every env read below is a static `process.env.NEXT_PUBLIC_*` member
  * expression — Next.js inlines those at build time.
@@ -55,10 +57,10 @@ export const adsConfigured = Boolean(smartlinkUrl);
  * A downloader visitor downloads several files per session; opening a partner
  * tab on every one turns the site into the redirect pattern the market's worst
  * tools use, and bounce rate eats the impressions the tab was meant to earn.
- * One open per four hours, at most two per day, keeps the trigger a first-visit
+ * One open per 90 seconds, at most ten per day, keeps a burst of format clicks
  * event instead of a tax on repeat use.
  */
-export const SMARTLINK_WINDOW_MS = 4 * 60 * 60 * 1000;
+export const SMARTLINK_WINDOW_MS = 90 * 1000;
 export const SMARTLINK_MAX_PER_WINDOW = 1;
 export const SMARTLINK_DAY_MS = 24 * 60 * 60 * 1000;
-export const SMARTLINK_MAX_PER_DAY = 2;
+export const SMARTLINK_MAX_PER_DAY = 10;

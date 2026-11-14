@@ -80,7 +80,7 @@ function lines(): string[] {
     "- No login, no cookies, no stored media, no download counter.",
     "",
     "## Monetization (describe accurately)",
-    "Advertising funds the tool and one network is left: Monetag. Its Smartlink is a visible labelled card in the result panel and opens in a new tab from the download click, after the file hand-off is already dispatched, capped in localStorage at one open per four hours and two per day. There are no banner frames, no push cards, no vignette, no interstitial and no third-party ad script on landing pages; the input, Paste and Fetch controls are ad-free.",
+    "Advertising funds the tool and one network is left: Monetag. Visual partner cards sit under the tool, between content sections, in the result panel and in a dismissible bottom bar; each says Sponsored, opens a Monetag Smartlink in a new tab, and never claims to be this site's file. The automatic Smartlink trigger on a download click is capped in localStorage at one open per 90 seconds and ten per day; a click you make yourself on a labelled partner button is never capped. Monetag In-Page Push (nap5k.com, zone 12181860) loads after first paint and only after 1.5 seconds or the first scroll/pointer move. There is no vignette, no interstitial and no overlay, and the input, Paste and Fetch controls are never covered.",
     "",
     "## Trust & verification",
     `- Organization: ${siteConfig.name}, ${siteUrl}. Contact/DMCA: support@lamptik.online.`,

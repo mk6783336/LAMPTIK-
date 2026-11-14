@@ -287,7 +287,7 @@ export function ResultPanel({
     openSmartlink();
     // Monetag, intent-gated: the hand-off above is already dispatched, so the
     // Smartlink opens alongside the file rather than before it. `openSmartlink`
-    // is the rate limiter — one open per four hours, two per day, recorded in
+    // is the rate limiter — one auto-open per 90 seconds, ten per day, recorded in
     // localStorage — so a session that saves five formats is not taxed five
     // times and the popup blocker sees a real gesture, not a timer.
     // Live until the proxied stream has had its full 300s window — removing

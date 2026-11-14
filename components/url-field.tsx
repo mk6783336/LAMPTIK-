@@ -17,7 +17,6 @@ import { cn } from "@/lib/cn";
 import { detectLink, extractLinkText, type DetectedLink } from "@/lib/detect";
 import { smartlinkUrl } from "@/lib/monetization";
 import { PLATFORMS, type Platform } from "@/lib/platforms";
-import { claimSmartlink } from "@/lib/smartlink";
 import { ENGLISH_DOWNLOADER_COPY, type DownloaderCopy } from "@/lib/i18n/ui";
 
 interface UrlFieldProps {
@@ -69,7 +68,6 @@ export function UrlField({
   const [isPasting, setIsPasting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
-  const [sponsorNote, setSponsorNote] = useState<string | null>(null);
 
 
   /** Live detection: null until the text contains a supported video link. */
@@ -417,19 +415,10 @@ export function UrlField({
               href={smartlinkUrl}
               target="_blank"
               rel="sponsored nofollow noopener noreferrer"
-              onClick={(event) => {
-                // Anchor navigation, not window.open: the browser performs it
-                // inside the real click gesture, so a popup blocker has nothing
-                // to suppress. The cap still applies — a capped click is
-                // cancelled and explained instead of opening a second tab.
-                if (!claimSmartlink(event)) {
-                  setSponsorNote(
-                    "Partner link already opened recently. It reopens after four hours.",
-                  );
-                } else {
-                  setSponsorNote(null);
-                }
-              }}
+              // No cap and no handler: an intentional click on a labelled
+              // partner link is the one case the automatic trigger's cooldown
+              // must never suppress. A plain anchor also keeps it working in
+              // in-app browsers that swallow window.open.
               data-testid="youtube-fallback-sponsor"
               className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-[var(--glass-border)] bg-[var(--field)] px-2.5 text-sm font-medium text-[var(--text-2)] transition-colors hover:border-[var(--glass-border-hover)] hover:text-[var(--text)]"
             >
@@ -445,7 +434,6 @@ export function UrlField({
           <span className="font-semibold uppercase tracking-wide">Sponsored</span> — the
           mirror button opens a partner page in a new tab; no file leaves this page and
           no download starts from it.
-          {sponsorNote ? ` ${sponsorNote}` : ""}
         </p>
       ) : null}
 
