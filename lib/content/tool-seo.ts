@@ -207,7 +207,7 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
         // return.
         question: "Is this Instagram Reels downloader free, HD and watermark-free?",
         answer:
-          "All three, and none of them come from post-processing: Instagram serves Reels as a progressive MP4 at 1080×1920 with the audio already muxed in and no logo burned on, so the file here is that stream untouched. There is no online queue and no credit system — the resolver runs server-side inside your request, and the panel prints the exact dimensions, codec and byte size before the button appears. Photo-only posts and carousels are the one thing it refuses, because there is no video stream to hand you.",
+          "All three, and none of them come from post-processing: Instagram serves Reels as a progressive MP4 with the audio already muxed in and no logo burned on, so the file here is that stream untouched. Three public reels measured on 2026-11-13 came back at 718×1276, 720×1280 and 576×1024 — a 720p-class rendition, not the 1080×1920 the player draws. There is no online queue and no credit system: the resolver runs server-side inside your request, and the panel prints the exact dimensions, codec and byte size before the button appears. Photo-only posts and carousels are the one thing it refuses, because there is no video stream to hand you.",
       },
       {
         question: "How do I download an Instagram Reel without a watermark?",
@@ -218,6 +218,13 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
         question: "Do I need to log in or connect my Instagram account?",
         answer:
           "No. LAMP TIK only reads public posts, so there is no login, no OAuth screen and no cookie from your account involved. Private accounts cannot be downloaded, by design — that protects other people's content.",
+      },
+      {
+        // Distinct from the FAQ above on purpose: that one covers the label,
+        // this one the container — the two questions editors actually ask.
+        question: "Does the downloaded Reel keep its audio in the same file?",
+        answer:
+          "Yes. Instagram publishes Reels as a progressive MP4 with picture and sound multiplexed together, so the file plays in QuickTime, Windows Media Player and every NLE without a second download. Downloaders that read the DASH manifest instead often hand you a video-only track and leave the audio behind, which is why a Reel can look fine in a browser preview and arrive silent in an editor. This route only accepts a variant that has both tracks.",
       },
       {
         question: "What quality do Instagram Reels download in?",
@@ -370,6 +377,15 @@ export const TOOL_SEO: Record<ToolId, ToolSeo> = {
         question: "Which iPhone Facebook video downloader app should I use — or do I need one?",
         answer:
           "You do not need one: Safari is the better tool for this on iPhone, and the \"free iPhone Facebook video downloader\" apps mostly wrap the same public request while asking for photo-library and network permissions. Paste the fb.watch or /videos/ link into Safari, tap Download HD MP4, and the file saves to Files → On My iPhone → Downloads. Long-press it there → Share → Save Video to move it into the camera roll. No watermark is added at any point, because Facebook's own stream carries none.",
+      },
+      {
+        // Measured 2026-11-13: the same public reel came back 1080×1920 once and
+        // 360×640 on the next read. The page's "up to" is that observation, not
+        // a hedge — and the panel, not the label, is what tells you which file
+        // you got.
+        question: "What resolution is a Facebook download, and why does it change?",
+        answer:
+          "Facebook picks a rendition per request. Three public reels measured on 2026-11-13 came back up to 1080×1920, and one of them returned 360×640 on a second read of the same URL — the highest-bandwidth variant Facebook exposed in that moment was a smaller one. That is why this page says \"up to HD\" instead of naming one number, and why the result panel prints the exact width, height and byte size it received before you save. Nothing is upscaled to make the label look better.",
       },
       {
         question: "How do I download a Facebook video in HD?",

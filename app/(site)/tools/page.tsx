@@ -141,6 +141,27 @@ export default function ToolsPage() {
                 ))}
               </div>
 
+              {/* Exact-match links to the platform money pages. /tools is the
+                  highest-authority hub a crawler reaches from the home page,
+                  so the English downloader anchors sit here rather than only
+                  inside the group cards below. */}
+              <nav aria-label="Core downloaders" className="mt-5 flex flex-wrap gap-2">
+                {[
+                  { href: "/facebook-video-downloader", label: "Facebook Video Downloader" },
+                  { href: "/instagram-reels-downloader", label: "Instagram Reels Downloader" },
+                  { href: "/youtube-downloader", label: "YouTube Video Downloader" },
+                  { href: "/twitter-video-downloader", label: "X (Twitter) Video Downloader" },
+                ].map((entry) => (
+                  <Link
+                    key={entry.href}
+                    href={entry.href}
+                    className="text-sm font-medium text-[var(--accent-text)] underline decoration-[var(--accent-soft)] underline-offset-4 transition-colors hover:decoration-[var(--accent)]"
+                  >
+                    {entry.label}
+                  </Link>
+                ))}
+              </nav>
+
               {/* Jump links: four anchors, so the page is navigable without
                   scrolling through all fifteen cards first. */}
               <nav aria-label="Tool categories" className="mt-7 flex flex-wrap gap-2">

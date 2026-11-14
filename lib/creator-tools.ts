@@ -107,6 +107,13 @@ export const CREATOR_TOOLS: readonly CreatorTool[] = [
           "By multiplying, never by looking anything up: (views ÷ 1000) × the RPM you supply for your country and niche, then the engagement and qualification discounts. Creator Rewards pays on qualified views over one second, so 100,000 raw views are not 100,000 paid views — a step most earnings estimates skip. That is also why two calculators disagree about the same video: one is quoting a US average, the other your own inputs.",
       },
       {
+        // The arithmetic is `views × RPM ÷ 1000`; this answers the part the
+        // other FAQs skip — which side of the payout the visitor controls.
+        question: "Why does the same video pay differently in another country?",
+        answer:
+          "Creator Rewards is priced against the audience, not the creator: views from countries where the program pays more are worth more per thousand, and views from ineligible regions are worth nothing in this calculation. Moving your audience mix by ten percent can change the estimate more than doubling the view count with the same mix. That is also why the calculator asks for the audience country separately from your niche, and why a single worldwide RPM would be an invented average.",
+      },
+      {
         question: "How many views do I need to make $1,000 a month?",
         answer:
           "At a $1.00 RPM and a 60% qualification rate you need roughly 1.7 million qualified views a month. The reverse calculator on this page does that arithmetic for your own country and niche, including the engagement discount.",
@@ -179,6 +186,13 @@ export const CREATOR_TOOLS: readonly CreatorTool[] = [
         question: "Does the checker upload my video?",
         answer:
           "No. The file is read with the browser's own file API and drawn as an image element in the page. There is no upload request, no server copy and no storage — closing the tab discards it.",
+      },
+      {
+        // The bands are percentages of a 1080×1920 frame, not a secret spec:
+        // TikTok redesigns its chrome, so a pinned pixel table would go stale.
+        question: "How were these safe-zone bands measured?",
+        answer:
+          "Each band is derived from where the app's own interface sits on a full-screen 9:16 post, then expressed as a percentage of a 1080×1920 frame and printed in pixels for your editor. Nothing here comes from an official TikTok template, because none is published: the layouts are observed, and they shift when the app redesigns its chrome. Treat the numbers as the current placement and re-check the overlay after a major app update rather than trusting a screenshot from last year.",
       },
       {
         question: "What pixel sizes do the overlays use?",
@@ -255,6 +269,13 @@ export const CREATOR_TOOLS: readonly CreatorTool[] = [
           "Each platform stores covers differently. YouTube exposes several fixed renditions (maxresdefault, sddefault, hqdefault) and the largest one is not always generated; TikTok returns the cover embedded in the post metadata.",
       },
       {
+        // A real failure mode of every thumbnail URL scheme: the largest name
+        // exists but is not the largest image.
+        question: "Why did maxresdefault return a tiny grey image?",
+        answer:
+          "Because the name is not a guarantee. YouTube only generates maxresdefault when the uploaded cover is large enough; when it is not, the same URL can answer with a small grey placeholder instead of a full-size frame. The extractor checks the bytes it actually received and falls back to sddefault or hqdefault rather than labelling a placeholder 4K. If every rendition looks soft, the source cover was uploaded soft — no tool can recover detail that was never stored.",
+      },
+      {
         question: "Does this work for private or deleted posts?",
         answer:
           "No. The resolver only reads public metadata, so a private, region-locked or deleted post returns an error instead of an image.",
@@ -327,6 +348,11 @@ export const CREATOR_TOOLS: readonly CreatorTool[] = [
         question: "Why is the caption sometimes empty?",
         answer:
           "A post can genuinely have no caption, and some reposted or photo-mode posts return only a title. If the API returns an error instead, the post is private, deleted or region-locked.",
+      },
+      {
+        question: "Does the extractor read text burned into the video?",
+        answer:
+          "No, and that distinction matters: it reads the caption field, the hashtag tokens and the audio title the platform stores with the post. Text painted onto the frames is pixels, not metadata, so a post whose message lives only in an on-screen caption returns an empty caption here. Nothing is OCR'd server-side, which is also why private and region-locked posts return an error instead of a guess.",
       },
       {
         question: "Does this show the audio track name?",

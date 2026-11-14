@@ -186,11 +186,15 @@ export const pt: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
       "fb.watch baixar",
       "facebook video download",
     ],
-    eyebrow: "Facebook · HD · sem instalar nada",
-    h1Lead: "Baixar vídeos do Facebook",
-    h1Accent: "em HD, sem aplicativo.",
+    // Bilingual reassurance on purpose: Search Console shows this page holding
+    // position 3 for the English queries "facebook video download" and
+    // "facebook video downloader", so the first screen has to answer an English
+    // searcher and a Portuguese one before either decides to click.
+    eyebrow: "Facebook Video Downloader · HD · sem login",
+    h1Lead: "Facebook Video Downloader",
+    h1Accent: "baixe em um clique, sem login.",
     lede:
-      "Cole o link e salve o MP4 com áudio. Funciona com posts de páginas, vídeos do Watch, Reels e links curtos fb.watch, que são expandidos no servidor antes da busca pelo arquivo.",
+      "Cole um link do Facebook e baixe o MP4 em um clique — sem conta, sem instalar nada, sem marca d'água. Funciona com posts de páginas, vídeos do Watch, Reels e links curtos fb.watch, que são expandidos no servidor antes da busca pelo arquivo.",
     chips: ["HD primeiro", "fb.watch incluído", "Vídeos longos"],
     tool: {
       heading: "Cole o link do vídeo",
