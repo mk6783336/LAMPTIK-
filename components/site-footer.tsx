@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
+
+import { Glyph } from "@/components/glyph";
 
 import { Logo } from "@/components/logo";
 import type { FooterCopy, FooterGroupId, FooterLinkId } from "@/lib/i18n/footer-copy";
@@ -200,7 +202,10 @@ export function SiteFooter({ copy }: { copy?: FooterCopy }) {
               className="btn btn-primary group h-11 shrink-0 gap-2 px-5 text-sm font-semibold"
             >
               {copy?.cta.button ?? "Open the downloader"}
-              <ArrowUpRight className="size-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+              <Glyph
+                name="arrow-up-right"
+                className="size-4 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+              />
             </Link>
           </div>
         </div>

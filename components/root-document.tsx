@@ -6,6 +6,7 @@ import {
   GoogleTagManagerNoScript,
 } from "@/components/google-tag-manager";
 import { JsonLd, siteEntityGraph } from "@/components/seo/JsonLd";
+import { GlyphSprite } from "@/components/glyph";
 import { WebVitals } from "@/components/web-vitals";
 
 import "@/app/globals.css";
@@ -100,6 +101,10 @@ export function RootDocument({
         {/* GTM's no-JavaScript fallback, first element in <body> as Google
             specifies. */}
         <GoogleTagManagerNoScript />
+        {/* Symbol table for the repeated check/✕/plus/arrow/Instagram marks.
+            Before {children} on purpose: a <use> resolves only against
+            symbols already parsed. */}
+        <GlyphSprite />
         {children}
         {/* No ad script is mounted here any more. Every third-party tag that
             used to live at this level (banner frames, side rails, the

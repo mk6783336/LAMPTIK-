@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { Glyph } from "@/components/glyph";
 
 import { PlatformIcon } from "@/components/platform-icons";
 import { CREATOR_TOOLS } from "@/lib/creator-tools";
@@ -34,7 +34,7 @@ export function PlatformGrid() {
             className="group inline-flex items-center gap-1.5 text-sm text-[var(--accent-text)] transition-opacity duration-200 hover:opacity-80"
           >
             Read the guides
-            <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+            <Glyph name="arrow-up-right" className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
           </Link>
         </div>
 
@@ -55,7 +55,7 @@ export function PlatformGrid() {
                   <span className="bento-icon">
                     <PlatformIcon platform={id} className="size-5" />
                   </span>
-                  <ArrowUpRight className="size-4 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
+                  <Glyph name="arrow-up-right" className="size-4 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
                 </div>
                 <h3 className="mt-6 text-base font-semibold tracking-tight">
                   {config.switcherLabel}
@@ -92,7 +92,7 @@ export function PlatformGrid() {
                   X
                 </span>
               </span>
-              <ArrowUpRight className="size-4 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
+              <Glyph name="arrow-up-right" className="size-4 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
             </div>
             <h3 className="mt-6 text-base font-semibold tracking-tight">Twitter / X video</h3>
             <p className="pretty mt-2 text-sm leading-relaxed text-[var(--text-2)]">
@@ -122,7 +122,7 @@ export function PlatformGrid() {
           </span>
           <span className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-[var(--accent-text)]">
             All 15 tools
-            <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+            <Glyph name="arrow-up-right" className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
           </span>
         </Link>
 
@@ -146,7 +146,7 @@ export function PlatformGrid() {
                     <span className="text-sm font-semibold leading-snug tracking-tight">
                       {tool.name}
                     </span>
-                    <ArrowUpRight className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
+                    <Glyph name="arrow-up-right" className="size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--tool-ink)]" />
                   </span>
                   <span className="pretty mt-2 block text-sm leading-relaxed text-[var(--text-2)]">
                     {tool.description}

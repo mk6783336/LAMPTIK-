@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowUpRight, MonitorPlay, Music2, ShieldCheck } from "lucide-react";
+import { MonitorPlay, Music2, ShieldCheck } from "lucide-react";
+
+import { Glyph } from "@/components/glyph";
 
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
@@ -205,7 +207,10 @@ export default function HomePage() {
                   className="group mt-7 hidden items-center gap-1.5 text-sm text-[var(--text-2)] transition-colors duration-200 hover:text-[var(--text)] sm:inline-flex"
                 >
                   See how it works
-                  <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                  <Glyph
+                    name="arrow-up-right"
+                    className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                  />
                 </Link>
               </div>
 
@@ -291,7 +296,10 @@ export default function HomePage() {
                   className="group inline-flex items-center gap-1.5 text-sm text-[var(--accent-text)] transition-opacity duration-200 hover:opacity-80"
                 >
                   All guides
-                  <ArrowUpRight className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                  <Glyph
+                    name="arrow-up-right"
+                    className="size-3.5 transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                  />
                 </Link>
               </div>
 
@@ -321,7 +329,7 @@ export default function HomePage() {
                         aria-hidden="true"
                         className="grid size-7 place-items-center rounded-full border border-[var(--glass-border)] bg-[var(--field)] text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:translate-x-0.5 group-hover:text-[var(--accent-text)]"
                       >
-                        <ArrowUpRight className="size-3.5" />
+                        <Glyph name="arrow-up-right" className="size-3.5" />
                       </span>
                     </div>
                   </Link>

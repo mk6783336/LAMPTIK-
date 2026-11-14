@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { Glyph } from "@/components/glyph";
 
 import { CREATOR_TOOLS } from "@/lib/creator-tools";
 import { cn } from "@/lib/cn";
@@ -65,8 +65,8 @@ export function CreatorToolkitBar({ className }: { className?: string }) {
                     {short.note}
                   </span>
                 </span>
-                <ArrowUpRight
-                  aria-hidden="true"
+                <Glyph
+                  name="arrow-up-right"
                   className="mt-0.5 size-3 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--accent-text)]"
                 />
               </Link>

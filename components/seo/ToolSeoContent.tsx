@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, Check, Plus, X } from "lucide-react";
+import { Glyph } from "@/components/glyph";
 
 import type { ToolId, ToolSeo } from "@/lib/content/tool-seo";
 import { TOOL_SEO } from "@/lib/content/tool-seo";
@@ -11,14 +11,14 @@ function VerdictBadge({ positive }: { positive: boolean }) {
       aria-hidden="true"
       className="grid size-6 shrink-0 place-items-center rounded-full border border-emerald-500/40 bg-emerald-500/20 text-emerald-300"
     >
-      <Check className="size-3.5" strokeWidth={3} />
+      <Glyph name="check" className="size-3.5" strokeWidth={3} />
     </span>
   ) : (
     <span
       aria-hidden="true"
       className="grid size-6 shrink-0 place-items-center rounded-full border border-rose-500/30 bg-rose-500/15 text-rose-300"
     >
-      <X className="size-3.5" strokeWidth={3} />
+      <Glyph name="x" className="size-3.5" strokeWidth={3} />
     </span>
   );
 }
@@ -216,7 +216,7 @@ export function ToolSeoContent({ platform }: { platform: ToolId }) {
                     aria-hidden="true"
                     className="grid size-6 shrink-0 place-items-center rounded-full border border-white/[0.07] bg-[var(--field)] text-[var(--text-3)] transition-[transform,color,border-color] duration-300 group-open:rotate-45 group-open:border-[color-mix(in_srgb,var(--accent)_45%,transparent)] group-open:text-[var(--accent-text)]"
                   >
-                    <Plus className="size-3.5" />
+                    <Glyph name="plus" className="size-3.5" />
                   </span>
                 </summary>
                 <p className="pretty mt-0.5 max-w-2xl pb-4 pr-8 text-sm leading-relaxed text-[var(--text-2)]">
@@ -254,7 +254,10 @@ export function ToolSeoContent({ platform }: { platform: ToolId }) {
                     {link.note}
                   </span>
                 </span>
-                <ArrowUpRight className="mt-0.5 size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--accent-text)]" />
+                <Glyph
+                  name="arrow-up-right"
+                  className="mt-0.5 size-4 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--accent-text)]"
+                />
               </Link>
             ))}
           </div>

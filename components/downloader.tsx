@@ -1,6 +1,8 @@
 "use client";
 
-import { ArrowUpRight, Check, Copy, Loader2, ShieldCheck, Sparkles, Zap } from "lucide-react";
+import { Copy, Loader2, ShieldCheck, Sparkles, Zap } from "lucide-react";
+
+import { Glyph } from "@/components/glyph";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
@@ -297,7 +299,7 @@ function LoadingConsole({
                 )}
               >
                 {done ? (
-                  <Check className="size-2.5" strokeWidth={3.5} />
+                  <Glyph name="check" className="size-2.5" strokeWidth={3.5} />
                 ) : active ? (
                   <Loader2 className="size-2.5 animate-spin" />
                 ) : (
@@ -375,7 +377,7 @@ function UrlPrefixTip() {
         className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[var(--glass-border)] px-2.5 py-1 text-xs font-medium transition-colors duration-200 hover:border-[var(--glass-border-hover)] hover:text-[var(--text)]"
       >
         {copied ? (
-          <Check aria-hidden="true" className="size-3 text-[var(--ok)]" />
+          <Glyph name="check" className="size-3 text-[var(--ok)]" />
         ) : (
           <Copy aria-hidden="true" className="size-3" />
         )}
@@ -1197,7 +1199,10 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
             className="group inline-flex shrink-0 items-center gap-1 underline-offset-4 transition-colors duration-200 hover:text-[var(--text-2)] hover:underline"
           >
             {t.sample}
-            <ArrowUpRight className="size-3 transition-transform duration-200 group-hover:-translate-y-px group-hover:translate-x-px" />
+            <Glyph
+              name="arrow-up-right"
+              className="size-3 transition-transform duration-200 group-hover:-translate-y-px group-hover:translate-x-px"
+            />
           </button>
         </div>
 
@@ -1299,7 +1304,7 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
               Bonus offer from our partner — opens in a new tab.
             </span>
           </span>
-          <ArrowUpRight aria-hidden="true" className="size-4 shrink-0 text-[var(--text-3)]" />
+          <Glyph name="arrow-up-right" className="size-4 shrink-0 text-[var(--text-3)]" />
         </a>
       ) : null}
     </div>
