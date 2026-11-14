@@ -1,4 +1,6 @@
 import { AhrefsAnalytics } from "@/components/ahrefs-analytics";
+import { MonetagScripts } from "@/components/ads/monetag";
+import { VisualAdSlot } from "@/components/ads/visual-ad-slot";
 import { ConsentModeScript } from "@/components/consent-mode";
 import { GoogleAnalytics } from "@/components/google-analytics";
 import {
@@ -106,12 +108,15 @@ export function RootDocument({
             symbols already parsed. */}
         <GlyphSprite />
         {children}
-        {/* No ad script is mounted here any more. Every third-party tag that
-            used to live at this level (banner frames, side rails, the
-            Monetag vignette and two push networks) is gone, so the document
-            Googlebot and a first-time visitor receive contains no ad request
-            at all: the only Monetag surface is the click-triggered Smartlink
-            in the result panel. */}
+        {/* Monetag In-Page Push, after first paint and after either 1.5s or the
+            first scroll/pointer move — never during the LCP window, and never
+            the vignette (a full-viewport interstitial this site's ad integrity
+            audit rejects). One script per document. */}
+        <MonetagScripts />
+        {/* Dismissible partner bar. In flow at the bottom of the document, not
+            over a control: it is one 9px-radius strip, remembers a dismissal
+            for the session, and the audit checks it cannot cover the CTA. */}
+        <VisualAdSlot variant="sticky-bottom" />
         {/* One Google tag for the whole site, configured for both GA4
             destinations (G-TLNZNDJD4J and G-8YQHV877RV). Rendered here so it
             exists exactly once per document, after the Consent Mode defaults

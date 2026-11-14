@@ -36,6 +36,13 @@
  */
 export const smartlinkUrl = process.env.NEXT_PUBLIC_SMARTLINK_URL?.trim() || "";
 
+/**
+ * Second Monetag Smartlink, used by the partner placements when the account
+ * has a second zone. Falls back to the primary everywhere it is consumed, so
+ * an unset value never leaves an empty link.
+ */
+export const smartlinkUrl2 = process.env.NEXT_PUBLIC_SMARTLINK_URL_2?.trim() || "";
+
 /** Monetag domain-verification token, emitted as `<meta name="monetag">`. */
 export const monetagVerification = process.env.NEXT_PUBLIC_MONETAG_META?.trim() || null;
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { VisualAdSlot } from "@/components/ads/visual-ad-slot";
 import { Glyph } from "@/components/glyph";
 import type { ReactNode } from "react";
 
@@ -126,6 +127,7 @@ export function CreatorToolPage({
             </div>
 
             <div className="shell mt-8 sm:mt-10">
+              <VisualAdSlot variant="under-tool" />
             </div>
 
             <div className="shell mt-8 sm:mt-12">
@@ -177,6 +179,8 @@ export function CreatorToolPage({
                   </li>
                 ))}
               </ol>
+
+              <VisualAdSlot variant="in-content" className="mt-8" />
 
               <h2 id="faq" className="mt-10 scroll-mt-24 text-2xl font-semibold tracking-headline">
                 Frequently asked questions

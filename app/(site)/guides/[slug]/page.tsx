@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { BookOpen, Sparkles } from "lucide-react";
 import { Glyph } from "@/components/glyph";
 
+import { VisualAdSlot } from "@/components/ads/visual-ad-slot";
 import { AmbientBackground } from "@/components/ambient-background";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -233,6 +234,10 @@ export default async function GuidePage({
                   </section>
                 ))}
               </div>
+
+              {/* In-content partner unit between the last section and the
+                  related links: the natural break a reader pauses at. */}
+              <VisualAdSlot variant="in-content" className="mt-11" />
 
               {/* Exact-match links to the routes the article measures. */}
               {guide.links?.length ? (

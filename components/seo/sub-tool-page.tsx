@@ -3,6 +3,7 @@ import { Glyph } from "@/components/glyph";
 
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
+import { VisualAdSlot } from "@/components/ads/visual-ad-slot";
 import { Downloader } from "@/components/downloader";
 import { PhotoDownloader } from "@/components/photo-downloader";
 import { PlaylistBrowser } from "@/components/playlist-browser";
@@ -292,6 +293,8 @@ export function SubToolPage({ tool }: { tool: SubTool }) {
                   </div>
                 </div>
               ) : null}
+
+              <VisualAdSlot variant="in-content" className="mt-8" />
 
               <h2 id="faq" className="mt-10 scroll-mt-24 text-2xl font-semibold tracking-headline">
                 Frequently asked questions

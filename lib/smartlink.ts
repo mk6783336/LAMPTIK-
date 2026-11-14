@@ -4,6 +4,7 @@ import {
   SMARTLINK_MAX_PER_WINDOW,
   SMARTLINK_WINDOW_MS,
   smartlinkUrl,
+  smartlinkUrl2,
 } from "@/lib/monetization";
 
 /**
@@ -44,25 +45,59 @@ function writeStamps(stamps: number[]): void {
 
 /** True when the visitor has not hit the four-hour or daily cap yet. */
 export function smartlinkAllowed(now = Date.now()): boolean {
-  if (typeof window === "undefined" || !smartlinkUrl) return false;
+  if (typeof window === "undefined" || (!smartlinkUrl && !smartlinkUrl2)) return false;
   const stamps = readStamps(now);
   const inWindow = stamps.filter((stamp) => now - stamp < SMARTLINK_WINDOW_MS).length;
   return inWindow < SMARTLINK_MAX_PER_WINDOW && stamps.length < SMARTLINK_MAX_PER_DAY;
 }
 
 /**
- * Open the Smartlink in a new tab and record the timestamp.
+ * Open a tab and cut the opener link.
  *
- * Called only from the download click handler, after the file hand-off has
- * been dispatched, so the gesture is still live for the browser's popup
- * blocker and the download is already in flight.
+ * `window.open(url, "_blank", "noopener")` is the tempting form, but any
+ * feature string makes Chrome return `null` even when the tab opened — which
+ * previously read as "blocked", so the cap never stamped and the trigger looked
+ * dead. Opening without features returns a real Window (the only way to tell a
+ * blocked popup from a successful one) and `opener = null` gives the same
+ * isolation.
+ */
+function openFreshTab(url: string): boolean {
+  const opened = window.open(url, "_blank");
+  if (!opened) return false;
+  try {
+    opened.opener = null;
+  } catch {
+    // Cross-origin already: nothing to sever.
+  }
+  return true;
+}
+
+/**
+ * Explicit partner click: no frequency cap.
+ *
+ * The cap exists so a download is not taxed every time. A visitor pressing a
+ * button that says "Partner" is asking for that tab, and suppressing the tab
+ * there is what makes a partner placement pointless. Still records the stamp
+ * so the automatic download-click trigger knows the partner surface was just
+ * shown.
+ */
+export function openPartnerLink(url: string, now = Date.now()): boolean {
+  if (!url || !openFreshTab(url)) return false;
+  writeStamps([...readStamps(now), now]);
+  return true;
+}
+
+/**
+ * Automatic trigger from the download click handler, capped.
+ *
+ * Called after the file hand-off has been dispatched, so the gesture is still
+ * live for the browser's popup blocker and the download is already in flight.
  */
 export function openSmartlink(now = Date.now()): boolean {
   if (!smartlinkAllowed(now)) return false;
-  const opened = window.open(smartlinkUrl, "_blank", "noopener,noreferrer");
   // A blocked popup is not an open: recording the stamp there would burn the
-  // visitor's one-per-four-hours allowance without ever showing them the page.
-  if (!opened) return false;
+  // visitor's allowance without ever showing them the page.
+  if (!openFreshTab(smartlinkUrl)) return false;
   writeStamps([...readStamps(now), now]);
   return true;
 }

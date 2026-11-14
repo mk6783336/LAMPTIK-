@@ -31,6 +31,7 @@ function usePrefersReducedMotion() {
 
 import { PlatformSwitcher } from "@/components/platform-switcher";
 import { isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
+import { VisualAdSlot } from "@/components/ads/visual-ad-slot";
 import { ResultPanel } from "@/components/result-panel";
 import { clientMirrorStreams, clientOembedMeta } from "@/lib/youtube-client";
 
@@ -40,7 +41,6 @@ import { cn } from "@/lib/cn";
 import { PLATFORMS, type Platform } from "@/lib/platforms";
 import { downloaderCopy, type DownloaderCopy } from "@/lib/i18n/ui";
 import type { LocaleCode } from "@/lib/i18n/types";
-import { smartlinkUrl } from "@/lib/monetization";
 import type { MediaPayload } from "@/lib/media";
 import type { ApiFailure, ApiSuccess, ApiResponse, VideoInfo } from "@/lib/tiktok/types";
 
@@ -1107,6 +1107,7 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
 
 
   return (
+    <>
     <div
       id="tool"
       data-ad-guard="tool"
@@ -1253,6 +1254,7 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
         </>
       </div>
 
+
       {/* Notifications render IN-FLOW below the tool buttons as solid opaque
           blocks — never a floating overlay on top of the form (on 390px
           screens the old fixed toast sat over the Download CTA with the
@@ -1275,38 +1277,13 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
         to clear
       </p>
 
-      {/* Mobile sponsor card. The High-Speed partner offer used to live only in
-          the desktop rails (`xl:` and up), which nine out of ten visitors never
-          see. In flow below the tool — never floating over a button, and never
-          disguised as a download: the label says partner and the click leaves
-          the site. */}
-      {smartlinkUrl ? (
-        <a
-          href={smartlinkUrl}
-          target="_blank"
-          rel="sponsored nofollow noopener"
-          className="mt-3 flex items-center gap-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.07] px-3 py-2.5 transition-colors duration-200 hover:border-amber-400/45 hover:bg-amber-500/[0.11] xl:hidden"
-        >
-          <span className="grid size-7 shrink-0 place-items-center rounded-full bg-amber-500/15 text-amber-300">
-            <Zap aria-hidden="true" className="size-3.5" fill="currentColor" strokeWidth={0} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-[var(--text)]">
-              High-speed download partner
-              {/* 12px is the site's type floor: at 10px this disclosure was the
-                  smallest text on the page and unreadable on a phone, which is
-                  the opposite of what a sponsorship label is for. */}
-              <span className="rounded-full border border-amber-500/30 px-1.5 py-0.5 text-xs font-medium uppercase tracking-wider text-amber-200/80">
-                {t.sponsored}
-              </span>
-            </span>
-            <span className="mt-0.5 block text-xs leading-relaxed text-[var(--text-3)]">
-              Bonus offer from our partner — opens in a new tab.
-            </span>
-          </span>
-          <Glyph name="arrow-up-right" className="size-4 shrink-0 text-[var(--text-3)]" />
-        </a>
-      ) : null}
     </div>
+
+    {/* Partner banner directly under the tool, OUTSIDE the guarded region: the
+        tap audit is there to prove the download controls are reachable, and an
+        ad link must never be counted as one of them. In flow on every page that
+        mounts the downloader (home, platform, locale, sub-tool). */}
+    <VisualAdSlot variant="under-tool" className="mt-3" />
+    </>
   );
 }

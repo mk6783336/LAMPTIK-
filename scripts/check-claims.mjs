@@ -789,9 +789,13 @@ async function listAppRoutes() {
 }
 
 /**
- * The ad purge is a decision, not a phase: these hosts and loaders must never
- * come back. Comments are stripped before the scan so history can still be
- * explained in prose without tripping the guard.
+ * These hosts and loaders must never come back: Adsterra's Social Bar and
+ * HilltopAds' popunder both hijack the page. Comments are stripped before the
+ * scan so history can still be explained in prose without tripping the guard.
+ *
+ * Monetag is the one allowed network, and its In-Page Push loader
+ * `https://nap5k.com/tag.min.js` is therefore NOT on this list — blocking that
+ * domain removes the visual ad supply, not a bad actor.
  */
 const BANNED_AD_STRINGS = [
   "bellnewyork.org",

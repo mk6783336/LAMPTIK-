@@ -12,7 +12,8 @@ import { CreatorToolkitBar } from "@/components/creator-toolkit-bar";
 import { PlatformIcon } from "@/components/platform-icons";
 import { cn } from "@/lib/cn";
 import { PLATFORMS } from "@/lib/platforms";
-import { smartlinkUrl } from "@/lib/monetization";
+import { VisualAdSlot } from "@/components/ads/visual-ad-slot";
+import { smartlinkUrl, smartlinkUrl2 } from "@/lib/monetization";
 import { openSmartlink } from "@/lib/smartlink";
 import { ENGLISH_DOWNLOADER_COPY, type DownloaderCopy } from "@/lib/i18n/ui";
 
@@ -99,6 +100,7 @@ export function ResultPanel({
   /** The only paid surface left: the Monetag Smartlink, shown as a visible
    *  sponsored card and also opened (within its cap) on a download click. */
   const sponsorUrl = smartlinkUrl;
+  const partnerUrl = smartlinkUrl2 || smartlinkUrl;
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
   const [started, setStarted] = useState<DownloadStarted | null>(null);
 
@@ -598,6 +600,31 @@ export function ResultPanel({
               that "mirror" would promise a file it cannot deliver — the exact
               pattern that gets a downloader flagged as adware. The visitor's
               file is already streaming from the buttons above. */}
+          {/* Explicit partner button. No frequency cap: this is a deliberate
+              click on a labelled offer, not an automatic trigger on someone's
+              download. It is an anchor, so the browser opens the tab inside the
+              gesture and no popup blocker can drop it. */}
+          {partnerUrl ? (
+            <a
+              href={partnerUrl}
+              target="_blank"
+              rel="sponsored nofollow noopener noreferrer"
+              data-testid="result-server-02"
+              className="btn mt-1 h-11 w-full gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-4 text-sm font-semibold text-amber-100 transition-colors hover:border-amber-400/60 hover:bg-amber-500/15"
+            >
+              <Zap aria-hidden="true" className="size-4 shrink-0 text-amber-300" />
+              <span className="min-w-0 flex-1 text-left">
+                ⚡ Download via High-Speed Server 02 (Partner)
+                <span className="mt-0.5 block text-xs font-normal text-[var(--text-3)]">
+                  Opens a partner page in a new tab — your file above is already downloading.
+                </span>
+              </span>
+              <Glyph name="arrow-up-right" aria-hidden="true" className="size-4 shrink-0" />
+            </a>
+          ) : null}
+
+          <VisualAdSlot variant="result" secondary className="mt-1" />
+
           {sponsorUrl ? (
             <a
               href={sponsorUrl}
