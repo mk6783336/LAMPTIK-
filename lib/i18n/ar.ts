@@ -40,7 +40,7 @@ export const ar: LandingCopy = {
   facts: [
     ["السعر", "مجاني بالكامل"],
     ["الحساب", "غير مطلوب"],
-    ["أفضل جودة", "MP4"],
+    ["الجودة", "MP4"],
     ["المنصات", "TikTok وInstagram وFacebook"],
   ],
   stepsHeading: "كيف تنزّل الفيديو في ثلاث خطوات",

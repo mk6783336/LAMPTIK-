@@ -42,7 +42,7 @@ export const es: LandingCopy = {
   facts: [
     ["Precio", "Gratis"],
     ["Cuenta", "No hace falta"],
-    ["Calidad máxima", "MP4"],
+    ["Calidad", "MP4"],
     ["Formatos", "MP4 y MP3"],
   ],
   stepsHeading: "Cómo descargar un video en tres pasos",
