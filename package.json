@@ -34,6 +34,7 @@
     "seo:submit": "node scripts/gsc-sitemaps.mjs",
     "seo:gsc": "node scripts/gsc-pages.mjs",
     "seo:scoreboard": "node scripts/seo-scoreboard.mjs",
+    "seo:audit": "node scripts/seo-page-sweep.mjs",
     "site:build": "node scripts/build-pages-site.mjs",
     "verify": "tsc --noEmit && next lint --max-warnings=0 && node scripts/check-content-links.mjs && node scripts/check-claims.mjs && next build"
   },

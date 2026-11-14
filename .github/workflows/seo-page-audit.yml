@@ -1,0 +1,213 @@
+name: SEO page audit
+
+# claude-seo's page_checks over every URL the live sitemap publishes. It exists
+# because a one-off sweep on 2026-11-14 found 16 Medium findings — six titles
+# outside 30-60 characters, ten descriptions over 160 — and no build gate looks
+# at a live page's <title> or meta description. Titles and descriptions drift one
+# page at a time, so the check has to run on a schedule, not once.
+#
+# The URL list is discovered from the sitemap on every run, which is what makes
+# a newly added page covered without touching this file or any list. The run's
+# Summary tab carries the full report, and .scratch/seo-page-audit.json (cached
+# between runs) is the baseline the report compares against to name the pages
+# that are new since the last sweep.
+#
+# The tool is not vendored: the repository must not carry claude-seo's files,
+# and this workflow downloads a pinned release into the runner's temp dir. To
+# bump it, change CLAUDE_SEO_VERSION and re-run by hand — the version is in the
+# report header, so a threshold change is visible in the diff.
+#
+# Scheduled workflows are disabled by GitHub after 60 days without repository
+# activity. If this goes quiet, re-enable it from the Actions tab.
+
+on:
+  schedule:
+    # Mondays 07:15 UTC, after the index check (06:00) has already refreshed
+    # the sitemap-side state. A week is the interval a content edit waits at
+    # most before it is measured.
+    - cron: "15 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+# The previous run's JSON is the baseline, so never cancel one mid-flight.
+concurrency:
+  group: seo-page-audit
+  cancel-in-progress: false
+
+env:
+  CLAUDE_SEO_VERSION: v2.6.0
+  AUDIT_ORIGIN: https://www.lamptik.online
+
+jobs:
+  audit:
+    name: Audit every sitemap URL
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # page_checks parses HTML with BeautifulSoup and prefers lxml.
+      - name: Install the parser
+        run: pip install --disable-pip-version-check beautifulsoup4 lxml
+
+      # Pinned tag, not `main`: a threshold or a new check must arrive as a
+      # deliberate version bump, not as a surprise red run on Monday.
+      - name: Fetch the pinned page-check tool
+        shell: bash
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/claude-seo"
+          mkdir -p "$dir"
+          # --strip-components drops the archive's root folder whatever it is
+          # named (`claude-seo-2.6.0` for a tag, `claude-seo-main` for main),
+          # so bumping the version never breaks the extraction.
+          curl -fsSL "https://github.com/AgriciDaniel/claude-seo/archive/refs/tags/${CLAUDE_SEO_VERSION}.tar.gz" \
+            | tar -xz -C "$dir" --strip-components=1
+          test -f "$dir/scripts/page_checks.py"
+          echo "CLAUDE_SEO_HOME=$dir" >> "$GITHUB_ENV"
+
+      # Restores the previous machine-readable sweep so the report can name the
+      # pages that are new. The per-run key keeps the cache always writable;
+      # restore-keys picks up the newest prior sweep.
+      - uses: actions/cache@v4
+        with:
+          path: .scratch/seo-page-audit.json
+          key: seo-page-audit-${{ github.run_id }}
+          restore-keys: |
+            seo-page-audit-
+
+      # Exit 1 = findings above Low, 2 = the sweep could not measure. Both are
+      # reported in the issue below; only the log is left for the run itself.
+      - name: Sweep the sitemap
+        id: audit
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/seo-page-sweep.mjs --no-write --origin "$AUDIT_ORIGIN" 2>&1 | tee audit.log
+
+      - name: Report findings in an issue
+        if: steps.audit.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            ;(async () => {
+            const fs = require("node:fs");
+            const title = "SEO page audit found findings above Low";
+            const label = "seo-audit";
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const log = fs.existsSync("audit.log")
+              ? fs.readFileSync("audit.log", "utf8").trim().slice(-40000)
+              : "(audit log missing)";
+            const body = [
+              `The scheduled page audit of every sitemap URL reported findings above Low, or could not read some pages.`,
+              ``,
+              `- Run: ${runUrl}`,
+              `- Commit: \`${context.sha.slice(0, 7)}\``,
+              `- Tool: claude-seo page_checks \`${process.env.CLAUDE_SEO_VERSION}\``,
+              ``,
+              `**Fix:** the report in the run's Summary tab names each page and message. \`npm run seo:audit\` reproduces it locally against \`${process.env.AUDIT_ORIGIN}\`.`,
+              ``,
+              "<details><summary>audit log</summary>",
+              ``,
+              "```",
+              log,
+              "```",
+              ``,
+              "</details>",
+            ].join("\n");
+
+            try {
+              await github.rest.issues.getLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: label,
+              });
+            } catch {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: label,
+                color: "5319e7",
+                description: "A scheduled SEO page audit found findings above Low",
+              });
+            }
+
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: label,
+              per_page: 20,
+            });
+            const existing = open.data.find((issue) => issue.title === title);
+
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body,
+              });
+              core.info(`Updated issue #${existing.number}`);
+            } else {
+              const created = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: [label],
+              });
+              core.info(`Opened issue #${created.data.number}`);
+            }
+            })();
+
+      # The green path closes the loop: a stale issue is a false alarm the next
+      # reader spends time on.
+      - name: Close the audit issue when the sweep is clean
+        if: steps.audit.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            ;(async () => {
+            const title = "SEO page audit found findings above Low";
+            const label = "seo-audit";
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: label,
+              per_page: 20,
+            });
+            for (const issue of open.data.filter((item) => item.title === title)) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `Every sitemap URL is clean down to Low as of ${runUrl}. Closing.`,
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: "closed",
+              });
+              core.info(`Closed issue #${issue.number}`);
+            }
+            })();
+
+      - name: Fail the job when the sweep did
+        if: steps.audit.outcome == 'failure'
+        run: exit 1
