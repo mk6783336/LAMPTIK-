@@ -192,7 +192,7 @@ export function LocalizedLanding({
                 </div>
 
                 <h1 className="balance mt-4 text-4xl font-semibold leading-[1.05] tracking-headline sm:mt-5 sm:text-5xl">
-                  {copy.h1Lead}
+                  {copy.h1Lead}{" "}
                   <span className="text-gradient mt-1 block">{copy.h1Accent}</span>
                 </h1>
 
