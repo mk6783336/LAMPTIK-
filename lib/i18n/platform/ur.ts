@@ -102,7 +102,7 @@ export const ur: {
     code: "ur",
     htmlLang: "ur",
     dir: "rtl",
-    title: "یوٹیوب ویڈیو ڈاؤن لوڈر — MP4 HD یا MP3",
+    title: "یوٹیوب ویڈیو ڈاؤن لوڈر — MP4 یا MP3",
     description:
       "یوٹیوب کا لنک پیسٹ کریں اور ویڈیو MP4 (640×360) میں یا صرف آواز MP3 میں ڈاؤن لوڈ کریں۔ watch، Shorts اور youtu.be لنک چلتے ہیں — بغیر ایپ، بغیر رجسٹریشن۔",
     keywords: [
@@ -115,7 +115,7 @@ export const ur: {
     ],
     eyebrow: "یوٹیوب · MP4 اور MP3 · بغیر انسٹال",
     h1Lead: "یوٹیوب ویڈیو ڈاؤن لوڈ کریں",
-    h1Accent: "MP4 HD یا صرف آواز۔",
+    h1Accent: "MP4 یا صرف آواز۔",
     lede:
       "لنک پیسٹ کریں اور وہی کوالٹی چنیں جو یوٹیوب پر واقعی موجود ہے: 640×360 (پیمودہ)، اور اصل آواز سے MP3۔ watch، Shorts، youtu.be اور پلے لسٹ لنک سب براؤزر سے چلتے ہیں۔",
     chips: ["MP4", "اصل MP3", "Shorts اور youtu.be"],

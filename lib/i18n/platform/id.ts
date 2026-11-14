@@ -90,7 +90,7 @@ export const id: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     code: "id",
     htmlLang: "id",
     dir: "ltr",
-    title: "Unduh Video YouTube MP4 HD atau MP3",
+    title: "Unduh Video YouTube MP4 atau MP3",
     description:
       "Tempel tautan YouTube lalu unduh videonya sebagai MP4 (640×360) atau ambil audionya saja sebagai MP3. Mendukung watch, Shorts, youtu.be, dan playlist.",
     keywords: [
@@ -103,7 +103,7 @@ export const id: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     ],
     eyebrow: "YouTube · MP4 dan MP3 · tanpa instal",
     h1Lead: "Unduh video YouTube",
-    h1Accent: "MP4 HD atau audionya saja.",
+    h1Accent: "MP4 atau audionya saja.",
     lede:
       "Tempel tautan dan pilih kualitas yang benar-benar tersedia: 640×360 (terukur), atau MP3 dari audio aslinya. Semua lewat browser, tanpa aplikasi.",
     chips: ["MP4", "MP3 asli", "Shorts dan youtu.be"],

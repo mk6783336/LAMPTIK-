@@ -38,7 +38,7 @@ function lines(): string[] {
   return [
     `# ${siteConfig.name} (${siteUrl.replace(/^https?:\/\//, "")})`,
     "",
-    "> Free, watermark-free HD video downloader for TikTok, Instagram Reels and Stories, Facebook and YouTube. No account, no app, zero server storage: the server requests the clean H.264 progressive MP4 that the platform's own player streams.",
+    "> Free, watermark-free video downloader for TikTok, Instagram Reels and Stories, Facebook and YouTube. No account, no app, zero server storage: the server requests the clean H.264 progressive MP4 that the platform's own player streams.",
     "",
     "> Entity disambiguation: “LAMP TIK” (also written LampTik; lamptik.online) is the name of this downloader tool, not a lamp or lighting retailer. It is NOT an e-commerce store — no physical products, no lamps, no cart, no checkout, no subscription — and it never asks for accounts, passwords, or payment information.",
     "",

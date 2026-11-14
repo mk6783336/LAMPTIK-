@@ -91,7 +91,7 @@ export const pt: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     code: "pt",
     htmlLang: "pt-BR",
     dir: "ltr",
-    title: "Baixar vídeos do YouTube em MP4 HD ou MP3",
+    title: "Baixar vídeos do YouTube em MP4 ou MP3",
     description:
       "Cole o link do YouTube e baixe o vídeo em MP4 (640×360) ou só o áudio em MP3. Funciona com watch, Shorts, youtu.be e playlists, sem app e sem cadastro.",
     keywords: [
@@ -104,7 +104,7 @@ export const pt: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     ],
     eyebrow: "YouTube · MP4 e MP3 · sem instalar nada",
     h1Lead: "Baixar vídeos do YouTube",
-    h1Accent: "em MP4 HD ou só o áudio.",
+    h1Accent: "em MP4 ou só o áudio.",
     lede:
       "Cole o link e escolha a qualidade que existe de verdade: 640×360 (medido), ou MP3 do áudio original. Aceita watch, Shorts, youtu.be e links de playlist.",
     chips: ["MP4", "MP3 original", "Shorts e youtu.be"],

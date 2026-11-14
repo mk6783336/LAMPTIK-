@@ -380,7 +380,29 @@ for (const [id, measurement] of Object.entries(MEASUREMENTS)) {
   // "YouTube tops out at 1080p" is judged by what the sentence says.
   measurement.bare = new RegExp(`(?<![–-])\\b(?:${measurement.numbers})\\b`, "i");
   measurement.id = id;
+  // Short edge is what "HD" means for vertical video: 720×1280 is HD, 576×1024
+  // is not, and 640×360 is not.
+  if (measurement.unit === "height") {
+    const pair = String(measurement.display ?? "").match(/(\d{3,4})\s?[×x]\s?(\d{3,4})/);
+    if (pair) measurement.shortEdge = Math.min(Number(pair[1]), Number(pair[2]));
+  }
 }
+
+/**
+ * "HD" is a word, not a number: a 576×1024 or 640×360 file is not HD however it
+ * is packaged, so a sentence that names that platform and calls the file HD is
+ * the same false promise as "1080p", only harder for a numeric check to see.
+ * Platforms whose measured short edge reaches 720 keep the word legitimately.
+ */
+const HD_WORD = /\b(?:full[\s-]?hd|fhd|hd)\b/i;
+const HD_REFUSAL =
+  /\b(?:kein\w*|keine\w*|nicht|aucun\w*|sans|senza|ohne|sin|não|nao|sem|tidak|tanpa|bukan|hindi|walang|không|yok|नहीं|न |لا |نہ |में नहीं|ไม่|بدون|بغیر|appeler|nennen|disebut|gọi|कहते|เรียกว่า|называть)\b/i;
+const HD_PLATFORMS = Object.values(MEASUREMENTS).filter(
+  (measurement) =>
+    measurement.unit === "height" &&
+    typeof measurement.shortEdge === "number" &&
+    measurement.shortEdge < 720,
+);
 
 /** Content that renders as page copy. */
 const CONTENT_FILES = [
@@ -534,6 +556,26 @@ function scanClaims(file, source, platform) {
         message:
           `promises "${hit[0].trim().slice(0, 70)}" but ${measurement.id} measured ` +
           `${measurement.measured} on ${measurement.date} (${measurement.method})`,
+      });
+    }
+  }
+
+  // The same ceiling, expressed as a word instead of a number.
+  for (const measurement of HD_PLATFORMS) {
+    for (const sentence of sentences) {
+      const text = sentence.text;
+      if (!measurement.mention.test(text) || !HD_WORD.test(text)) continue;
+      if (/\?["'”’)\],]*\s*$/.test(text)) continue;
+      if (NEGATION.test(text) || QUALIFIED.test(text) || HD_REFUSAL.test(text)) continue;
+      if (/^\s*(?:related|guides|slug|href|anchor|canonical)\s*:/.test(text)) continue;
+      const hit = text.match(HD_WORD);
+      if (!hit) continue;
+      failures.push({
+        kind: "hd-word",
+        file,
+        line: lineAt(source, sentence.at + (hit.index ?? 0)),
+        message:
+          `calls the file "HD" but ${measurement.id} measured ${measurement.display}`,
       });
     }
   }

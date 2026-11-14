@@ -14,10 +14,10 @@ import type { SubTool } from "@/lib/content/sub-tool-types";
 export const entry: SubTool = {
   slug: "download-videos-united-states",
   platform: "tiktok",
-  title: "TikTok Video Downloader No Watermark HD - US",
-  socialTitle: "TikTok Video Downloader Without Watermark - HD MP4 and MP3",
+  title: "TikTok Video Downloader No Watermark MP4 - US",
+  socialTitle: "TikTok Video Downloader Without Watermark - MP4 and MP3",
   description:
-    "Download TikTok videos in the US without a watermark: paste the link and save the HD MP4 TikTok serves, or an MP3 of the same sound. No app, no account.",
+    "Download TikTok videos in the US without a watermark: paste the link and save the MP4 TikTok serves, or an MP3 of the same sound. No app, no account.",
   keywords: [
     "tiktok video downloader no watermark",
     "tiktok downloader no watermark hd",

@@ -104,7 +104,7 @@ export const SUB_TOOL_ANSWERS: Record<string, SubToolAnswer> = {
   "tiktok-video-for-capcut": {
     query: "How do I get a TikTok video into CapCut?",
     answer:
-      "Paste the TikTok link here and save the HD MP4, then import that file in CapCut. TikTok already serves H.264 video with AAC audio — the pair every CapCut build reads — so there is no conversion step and the audio arrives attached to the clip.",
+      "Paste the TikTok link here and save the MP4, then import that file in CapCut. TikTok already serves H.264 video with AAC audio — the pair every CapCut build reads — so there is no conversion step and the audio arrives attached to the clip.",
     comparison: [
       {
         label: "What you import",
@@ -218,7 +218,7 @@ export const SUB_TOOL_ANSWERS: Record<string, SubToolAnswer> = {
   "tiktok-video-download-iphone": {
     query: "How do I download a TikTok video on iPhone without an app?",
     answer:
-      "Copy the link in TikTok, open this page in Safari, paste, and tap Download HD MP4. The file lands in Files → Downloads; long-press it and choose Share → Save Video to put it in Photos.",
+      "Copy the link in TikTok, open this page in Safari, paste, and tap Download Video. The file lands in Files → Downloads; long-press it and choose Share → Save Video to put it in Photos.",
     comparison: [
       {
         label: "Install",

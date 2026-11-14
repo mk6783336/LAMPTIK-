@@ -11,7 +11,7 @@ const SUGGESTIONS = [
   {
     href: "/",
     title: "TikTok Downloader",
-    body: "Watermark-free HD MP4 and original-sound MP3 from any TikTok link.",
+    body: "Watermark-free MP4 and original-sound MP3 from any TikTok link.",
   },
   {
     href: "/instagram-reels-downloader",

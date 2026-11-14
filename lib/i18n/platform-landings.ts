@@ -157,7 +157,7 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
       code: "es",
       htmlLang: "es",
       dir: "ltr",
-      title: "Descargar videos de YouTube en MP4 HD y MP3 — Gratis",
+      title: "Descargar videos de YouTube en MP4 y MP3 — Gratis",
       description:
         "Pega un enlace de YouTube y guarda el MP4 que sirve el resolutor (640×360 medido el 2026-11-13) o el audio en MP3. Funciona con watch, Shorts, youtu.be y playlists, sin app ni registro.",
       keywords: [
@@ -170,7 +170,7 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
       ],
       eyebrow: "YouTube · MP4 y MP3 · sin instalar nada",
       h1Lead: "Descarga videos de YouTube",
-      h1Accent: "en MP4 HD o solo el audio.",
+      h1Accent: "en MP4 o solo el audio.",
       lede:
         "Pega el enlace del vídeo: el resolutor devuelve un MP4 de 640×360 (medido el 2026-11-13) o un MP3 del audio original. Acepta watch, Shorts, youtu.be y enlaces de playlist, todo desde el navegador.",
       chips: ["MP4", "MP3 original", "Shorts y youtu.be"],
@@ -415,7 +415,7 @@ export const PLATFORM_LANDINGS: Record<PlatformLocale, Record<LocalizedPlatform,
       code: "ar",
       htmlLang: "ar",
       dir: "rtl",
-      title: "تنزيل فيديوهات يوتيوب MP4 بجودة HD أو MP3 — بدون تطبيق",
+      title: "تنزيل فيديوهات يوتيوب MP4 أو MP3 — بدون تطبيق",
       description:
         "الصق رابط يوتيوب ونزّل الفيديو بصيغة MP4 أو الصوت MP3. يدعم watch وShorts وyoutu.be وقوائم التشغيل، بلا تطبيق وبلا تسجيل.",
       keywords: [

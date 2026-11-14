@@ -91,7 +91,7 @@ export const de: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     code: "de",
     htmlLang: "de",
     dir: "ltr",
-    title: "YouTube Videos herunterladen — MP4 in HD oder MP3",
+    title: "YouTube Videos herunterladen — MP4 oder MP3",
     description:
       "YouTube-Link einfügen und das Video als MP4 (640×360) oder nur den Ton als MP3 speichern. Für watch-, Shorts- und youtu.be-Links, ohne App und ohne Konto.",
     keywords: [
@@ -104,7 +104,7 @@ export const de: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     ],
     eyebrow: "YouTube · MP4 und MP3 · ohne Installation",
     h1Lead: "YouTube-Videos herunterladen",
-    h1Accent: "als MP4 in HD oder nur der Ton.",
+    h1Accent: "als MP4 oder nur der Ton.",
     lede:
       "Link einfügen und die Auflösung wählen, die es wirklich gibt: 640×360 (gemessen), oder MP3 aus der Originaltonspur. Funktioniert mit watch-, Shorts- und youtu.be-Links im Browser.",
     chips: ["MP4", "MP3 original", "Shorts und youtu.be"],

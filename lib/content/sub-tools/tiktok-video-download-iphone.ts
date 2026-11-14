@@ -57,7 +57,7 @@ export const entry: SubTool = {
     {
       question: "How do I download a TikTok video on my iPhone?",
       answer:
-        "Open the video in TikTok, tap Share → Copy link, then paste that link into the field on this page in Safari and tap Download HD MP4. The MP4 saves to Files → Downloads; long-press it there and choose Share → Save Video to put it in Photos.",
+        "Open the video in TikTok, tap Share → Copy link, then paste that link into the field on this page in Safari and tap Download Video. The MP4 saves to Files → Downloads; long-press it there and choose Share → Save Video to put it in Photos.",
     },
     {
       question: "Why is there no Save video option in TikTok?",

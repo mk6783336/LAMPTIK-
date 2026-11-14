@@ -91,7 +91,7 @@ export const th: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     code: "th",
     htmlLang: "th",
     dir: "ltr",
-    title: "ดาวน์โหลดวิดีโอ YouTube MP4 HD หรือ MP3",
+    title: "ดาวน์โหลดวิดีโอ YouTube MP4 หรือ MP3",
     description:
       "วางลิงก์ YouTube แล้วดาวน์โหลดวิดีโอเป็น MP4 (640×360) หรือเอาเฉพาะเสียงเป็น MP3 รองรับ watch, Shorts, youtu.be และเพลย์ลิสต์ ไม่ต้องติดตั้งแอป",
     keywords: [
@@ -104,7 +104,7 @@ export const th: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     ],
     eyebrow: "YouTube · MP4 และ MP3 · ไม่ต้องติดตั้ง",
     h1Lead: "ดาวน์โหลดวิดีโอ YouTube",
-    h1Accent: "MP4 HD หรือเอาแค่เสียง",
+    h1Accent: "MP4 หรือเอาแค่เสียง",
     lede:
       "วางลิงก์แล้วเลือกคุณภาพที่มีจริง — 640×360 (วัดแล้ว) หรือ MP3 จากแทร็กเสียงต้นฉบับ ทั้งหมดทำในเบราว์เซอร์ ไม่ต้องติดตั้งอะไร",
     chips: ["MP4", "MP3 ต้นฉบับ", "Shorts และ youtu.be"],

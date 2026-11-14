@@ -82,7 +82,7 @@ const OTHER_TOOLS: ReadonlyArray<readonly [string, string, string]> = [
     "Descargar Reels de Instagram",
     "El MP4 completo en 1080 × 1920, sin marca de agua.",
   ],
-  ["/es", "Descargar videos de TikTok", "Sin marca de agua, en HD y con el audio original."],
+  ["/es", "Descargar videos de TikTok", "Sin marca de agua, en MP4 y con el audio original."],
   [
     "/es/twitter-video-downloader",
     "Descargar videos de Twitter (X)",

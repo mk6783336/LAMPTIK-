@@ -90,7 +90,7 @@ export const vi: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     code: "vi",
     htmlLang: "vi",
     dir: "ltr",
-    title: "Tải Video YouTube MP4 HD hoặc MP3",
+    title: "Tải Video YouTube MP4 hoặc MP3",
     description:
       "Dán liên kết YouTube để tải video MP4 (640×360) hoặc chỉ lấy âm thanh thành MP3. Hỗ trợ watch, Shorts, youtu.be và danh sách phát, không cần cài ứng dụng.",
     keywords: [
@@ -103,7 +103,7 @@ export const vi: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     ],
     eyebrow: "YouTube · MP4 và MP3 · không cần cài",
     h1Lead: "Tải video YouTube",
-    h1Accent: "MP4 HD hoặc chỉ âm thanh.",
+    h1Accent: "MP4 hoặc chỉ âm thanh.",
     lede:
       "Dán liên kết rồi chọn đúng mức chất lượng đang có: 640×360 (đã đo), hoặc MP3 từ track âm thanh gốc. Tất cả chạy trong trình duyệt, không cần ứng dụng.",
     chips: ["MP4", "MP3 gốc", "Shorts và youtu.be"],

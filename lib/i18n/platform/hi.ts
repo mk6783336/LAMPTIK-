@@ -91,7 +91,7 @@ export const hi: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     code: "hi",
     htmlLang: "hi",
     dir: "ltr",
-    title: "YouTube वीडियो डाउनलोड — MP4 HD या MP3",
+    title: "YouTube वीडियो डाउनलोड — MP4 या MP3",
     description:
       "YouTube लिंक पेस्ट करके वीडियो MP4 (640×360) या सिर्फ़ आवाज़ MP3 में डाउनलोड करें। watch, Shorts, youtu.be और प्लेलिस्ट लिंक चलते हैं। बिना ऐप।",
     keywords: [
@@ -104,7 +104,7 @@ export const hi: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     ],
     eyebrow: "YouTube · MP4 और MP3 · बिना इंस्टॉल",
     h1Lead: "YouTube वीडियो डाउनलोड करें",
-    h1Accent: "MP4 HD या सिर्फ़ आवाज़।",
+    h1Accent: "MP4 या सिर्फ़ आवाज़।",
     lede:
       "लिंक पेस्ट करें और वही क्वालिटी चुनें जो सच में उपलब्ध है — 640×360 (नापा गया), या असली ऑडियो ट्रैक से MP3। सब ब्राउज़र में, बिना ऐप।",
     chips: ["MP4", "असली MP3", "Shorts और youtu.be"],

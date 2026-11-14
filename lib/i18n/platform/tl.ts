@@ -91,7 +91,7 @@ export const tl: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     code: "tl",
     htmlLang: "tl",
     dir: "ltr",
-    title: "I-download ang YouTube Video — MP4 HD o MP3",
+    title: "I-download ang YouTube Video — MP4 o MP3",
     description:
       "I-paste ang YouTube link at i-download ang video bilang MP4 (640×360), o ang audio lang bilang MP3. Gumagana ang watch, Shorts at playlist link.",
     keywords: [
@@ -104,7 +104,7 @@ export const tl: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     ],
     eyebrow: "YouTube · MP4 at MP3 · walang i-install",
     h1Lead: "I-download ang YouTube video",
-    h1Accent: "MP4 HD o audio lang.",
+    h1Accent: "MP4 o audio lang.",
     lede:
       "I-paste ang link at piliin ang quality na talagang available — 640×360 (sinukat), o MP3 mula sa orihinal na audio track. Lahat sa browser, walang app.",
     chips: ["MP4", "Tunay na MP3", "Shorts at youtu.be"],

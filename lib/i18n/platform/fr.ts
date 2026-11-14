@@ -102,7 +102,7 @@ export const fr: Record<LocalizedPlatform, LandingCopy> = {
     code: "fr",
     htmlLang: "fr",
     dir: "ltr",
-    title: "Télécharger une vidéo YouTube en MP4 HD ou MP3",
+    title: "Télécharger une vidéo YouTube en MP4 ou MP3",
     description:
       "Collez un lien YouTube et récupérez la vidéo en MP4 en 640×360, ou l’audio en MP3. Watch, Shorts, youtu.be et playlists, sans application.",
     keywords: [
@@ -116,7 +116,7 @@ export const fr: Record<LocalizedPlatform, LandingCopy> = {
     ],
     eyebrow: "YouTube · MP4 et MP3 · rien à installer",
     h1Lead: "Téléchargez une vidéo YouTube",
-    h1Accent: "en MP4 HD ou en audio seul.",
+    h1Accent: "en MP4 ou en audio seul.",
     lede:
       "Collez le lien et choisissez la qualité réellement disponible : 640×360 (mesuré), ou MP3 de l’audio d’origine. Les liens watch, Shorts, youtu.be et les playlists sont acceptés, directement dans le navigateur.",
     chips: ["MP4", "MP3 d’origine", "Shorts et youtu.be"],

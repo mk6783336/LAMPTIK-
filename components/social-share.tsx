@@ -12,7 +12,7 @@ import { siteUrl } from "@/lib/site";
  */
 export function SocialShare({ compact = false }: { compact?: boolean }) {
   const [copied, setCopied] = useState(false);
-  const shareText = encodeURIComponent("LAMP TIK — free HD TikTok, Reels & FB downloads, no watermark:");
+  const shareText = encodeURIComponent("LAMP TIK — free TikTok, Reels & FB downloads, no watermark:");
   const shareUrl = encodeURIComponent(siteUrl);
   const links = [
     {

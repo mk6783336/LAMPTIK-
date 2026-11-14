@@ -78,12 +78,12 @@ export interface FooterCopy {
 export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
   es: {
     cta: {
-      heading: "Guarda tu próximo vídeo en HD.",
+      heading: "Guarda tu próximo vídeo en MP4.",
       body: "Pega un enlace y obtén la transmisión original. Sin cuenta, sin app y sin guardar nada.",
       button: "Abrir el descargador",
     },
     tagline:
-      "Descargas HD sin marca de agua de TikTok, Instagram, Facebook y YouTube. Pega un enlace y obtén la transmisión original. Sin cuenta y sin rastrear tus descargas.",
+      "Descargas MP4 sin marca de agua de TikTok, Instagram, Facebook y YouTube. Pega un enlace y obtén la transmisión original. Sin cuenta y sin rastrear tus descargas.",
     status: "Todo funcionando",
     groups: {
       downloaders: "Descargadores",
@@ -98,7 +98,7 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
       tiktok: "TikTok sin marca",
       instagram: "Reels de Instagram",
       facebook: "Facebook HD",
-      youtube: "YouTube HD",
+      youtube: "YouTube",
       allTools: "Las 15 herramientas",
       tiktokMp3: "TikTok a MP3",
       tiktokPhotos: "Fotos de TikTok",
@@ -133,12 +133,12 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
 
   ar: {
     cta: {
-      heading: "احفظ فيديوك القادم بجودة HD.",
+      heading: "احفظ فيديوك القادم بجودة MP4.",
       body: "الصق رابطًا واحصل على البث الأصلي. بدون حساب وبدون تطبيق وبدون تخزين أي ملف.",
       button: "افتح أداة التنزيل",
     },
     tagline:
-      "تنزيلات HD بدون علامة مائية من تيك توك وإنستغرام وفيسبوك ويوتيوب. الصق رابطًا واحصل على البث الأصلي. بدون حساب وبدون تتبّع لتنزيلاتك.",
+      "تنزيلات MP4 بدون علامة مائية من تيك توك وإنستغرام وفيسبوك ويوتيوب. الصق رابطًا واحصل على البث الأصلي. بدون حساب وبدون تتبّع لتنزيلاتك.",
     status: "كل الأنظمة تعمل",
     groups: {
       downloaders: "أدوات التنزيل",
@@ -153,7 +153,7 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
       tiktok: "تيك توك بدون علامة",
       instagram: "ريلز إنستغرام",
       facebook: "فيسبوك HD",
-      youtube: "يوتيوب HD",
+      youtube: "يوتيوب",
       allTools: "كل الأدوات",
       tiktokMp3: "تيك توك إلى MP3",
       tiktokPhotos: "صور تيك توك",
@@ -188,12 +188,12 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
 
   de: {
     cta: {
-      heading: "Speichere dein nächstes Video in HD.",
+      heading: "Speichere dein nächstes Video in MP4.",
       body: "Link einfügen und den Originalstream erhalten. Kein Konto, keine App, nichts gespeichert.",
       button: "Downloader öffnen",
     },
     tagline:
-      "Wasserzeichenfreie HD-Downloads von TikTok, Instagram, Facebook und YouTube. Link einfügen, Originalstream bekommen. Kein Konto, kein Tracking deiner Downloads.",
+      "Wasserzeichenfreie MP4-Downloads von TikTok, Instagram, Facebook und YouTube. Link einfügen, Originalstream bekommen. Kein Konto, kein Tracking deiner Downloads.",
     status: "Alle Systeme laufen",
     groups: {
       downloaders: "Downloader",
@@ -208,7 +208,7 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
       tiktok: "TikTok ohne Logo",
       instagram: "Instagram Reels",
       facebook: "Facebook HD",
-      youtube: "YouTube HD",
+      youtube: "YouTube",
       allTools: "Alle 15 Werkzeuge",
       tiktokMp3: "TikTok zu MP3",
       tiktokPhotos: "TikTok-Fotos",
@@ -243,12 +243,12 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
 
   pt: {
     cta: {
-      heading: "Salve seu próximo vídeo em HD.",
+      heading: "Salve seu próximo vídeo em MP4.",
       body: "Cole um link e receba o stream original. Sem conta, sem app e nada armazenado.",
       button: "Abrir o baixador",
     },
     tagline:
-      "Downloads em HD sem marca d'água do TikTok, Instagram, Facebook e YouTube. Cole um link e receba o stream original. Sem conta e sem rastrear seus downloads.",
+      "Downloads em MP4 sem marca d'água do TikTok, Instagram, Facebook e YouTube. Cole um link e receba o stream original. Sem conta e sem rastrear seus downloads.",
     status: "Tudo funcionando",
     groups: {
       downloaders: "Baixadores",
@@ -263,7 +263,7 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
       tiktok: "TikTok sem marca",
       instagram: "Reels do Instagram",
       facebook: "Facebook HD",
-      youtube: "YouTube HD",
+      youtube: "YouTube",
       allTools: "As 15 ferramentas",
       tiktokMp3: "TikTok para MP3",
       tiktokPhotos: "Fotos do TikTok",
@@ -297,12 +297,12 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
 
   id: {
     cta: {
-      heading: "Simpan video berikutnya dalam HD.",
+      heading: "Simpan video berikutnya dalam MP4.",
       body: "Tempel tautan dan dapatkan stream aslinya. Tanpa akun, tanpa aplikasi, tidak ada yang disimpan.",
       button: "Buka pengunduh",
     },
     tagline:
-      "Unduhan HD tanpa watermark dari TikTok, Instagram, Facebook, dan YouTube. Tempel tautan, dapatkan stream aslinya. Tanpa akun dan tanpa melacak unduhan Anda.",
+      "Unduhan MP4 tanpa watermark dari TikTok, Instagram, Facebook, dan YouTube. Tempel tautan, dapatkan stream aslinya. Tanpa akun dan tanpa melacak unduhan Anda.",
     status: "Semua sistem normal",
     groups: {
       downloaders: "Pengunduh",
@@ -317,7 +317,7 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
       tiktok: "TikTok tanpa watermark",
       instagram: "Reels Instagram",
       facebook: "Facebook HD",
-      youtube: "YouTube HD",
+      youtube: "YouTube",
       allTools: "Semua 15 alat",
       tiktokMp3: "TikTok ke MP3",
       tiktokPhotos: "Foto TikTok",
@@ -352,12 +352,12 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
 
   hi: {
     cta: {
-      heading: "अगला वीडियो HD में सेव करें।",
+      heading: "अगला वीडियो MP4 में सेव करें।",
       body: "लिंक पेस्ट करें और ओरिजिनल स्ट्रीम पाएँ। कोई अकाउंट नहीं, कोई ऐप नहीं, कुछ सेव नहीं होता।",
       button: "डाउनलोडर खोलें",
     },
     tagline:
-      "TikTok, Instagram, Facebook और YouTube से बिना वॉटरमार्क HD डाउनलोड। लिंक पेस्ट करें और ओरिजिनल स्ट्रीम पाएँ। कोई अकाउंट नहीं और आपके डाउनलोड ट्रैक नहीं होते।",
+      "TikTok, Instagram, Facebook और YouTube से बिना वॉटरमार्क MP4 डाउनलोड। लिंक पेस्ट करें और ओरिजिनल स्ट्रीम पाएँ। कोई अकाउंट नहीं और आपके डाउनलोड ट्रैक नहीं होते।",
     status: "सभी सिस्टम चालू",
     groups: {
       downloaders: "डाउनलोडर",
@@ -372,7 +372,7 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
       tiktok: "TikTok बिना वॉटरमार्क",
       instagram: "Instagram Reels",
       facebook: "Facebook HD",
-      youtube: "YouTube HD",
+      youtube: "YouTube",
       allTools: "सभी 15 टूल्स",
       tiktokMp3: "TikTok से MP3",
       tiktokPhotos: "TikTok फ़ोटो",
@@ -407,12 +407,12 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
 
   vi: {
     cta: {
-      heading: "Lưu video tiếp theo ở chất lượng HD.",
+      heading: "Lưu video tiếp theo ở chất lượng MP4.",
       body: "Dán liên kết và nhận luồng gốc. Không tài khoản, không ứng dụng, không lưu gì.",
       button: "Mở trình tải",
     },
     tagline:
-      "Tải HD không logo từ TikTok, Instagram, Facebook và YouTube. Dán liên kết và nhận luồng gốc. Không tài khoản, không theo dõi lượt tải của bạn.",
+      "Tải MP4 không logo từ TikTok, Instagram, Facebook và YouTube. Dán liên kết và nhận luồng gốc. Không tài khoản, không theo dõi lượt tải của bạn.",
     status: "Mọi hệ thống bình thường",
     groups: {
       downloaders: "Trình tải",
@@ -427,7 +427,7 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
       tiktok: "TikTok không logo",
       instagram: "Reels Instagram",
       facebook: "Facebook HD",
-      youtube: "YouTube HD",
+      youtube: "YouTube",
       allTools: "Tất cả 15 công cụ",
       tiktokMp3: "TikTok sang MP3",
       tiktokPhotos: "Ảnh TikTok",
@@ -462,12 +462,12 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
 
   th: {
     cta: {
-      heading: "บันทึกวิดีโอถัดไปเป็น HD",
+      heading: "บันทึกวิดีโอถัดไปเป็น MP4",
       body: "วางลิงก์แล้วรับไฟล์ต้นฉบับ ไม่ต้องมีบัญชี ไม่ต้องติดตั้งแอป และไม่มีการเก็บไฟล์",
       button: "เปิดตัวดาวน์โหลด",
     },
     tagline:
-      "ดาวน์โหลด HD ไม่มีลายน้ำจาก TikTok, Instagram, Facebook และ YouTube วางลิงก์แล้วรับไฟล์ต้นฉบับ ไม่ต้องมีบัญชี และไม่ติดตามการดาวน์โหลดของคุณ",
+      "ดาวน์โหลด MP4 ไม่มีลายน้ำจาก TikTok, Instagram, Facebook และ YouTube วางลิงก์แล้วรับไฟล์ต้นฉบับ ไม่ต้องมีบัญชี และไม่ติดตามการดาวน์โหลดของคุณ",
     status: "ระบบทำงานปกติ",
     groups: {
       downloaders: "ตัวดาวน์โหลด",
@@ -482,7 +482,7 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
       tiktok: "TikTok ไม่มีลายน้ำ",
       instagram: "Reels Instagram",
       facebook: "Facebook HD",
-      youtube: "YouTube HD",
+      youtube: "YouTube",
       allTools: "เครื่องมือทั้ง 15",
       tiktokMp3: "TikTok เป็น MP3",
       tiktokPhotos: "รูปภาพ TikTok",
@@ -516,12 +516,12 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
 
   tl: {
     cta: {
-      heading: "I-save ang susunod na video sa HD.",
+      heading: "I-save ang susunod na video sa MP4.",
       body: "I-paste ang link at kunin ang orihinal na stream. Walang account, walang app, walang naitatago.",
       button: "Buksan ang downloader",
     },
     tagline:
-      "HD na download na walang watermark mula sa TikTok, Instagram, Facebook at YouTube. I-paste ang link at kunin ang orihinal na stream. Walang account at walang pagsubaybay sa download mo.",
+      "MP4 na download na walang watermark mula sa TikTok, Instagram, Facebook at YouTube. I-paste ang link at kunin ang orihinal na stream. Walang account at walang pagsubaybay sa download mo.",
     status: "Maayos ang lahat",
     groups: {
       downloaders: "Mga downloader",
@@ -536,7 +536,7 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
       tiktok: "TikTok walang watermark",
       instagram: "Instagram Reels",
       facebook: "Facebook HD",
-      youtube: "YouTube HD",
+      youtube: "YouTube",
       allTools: "Lahat ng 15 tool",
       tiktokMp3: "TikTok to MP3",
       tiktokPhotos: "TikTok Photos",
@@ -571,12 +571,12 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
 
   tr: {
     cta: {
-      heading: "Sıradaki videonuzu HD olarak kaydedin.",
+      heading: "Sıradaki videonuzu MP4 olarak kaydedin.",
       body: "Bağlantıyı yapıştırın, orijinal akışı alın. Hesap yok, uygulama yok, hiçbir şey saklanmıyor.",
       button: "İndiriciyi aç",
     },
     tagline:
-      "TikTok, Instagram, Facebook ve YouTube'dan filigransız HD indirme. Bağlantıyı yapıştırın, orijinal akışı alın. Hesap yok, indirmeleriniz izlenmiyor.",
+      "TikTok, Instagram, Facebook ve YouTube'dan filigransız MP4 indirme. Bağlantıyı yapıştırın, orijinal akışı alın. Hesap yok, indirmeleriniz izlenmiyor.",
     status: "Tüm sistemler çalışıyor",
     groups: {
       downloaders: "İndiriciler",
@@ -591,7 +591,7 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
       tiktok: "Filigransız TikTok",
       instagram: "Instagram Reels",
       facebook: "Facebook HD",
-      youtube: "YouTube HD",
+      youtube: "YouTube",
       allTools: "15 aracın tümü",
       tiktokMp3: "TikTok'tan MP3",
       tiktokPhotos: "TikTok fotoğrafları",
@@ -626,12 +626,12 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
 
   fr: {
     cta: {
-      heading: "Enregistrez votre prochaine vidéo en HD.",
+      heading: "Enregistrez votre prochaine vidéo en MP4.",
       body: "Collez un lien et obtenez le flux d'origine. Sans compte, sans application, rien n'est conservé.",
       button: "Ouvrir le téléchargeur",
     },
     tagline:
-      "Téléchargements HD sans filigrane depuis TikTok, Instagram, Facebook et YouTube. Collez un lien et obtenez le flux d'origine. Sans compte et sans suivi de vos téléchargements.",
+      "Téléchargements MP4 sans filigrane depuis TikTok, Instagram, Facebook et YouTube. Collez un lien et obtenez le flux d'origine. Sans compte et sans suivi de vos téléchargements.",
     status: "Tous les systèmes fonctionnent",
     groups: {
       downloaders: "Téléchargeurs",
@@ -646,7 +646,7 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
       tiktok: "TikTok sans filigrane",
       instagram: "Instagram Reels",
       facebook: "Facebook HD",
-      youtube: "YouTube HD",
+      youtube: "YouTube",
       allTools: "Les 15 outils",
       tiktokMp3: "TikTok en MP3",
       tiktokPhotos: "Photos TikTok",
@@ -681,12 +681,12 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
 
   ur: {
     cta: {
-      heading: "اگلی ویڈیو HD میں محفوظ کریں۔",
+      heading: "اگلی ویڈیو MP4 میں محفوظ کریں۔",
       body: "لنک پیسٹ کریں اور اصل اسٹریم لے لیں۔ نہ اکاؤنٹ، نہ ایپ، کچھ محفوظ نہیں ہوتا۔",
       button: "ڈاؤن لوڈر کھولیں",
     },
     tagline:
-      "ٹک ٹاک، انسٹاگرام، فیس بک اور یوٹیوب سے بغیر واٹر مارک HD ڈاؤن لوڈ۔ لنک پیسٹ کریں اور اصل اسٹریم لیں۔ نہ اکاؤنٹ اور نہ آپ کے ڈاؤن لوڈز کا کوئی ریکارڈ۔",
+      "ٹک ٹاک، انسٹاگرام، فیس بک اور یوٹیوب سے بغیر واٹر مارک MP4 ڈاؤن لوڈ۔ لنک پیسٹ کریں اور اصل اسٹریم لیں۔ نہ اکاؤنٹ اور نہ آپ کے ڈاؤن لوڈز کا کوئی ریکارڈ۔",
     status: "تمام سسٹم چل رہے ہیں",
     groups: {
       downloaders: "ڈاؤن لوڈر",
@@ -701,7 +701,7 @@ export const FOOTER_COPY: Record<LocaleCode, FooterCopy> = {
       tiktok: "ٹک ٹاک بغیر واٹر مارک",
       instagram: "انسٹاگرام ریلز",
       facebook: "فیس بک HD",
-      youtube: "یوٹیوب HD",
+      youtube: "یوٹیوب",
       allTools: "تمام 15 ٹولز",
       tiktokMp3: "ٹک ٹاک سے MP3",
       tiktokPhotos: "ٹک ٹاک تصاویر",

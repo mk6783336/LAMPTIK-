@@ -63,7 +63,7 @@ const FOOTER_GROUPS: Array<{ id: FooterGroupId; label: string; links: FooterLink
       // key would break the total record in footer-copy.ts. The English label
       // is correct in every locale here — "Twitter / X" is a brand name.
       { href: "/twitter-video-downloader", label: "Twitter / X video" },
-      { href: "/youtube-downloader", label: "YouTube HD", id: "youtube" },
+      { href: "/youtube-downloader", label: "YouTube MP4", id: "youtube" },
     ],
   },
   // Programmatic sub-tools: one link per high-intent query. These are real
@@ -210,7 +210,7 @@ export function SiteFooter({ copy }: { copy?: FooterCopy }) {
             <Logo />
             <p className="pretty mt-4 text-sm leading-relaxed text-[var(--text-2)]">
               {copy?.tagline ??
-                "Watermark-free TikTok, Instagram, Facebook & YouTube HD downloads. Paste a link, get the original stream. No account, no tracking of your downloads."}
+                "Watermark-free TikTok, Instagram, Facebook & YouTube downloads. Paste a link, get the stream the platform serves. No account, no tracking of your downloads."}
             </p>
             <Link
               href="/api/health"
