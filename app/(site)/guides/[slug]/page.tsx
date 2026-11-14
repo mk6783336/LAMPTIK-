@@ -234,6 +234,31 @@ export default async function GuidePage({
                 ))}
               </div>
 
+              {/* Exact-match links to the routes the article measures. */}
+              {guide.links?.length ? (
+                <nav aria-label="Platform downloaders" className="mt-11">
+                  <p className="micro text-[var(--text-3)]">
+                    Check the measurements on each platform
+                  </p>
+                  <ul className="mt-3 flex flex-wrap gap-2">
+                    {guide.links.map((link) => (
+                      <li key={link.href}>
+                        <Link
+                          href={link.href}
+                          className="group inline-flex items-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-1.5 text-sm font-medium transition-colors duration-200 hover:border-[var(--glass-border-hover)] hover:text-[var(--accent-text)]"
+                        >
+                          {link.anchor}
+                          <Glyph
+                            name="arrow-up-right"
+                            className="size-3.5 shrink-0 text-[var(--text-3)] transition-[transform,color] duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--accent-text)]"
+                          />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              ) : null}
+
               {/* Pre-CTA video + multi-slot ad unit — after the last section. */}
               <div className="mt-12">
               </div>

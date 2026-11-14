@@ -1,7 +1,7 @@
 /**
  * Editorial content for the guides hub.
  *
- * Four hubs, not fourteen pages.
+ * Five hubs, not fourteen pages.
  *
  * Search Console measured the previous set over 28 finalised days: fourteen
  * guide URLs earned 26 impressions between them and zero clicks, and not one of
@@ -46,6 +46,12 @@ export interface Guide {
   shortAnswer: string;
   sections: GuideSection[];
   related: string[];
+  /**
+   * Exact-match links from an article to the tool pages it measures. Used by
+   * the comparison guide, whose whole point is that the numbers belong to
+   * specific routes — the anchor text is the query each page targets.
+   */
+  links?: { href: string; anchor: string }[];
 }
 
 export const GUIDES: Guide[] = [
@@ -434,6 +440,90 @@ export const GUIDES: Guide[] = [
       "download-tiktok-video-without-watermark",
       "download-tiktok-audio-as-mp3",
       "why-tiktok-video-quality-drops-after-upload",
+    ],
+  },
+  {
+    slug: "measured-video-files-vs-1080p-labels",
+    title: "\"1080p\" Labels vs the File You Receive: Measured Dimensions by Platform",
+    metaTitle: "1080p Labels vs the Measured File",
+    description:
+      "What \"1080p\" labels mean versus the file you actually receive: MP4 tkhd measurements from TikTok, YouTube, Instagram, Facebook and X on 2026-11-13.",
+    updatedAt: "2026-11-14",
+    shortAnswer:
+      "A downloader's 1080p label describes a rendition the platform offers, not the file your browser receives. Reading the tkhd box of the delivered MP4 on 2026-11-13 gave 576×1024 for TikTok, 640×360 for YouTube, a 720p-class rendition for Instagram, up to 1080×1920 for Facebook, and 3840×2160 for X.",
+    sections: [
+      {
+        heading: "What a resolution label describes",
+        paragraphs: [
+          "1080p is a rung on a platform's encoding ladder, not a property of the file your browser receives. The badge describes the largest rendition the platform stored; the download API returns whichever rung it decides to serve.",
+          "The container records the truth. Every MP4 carries a tkhd (track header) box, written at encode time with the track's coded width and height. Read those two integers and you know exactly what arrived — no player, no guesswork, no marketing.",
+        ],
+      },
+      {
+        heading: "Measured on 2026-11-13, through this resolver",
+        paragraphs: [
+          "Each sample was fetched through this site's own API, and the first bytes of the MP4 were parsed for the tkhd box. Nothing below is copied from a platform's help page.",
+        ],
+        list: [
+          "TikTok: 576×1024 measured on three posts — a 2019 upload, a 2022 one and a 2025 one. All three played sharper in the app than the file that was served.",
+          "YouTube: 640×360 measured on three videos, one of them uploaded as a 4K master. The watch page offers a ladder above that; the served MP4 measured was the 360p-class rendition.",
+          "Instagram Reels: 718×1276, 720×1280 and 576×1024 measured across three public reels. A 720p-class rendition in every case.",
+          "Facebook: up to 1080×1920 measured, and one reel returned 360×640 on a second read of the same URL. The rendition is not stable, which is why the Facebook page says \"up to\" rather than naming one number.",
+          "X: 3840×2160 measured on a NASA post. This is the one platform where the delivered file matched its largest published label.",
+        ],
+      },
+      {
+        heading: "Why a 576×1024 file gets sold as 1080p",
+        paragraphs: [
+          "The ladder exists for playback. A phone on a weak connection gets 360p, a desktop on fibre gets the largest rung, and the player switches between them mid-video. A downloader that captures the URL the API handed it captures one rung, chosen by the platform rather than by your screen.",
+          "That becomes a false claim at the moment the copy turns the ladder's top rung into a promise. A page titled \"1080p TikTok downloader\" whose delivered file measures 576×1024 is not describing a limitation — it is describing a file that does not exist on that route.",
+          "Upscaling hides the gap without closing it. Stretch 576×1024 to 1920 pixels tall and the container will report the larger number while the detail stays exactly as soft as the source. The file is bigger and the pixels are invented.",
+        ],
+      },
+      {
+        heading: "Check any downloader in one command",
+        paragraphs: [
+          "Download a file from the tool you are testing, then read its header locally. ffprobe ships with FFmpeg and most video editors already have it:",
+          "ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 clip.mp4",
+          "The two numbers it prints are the same ones the tkhd box carries. If they are smaller than the label that sold you the download, the label was marketing rather than a specification. On a phone, VLC's file properties show the same pair under Dimensions.",
+        ],
+      },
+      {
+        heading: "What this site shows before you download",
+        paragraphs: [
+          "The result panel prints the width, height and file size of the stream the resolver returned, before you commit to saving it. If a platform serves a smaller rendition, the panel says so; nothing is upscaled to make the number look better.",
+          "Every platform page states the measured class instead of the ladder's ceiling: 576×1024 on TikTok, 640×360 on YouTube, a 720p-class rendition on Instagram, up to 1080×1920 on Facebook, and 3840×2160 on X. Those sentences are checked at build time, so a copy edit cannot quietly upgrade them.",
+          "The site also refuses the annoyances that make downloader pages feel hostile: nothing third-party loads before you ask for a file, no overlay covers the download button, and the one sponsored surface opens after a hand-off — at most once every four hours, and only on a click.",
+        ],
+      },
+      {
+        heading: "Why these numbers are enforced by CI",
+        paragraphs: [
+          "A small table in the claim audit maps each platform to its measured ceiling, and it runs on every commit. Any sentence in the site's copy that promises a resolution above that ceiling fails the build — translated pages included, which is where a false number survived for months before the check read them.",
+          "The measurement itself is opt-in: a separate flag replays three sample URLs per platform, parses the tkhd box of the response, and rewrites the table only when a fresh sample agrees. Offline builds stay deterministic, so the ceiling cannot drift because a CDN was slow on a Tuesday.",
+        ],
+      },
+      {
+        heading: "What this comparison does not cover",
+        paragraphs: [
+          "Bitrate, frame rate and audio codec matter as much as width and height, and this page reports only dimensions because those are the numbers the tkhd box settles without ambiguity.",
+          "The samples are public posts from 2026-11-13, not a survey. A platform can change its ladder tomorrow; the honest reading of this table is what those routes served on that date, and the claim audit exists so the site notices when that stops being true.",
+        ],
+      },
+    ],
+    links: [
+      { href: "/", anchor: "TikTok video downloader without watermark" },
+      { href: "/instagram-reels-downloader", anchor: "Instagram Reels downloader" },
+      { href: "/youtube-downloader", anchor: "YouTube video downloader" },
+      { href: "/facebook-video-downloader", anchor: "Facebook video downloader" },
+      { href: "/twitter-video-downloader", anchor: "X (Twitter) video downloader" },
+      { href: "/tools", anchor: "all video downloaders" },
+    ],
+    related: [
+      "why-tiktok-video-quality-drops-after-upload",
+      "download-tiktok-video-without-watermark",
+      "download-tiktok-audio-as-mp3",
+      "is-downloading-tiktok-videos-legal",
     ],
   },
 ];

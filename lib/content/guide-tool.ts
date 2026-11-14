@@ -5,7 +5,7 @@ import type { ToolId } from "@/lib/content/tool-seo";
  *
  * Every article points back at the one tool that satisfies the search intent
  * that brought the reader in, using the tool's exact-match anchor text. That
- * gives the four guides a real link path into the money pages instead of a
+ * gives the guides a real link path into the money pages instead of a
  * generic "open the downloader" that lands everyone on TikTok.
  *
  * The map used to hold fourteen entries; the guides were consolidated by intent
@@ -14,7 +14,8 @@ import type { ToolId } from "@/lib/content/tool-seo";
  * a 301 — `getGuide` would return null and the card would vanish.
  */
 export interface GuideToolLink {
-  tool: ToolId;
+  /** `hub` is the cross-platform comparison, which belongs to /tools. */
+  tool: ToolId | "hub";
   href: string;
   /** Exact-match anchor text — the keyword the destination page targets. */
   anchor: string;
@@ -63,6 +64,15 @@ export const GUIDE_TOOL: Record<string, GuideToolLink> = {
     heading: "Download the videos you own",
     body: "Archiving your own uploads is the use case the tool is built for: original quality, no watermark, nothing stored.",
     cta: "Open the TikTok downloader",
+  },
+  "measured-video-files-vs-1080p-labels": {
+    tool: "hub",
+    href: "/tools",
+    anchor: "all video downloaders",
+    inline: "the numbers above belong to these routes, so check the one you need.",
+    heading: "Check the measured file on the platform you use",
+    body: "Every tool page names the rendition its platform serves instead of the ladder's top rung, and the result panel shows the real width and height before you save.",
+    cta: "Open all downloaders",
   },
 };
 

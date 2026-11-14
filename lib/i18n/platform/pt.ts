@@ -169,9 +169,15 @@ export const pt: Record<"instagram" | "youtube" | "facebook", LandingCopy> = {
     code: "pt",
     htmlLang: "pt-BR",
     dir: "ltr",
-    title: "Baixar vídeos do Facebook em HD — sem aplicativo",
+    // GSC, 28 days to 2026-11-11: this page held position 3 for "facebook video
+    // download" and "facebook video downloader" (147 + 97 impressions) and
+    // earned zero clicks. The title named the benefit (HD, no app) but not the
+    // English query the SERP was matching, so the listing read as a weaker
+    // result than the Portuguese pages beneath it. Query phrase first, benefit
+    // second — the claim stays inside the measured 1080×1920 ceiling.
+    title: "Facebook Video Downloader — baixar vídeos do Facebook",
     description:
-      "Baixe vídeos do Facebook em HD pelo navegador: posts de páginas, Watch, Reels e links fb.watch. Sem instalar nada, sem conta e sem marca d'água.",
+      "Facebook video downloader no navegador: baixe vídeos de páginas, Watch, Reels e links fb.watch em HD, grátis, sem conta e sem marca d'água.",
     keywords: [
       "baixar videos do facebook",
       "baixar video do facebook sem app",
