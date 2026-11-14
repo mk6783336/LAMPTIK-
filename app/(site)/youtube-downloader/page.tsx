@@ -3,8 +3,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight, Check, Youtube } from "lucide-react";
 
-import { AdSlot } from "@/components/ads/AdSlot";
-import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
 import { CreatorToolkitBar } from "@/components/creator-toolkit-bar";
@@ -234,8 +232,6 @@ export default function YouTubeDownloaderPage() {
                 {/* Result mode only (lg+): fills the column beside the result
                     card with the sponsor showcase instead of empty space. */}
                 <div className="hero-ads mt-8 space-y-3">
-                  <AdSlot slot="hero" format="rectangle" label="Sponsored — keeps LAMP TIK free" />
-                  <AdSlot slot="hero-bar" format="leaderboard" label="Sponsored — keeps LAMP TIK free" />
                 </div>
               </div>
 
@@ -248,7 +244,6 @@ export default function YouTubeDownloaderPage() {
             </div>
 
             <div className="shell mt-8 sm:mt-10">
-              <VideoAdUnit />
             </div>
 
             <div className="shell mt-8">
@@ -487,7 +482,6 @@ export default function YouTubeDownloaderPage() {
           {/* How + FAQ (mirrors the JSON-LD) */}
           <section id="how" className="seo-section section-pad scroll-mt-24 border-t border-[var(--line)]">
             <div className="shell mb-10">
-              <AdSlot slot="article" format="leaderboard" label="Advertisement" />
             </div>
             <div className="shell max-w-3xl">
               <p className="eyebrow">

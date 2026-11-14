@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
-import { AdSlot } from "@/components/ads/AdSlot";
 import { AmbientBackground } from "@/components/ambient-background";
 import { Breadcrumb } from "@/components/seo/breadcrumb";
 import { SiteFooter } from "@/components/site-footer";
@@ -243,7 +242,6 @@ export default function TwitterVideoDownloaderEsPage() {
               </div>
 
               <div className="mt-10">
-                <AdSlot slot="under-tool" format="leaderboard" label="Publicidad" />
               </div>
             </div>
           </section>

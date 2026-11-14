@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight, MonitorPlay, Music2, ShieldCheck } from "lucide-react";
 
-import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
 import { CreatorToolkitBar } from "@/components/creator-toolkit-bar";
@@ -216,10 +215,40 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Slot B — Outstream Video Ad + 300x250 + 728x90 directly below the downloader card. */}
-            <div className="shell mt-8 sm:mt-10">
-              <VideoAdUnit />
-            </div>
+            {/* Internal links where the banner stack used to sit. These are the
+                pages with the highest RPM and the clearest intent — X video and
+                the three Tier-1 country pages — so the homepage passes its
+                authority to them instead of to an ad exchange. */}
+            <nav
+              aria-label="Popular pages"
+              className="shell mt-8 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm sm:mt-10"
+            >
+              <span className="micro text-xs text-[var(--text-3)]">Popular</span>
+              <Link
+                href="/twitter-video-downloader"
+                className="text-[var(--text-2)] underline decoration-[var(--glass-border)] underline-offset-4 transition-colors hover:text-[var(--text)]"
+              >
+                X / Twitter video, up to 4K
+              </Link>
+              <Link
+                href="/download-videos-united-states"
+                className="text-[var(--text-2)] underline decoration-[var(--glass-border)] underline-offset-4 transition-colors hover:text-[var(--text)]"
+              >
+                US video downloader
+              </Link>
+              <Link
+                href="/download-videos-united-kingdom"
+                className="text-[var(--text-2)] underline decoration-[var(--glass-border)] underline-offset-4 transition-colors hover:text-[var(--text)]"
+              >
+                UK video downloader
+              </Link>
+              <Link
+                href="/download-videos-germany"
+                className="text-[var(--text-2)] underline decoration-[var(--glass-border)] underline-offset-4 transition-colors hover:text-[var(--text)]"
+              >
+                Downloader für Deutschland
+              </Link>
+            </nav>
 
             {/* Trust strip — the four facts people actually check, as glass
                 tiles instead of a cramped definition list. */}

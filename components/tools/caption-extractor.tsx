@@ -3,7 +3,6 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Check, Copy, Hash, Loader2 } from "lucide-react";
 
-import { signalAdIntent } from "@/lib/ad-intent";
 import type { ApiResponse } from "@/lib/tiktok/types";
 
 type Success = Extract<ApiResponse, { ok: true }>;
@@ -64,7 +63,6 @@ export function CaptionExtractor() {
 
   async function copy(kind: "caption" | "tags", text: string) {
     // Copying is the tool doing its job — the post-intent arm for this page.
-    signalAdIntent("caption-copy");
     try {
       await navigator.clipboard.writeText(text);
       setCopied(kind);

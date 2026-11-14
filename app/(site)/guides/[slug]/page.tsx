@@ -3,10 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowUpRight, BookOpen, Sparkles } from "lucide-react";
 
-import { AdSlot } from "@/components/ads/AdSlot";
-import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
-import { EngagementIntent } from "@/components/ads/engagement-intent";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { PlatformBridge } from "@/components/seo/platform-bridge";
@@ -194,7 +191,6 @@ export default async function GuidePage({
 
               {/* In-article leaderboard — below the intro, above the body. */}
               <div className="mt-8">
-                <AdSlot slot="article" format="leaderboard" eager label="Advertisement" />
               </div>
 
               <div className="mt-11 space-y-11">
@@ -239,7 +235,6 @@ export default async function GuidePage({
 
               {/* Pre-CTA video + multi-slot ad unit — after the last section. */}
               <div className="mt-12">
-                <VideoAdUnit />
               </div>
 
               <div className="panel relative mt-12 overflow-hidden p-5 sm:p-6">
@@ -303,7 +298,6 @@ export default async function GuidePage({
 
         {/* Reading a third of the guide for four seconds is the engagement
             signal this page has instead of a download click. */}
-        <EngagementIntent />
         <SiteFooter />
       </div>
     </>

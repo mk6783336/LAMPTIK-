@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { Calculator, TrendingUp } from "lucide-react";
 
-import { signalAdIntent } from "@/lib/ad-intent";
 
 /**
  * Creator Rewards + brand-deal estimator.
@@ -103,13 +102,7 @@ export function MoneyCalculator() {
   }, [views, countryId, nicheId, engagement, target]);
 
   return (
-    <div
-      className="panel p-4 sm:p-5"
-      // Any edit is engagement: the visitor is modelling their own numbers, not
-      // looking at a landing page. This is the arm the push networks wait for
-      // (see lib/ad-intent.ts).
-      onChange={() => signalAdIntent("calculator-input")}
-    >
+    <div className="panel p-4 sm:p-5">
       <div className="flex items-center gap-2">
         <Calculator aria-hidden="true" className="size-4 text-[var(--accent-text)]" />
         <p className="text-sm font-semibold tracking-tight">Earnings estimator</p>

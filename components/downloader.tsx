@@ -30,17 +30,15 @@ function usePrefersReducedMotion() {
 import { PlatformSwitcher } from "@/components/platform-switcher";
 import { isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
 import { ResultPanel } from "@/components/result-panel";
-import { AdSlot } from "@/components/ads/AdSlot";
 import { clientMirrorStreams, clientOembedMeta } from "@/lib/youtube-client";
 
 import { ToastStack, type ToastItem } from "@/components/toast";
 import { UrlField } from "@/components/url-field";
-import { signalAdIntent } from "@/lib/ad-intent";
 import { cn } from "@/lib/cn";
 import { PLATFORMS, type Platform } from "@/lib/platforms";
 import { downloaderCopy, type DownloaderCopy } from "@/lib/i18n/ui";
 import type { LocaleCode } from "@/lib/i18n/types";
-import { directLinkUrl } from "@/lib/monetization";
+import { smartlinkUrl } from "@/lib/monetization";
 import type { MediaPayload } from "@/lib/media";
 import type { ApiFailure, ApiSuccess, ApiResponse, VideoInfo } from "@/lib/tiktok/types";
 
@@ -333,13 +331,6 @@ function LoadingConsole({
           CDN link is being prepared. Clickable, never an overlay, and it
           unmounts with the console the moment the resolve finishes. */}
       <div className="mt-4">
-        <AdSlot
-          slot="loader"
-          format="rectangle"
-          eager
-          alwaysReserve
-          label="Sponsored — keeps LAMP TIK free"
-        />
       </div>
     </div>
   );
@@ -419,9 +410,6 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
   const [elapsedMs, setElapsedMs] = useState(0);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [seed, setSeed] = useState({ value: initialUrl?.trim() ?? "", nonce: 0 });
-  /** Incremented on every resolve / reset so the ad slots re-auction for a
-      fresh impression (see AdSlot's throttled `refreshKey`). */
-  const [adRefreshKey, setAdRefreshKey] = useState(0);
   /** Shown during the single silent auto-retry (attempt 2/2). */
   const [backupNote, setBackupNote] = useState<string | null>(null);
   /** Last URL that actually failed, so the inline Retry can skip re-detecting. */
@@ -769,7 +757,6 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
     setError(null);
     setProviderBlocked(false);
     clearLastResult();
-    setAdRefreshKey((key) => key + 1);
     setSeed((current) => ({ value: "", nonce: current.nonce + 1 }));
     window.setTimeout(() => inputRef.current?.focus(), 50);
   }
@@ -911,7 +898,6 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
     // The visitor submitted a real link: the tool is in use, so the post-intent
     // push networks may load from here on (lib/ad-intent.ts). Fires once per
     // pageview, and after the sanitise step so junk submissions never arm it.
-    signalAdIntent("resolve-submit");
 
     // Real elapsed-time readout while the resolver runs.
     const startedAt = performance.now();
@@ -1079,7 +1065,6 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
       setStatus("success");
       // Persist for Back/Forward/refresh survival (see restore effect below).
       saveLastResult(url, payload.video, payload.media);
-      setAdRefreshKey((key) => key + 1);
       notify({
         kind: "success",
         title: "Stream ready",
@@ -1222,14 +1207,6 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
             flow, CLS-safe, and refreshed (throttled inside AdSlot) on every
             new video so the banner re-auctions instead of going stale. */}
         <div className="mt-4 flex justify-center">
-          <AdSlot
-            slot="tool-bar"
-            format="leaderboard"
-            eager
-            refreshKey={adRefreshKey}
-            className="max-w-[340px] sm:max-w-none"
-            label="Sponsored — keeps LAMP TIK free"
-          />
         </div>
 
         <>
@@ -1263,7 +1240,6 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
                 video={video}
                 onReset={reset}
                 onNotify={notify}
-                refreshKey={adRefreshKey}
                 onReresolve={(url) => void submitRef.current(url, { force: true })}
                 copy={t}
               />
@@ -1299,9 +1275,9 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
           see. In flow below the tool — never floating over a button, and never
           disguised as a download: the label says partner and the click leaves
           the site. */}
-      {directLinkUrl ? (
+      {smartlinkUrl ? (
         <a
-          href={directLinkUrl}
+          href={smartlinkUrl}
           target="_blank"
           rel="sponsored nofollow noopener"
           className="mt-3 flex items-center gap-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.07] px-3 py-2.5 transition-colors duration-200 hover:border-amber-400/45 hover:bg-amber-500/[0.11] xl:hidden"

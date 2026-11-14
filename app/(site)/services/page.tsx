@@ -12,7 +12,7 @@ import { siteConfig, siteUrl } from "@/lib/site";
  *
  * This is the one page on the site whose job is not a download — it converts a
  * visitor into a paying client. That is also why it carries **no ad slots**: a
- * page asking for a build contract while an Adsterra banner offers a competitor
+ * page asking for a build contract while a sponsor card offers a competitor
  * downloader two rows below reads as a hobby, not a business.
  *
  * Everything claimed here is true of the codebase that hosts it: this site is

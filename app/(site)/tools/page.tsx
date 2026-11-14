@@ -2,9 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight, Check } from "lucide-react";
 
-import { AdSlot } from "@/components/ads/AdSlot";
-import { EngagementIntent } from "@/components/ads/engagement-intent";
-import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
 import { PlatformIcon } from "@/components/platform-icons";
@@ -163,7 +160,6 @@ export default function ToolsPage() {
             </div>
 
             <div className="shell mt-9">
-              <VideoAdUnit />
             </div>
           </section>
 
@@ -262,7 +258,6 @@ export default function ToolsPage() {
                     it never sits over a card or a CTA. */}
                 {groupIndex === 1 ? (
                   <div className="mt-10">
-                    <AdSlot slot="article" format="leaderboard" label="Advertisement" />
                   </div>
                 ) : null}
               </div>
@@ -359,7 +354,6 @@ export default function ToolsPage() {
 
         {/* The hub is a reading page, not a tool: arm on scroll depth after a
             real dwell (lib/ad-intent.ts). */}
-        <EngagementIntent />
         <SiteFooter />
       </div>
     </>

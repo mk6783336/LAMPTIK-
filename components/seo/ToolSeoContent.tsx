@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight, Check, Plus, X } from "lucide-react";
 
-import { AdSlot } from "@/components/ads/AdSlot";
 import type { ToolId, ToolSeo } from "@/lib/content/tool-seo";
 import { TOOL_SEO } from "@/lib/content/tool-seo";
 
@@ -177,7 +176,6 @@ export function ToolSeoContent({ platform }: { platform: ToolId }) {
           back-to-back banners. */}
       <section className="border-t border-[var(--line)] py-10 sm:py-12">
         <div className="shell">
-          <AdSlot slot="article" format="leaderboard" label="Advertisement" />
         </div>
       </section>
 

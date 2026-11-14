@@ -2,8 +2,6 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ArrowUpRight, Check } from "lucide-react";
 
-import { AdSlot } from "@/components/ads/AdSlot";
-import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
 import { Breadcrumb } from "@/components/seo/breadcrumb";
@@ -128,7 +126,6 @@ export function CreatorToolPage({
             </div>
 
             <div className="shell mt-8 sm:mt-10">
-              <VideoAdUnit />
             </div>
 
             <div className="shell mt-8 sm:mt-12">
@@ -150,7 +147,6 @@ export function CreatorToolPage({
 
           <section id="how" className="seo-section section-pad scroll-mt-24 border-t border-[var(--line)]">
             <div className="shell mb-10">
-              <AdSlot slot="article" format="leaderboard" label="Advertisement" />
             </div>
             <div className="shell max-w-3xl">
               <p className="eyebrow">

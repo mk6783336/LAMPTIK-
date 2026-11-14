@@ -1,11 +1,11 @@
 /**
  * Non-AdSense advertising configuration.
  *
- * Ad delivery itself lives in `lib/monetization.ts` + `components/ads/*`
- * (Adsterra banners / Social Bar, Monetag Vignette + SmartLink). This module
- * only holds the small bits of static config those systems and the crawler
- * files need — plus `ads.txt`, which the ad networks use to verify that we
- * are allowed to sell their inventory on this domain.
+ * Ad delivery itself is the Monetag Smartlink in `lib/monetization.ts`; there
+ * is no banner or push stack left to configure. This module only holds the
+ * small bits of static config the crawler files need — plus `ads.txt`, which
+ * an ad network uses to verify that we are allowed to sell its inventory on
+ * this domain.
  *
  * Every read is a static `process.env.NEXT_PUBLIC_*` member expression so
  * Next.js can inline it at build time.
@@ -19,13 +19,12 @@ export const adsContactEmail =
 
 /**
  * Raw `ads.txt` records, one per line, exactly as the network's dashboard
- * gives them (Adsterra and HilltopAds both issue `domain, publisher-id,
- * DIRECT` style rows).
+ * gives them (the `domain, publisher-id, DIRECT` shape every seller uses).
  *
  * The value is pasted from two different dashboards, so it is parsed
  * defensively rather than assuming one tidy format:
  *
- *   NEXT_PUBLIC_ADS_TXT_LINES="adsterra.com, 1234567, DIRECT; hilltopads.com, 7654321, DIRECT"
+ *   NEXT_PUBLIC_ADS_TXT_LINES="monetag.com, 1234567, DIRECT"
  *
  * Splitting accepts `;` **and** newlines, because a copied block arrives
  * multi-line and a dashboard export often carries the network's own `#`

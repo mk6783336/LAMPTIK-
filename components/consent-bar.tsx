@@ -62,7 +62,7 @@ export function ConsentBar() {
           {/* Phones get one line so the bar stays short enough to clear the
               Download CTA on a 600px-tall viewport. */}
           <p className="text-xs leading-relaxed text-[var(--text-2)] sm:hidden">
-            Ads: Adsterra, Monetag.{" "}
+            Ads: Monetag.{" "}
             <Link
               href="/privacy"
               className="text-[var(--accent-text)] underline decoration-[var(--accent-soft)] underline-offset-2"
@@ -72,7 +72,7 @@ export function ConsentBar() {
           </p>
           <p className="hidden text-sm leading-relaxed text-[var(--text-2)] sm:block">
             <span className="micro mr-1.5 text-xs text-[var(--text-3)]">Privacy</span>
-            Ads here are served by Adsterra and Monetag. Accept to allow
+            Ads here are served by Monetag. Accept to allow
             cookie-based personalisation; decline for contextual only. Stored on
             this device.{" "}
             <Link

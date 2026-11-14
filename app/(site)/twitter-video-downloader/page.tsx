@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 
-import { AdSlot } from "@/components/ads/AdSlot";
 import { AmbientBackground } from "@/components/ambient-background";
 import { CreatorToolkitBar } from "@/components/creator-toolkit-bar";
 import { Breadcrumb } from "@/components/seo/breadcrumb";
@@ -26,10 +25,10 @@ import { pageAlternates, siteUrl } from "@/lib/site";
 // Intent-matched, not generic: the query this page answers is «save x video gif
 // to mp4» — an X GIF is already an MP4 variant, so the title names both the
 // object and the output instead of repeating "video downloader".
-const TITLE = "X Video & GIF to MP4 — HD Download, No Login, Free";
-const SOCIAL_TITLE = "Save X Videos and GIFs as MP4 — HD Renditions, No Login";
+const TITLE = "X Video Downloader — MP4 up to 4K, No Login";
+const SOCIAL_TITLE = "Save X Videos and GIFs as MP4 — up to 3840×2160";
 const DESCRIPTION =
-  "Save Twitter (X) videos and GIFs as MP4 — every rendition X published is listed, so you pick the size and download it to your device. Free, no login, no app, and no watermark to remove.";
+  "Save Twitter (X) videos and GIFs as MP4 up to 3840×2160 — every rendition X published is listed, so you pick the size and download it to your device. Free, no login, no app, and no watermark to remove.";
 
 const FAQS: ReadonlyArray<{ question: string; answer: string }> = [
   {
@@ -227,7 +226,6 @@ export default function TwitterVideoDownloaderPage() {
               </div>
 
               <div className="mt-10">
-                <AdSlot slot="under-tool" format="leaderboard" label="Advertisement" />
               </div>
             </div>
           </section>

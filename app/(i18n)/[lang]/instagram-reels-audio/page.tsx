@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
-import { AdSlot } from "@/components/ads/AdSlot";
 import { AmbientBackground } from "@/components/ambient-background";
 import { Downloader } from "@/components/downloader";
 import { Breadcrumb } from "@/components/seo/breadcrumb";
@@ -238,7 +237,6 @@ export default function InstagramReelsAudioEsPage() {
               </div>
 
               <div className="mt-10">
-                <AdSlot slot="under-tool" format="leaderboard" label="Publicidad" />
               </div>
             </div>
           </section>

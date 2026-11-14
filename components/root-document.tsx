@@ -1,5 +1,3 @@
-import { AdScripts } from "@/components/ads/AdScripts";
-import { DesktopSideRails } from "@/components/ads/DesktopSideRails";
 import { AhrefsAnalytics } from "@/components/ahrefs-analytics";
 import { ConsentModeScript } from "@/components/consent-mode";
 import { GoogleAnalytics } from "@/components/google-analytics";
@@ -64,15 +62,11 @@ export function RootDocument({
           element inside a layout file, which a shared component is not. */}
       {/* eslint-disable-next-line @next/next/no-head-element */}
       <head>
-        {/* Resource hints: exactly one ad origin is warmed. `n6wxm.com` and
-            `idealistic-revenue.com` are click-time destinations (Direct Link),
-            so preconnecting to them only burned sockets and made Lighthouse
-            report unused/duplicate preconnects. `bellnewyork.org` is the only
-            origin the page actually fetches from at load, and it is declared
-            once — a `dns-prefetch` alongside a `preconnect` is free, two
-            `preconnect`s to the same host are not. */}
-        <link rel="preconnect" href="https://bellnewyork.org" crossOrigin="" />
-        <link rel="dns-prefetch" href="https://bellnewyork.org" />
+        {/* No ad origin is warmed any more. The Adsterra preconnect to
+            `bellnewyork.org` opened a socket to a network that serves nothing
+            on this site; with the display stack gone, the document ships with
+            zero third-party hints and the first connection a visitor makes is
+            to our own font. */}
         {/* No `manifest.json` link and no install-prompt code: the PWA shell
             was retired when the real Chrome extension and Android app landed
             (/apps). The one remaining service worker, `/sw.js`, is the ad
@@ -107,13 +101,12 @@ export function RootDocument({
             specifies. */}
         <GoogleTagManagerNoScript />
         {children}
-        {/* Desktop side rails (xl+ margins) only. Inline ad slots live in the
-            document flow; nothing is allowed to float over the tool. */}
-        <DesktopSideRails />
-        {/* Adsterra Social Bar + Monetag Vignette, loaded for every visitor
-            (no consent gate) after hydration, so first paint and LCP are
-            untouched while every pageview is monetized. */}
-        <AdScripts />
+        {/* No ad script is mounted here any more. Every third-party tag that
+            used to live at this level (banner frames, side rails, the
+            Monetag vignette and two push networks) is gone, so the document
+            Googlebot and a first-time visitor receive contains no ad request
+            at all: the only Monetag surface is the click-triggered Smartlink
+            in the result panel. */}
         {/* One Google tag for the whole site, configured for both GA4
             destinations (G-TLNZNDJD4J and G-8YQHV877RV). Rendered here so it
             exists exactly once per document, after the Consent Mode defaults

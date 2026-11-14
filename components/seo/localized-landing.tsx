@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight, Check, Globe } from "lucide-react";
 
-import { AdSlot } from "@/components/ads/AdSlot";
-import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
 import { Downloader } from "@/components/downloader";
@@ -243,7 +241,6 @@ export function LocalizedLanding({
             ) : null}
 
             <div className="shell mt-8 sm:mt-10">
-              <VideoAdUnit />
             </div>
 
             <div className="shell mt-10 sm:mt-12">
@@ -263,7 +260,6 @@ export function LocalizedLanding({
 
           <section id="how" className="seo-section section-pad scroll-mt-24 border-t border-[var(--line)]">
             <div className="shell mb-10">
-              <AdSlot slot="article" format="leaderboard" label="Advertisement" />
             </div>
             <div className="shell max-w-3xl">
               <p className="eyebrow">

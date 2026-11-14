@@ -230,9 +230,10 @@ export default function AboutPage() {
                 </h2>
                 <p className="mt-2">
                   LAMP TIK is free and stays free. When advertising is enabled,
-                  it is served by Adsterra and Monetag through clearly labeled
-                  units during the active download window only — never fake
-                  download buttons, forced redirects, or Google AdSense cookies — and our{" "}
+                  it is served by Monetag through one clearly labeled sponsor
+                  card, plus a rate-limited offer on the download click — never
+                  fake download buttons, forced redirects, or Google AdSense
+                  cookies — and our{" "}
                   <Link
                     href="/privacy"
                     className="text-[var(--accent-text)] underline underline-offset-4"

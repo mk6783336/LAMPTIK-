@@ -16,18 +16,31 @@ import { useState } from "react";
 import { trackEvent, type DownloadEventMeta } from "@/lib/analytics";
 import { formatBytes, formatDuration } from "@/lib/format";
 import type { ToastItem } from "@/components/toast";
-import { AdSlot } from "@/components/ads/AdSlot";
 import { CreatorToolkitBar } from "@/components/creator-toolkit-bar";
 import { PlatformIcon } from "@/components/platform-icons";
 import { cn } from "@/lib/cn";
 import { PLATFORMS } from "@/lib/platforms";
-import { directLinkUrl, smartlinkUrl } from "@/lib/monetization";
+import { smartlinkUrl } from "@/lib/monetization";
+import { openSmartlink } from "@/lib/smartlink";
 import { ENGLISH_DOWNLOADER_COPY, type DownloaderCopy } from "@/lib/i18n/ui";
 
 import { isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
 import { SocialShare } from "@/components/social-share";
 import type { MediaPayload } from "@/lib/media";
 import type { VideoInfo } from "@/lib/tiktok/types";
+
+/**
+ * What the resolver actually hands back, per platform — the same numbers the
+ * claim gate enforces. Facebook is the one volatile case (the same reel came
+ * back 720×1280 twice and 1080×1920 once), hence "or better".
+ */
+const STREAM_SPEC: Record<string, string> = {
+  tiktok: "576×1024",
+  youtube: "640×360",
+  instagram: "718×1276",
+  facebook: "720×1280 or better",
+  twitter: "3840×2160",
+};
 
 interface ResultPanelProps {
   /** Unified cross-platform payload — drives badges and download links. */
@@ -36,9 +49,6 @@ interface ResultPanelProps {
   video: VideoInfo;
   onReset: () => void;
   onNotify: (toast: Omit<ToastItem, "id">) => void;
-  /** Bumped by the downloader on every resolve/reset; re-keys the banner
-      slots for fresh impressions (throttled globally inside AdSlot). */
-  refreshKey?: number;
   /** Fire the cache-busting re-resolve (POST /api/fetch {force:true}) for a
       canonical URL — shown on the theater's failure card so an expired
       signed CDN link re-signs itself without re-pasting. */
@@ -90,15 +100,13 @@ export function ResultPanel({
   video,
   onReset,
   onNotify,
-  refreshKey,
   onReresolve,
   copy,
 }: ResultPanelProps) {
   const t = copy ?? ENGLISH_DOWNLOADER_COPY;
-  /** The high-CPM partner card: an explicit Smartlink wins, otherwise the
-   *  HilltopAds Direct Link the rails already use — so the card is live on
-   *  mobile without any extra configuration. */
-  const sponsorUrl = smartlinkUrl || directLinkUrl;
+  /** The only paid surface left: the Monetag Smartlink, shown as a visible
+   *  sponsored card and also opened (within its cap) on a download click. */
+  const sponsorUrl = smartlinkUrl;
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
   const [started, setStarted] = useState<DownloadStarted | null>(null);
 
@@ -231,20 +239,6 @@ export function ResultPanel({
  *   download, or the audio of this one, immediately.
  * ---------------------------------------------------------------- */
 
-  /**
-   * Unlocks the push ad networks, which now load only after a real download
-   * (see `components/ads/AdScripts.tsx`). Dispatched AFTER the file hand-off
-   * — the iframe has already navigated or the anchor has already clicked — so
-   * nothing in this path can delay the download.
-   */
-  function signalDownloadIntent(kind: string) {
-    try {
-      document.dispatchEvent(new CustomEvent("lamptik:intent", { detail: { kind } }));
-    } catch {
-      // Very old browser: the push networks simply stay unarmed.
-    }
-  }
-
   function rejectKnownYouTubeInterstitial(url: string | null): boolean {
     if (platform !== "youtube" || !url || !isKnownLoaderInterstitialUrl(url)) return false;
     setStarted(null);
@@ -296,10 +290,12 @@ export function ResultPanel({
     );
     frame.src = href;
     document.body.appendChild(frame);
-    // No sponsor tab: a download click produces the file and nothing else. An
-    // auto-opened third-party tab is what every visitor reads as a redirect,
-    // and it is the pattern ad networks themselves classify as forced traffic.
-    signalDownloadIntent(kind);
+    openSmartlink();
+    // Monetag, intent-gated: the hand-off above is already dispatched, so the
+    // Smartlink opens alongside the file rather than before it. `openSmartlink`
+    // is the rate limiter — one open per four hours, two per day, recorded in
+    // localStorage — so a session that saves five formats is not taxed five
+    // times and the popup blocker sees a real gesture, not a timer.
     // Live until the proxied stream has had its full 300s window — removing
     // the frame earlier aborts a still-streaming download.
     window.setTimeout(() => frame.remove(), 300_000);
@@ -339,7 +335,7 @@ export function ResultPanel({
     anchor.style.display = "none";
     document.body.appendChild(anchor);
     anchor.click();
-    signalDownloadIntent(kind);
+    openSmartlink();
     window.setTimeout(() => anchor.remove(), 30_000);
     setStarted({
       attemptId: Date.now(),
@@ -407,30 +403,20 @@ export function ResultPanel({
         </div>
       </div>
 
-      {/* SnapTik sandwich — TOP slice. Between the thumbnail/title header and
-          the first Download button: the creative sits exactly on the line a
-          thumb travels between "is this my video?" and "save it", which is
-          the most-viewed band of the card.
-
-          `alwaysReserve` is not cosmetic. Without it the slot starts at 0px
-          and grows to 250px when the auction fills ~1–2 s later, shoving the
-          primary button down under the thumb that is already moving — the
-          measured CLS on this exact panel. Reserving first means the creative
-          paints INTO space that already exists and nothing below moves. A
-          blocked auction still collapses to the 56px sponsor line at 20 s. */}
-      <div className="order-4 mt-4 sm:order-2">
-        <AdSlot
-          slot="result-top"
-          format="rectangle"
-          eager
-          alwaysReserve
-          /* ~60px sponsor row on a phone instead of a 288px rectangle: the
-             panel is the one place the visitor is mid-task. */
-          compactOnMobile
-          refreshKey={refreshKey}
-          label="Sponsored — keeps LAMP TIK free"
-          sponsoredLabel={t.sponsored}
-        />
+      {/* Verified stream spec. The numbers are the measurements the claim gate
+          enforces (`scripts/check-claims.mjs`), not marketing: a visitor who
+          has been promised "1080p HD" by every other downloader gets the real
+          rendition that is about to land in their tray, with the platform's
+          ceiling stated instead of hidden. */}
+      <div className="order-3 mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs leading-relaxed text-[var(--text-3)] sm:order-4">
+        <ShieldCheck aria-hidden="true" className="size-3.5 shrink-0 text-[var(--ok)]" />
+        <span className="font-medium text-[var(--text-2)]">Verified stream</span>
+        <span aria-hidden="true">·</span>
+        <span className="font-mono tabular-nums">{STREAM_SPEC[platform]}</span>
+        <span aria-hidden="true">·</span>
+        <span>watermark-free</span>
+        <span aria-hidden="true">·</span>
+        <span>no re-encode</span>
       </div>
 
       {started ? (
@@ -485,11 +471,21 @@ export function ResultPanel({
                 </button>
               </p>
             ) : null}
+
+            {/* The retention hook: the shortcut the site already supports
+                (`app/(site)/[...target]`), offered at the one moment a visitor
+                has proof it works. A bookmark is a direct visit next time, and
+                direct visits are the traffic that survives an algorithm. */}
+            <p className="mt-1.5 text-center text-xs leading-relaxed text-[var(--text-3)]">
+              Keep this open: type <span className="font-mono text-[var(--text-2)]">lamptik.online</span> in
+              front of any TikTok or Shorts link next time and it opens already resolving — no
+              bookmark hunting, no app.
+            </p>
           </div>
         </div>
       ) : null}
 
-      <div className="order-3 mt-4 grid gap-2 sm:order-4">
+      <div className="order-4 mt-3 grid gap-2 sm:order-5">
           {/* SnapTik-style stacked action buttons: full-width. Each button
               routes through the same-origin proxy attachment — Chrome's own
               download manager does the receiving, never an inline tab. */}

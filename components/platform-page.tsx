@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight, Check } from "lucide-react";
 
-import { AdSlot } from "@/components/ads/AdSlot";
-import { VideoAdUnit } from "@/components/ads/VideoAdUnit";
 import { AmbientBackground } from "@/components/ambient-background";
 import { ConsentBar } from "@/components/consent-bar";
 import { CreatorToolkitBar } from "@/components/creator-toolkit-bar";
@@ -230,8 +228,6 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
                     column, so the tall result card is never stranded beside an
                     empty dark void. One slot, never a stack. */}
                 <div className="hero-ads mt-8 space-y-3">
-                  <AdSlot slot="hero" format="rectangle" label="Sponsored — keeps LAMP TIK free" />
-                  <AdSlot slot="hero-bar" format="leaderboard" label="Sponsored — keeps LAMP TIK free" />
                 </div>
               </div>
 
@@ -250,7 +246,6 @@ export function PlatformPage({ platform }: { platform: Exclude<Platform, "youtub
             </div>
 
             <div className="shell mt-8 sm:mt-10">
-              <VideoAdUnit />
             </div>
 
             <div className="shell mt-10 sm:mt-12">

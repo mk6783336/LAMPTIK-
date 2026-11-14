@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ImageUp, Layers } from "lucide-react";
 
-import { signalAdIntent } from "@/lib/ad-intent";
 
 /**
  * 9:16 safe-zone overlay.
@@ -100,7 +99,6 @@ export function SafeZoneChecker() {
     setSource(file.name);
     // The frame is loaded and the overlay is on it: this visitor is using the
     // tool, so the post-intent ad arm fires here (lib/ad-intent.ts).
-    signalAdIntent("safe-zone-upload");
   }
 
   function toggleZone(id: string) {
@@ -124,7 +122,6 @@ export function SafeZoneChecker() {
             aria-pressed={entry.id === platformId}
             onClick={() => {
               setPlatformId(entry.id);
-              signalAdIntent("safe-zone-preset");
             }}
             className={
               entry.id === platformId
@@ -166,7 +163,6 @@ export function SafeZoneChecker() {
                 setError(null);
                 setImageUrl(value);
                 setSource(value.replace(/^https?:\/\//, "").slice(0, 32));
-                signalAdIntent("safe-zone-url");
               }}
               className="mt-1.5 h-11 w-full rounded-xl border border-[var(--glass-border)] bg-[var(--field)] px-3 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
             />
