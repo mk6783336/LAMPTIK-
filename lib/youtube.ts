@@ -649,11 +649,39 @@ async function innertubePlayer(
 
 /* ------------------------------------------------------------------ Tier 3 */
 
-// 2026-active public instances. The legacy kavin.rocks / tokhmi.xyz /
-// reallyaweso.me / tux.pizza domains are dead and were removed.
-const PIPED_APIS = ["https://pipedapi.kavin.rocks", "https://pipedapi.adminforge.de"];
+/**
+ * Public mirror lists, measured 2026-11-14 from the production network.
+ *
+ * The previous pair was dead: pipedapi.kavin.rocks answered nothing and
+ * pipedapi.adminforge.de answered 301 → 403. Both were replaced with the two
+ * Piped APIs that still returned a parseable stream payload; the Invidious
+ * pair answers 403 to some networks (Cloudflare bot rules) but is reachable
+ * from others, so it stays behind the env override instead of being deleted.
+ *
+ * A mirror is one racer in a Promise.race, never a blocking hop: a dead
+ * instance costs its own timeout and nothing else. Operators can replace the
+ * lists without a deploy:
+ *
+ *   YT_PIPED_APIS=https://a.example,https://b.example
+ *   YT_INVIDIOUS_APIS=https://c.example
+ */
+function mirrorList(name: string, defaults: readonly string[]): string[] {
+  const configured = (process.env[name] ?? "")
+    .split(/[\s,]+/)
+    .map((entry) => entry.trim().replace(/\/+$/, ""))
+    .filter((entry) => /^https:\/\/[^\s]{4,2048}$/.test(entry));
+  return configured.length ? configured : [...defaults];
+}
 
-const INVIDIOUS_APIS = ["https://inv.nadeko.net", "https://invidious.nerdvpn.de"];
+const PIPED_APIS = mirrorList("YT_PIPED_APIS", [
+  "https://api.piped.private.coffee",
+  "https://pipedapi.ducks.party",
+]);
+
+const INVIDIOUS_APIS = mirrorList("YT_INVIDIOUS_APIS", [
+  "https://inv.nadeko.net",
+  "https://invidious.nerdvpn.de",
+]);
 
 /**
  * yt-dlp with the forced Android player client (`player_client=android`).
@@ -1181,7 +1209,26 @@ async function resolveYouTubeStreams(
   canonicalUrl: string,
 ): Promise<TierHit & { streams: YouTubeStreams }> {
   const startedAt = Date.now();
-  const [android, ...fallbacks] = INNERTUBE_CLIENTS;
+  const [android, ...defined] = INNERTUBE_CLIENTS;
+  // Failover order is explicit, not array order: the Apple and TV clients are
+  // the ones that keep answering public videos when a datacenter IP is
+  // challenged, and VISIONOS — useful as a last resort — is the most likely to
+  // demand a login. A client missing from the priority list still runs, at the
+  // end, so adding one to the table can never silently drop it.
+  const FAILOVER_ORDER = [
+    "youtube:innertube-ios",
+    "youtube:innertube-tv-samsung",
+    "youtube:innertube-android-vr",
+    "youtube:innertube-visionos",
+    "youtube:innertube-web-embedded",
+    "youtube:innertube-tv-embedded",
+  ];
+  const fallbacks = [
+    ...FAILOVER_ORDER.map((name) => defined.find((client) => client.name === name)).filter(
+      (client): client is InnertubeClient => Boolean(client),
+    ),
+    ...defined.filter((client) => !FAILOVER_ORDER.includes(client.name)),
+  ];
 
   try {
     const primary = requireStreams(

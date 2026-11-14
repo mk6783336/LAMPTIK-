@@ -60,6 +60,32 @@ export function smartlinkAllowed(now = Date.now()): boolean {
 export function openSmartlink(now = Date.now()): boolean {
   if (!smartlinkAllowed(now)) return false;
   const opened = window.open(smartlinkUrl, "_blank", "noopener,noreferrer");
+  // A blocked popup is not an open: recording the stamp there would burn the
+  // visitor's one-per-four-hours allowance without ever showing them the page.
+  if (!opened) return false;
   writeStamps([...readStamps(now), now]);
-  return Boolean(opened);
+  return true;
+}
+
+/**
+ * Cap check for an anchor whose href IS the Smartlink.
+ *
+ * `window.open` is the right call from a download hand-off (the gesture is
+ * already spent on the file), but a plain anchor is immune to popup blockers
+ * and survives in-app browsers that suppress `window.open` entirely. The
+ * browser performs the navigation, so nothing here opens a second tab: the
+ * handler only records the stamp, or cancels the click once the cap is hit.
+ *
+ * Returns true when the click may proceed.
+ */
+export function claimSmartlink(
+  event: { preventDefault: () => void },
+  now = Date.now(),
+): boolean {
+  if (!smartlinkAllowed(now)) {
+    event.preventDefault();
+    return false;
+  }
+  writeStamps([...readStamps(now), now]);
+  return true;
 }
