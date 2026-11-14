@@ -78,7 +78,7 @@ export const es: LandingCopy = {
     {
       question: "¿El video sale en MP4 de verdad?",
       answer:
-        "Se entrega la versión de mayor resolución que TikTok tenga publicada para ese video, normalmente 720p o MP4. No se reescala ni se recodifica: si el autor subió el video en 540p, el archivo será 540p y la ficha lo indica antes de descargar. Por eso dos videos distintos pueden dar archivos de distinto tamaño.",
+        "Se entrega el MP4 que TikTok sirve para ese video: medido en tres publicaciones (2019, 2022 y 2025), el archivo llega a 576×1024. No se reescala ni se recodifica, así que lo que no está en ese archivo no aparece de repente: subir el número en la copia sería inventar píxeles. Por eso dos videos distintos pueden dar archivos de distinto tamaño.",
     },
     {
       question: "¿Se guardan mis enlaces o mis videos?",

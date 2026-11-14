@@ -364,6 +364,29 @@ const ABSOLUTE_QUANTIFIERS = "up to|full|fixed|guaranteed|always|every file|ever
 const QUALIFIED =
   /\b(?:when|if|where|only|measured|tests?|testing|actually|really|instead|depends|ceiling|cap|capped|below|above|except|conditional|rather than|labels?|labell?ed|upsampl\w*|re-encod\w*|encod\w*|container|padded|padding|merg\w*|claims?|advertis\w*)\b/i;
 
+/**
+ * "normalmente 720p" is a resolution claim with no verb in front of it, so the
+ * delivery-verb pattern never saw it. A sentence that talks about resolution
+ * and names a number is a claim about the file whether or not it says
+ * "download" first.
+ */
+const QUALITY_WORDS =
+  /\b(?:qualit\w*|quality|resoluci\w*|resolución|resolução|resolution|risoluzione|aufl\w*sung|kualitas|kalidad|calidad|kwaliteit|คุณภาพ|chất lượng|جودة|الدقة|गुणवत्ता|क्वालिटी|معیار|ریزولوشن|çözünürlük|rozdzielczość)\b/i;
+
+/**
+ * The short edge a token promises — the dimension "720p" names. A vertical
+ * 576×1024 file is 1024 tall, so comparing against height would let a 720p
+ * claim pass; 720p means 1280×720, and 720 is above every edge of that file.
+ */
+function claimedShortEdge(token) {
+  const text = token.toLowerCase();
+  if (/\b(?:4k|2160)/.test(text)) return 2160;
+  const pair = text.match(/(\d{3,4})\s*[×x]\s*(\d{3,4})/);
+  if (pair) return Math.min(Number(pair[1]), Number(pair[2]));
+  const single = text.match(/(\d{3,4})/);
+  return single ? Number(single[1]) : 0;
+}
+
 function numericPromise(numbers) {
   return new RegExp(
     `\\b(?:${DELIVERY_VERBS})\\b(?:\\s+[\\w'’-]+){0,2}\\s+(?:${numbers})\\b` +
@@ -557,6 +580,35 @@ function scanClaims(file, source, platform) {
         message:
           `promises "${hit[0].trim().slice(0, 70)}" but ${measurement.id} measured ` +
           `${measurement.measured} on ${measurement.date} (${measurement.method})`,
+      });
+    }
+  }
+
+  // A resolution word plus a number, even with no delivery verb in the
+  // sentence: "normalmente 720p" asserts a resolution without ever saying
+  // "download". Only numbers above the measured ceiling count, so a platform
+  // that really serves 720p keeps its 720p sentence.
+  for (const measurement of Object.values(MEASUREMENTS)) {
+    if (measurement.unit !== "height") continue;
+    for (const sentence of sentences) {
+      const text = sentence.text;
+      if (!measurement.mention.test(text) || !QUALITY_WORDS.test(text)) continue;
+      if (/\?["'”’)\],]*\s*$/.test(text)) continue;
+      if (NEGATION.test(text) || QUALIFIED.test(text)) continue;
+      if (/^\s*(?:related|guides|slug|href|anchor|canonical)\s*:/.test(text)) continue;
+      const token = text.match(measurement.bare);
+      if (!token) continue;
+      // "1920" alone is a dimension, not a resolution class; the numbers list
+      // only holds classes (720p, 1080p, 4k, 1080×1920).
+      const measuredEdge = measurement.shortEdge ?? measurement.max;
+      if (claimedShortEdge(token[0]) <= measuredEdge) continue;
+      failures.push({
+        kind: "quality-claim",
+        file,
+        line: lineAt(source, sentence.at + (token.index ?? 0)),
+        message:
+          `calls the file "${token[0].trim()}" but ${measurement.id} measured ` +
+          `${measurement.display}`,
       });
     }
   }
