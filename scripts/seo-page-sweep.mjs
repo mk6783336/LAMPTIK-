@@ -29,6 +29,12 @@
  * not measure (sitemap unreachable, tool missing, page fetch failed), 0 =
  * measured and clean down to Low.
  *
+ * Alongside the tool, every page's HTML goes through the static sprite check in
+ * scripts/lib/sprite-check.mjs: each `<use href="#…">` must resolve to a
+ * `<symbol id>` in the same document. No browser is involved, but a renamed or
+ * missing symbol — the way a sprite refactor ships invisible icons — fails the
+ * run as High instead of passing silently.
+ *
  * Outputs: `docs/seo-page-audit.md` (committed, human-readable; `--no-write`
  * skips it), `.scratch/seo-page-audit.json` (machine-readable, git-ignored,
  * also the baseline the next run compares against for "new since last
@@ -38,6 +44,8 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+
+import { checkSprite } from "./lib/sprite-check.mjs";
 
 /* --------------------------------- config --------------------------------- */
 
@@ -64,6 +72,7 @@ const JSON_PATH = option("json", ".scratch/seo-page-audit.json");
 
 const FAILING = new Set(["Critical", "High", "Medium"]);
 const SEVERITY_ORDER = ["Critical", "High", "Medium", "Low"];
+const SEVERITIES = ["Critical", "High", "Medium", "Low"];
 
 /* -------------------------------- tooling --------------------------------- */
 
@@ -183,7 +192,19 @@ async function checkPage(python, tool, url) {
     if (result.stdout.trim()) {
       try {
         const parsed = JSON.parse(result.stdout);
-        if (parsed.summary) return { url, summary: parsed.summary, findings: parsed.findings || [] };
+        if (parsed.summary) {
+          // The tool fetched the page to check it; this second read is where
+          // the sprite's promises get verified. Failing to read it is a
+          // measurement failure, not a clean page.
+          let spriteFindings;
+          try {
+            spriteFindings = checkSprite(await fetchText(url));
+          } catch (error) {
+            return { url, error: `sprite check could not read the page: ${error.message}` };
+          }
+          const findings = [...(parsed.findings || []), ...spriteFindings];
+          return { url, summary: summarize(findings), findings };
+        }
       } catch {
         last = `unreadable tool output (${result.code})`;
       }
@@ -196,6 +217,14 @@ async function checkPage(python, tool, url) {
   }
 
   return { url, error: last };
+}
+
+function summarize(findings) {
+  const summary = Object.fromEntries(SEVERITIES.map((severity) => [severity, 0]));
+  for (const finding of findings) {
+    if (finding.severity in summary) summary[finding.severity] += 1;
+  }
+  return summary;
 }
 
 function severityOf(findings) {
@@ -273,6 +302,11 @@ function markdown(urls, results, aggregateResult, previous, version) {
     "and currently means the wide-DOM heuristic, which counts the inline",
     "`self.__next_f` scripts Next streams into `<body>` (one per ~4 KB of flight",
     "data) as if they were the site's own DOM.",
+    "",
+    "The static sprite check runs on the same HTML: every `<use href=\"#…\">` must",
+    "resolve to a `<symbol id>` in that document, so a sprite that stops",
+    "matching its references fails the run as High rather than shipping",
+    "invisible icons.",
     "",
   ].join("\n");
 

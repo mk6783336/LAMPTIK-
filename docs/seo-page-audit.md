@@ -9,6 +9,11 @@ and currently means the wide-DOM heuristic, which counts the inline
 `self.__next_f` scripts Next streams into `<body>` (one per ~4 KB of flight
 data) as if they were the site's own DOM.
 
+The static sprite check runs on the same HTML: every `<use href="#…">` must
+resolve to a `<symbol id>` in that document, so a sprite that stops
+matching its references fails the run as High rather than shipping
+invisible icons.
+
 ## Findings above Low
 
 _(none)_
