@@ -244,7 +244,7 @@ export const GUIDES: Guide[] = [
       {
         heading: "TikTok re-encodes everything — your export is the input",
         paragraphs: [
-          "Nothing you upload survives untouched. TikTok transcodes every video into several delivery renditions, commonly led by a 1080p stream at a few Mbps, with 720p, 540p and lower versions behind it for weak connections. Re-encoding is lossy, and lossy-on-lossy compounds: detail that was already smeared by a low-bitrate first encode gets smeared again by the second. This is why a video that looked perfect in your camera roll can look soft after posting.",
+          "Nothing you upload survives untouched. Every post is transcoded into several delivery renditions at different resolutions and bitrates, and the file the desktop site hands out is not the best of them: measured on three posts from 2019, 2022 and 2025, the MP4 this tool receives is 576×1024. Re-encoding is lossy, and lossy-on-lossy compounds: detail that was already smeared by a low-bitrate first encode gets smeared again by the second. This is why a video that looked perfect in your camera roll can look soft after posting.",
           "The fix is not to fight the re-encode. It is to give the encoder a clean master: stable detail, controlled noise and a healthy bitrate. Those are the things a second encode can preserve. Banding, crushed shadows and thin compressed edges are what it destroys first.",
         ],
       },
@@ -279,7 +279,7 @@ export const GUIDES: Guide[] = [
       {
         heading: "How to verify the damage before you upload",
         list: [
-          "Compare file size, not just resolution. A one-minute 1080p clip at 10–16 Mbps should be roughly 75–120 MB; a 15 MB file at the same length is heavily compressed before TikTok ever touches it.",
+          "Compare file size, not just resolution. A one-minute 1080p clip at 10–16 Mbps of your own export should be roughly 75–120 MB; a 15 MB file at the same length is heavily compressed before the platform ever touches it.",
           "Inspect a single frame at 100% in your editor. If edges are already smeared and shadows are blocky in the export, the upload will make both worse.",
           "Play the export on a phone, not only on your monitor. Phone screens are denser; compression artefacts that disappear on a desktop preview are obvious there.",
           "Download your own post afterwards with a tool that returns the source stream, then compare it with the original export. If the downloaded file is much smaller, the platform served a lower rendition — the app may still have played the better one on a fast connection.",
@@ -295,7 +295,7 @@ export const GUIDES: Guide[] = [
           "Two things go wrong with a watermarked master. Visually, the bouncing username overlay competes with your captions and on-screen text in the first two seconds. Practically, both Shorts and Reels can detect the TikTok watermark, and watermarked uploads historically get less distribution because they read as recycled content. The overlay also sits in the corners where each platform's own UI later renders.",
         ],
         list: [
-          "Copy the link of your own video inside TikTok (Share → Copy link) and resolve the original HD stream.",
+          "Copy the link of your own video inside TikTok (Share → Copy link) and save the MP4 the platform serves.",
           "Save the watermark-free MP4 — it lands as lamptik-<id>.mp4 in your downloads folder.",
           "Trim in your editor: Shorts allows up to 60 seconds, Reels up to 90. Cut the intro/outro beats that do not serve the new audience.",
           "Export once at 1080×1920, H.264, 10–16 Mbps. Upload that single export to each platform — never re-export between uploads.",

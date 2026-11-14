@@ -407,6 +407,7 @@ const HD_PLATFORMS = Object.values(MEASUREMENTS).filter(
 /** Content that renders as page copy. */
 const CONTENT_FILES = [
   "lib/content/tool-seo.ts",
+  "lib/content/guides.ts",
   "lib/i18n/platform-landings.ts",
 ];
 
@@ -666,6 +667,16 @@ async function scanAllClaims() {
     scanClaims(page.file, source, page.platform);
   }
 
+  // Every remaining English route under app/(site). A page that prints its own
+  // hero and metadata is copy like any other; listing route files by hand is
+  // how the YouTube pages fell outside the gate in the first place.
+  const listedPages = new Set(PAGE_FILES.map((page) => page.file));
+  for (const file of await listAppPages()) {
+    if (listedPages.has(file)) continue;
+    const source = await readFile(path.join(root, file), "utf8");
+    scanClaims(file, source, platformOfPath(file));
+  }
+
   // Localized copy, recursively: the platform landings, the home pages, the
   // blurbs and the footer all print resolutions, and each one is a page a
   // visitor reads in their own language.
@@ -675,6 +686,33 @@ async function scanAllClaims() {
     const source = await readFile(path.join(root, file), "utf8");
     scanClaims(file, source, "any");
   }
+}
+
+/** A page names its platform in its path: /youtube-shorts-downloader is YouTube. */
+function platformOfPath(file) {
+  const slug = file.toLowerCase();
+  for (const platform of ["facebook", "twitter", "tiktok", "youtube", "instagram", "reels"]) {
+    if (slug.includes(platform)) {
+      return platform === "reels" ? "instagram" : platform;
+    }
+  }
+  return "any";
+}
+
+/** Route copy: every page.tsx under app/(site) is a document a visitor reads. */
+async function listAppPages() {
+  const { readdir } = await import("node:fs/promises");
+  const files = [];
+  async function walk(relative) {
+    const entries = await readdir(path.join(root, relative), { withFileTypes: true });
+    for (const entry of entries) {
+      const child = `${relative}/${entry.name}`;
+      if (entry.isDirectory()) await walk(child);
+      else if (entry.name === "page.tsx") files.push(child);
+    }
+  }
+  await walk("app/(site)");
+  return files.sort();
 }
 
 async function listLocaleFiles() {
