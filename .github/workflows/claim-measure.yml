@@ -4,9 +4,9 @@ name: Claim measurement
 # scripts/check-claims.mjs. Those numbers come from real files, and a platform
 # can start serving a different rendition without a commit — YouTube's mirrors
 # come and go, Facebook varies by reel. This job re-reads the streams the
-# deployment serves and fails when a recorded ceiling no longer matches, so the
-# drift shows up as a red run instead of an unread number. Manual runs and
-# `npm run check:claims:measure` locally do the same thing.
+# deployment serves and, when a recorded ceiling no longer matches, opens (or
+# updates) a GitHub issue with the log so the drift is not a red run nobody
+# reads. Manual runs and `npm run check:claims:measure` locally do the same.
 
 on:
   schedule:
@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: claim-measure-${{ github.ref }}
@@ -39,7 +40,127 @@ jobs:
         run: npm ci
 
       # Reads each sample through the deployed resolver and parses the first
-      # tkhd box. Exits 1 on drift, 2 when a platform serves nothing readable —
-      # both mean the recorded ceiling is not backed by today's files.
+      # tkhd box. Exit 1 means a ceiling no longer matches; exit 2 means a
+      # platform served nothing readable. Both are reported in the issue.
       - name: Measure the streams
-        run: npm run check:claims:measure
+        id: measure
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run check:claims:measure 2>&1 | tee measure.log
+
+      - name: Report drift in an issue
+        if: steps.measure.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            ;(async () => {
+            const fs = require("node:fs");
+            const title = "Claim ceilings no longer match the served streams";
+            const label = "claim-drift";
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const log = fs.existsSync("measure.log")
+              ? fs.readFileSync("measure.log", "utf8").trim().slice(-40000)
+              : "(measurement log missing)";
+            const body = [
+              `The scheduled measurement read the streams the deployment serves and found a ceiling that no longer matches.`,
+              ``,
+              `- Run: ${runUrl}`,
+              `- Commit: \`${context.sha.slice(0, 7)}\``,
+              ``,
+              `**Fix:** re-read the copy that relied on the old ceiling, then record the measured numbers with \`npm run check:claims:measure:update\`.`,
+              ``,
+              "<details><summary>measurement log</summary>",
+              ``,
+              "```",
+              log,
+              "```",
+              ``,
+              "</details>",
+            ].join("\n");
+
+            // One label, created on first use so the run never fails on it.
+            try {
+              await github.rest.issues.getLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: label,
+              });
+            } catch {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: label,
+                color: "d93f0b",
+                description: "A measured claim ceiling drifted from the served streams",
+              });
+            }
+
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: label,
+              per_page: 20,
+            });
+            const existing = open.data.find((issue) => issue.title === title);
+
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body,
+              });
+              core.info(`Updated issue #${existing.number}`);
+            } else {
+              const created = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: [label],
+              });
+              core.info(`Opened issue #${created.data.number}`);
+            }
+            })();
+
+      # The green path closes the loop: a stale issue is a false alarm the next
+      # reader would spend time on.
+      - name: Close the drift issue when the ceilings match again
+        if: steps.measure.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            ;(async () => {
+            const title = "Claim ceilings no longer match the served streams";
+            const label = "claim-drift";
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: label,
+              per_page: 20,
+            });
+            for (const issue of open.data.filter((item) => item.title === title)) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `Every recorded ceiling matches again as of ${runUrl}. Closing.`,
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: "closed",
+              });
+              core.info(`Closed issue #${issue.number}`);
+            }
+            })();
+
+      - name: Fail the job when the measurement did
+        if: steps.measure.outcome == 'failure'
+        run: exit 1
