@@ -610,6 +610,22 @@ async function innertubePlayer(
   // age-restricted" — a wrong and unactionable answer.
   const earlyDetails = asRecord(root.videoDetails) ?? {};
   const liveNowEarly = earlyDetails.isLive === true || earlyDetails.isLiveNow === true;
+  const liveContentEarly = earlyDetails.isLiveContent === true;
+  // A refused playback on live content is an answer about the video, not the
+  // network: report which one it is instead of falling through to "private"
+  // or "retry in a moment". An OK response still resolves normally — a
+  // finished live recording often has a muxed MP4.
+  if (status !== "OK" && (liveNowEarly || liveContentEarly)) {
+    throw new AppError(
+      "VIDEO_LIVE",
+      liveNowEarly
+        ? "This YouTube video is live right now — there is no MP4 until the broadcast ends."
+        : "This is a live-stream recording. YouTube serves it only as a live/HLS stream, so there is no downloadable MP4.",
+      liveNowEarly
+        ? "Once YouTube finishes processing the recording, the same link downloads normally."
+        : "A normal upload or Short resolves as MP4.",
+    );
+  }
   if (liveNowEarly || status === "LIVE_STREAM_OFFLINE") {
     throw new AppError(
       "VIDEO_LIVE",
