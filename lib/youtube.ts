@@ -551,17 +551,12 @@ async function detectLiveState(videoId: string): Promise<"live" | "archive" | "v
       if (!response.ok) continue;
       const html = await response.text();
       if (!html.includes("ytInitialPlayerResponse")) continue;
+      // Only positive evidence is taken from the page: a consent/bot shell
+      // carries the initial-player script without any live flags, and calling
+      // that "vod" used to return before the page-data probe below could read
+      // "Streamed live on …". A page that says nothing falls through.
       const liveContent = /"isLiveContent":true/.test(html);
-      if (!liveContent) {
-        // A real player response always names the video inside videoDetails; a
-        // consent/bot shell carries the script but not the details. Only a real
-        // one may answer "vod" — otherwise the page-data probe below still gets
-        // its say, which is how a live recording is recognised on such hosts.
-        if (!html.includes('"videoDetails"')) continue;
-        const state = "vod" as const;
-        liveStateCache.set(videoId, { state, expiresAt: Date.now() + 5 * 60_000 });
-        return state;
-      }
+      if (!liveContent) continue;
       const liveNow = /"isLiveNow":true/.test(html) || /"isLive":true/.test(html);
       const state = liveNow ? ("live" as const) : ("archive" as const);
       liveStateCache.set(videoId, { state, expiresAt: Date.now() + 5 * 60_000 });
@@ -602,8 +597,10 @@ async function detectLiveState(videoId: string): Promise<"live" | "archive" | "v
     );
     if (response.ok) {
       const raw = JSON.stringify(await response.json().catch(() => null));
-      if (/"dateText":\{"simpleText":"Streamed live/.test(raw)) {
-        const state = "archive" as const;
+      if (raw.includes("videoPrimaryInfoRenderer")) {
+        const state = /"dateText":\{"simpleText":"Streamed live/.test(raw)
+          ? ("archive" as const)
+          : ("vod" as const);
         liveStateCache.set(videoId, { state, expiresAt: Date.now() + 5 * 60_000 });
         return state;
       }
