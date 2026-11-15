@@ -25,6 +25,7 @@
     "twitter:health": "node scripts/twitter-health.mjs",
     "notify:webhook": "node scripts/notify-webhook.mjs",
     "extension:package": "node scripts/package-extension.mjs",
+    "extension:build": "node scripts/build-extension.mjs",
     "bridge:tunnel": "node scripts/bridge-tunnel.mjs",
     "bridge:autostart": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-bridge-autostart.ps1",
     "downloads:totals": "node scripts/download-totals.mjs",

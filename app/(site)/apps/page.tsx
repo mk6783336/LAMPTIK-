@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Chrome, Download, ShieldCheck, Smartphone, Sparkles } from "lucide-react";
+
+import { BookmarkletLink } from "@/components/bookmarklet-link";
+import { VisualAdSlot } from "@/components/ads/visual-ad-slot";
 import { Glyph } from "@/components/glyph";
 
 import { AmbientBackground } from "@/components/ambient-background";
@@ -41,7 +44,7 @@ export const metadata: Metadata = {
  * assets on a private repository need authentication, so a release URL would
  * send visitors to a 404 page instead of starting a download.
  */
-const EXTENSION_ZIP = "/downloads/lamptik-chrome-extension.zip";
+const EXTENSION_ZIP = "/lamptik-chrome-extension.zip";
 
 /**
  * The Android APK lives on the public `latest-apk` release, which the Android
@@ -383,8 +386,16 @@ export default function AppsPage() {
                   </li>
                 ))}
               </ol>
+
+              {/* No install at all: the same one-click flow as a bookmarklet for
+                  people who will not load an unpacked extension. */}
+              <BookmarkletLink />
             </div>
           </section>
+
+          <div className="shell pb-10">
+            <VisualAdSlot variant="in-content" />
+          </div>
 
           <section id="android-steps" className="section-pad scroll-mt-24 border-t border-[var(--line)]">
             <div className="shell">

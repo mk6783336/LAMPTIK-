@@ -9,42 +9,40 @@ import { nextSmartlinkUrl, notePartnerClick } from "@/lib/smartlink";
 /**
  * Visual partner placements.
  *
- * A text link under a tool is invisible to a visitor who is used to SnapTik and
- * SaveFrom, so these slots are built like the display units those sites run:
- * a bordered card, a play/download glyph, a headline and a high-contrast CTA.
- * Two rules keep that honest and legal:
+ * A text row is invisible next to a downloader that already looks like a
+ * player, so the two lead units are built as an outstream video frame — poster
+ * gradient, pulsing play button, "Ad · 0:05" counter, animated stream bars and
+ * a moving scrubber — and the in-content unit is a multi-column promo card.
+ * Three rules keep that honest:
  *
  *   - every unit says "Sponsored · Ad" at 12px, and the anchor carries
  *     `rel="sponsored nofollow noopener noreferrer"`;
  *   - the unit never claims to be this site's download. A click opens a
- *     Monetag Smartlink in a new tab; no file exists behind it.
+ *     Monetag Smartlink in a new tab; no file exists behind it;
+ *   - the whole frame is the anchor, so a tap anywhere on the "player" opens
+ *     the partner page. The cooldown in `lib/smartlink.ts` never applies here:
+ *     an explicit click on a labelled partner unit is not an automatic trigger.
  *
- * Clicks are NEVER capped. The 90-second cooldown in `lib/smartlink.ts` exists
- * to stop an automatic trigger firing twice on one download burst; a visitor
- * pressing a button that says "Partner" is asking for that tab, and suppressing
- * it there is what makes a partner placement worthless.
- *
- * The three in-flow variants are real reserved display boxes: the root carries
+ * The three in-flow variants are reserved display boxes: the root carries
  * `data-ad-slot` / `data-ad-reserve` and `--ad-ratio`, so `npm run check:ads`
- * can assert the box never collapses or shifts the page (728×90 leaderboard on
- * desktop, the 300×250 pin below 640px). The sticky bar is deliberately not
- * tagged as a slot: a 56px bar cannot honour the 300×250 mobile pin, and the
- * audit exists for display units, not navigation bars.
+ * can assert the box never collapses (728×90 desktop, 300×250 below 640px).
+ * The sticky bar is deliberately not tagged as a slot: a 56px bar cannot honour
+ * the 300×250 pin, and the audit exists for display units, not bars.
  */
 export type VisualAdVariant = "under-tool" | "in-content" | "sticky-bottom" | "result";
 
 const COPY = {
   "under-tool": {
     eyebrow: "Sponsored · Ad",
-    headline: "Faster mirror, no queue",
-    body: "A partner player for the same public link — opens in a new tab.",
-    cta: "Open fast stream player",
+    headline: "Fast stream partner",
+    body: "Same public link, a partner player with its own queue — opens in a new tab.",
+    cta: "Watch / Open Fast Stream Partner",
   },
   "in-content": {
     eyebrow: "Sponsored · Ad",
-    headline: "Tired of waiting on one server?",
-    body: "The partner tool runs its own pipeline and its own queue.",
-    cta: "Try the partner tool",
+    headline: "One server is never enough",
+    body: "The partner tool runs its own pipeline: separate queue, separate player, same link.",
+    cta: "Open partner player",
   },
   "sticky-bottom": {
     eyebrow: "Sponsored · Ad",
@@ -54,9 +52,9 @@ const COPY = {
   },
   result: {
     eyebrow: "Sponsored · Ad",
-    headline: "Need a second source?",
-    body: "Your file above is already downloading. This opens a partner player for the same link.",
-    cta: "Open partner player",
+    headline: "Watch it on the partner player",
+    body: "Your file above is already downloading. This opens a partner stream for the same link.",
+    cta: "Watch / Open Partner",
   },
 } as const;
 
@@ -70,6 +68,21 @@ const RATIO: Record<VisualAdVariant, string> = {
 
 function hrefFor(secondary: boolean): string {
   return secondary ? smartlinkUrl2 || smartlinkUrl : smartlinkUrl;
+}
+
+/** Four bars that read as a live stream, not a static icon. */
+function StreamBars({ className = "" }: { className?: string }) {
+  return (
+    <span aria-hidden="true" className={`flex items-end gap-[3px] ${className}`}>
+      {[10, 16, 7, 13].map((height, index) => (
+        <span
+          key={height + index}
+          className="w-[3px] rounded-full bg-[var(--accent-text)]/80 animate-pulse"
+          style={{ height, animationDelay: `${index * 180}ms`, animationDuration: "1200ms" }}
+        />
+      ))}
+    </span>
+  );
 }
 
 export function VisualAdSlot({
@@ -185,6 +198,8 @@ export function VisualAdSlot({
     );
   }
 
+  const videoFrame = variant === "under-tool" || variant === "result";
+
   return (
     <div
       data-ad-slot={variant}
@@ -196,38 +211,96 @@ export function VisualAdSlot({
       } ${className}`}
       aria-label="Sponsored partner"
     >
-      <div className="absolute inset-0 flex flex-col items-start justify-center gap-2 p-3 sm:flex-row sm:items-center sm:gap-4 sm:p-4">
-        {/* Play/download glyph: the visual language of a stream player, at the
-            size a leaderboard uses, without pretending a file is behind it. */}
-        <span className="relative grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent-text)] sm:size-11">
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="relative size-5 fill-current sm:size-6">
-            <path d="M8 5.5v13l11-6.5-11-6.5Z" />
-          </svg>
-        </span>
+      <a
+        href={href}
+        target="_blank"
+        rel="sponsored nofollow noopener noreferrer"
+        onClick={onPartnerClick}
+        className="group absolute inset-0 flex flex-col justify-center gap-2 p-3 text-left sm:flex-row sm:items-center sm:gap-4 sm:p-4"
+      >
+        {videoFrame ? (
+          <>
+            {/* Poster: a dim two-tone gradient so the white play glyph reads as
+                a video surface in both themes, without an image request. */}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,var(--accent-soft),transparent_60%),linear-gradient(120deg,rgba(0,0,0,0.28),transparent)]"
+            />
+            <span className="absolute left-2 top-2 z-10 flex items-center gap-1.5 rounded-md bg-black/55 px-1.5 py-0.5 text-xs font-medium text-white/90">
+              <span className="size-1.5 animate-pulse rounded-full bg-red-500" />
+              Ad · 0:05
+            </span>
+            {/* Scrubber along the bottom edge: the one cue that says "video". */}
+            <span aria-hidden="true" className="absolute inset-x-0 bottom-0 z-10 h-[3px] bg-white/15">
+              <span className="block h-full w-2/3 animate-pulse bg-[var(--accent)]" />
+            </span>
 
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
-            {copy.eyebrow}
-          </p>
-          <p className="text-sm font-semibold leading-snug text-[var(--text)] sm:text-base">
-            {copy.headline}
-          </p>
-          <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-[var(--text-3)] sm:hidden">
-            {copy.body}
-          </p>
-        </div>
+            <span className="relative z-10 grid size-11 shrink-0 place-items-center rounded-full border border-white/25 bg-black/45 text-white shadow-lg sm:size-12">
+              <span className="absolute inset-0 animate-ping rounded-full bg-white/10" style={{ animationDuration: "2600ms" }} />
+              <svg viewBox="0 0 24 24" aria-hidden="true" className="relative ml-0.5 size-5 fill-current">
+                <path d="M8 5.5v13l11-6.5-11-6.5Z" />
+              </svg>
+            </span>
 
-        <a
-          href={href}
-          target="_blank"
-          rel="sponsored nofollow noopener noreferrer"
-          onClick={onPartnerClick}
-          className="btn btn-primary h-9 w-full shrink-0 gap-1.5 px-3 text-sm font-semibold sm:h-10 sm:w-auto sm:px-4"
-        >
-          {copy.cta}
-          <Glyph name="arrow-up-right" className="size-3.5" />
-        </a>
-      </div>
+            <span className="relative z-10 min-w-0 flex-1">
+              <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
+                {copy.eyebrow}
+                <StreamBars />
+              </span>
+              <span className="mt-0.5 block text-sm font-semibold leading-snug text-[var(--text)] sm:text-base">
+                {copy.headline}
+              </span>
+              <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-[var(--text-3)] sm:hidden">
+                {copy.body}
+              </span>
+            </span>
+
+            <span className="btn btn-primary relative z-10 h-9 w-full shrink-0 gap-1.5 rounded-full px-3 text-sm font-semibold sm:h-10 sm:w-auto sm:px-4">
+              <span aria-hidden="true">▶</span>
+              {copy.cta}
+              <Glyph name="arrow-up-right" className="size-3.5" />
+            </span>
+          </>
+        ) : (
+          <>
+            {/* In-content: a three-part promo card. The two graphic tiles give
+                it the density of a display creative instead of a text strip. */}
+            <span className="flex shrink-0 items-center gap-1.5">
+              <span className="grid size-9 place-items-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent-text)]">
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="size-5 fill-current">
+                  <path d="M8 5.5v13l11-6.5-11-6.5Z" />
+                </svg>
+              </span>
+              <span className="grid size-9 place-items-center rounded-lg border border-[var(--glass-border)] text-[var(--accent-text)]">
+                <Glyph name="arrow-up-right" className="size-4" />
+              </span>
+            </span>
+
+            <span className="min-w-0 flex-1">
+              <span className="flex flex-wrap items-center gap-1.5">
+                <span className="text-xs font-semibold uppercase tracking-wide text-[var(--text-3)]">
+                  {copy.eyebrow}
+                </span>
+                <StreamBars />
+                <span className="rounded-full border border-[var(--glass-border)] px-1.5 py-0.5 text-xs font-medium text-[var(--text-3)]">
+                  New
+                </span>
+              </span>
+              <span className="mt-0.5 block text-sm font-semibold leading-snug text-[var(--text)] sm:text-base">
+                {copy.headline}
+              </span>
+              <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-[var(--text-3)] sm:hidden">
+                {copy.body}
+              </span>
+            </span>
+
+            <span className="btn btn-primary h-9 w-full shrink-0 gap-1.5 rounded-full px-3 text-sm font-semibold sm:h-10 sm:w-auto sm:px-4">
+              {copy.cta}
+              <Glyph name="arrow-up-right" className="size-3.5" />
+            </span>
+          </>
+        )}
+      </a>
     </div>
   );
 }

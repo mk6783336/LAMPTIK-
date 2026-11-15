@@ -10,6 +10,8 @@
     "*://*.tiktok.com/*",
     "*://*.instagram.com/*",
     "*://*.facebook.com/*",
+    "*://*.x.com/*",
+    "*://*.twitter.com/*",
     "https://www.lamptik.online/*"
   ],
   "background": {
@@ -37,7 +39,9 @@
         "*://*.youtube.com/*",
         "*://*.tiktok.com/*",
         "*://*.instagram.com/*",
-        "*://*.facebook.com/*"
+        "*://*.facebook.com/*",
+        "*://*.x.com/*",
+        "*://*.twitter.com/*"
       ],
       "js": ["content.js"],
       "css": ["content.css"],

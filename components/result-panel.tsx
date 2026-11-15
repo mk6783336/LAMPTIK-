@@ -3,7 +3,7 @@
 
 import { AlertTriangle, Clock3, Download, Music2, RefreshCw, ShieldCheck, Zap } from "lucide-react";
 import { Glyph } from "@/components/glyph";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { trackEvent, type DownloadEventMeta } from "@/lib/analytics";
 import { formatBytes, formatDuration } from "@/lib/format";
@@ -14,7 +14,7 @@ import { cn } from "@/lib/cn";
 import { PLATFORMS } from "@/lib/platforms";
 import { VisualAdSlot } from "@/components/ads/visual-ad-slot";
 import { smartlinkUrl, smartlinkUrl2 } from "@/lib/monetization";
-import { openSmartlink } from "@/lib/smartlink";
+import { openPartnerLink, openSmartlink } from "@/lib/smartlink";
 import { ENGLISH_DOWNLOADER_COPY, type DownloaderCopy } from "@/lib/i18n/ui";
 
 import { isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
@@ -101,6 +101,22 @@ export function ResultPanel({
    *  sponsored card and also opened (within its cap) on a download click. */
   const sponsorUrl = smartlinkUrl;
   const partnerUrl = smartlinkUrl2 || smartlinkUrl;
+  const [previewFailed, setPreviewFailed] = useState(false);
+  const [previewStarted, setPreviewStarted] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const prerollOpened = useRef(false);
+
+  /**
+   * Sponsored pre-roll: the first play press is a real user gesture, so the
+   * partner tab opens in the same tick and the preview keeps playing behind it.
+   * Once per resolved video — a pause/resume must not spawn more tabs.
+   */
+  const onPreviewPlay = () => {
+    setPreviewStarted(true);
+    if (prerollOpened.current) return;
+    prerollOpened.current = true;
+    openPartnerLink(partnerUrl);
+  };
   const [thumbnailFailed, setThumbnailFailed] = useState(false);
   const [started, setStarted] = useState<DownloadStarted | null>(null);
 
@@ -136,6 +152,10 @@ export function ResultPanel({
 
   /** Server 01: always the proxy attachment (direct CDN upstream when known). */
   const directUpstream = media.videoDirect ?? null;
+  /** Inline preview: the raw stream the resolver returned, not the attachment
+   *  proxy (Content-Disposition would make the <video> element fail). */
+  const previewSrc = directUpstream ?? media.videoHd ?? video.downloads.video ?? "";
+  const previewPoster = media.thumbnail ?? video.thumbnail ?? undefined;
   const server01Href = directUpstream
     ? proxyHref("video", directUpstream, "1")
     : (media.videoHd ?? video.downloads.video ?? "");
@@ -600,6 +620,30 @@ export function ResultPanel({
               that "mirror" would promise a file it cannot deliver — the exact
               pattern that gets a downloader flagged as adware. The visitor's
               file is already streaming from the buttons above. */}
+          {/* Inline preview. The source is the resolved stream itself, so no
+              extra server hop is added; a failed source hides the player rather
+              than leaving a black box. First play is the pre-roll gesture. */}
+          {previewSrc && !previewFailed ? (
+            <div className="relative mt-1 overflow-hidden rounded-xl border border-[var(--glass-border)] bg-black">
+              <video
+                ref={videoRef}
+                src={previewSrc}
+                poster={previewPoster}
+                controls
+                playsInline
+                preload="metadata"
+                onPlay={onPreviewPlay}
+                onError={() => setPreviewFailed(true)}
+                className="max-h-[340px] w-full object-contain"
+              />
+              {!previewStarted ? (
+                <span className="pointer-events-none absolute left-2 top-2 rounded-md bg-black/60 px-1.5 py-0.5 text-xs font-medium text-white/90">
+                  Sponsored · Pre-roll
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+
           {/* Explicit partner button. No frequency cap: this is a deliberate
               click on a labelled offer, not an automatic trigger on someone's
               download. It is an anchor, so the browser opens the tab inside the
@@ -610,6 +654,13 @@ export function ResultPanel({
               target="_blank"
               rel="sponsored nofollow noopener noreferrer"
               data-testid="result-server-02"
+              onClick={() => {
+                // This click IS the partner open; mark the pre-roll spent so the
+                // play() below cannot open a second tab through onPreviewPlay.
+                prerollOpened.current = true;
+                setPreviewStarted(true);
+                void videoRef.current?.play().catch(() => undefined);
+              }}
               className="btn mt-1 h-11 w-full gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-4 text-sm font-semibold text-amber-100 transition-colors hover:border-amber-400/60 hover:bg-amber-500/15"
             >
               <Zap aria-hidden="true" className="size-4 shrink-0 text-amber-300" />

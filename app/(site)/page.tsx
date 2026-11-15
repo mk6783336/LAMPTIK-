@@ -236,6 +236,18 @@ export default function HomePage() {
                 X / Twitter video, up to 4K
               </Link>
               <Link
+                href="/facebook-video-downloader"
+                className="text-[var(--text-2)] underline decoration-[var(--glass-border)] underline-offset-4 transition-colors hover:text-[var(--text)]"
+              >
+                Facebook video, HD
+              </Link>
+              <Link
+                href="/apps"
+                className="text-[var(--text-2)] underline decoration-[var(--glass-border)] underline-offset-4 transition-colors hover:text-[var(--text)]"
+              >
+                Chrome extension &amp; Android app
+              </Link>
+              <Link
                 href="/download-videos-united-states"
                 className="text-[var(--text-2)] underline decoration-[var(--glass-border)] underline-offset-4 transition-colors hover:text-[var(--text)]"
               >

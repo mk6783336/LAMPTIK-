@@ -1,160 +1,115 @@
-# LAMP TIK
+# LAMP TIK — watermark-free video downloader, measured
 
-A production-ready, watermark-free TikTok video downloader. Paste a link, resolve the original MP4 stream, and save HD video or MP3 audio straight to your device.
+**[lamptik.online](https://www.lamptik.online)** is a production Next.js 15 downloader for
+TikTok, Instagram Reels, Facebook and YouTube. Paste a link, get the file the platform
+actually serves — no account, no app install, nothing stored on the server, and no
+resolution label the file cannot back up.
 
-**Stack:** Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS 3 · Framer Motion · Lucide
-**Vibe:** cyberpunk minimalism — deep `#0A0A0B`, neon cyan `#00F2FE` / magenta `#FE0979`, frosted glass.
+This repository is the whole website: the resolvers, the streaming proxy, the UI, the
+ad layer and the build gates. A thin Expo client in [`mobile-app/`](mobile-app/) talks to
+the same API routes; [`extension/`](extension/) is the Manifest V3 browser extension.
 
----
+## What the files actually are (measured)
 
-## Features
+YouTube does not publish one universal MP4. Above 720p it stores video and audio
+separately, and a downloader that hands you 1080p has merged them — that is a re-encode.
+This site returns the single muxed stream YouTube still serves and states its height
+instead of renaming it.
 
-- **No watermark** — fetches the TikTok CDN's clean `hdplay` / `play` stream, never re-encodes or overlays.
-- **HD + MP3** — separate video and audio download actions; audio comes from TikTok's `audio/mpeg` track.
-- **Direct file save** — downloads are streamed through `/api/download` with `Content-Disposition: attachment`, so browsers save the file instead of opening a tab.
-- **Short links** — resolves `vt.tiktok.com` / `vm.tiktok.com` redirects server-side before extraction.
-- **Clipboard paste** — one-tap paste button with permission-aware fallback.
-- **Real states** — live validation, neon scanline loading skeleton, expanding result card, and accessible toast errors.
-- **Dark / light mode** — dark by default, persisted in `localStorage`, zero flash on load.
-- **Hardened by default** — strict URL validation, media-host allowlist, range pass-through, in-memory rate limiting, no server-side storage.
-- **SEO ready** — metadata, JSON-LD (`WebApplication` + `FAQPage`), robots.txt, sitemap, dynamic favicon.
+| Platform | Delivered container | Measured `tkhd` ceiling | Notes |
+| --- | --- | --- | --- |
+| YouTube | MP4 · H.264 + AAC (muxed) | **640 × 360** | No merge, no 1080p label; audio via MP3 bridge |
+| TikTok | MP4 · H.264 | **576 × 1024** | Watermark-free stream as published |
+| Instagram Reels | MP4 | **718 × 1276** | Reels, photo-post videos, IGTV |
+| Facebook | MP4 | **720 × 1280 – 1080 × 1920** | HD Watch, page uploads, `fb.watch` |
+| X / Twitter | MP4 | **up to 3840 × 2160** | Highest published variant |
+| Audio | M4A (AAC) / MP3 | **128–256 kbps** | No fake 320 kbps upscale |
 
----
+Measured 2026-11-13 from the container headers (`tkhd`), not from a marketing page.
+Full method and per-format caveats:
+[measured video files vs 1080p labels](https://www.lamptik.online/guides/measured-video-files-vs-1080p-labels).
 
-## Quick start
+## Downloaders
+
+| Platform | Page |
+| --- | --- |
+| TikTok (no watermark, MP3) | https://www.lamptik.online/tiktok-video-downloader |
+| X / Twitter (MP4, up to 4K) | https://www.lamptik.online/twitter-video-downloader |
+| Facebook (HD, `fb.watch`) | https://www.lamptik.online/facebook-video-downloader |
+| Instagram Reels | https://www.lamptik.online/instagram-reels-downloader |
+| YouTube (MP4 + MP3) | https://www.lamptik.online/youtube-downloader |
+
+Localized landing pages are written per market, not machine-translated, and each one
+declares the others as translations of the same topic:
+
+- Deutsch — https://www.lamptik.online/de
+- Français — https://www.lamptik.online/fr
+- Español — https://www.lamptik.online/es
+- Português — https://www.lamptik.online/pt
+
+## Apps and one-click tools
+
+- **Chrome extension (Manifest V3)** — https://www.lamptik.online/apps ·
+  download [`lamptik-chrome-extension.zip`](https://www.lamptik.online/lamptik-chrome-extension.zip)
+  and load it from `chrome://extensions` → Developer mode → Load unpacked.
+  It injects a "⚡ Download MP4 (LAMP TIK)" button on YouTube/Shorts, TikTok,
+  Instagram Reels, X and Facebook video pages, and its popup can send the current tab
+  straight to the matching downloader.
+- **Bookmarklet** — on [/apps](https://www.lamptik.online/apps), drag the
+  "⚡ Download with LAMP TIK" link to the bookmarks bar: it opens the downloader with
+  the current page URL, no install required.
+- **Android APK** — sideload build from the `latest-apk` release, linked on `/apps`.
+
+## How a resolve works
+
+1. `POST /api/fetch` validates and normalises the link, then routes by platform.
+2. Short links (`vm.tiktok.com`, `fb.watch`, `youtu.be`) are expanded server-side, so an
+   expired redirect never reaches the browser.
+3. Each platform has a waterfall: native API first, then a bridge (`yt-dlp` on a small
+   host) and, for YouTube, Innertube clients in an explicit order
+   (iOS → TVHTML5 → Android VR → visionOS → embedded) plus Piped/Invidious mirrors.
+4. The browser downloads through `/api/download`, which forwards `Range` requests to the
+   CDN and forces `Content-Disposition: attachment` — the file lands in the browser's own
+   download manager, never in IndexedDB or a Blob.
+5. Errors carry a stable code (`PROVIDER_UNAVAILABLE`, `LINK_UNSUPPORTED`, …) and the UI
+   offers a source link instead of a dead end.
+
+## Ads, stated plainly
+
+One network: Monetag. Visual partner cards sit under the tool, between content sections,
+in the result panel and in a dismissible bottom bar; each is labelled *Sponsored · Ad*
+and opens a Smartlink in a new tab. Monetag In-Page Push loads only after first paint and
+after 1.5 s or the first scroll/pointer move.
+
+The **automatic** Smartlink trigger on a download click is capped in `localStorage` at
+one open per 90 seconds and ten per day. A click on a labelled partner button is never
+capped. No vignette, no interstitial, no overlay, and the input, Paste and Fetch
+controls are never covered.
+
+## Build and gates
 
 ```bash
 npm install
-cp .env.example .env.local   # optional; defaults to http://localhost:3000
-npm run dev                  # http://localhost:3000
+npm run dev                 # local dev
+npm run verify              # typecheck + lint + links + claims + build
+npm run check:ads           # box-model audit: slot size, overlays, tap-through
+npm run check:metadata -- --local=http://127.0.0.1:3100
+npm run extension:build     # extension/ → public/*.zip (deterministic)
+npm run indexnow            # submit changed sitemap URLs to IndexNow
 ```
 
-Production:
+Four rules are enforced, not aspirational: a green `verify`, SSRF-guarded upstream hops,
+the 12px type floor / three button variants, and ads that never cover the download CTA.
+See [`AGENTS.md`](AGENTS.md) and [`.claude/rules/`](.claude/rules/).
 
-```bash
-npm run build
-npm start
-```
+## Stack
 
-Requires **Node.js 20.9+**.
+Next.js 15.5 (App Router, React 19, TypeScript strict), Tailwind 3.4, Node runtime for
+the resolvers, Edge for the streaming proxy. No database: nothing about a download is
+stored. Client-side frequency caps live in `localStorage`.
 
-### Environment
+## License and responsible use
 
-| Variable | Required | Description |
-| --- | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | Recommended in prod | Public origin with no trailing slash. Used for canonical URLs, sitemap, robots and social metadata. |
-
-No API keys are needed. TikTok extraction uses public endpoints.
-
----
-
-## Architecture
-
-```
-app/
-├── api/
-│   ├── fetch/route.ts       POST /api/fetch     — validate + extract metadata, return download links
-│   ├── download/route.ts    GET  /api/download  — allowlisted CDN stream → attachment download
-│   └── health/route.ts      GET  /api/health    — liveness probe
-├── globals.css              design tokens, glass, gradient border, skeleton, scanline
-├── layout.tsx               fonts, theme boot script, metadata
-├── page.tsx                 hero, downloader, trust strip, explainer, FAQ
-├── icon.svg                 neon bolt favicon
-├── robots.ts / sitemap.ts   SEO routes
-components/
-├── downloader.tsx           client state machine (idle → loading → success / error)
-├── result-panel.tsx         thumbnail, caption, author, stats, download actions
-├── toast.tsx                animated accessible notifications
-├── site-header.tsx          sticky nav + theme toggle
-├── how-it-works.tsx, faq.tsx, site-footer.tsx, ambient-background.tsx, logo.tsx
-lib/
-├── tiktok/
-│   ├── parse.ts             URL validation, short-link detection, video ID / username extraction
-│   ├── resolve.ts           vt/vm redirect resolution
-│   ├── index.ts             provider orchestration, TTL cache, in-flight dedupe, error classification
-│   ├── providers/tikwm.ts   primary extractor (HD clean MP4 + MP3)
-│   ├── providers/page.ts    fallback: __UNIVERSAL_DATA_FOR_REHYDRATION__ page parse
-│   ├── providers/oembed.ts  official oEmbed probe (exists vs. blocked)
-│   ├── allowlist.ts         media host allowlist + safe filename / Content-Disposition
-│   └── links.ts             builds same-origin proxy links
-├── cache.ts, rate-limit.ts, errors.ts, http.ts, format.ts, request.ts, site.ts
-```
-
-### Extraction pipeline
-
-1. **Validate & normalize** (`parse.ts`) — accepts `tiktok.com`, `m.tiktok.com`, `vt.tiktok.com`, `vm.tiktok.com`, and `/t/` short paths. Rejects profiles, feeds, and non-TikTok hosts. Photo posts are rejected with a friendly error.
-2. **Resolve short links** (`resolve.ts`) — follows redirects with a mobile UA and re-parses the canonical URL.
-3. **Check cache** — 10-minute in-memory TTL, plus in-flight de-duplication for bursts on the same video.
-4. **Primary extractor** (`providers/tikwm.ts`) — calls the public TikWM resolver with `hd=1`, prefers `hdplay`, falls back to `play`, and takes audio from `music`.
-5. **Fallback extractor** (`providers/page.ts`) — parses TikTok's embedded `__UNIVERSAL_DATA_FOR_REHYDRATION__` JSON (`webapp.video-detail → itemInfo → itemStruct`).
-6. **Classify failures** (`providers/oembed.ts`) — if both extractors fail, the official oEmbed endpoint distinguishes "video exists but CDN is blocking" (503) from "video is gone/private" (404).
-7. **Attach download links** — the client never talks to the CDN directly; both buttons point at `/api/download`.
-
-TikTok's signed CDN URLs expire. Metadata is cached for only 10 minutes, and the UI asks users to fetch again if a stream 502s.
-
-### API
-
-**`POST /api/fetch`**
-
-```bash
-curl -s -X POST http://localhost:3000/api/fetch \
-  -H 'Content-Type: application/json' \
-  -d '{"url":"https://www.tiktok.com/@scout2015/video/6718335390845095173"}'
-```
-
-```json
-{
-  "ok": true,
-  "cached": false,
-  "video": {
-    "id": "6718335390845095173",
-    "title": "Scramble up ur name & I'll try to guess it…",
-    "duration": 10,
-    "thumbnail": "https://…",
-    "author": { "username": "scout2015", "nickname": "Scout, Suki & Stella", "avatar": "https://…" },
-    "stats": { "plays": 159576, "likes": 35187, "comments": 5714, "shares": 1516 },
-    "quality": "hd",
-    "noWatermark": true,
-    "source": "tikwm",
-    "byteSize": 2004627,
-    "downloads": {
-      "video": "/api/download?kind=video&u=…&id=…&author=scout2015",
-      "audio": "/api/download?kind=audio&u=…&id=…&author=scout2015"
-    }
-  }
-}
-```
-
-Failures return `{ "ok": false, "error": { "code", "message", "hint"? } }` with `400` (invalid), `403` (private), `404` (missing), `422` (photo post), `429` (rate limited), `502` (CDN error), or `503` (resolver unavailable).
-
-**`GET /api/download?kind=video|audio&u=<cdn-url>&id=…&author=…`**
-
-Streams the CDN response (passing through `Range`, `Content-Length`, `Content-Range`) with:
-
-```
-Content-Disposition: attachment; filename="lamptik-scout2015-6718335390845095173.mp4"
-```
-
-Only hosts under `tiktokcdn*.com`, `tiktokv.com`, `tikwm.com`, `byteoversea.com`, and `ibytedtos.com` are accepted, and the final URL is re-checked after redirects.
-
-**Rate limits (best-effort, per instance):** 20 metadata requests/min and 60 downloads/min per IP.
-
----
-
-## Deployment notes
-
-- Deploy on any Node 20.9+ host (Vercel, Docker, Fly.io, Render). Route handlers are `nodejs` runtime and stream responses.
-- `maxDuration` is set to 30s for extraction and 60s for downloads. Adjust to your platform.
-- The in-memory cache and rate limiter are per-instance and reset on deploy. For global limits, put a WAF/platform rate limiter in front.
-- Set `NEXT_PUBLIC_SITE_URL` to your production origin.
-- The TikWM resolver is a free, unofficial public API with no SLA. The direct-page fallback handles outages where TikTok does not challenge the request, and oEmbed keeps error messaging accurate. For high-traffic production use, plan for a maintained extraction provider or a self-hosted resolver.
-
----
-
-## Legal
-
-LAMP TIK is an independent project, not affiliated with TikTok or ByteDance. It does not host videos; it proxies publicly accessible streams on request. Download only content you own or have permission to use, and respect creators' rights, copyright law, and TikTok's Terms of Service. The author assumes no liability for misuse.
-
----
-
-Built with Next.js. Designed for the dark mode enjoyers.
+The code is published for reference and self-hosting. Download only content you have the
+right to use; the site is not affiliated with TikTok, ByteDance, Instagram, Facebook, X or
+YouTube. DMCA and contact: support@lamptik.online.

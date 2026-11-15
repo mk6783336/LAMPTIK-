@@ -127,7 +127,11 @@ end.writeUInt16LE(0, 20);
 
 const archive = Buffer.concat([...localParts, centralDir, end]);
 writeFileSync(OUT_FILE, archive);
+// Canonical short path advertised on /apps and in the extension docs. Same
+// bytes, so a browser download and a committed copy cannot drift.
+writeFileSync(join(ROOT, "public", "lamptik-chrome-extension.zip"), archive);
 
 const kb = (archive.length / 1024).toFixed(1);
 console.log(`packaged ${files.length} files → ${relative(ROOT, OUT_FILE)} (${kb} KB)`);
+console.log(`also public/lamptik-chrome-extension.zip`);
 for (const file of files) console.log(`  ${file.name}`);

@@ -36,14 +36,16 @@
  * and opened on a download click within the cap. Empty by default: without it
  * the card renders nothing, reserves no space, and no tab ever opens.
  */
-export const smartlinkUrl = process.env.NEXT_PUBLIC_SMARTLINK_URL?.trim() || "";
+export const smartlinkUrl =
+  process.env.NEXT_PUBLIC_SMARTLINK_URL?.trim() || "https://uplcm.com/4/12263665";
 
 /**
  * Second Monetag Smartlink, used by the partner placements when the account
  * has a second zone. Falls back to the primary everywhere it is consumed, so
  * an unset value never leaves an empty link.
  */
-export const smartlinkUrl2 = process.env.NEXT_PUBLIC_SMARTLINK_URL_2?.trim() || "";
+export const smartlinkUrl2 =
+  process.env.NEXT_PUBLIC_SMARTLINK_URL_2?.trim() || "https://uplcm.com/4/12263661";
 
 /** Monetag domain-verification token, emitted as `<meta name="monetag">`. */
 export const monetagVerification = process.env.NEXT_PUBLIC_MONETAG_META?.trim() || null;

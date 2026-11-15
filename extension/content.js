@@ -95,6 +95,13 @@
       return null;
     }
 
+    if (host === "x.com" || host.endsWith(".x.com") || host === "twitter.com" || host.endsWith(".twitter.com")) {
+      if (/\/status\/\d+/.test(path)) {
+        return { platform: "twitter", url: location.href, videoId: path.match(/\/status\/(\d+)/)?.[1] ?? null };
+      }
+      return null;
+    }
+
     if (host.endsWith("facebook.com") || host === "fb.watch") {
       if (/\/(reel|videos|watch)\//.test(path) || /[?&]v=\d+/.test(search) || host === "fb.watch") {
         return { platform: "facebook", url: location.href, videoId: null };
