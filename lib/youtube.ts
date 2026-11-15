@@ -529,35 +529,43 @@ const liveStateCache = new Map<string, { state: "live" | "archive" | "vod"; expi
 async function detectLiveState(videoId: string): Promise<"live" | "archive" | "vod" | null> {
   const cached = liveStateCache.get(videoId);
   if (cached && cached.expiresAt > Date.now()) return cached.state;
-  try {
-    const response = await fetch(
-      `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}&hl=en`,
-      {
+  // The desktop page answers a datacenter IP with a consent/bot shell often
+  // enough that the mobile page is worth one extra try; both are cheap and
+  // this only runs after every real engine has already failed.
+  const pages = [
+    `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}&hl=en&gl=US&bpctr=9999999999&has_verified=1`,
+    `https://m.youtube.com/watch?v=${encodeURIComponent(videoId)}&hl=en`,
+  ];
+  for (const page of pages) {
+    try {
+      const response = await fetch(page, {
         headers: {
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
           "Accept-Language": "en-US,en;q=0.9",
+          Cookie: "CONSENT=YES+1",
         },
         cache: "no-store",
         signal: AbortSignal.timeout(6_000),
-      },
-    );
-    if (!response.ok) return null;
-    const html = await response.text();
-    if (!html.includes("ytInitialPlayerResponse")) return null;
-    const liveContent = /"isLiveContent":true/.test(html);
-    if (!liveContent) {
-      const state = "vod" as const;
+      });
+      if (!response.ok) continue;
+      const html = await response.text();
+      if (!html.includes("ytInitialPlayerResponse")) continue;
+      const liveContent = /"isLiveContent":true/.test(html);
+      if (!liveContent) {
+        const state = "vod" as const;
+        liveStateCache.set(videoId, { state, expiresAt: Date.now() + 5 * 60_000 });
+        return state;
+      }
+      const liveNow = /"isLiveNow":true/.test(html) || /"isLive":true/.test(html);
+      const state = liveNow ? ("live" as const) : ("archive" as const);
       liveStateCache.set(videoId, { state, expiresAt: Date.now() + 5 * 60_000 });
       return state;
+    } catch {
+      // Try the next page shape.
     }
-    const liveNow = /"isLiveNow":true/.test(html) || /"isLive":true/.test(html);
-    const state = liveNow ? ("live" as const) : ("archive" as const);
-    liveStateCache.set(videoId, { state, expiresAt: Date.now() + 5 * 60_000 });
-    return state;
-  } catch {
-    return null;
   }
+  return null;
 }
 
 interface InnertubeFormat {
