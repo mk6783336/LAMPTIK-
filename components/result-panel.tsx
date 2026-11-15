@@ -153,8 +153,14 @@ export function ResultPanel({
   /** Server 01: always the proxy attachment (direct CDN upstream when known). */
   const directUpstream = media.videoDirect ?? null;
   /** Inline preview: the raw stream the resolver returned, not the attachment
-   *  proxy (Content-Disposition would make the <video> element fail). */
-  const previewSrc = directUpstream ?? media.videoHd ?? video.downloads.video ?? "";
+   *  proxy (Content-Disposition would make the <video> element fail). When the
+   *  payload only carries `/api/download?u=…`, unwrap the `u` parameter. */
+  const previewHref = media.videoHd ?? video.downloads.video ?? "";
+  const previewSrc =
+    directUpstream ??
+    (previewHref.startsWith("/api/download")
+      ? new URLSearchParams(previewHref.split("?")[1] ?? "").get("u") ?? ""
+      : previewHref);
   const previewPoster = media.thumbnail ?? video.thumbnail ?? undefined;
   const server01Href = directUpstream
     ? proxyHref("video", directUpstream, "1")
