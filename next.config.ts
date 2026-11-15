@@ -46,6 +46,10 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: "/tiktok-downloader", destination: "/", permanent: true },
+      // The same keyword URL without the short form; both are used by
+      // backlinks and neither should answer 404 when the home page is the
+      // TikTok downloader.
+      { source: "/tiktok-video-downloader", destination: "/", permanent: true },
       // Two guides covered the same repurposing query with near-identical copy,
       // so Google had to pick one and the other competed with it. The weaker
       // duplicate was retired and folded into the survivor: a 301 keeps every

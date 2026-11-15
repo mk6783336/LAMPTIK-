@@ -41,9 +41,13 @@ const INDEXNOW_ENDPOINTS = [
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36";
 const PACING_MS = Number(process.env.BACKLINKS_PACING_MS ?? 3_000);
+/** Re-verify captures made earlier in the same maintenance window. */
+const SINCE_MS = Number(process.env.BACKLINKS_SINCE_MS ?? 0);
 const DRY_RUN = process.argv.includes("--dry");
 const SKIP_WAYBACK = process.argv.includes("--no-wayback");
 const SKIP_GSC = process.argv.includes("--no-gsc");
+/** Archive.org throttles hard; run the critical submissions first, captures after. */
+const WAYBACK_ONLY = process.argv.includes("--wayback-only");
 
 /** Homepage plus the twelve pages worth a public capture, in fetch order. */
 const CORE_PATHS = [
@@ -51,7 +55,7 @@ const CORE_PATHS = [
   "/facebook-video-downloader",
   "/pt/facebook-video-downloader",
   "/twitter-video-downloader",
-  "/tiktok-video-downloader",
+  "/tiktok-photo-downloader",
   "/instagram-reels-downloader",
   "/youtube-downloader",
   "/youtube-shorts-downloader",
@@ -115,13 +119,15 @@ async function verifyKeyFile() {
 }
 
 /** One Save Page Now capture; archive.org answers 302 to the finished snapshot. */
-async function capture(url) {
+async function captureOnce(url) {
   const startedAt = Date.now();
   try {
     const response = await fetch(`https://web.archive.org/save/${url}`, {
       headers: { "user-agent": UA, accept: "text/html,application/xhtml+xml" },
       redirect: "follow",
-      signal: AbortSignal.timeout(75_000),
+      // Save Page Now often hangs rather than answering 429; a short deadline
+      // keeps one stuck URL from consuming the whole run.
+      signal: AbortSignal.timeout(25_000),
     });
     const body = await response.text().catch(() => "");
     const snapshot =
@@ -147,6 +153,58 @@ async function capture(url) {
   }
 }
 
+/** Wayback timestamp format used by both APIs: YYYYMMDDhhmmss (UTC). */
+const waybackStamp = (ms) => new Date(ms).toISOString().replace(/[-:T]/g, "").slice(0, 14);
+
+/**
+ * The save endpoint answers 429 or redirects to the CDX asset of a script tag,
+ * so its HTTP status is not proof of anything. The availability API is: it
+ * returns the newest snapshot and its timestamp, which must be from this run.
+ */
+async function availabilitySince(url, sinceMs) {
+  try {
+    const response = await fetch(
+      `https://archive.org/wayback/available?url=${encodeURIComponent(url)}&timestamp=${waybackStamp(sinceMs)}`,
+      { headers: { "user-agent": UA, accept: "application/json" }, signal: AbortSignal.timeout(15_000) },
+    );
+    if (!response.ok) return null;
+    const body = await response.json().catch(() => null);
+    const closest = body?.archived_snapshots?.closest;
+    if (!closest?.available || String(closest.status) !== "200" || !closest.url) return null;
+    if (Number(closest.timestamp) < Number(waybackStamp(sinceMs))) return null;
+    return String(closest.url).replace(/^http:/, "https:");
+  } catch {
+    return null;
+  }
+}
+
+/** One save attempt, then proof from the availability API; one retry on 429. */
+async function capture(url) {
+  const startedAt = Date.now();
+  // Two minutes of clock skew between us and archive.org; an explicit window
+  // start lets a retry confirm captures made minutes earlier.
+  const since = SINCE_MS || startedAt - 120_000;
+  const first = await captureOnce(url);
+  let snapshot = await availabilitySince(url, since);
+  let last = first;
+  let retried = false;
+  if (!snapshot && first.status === 429) {
+    await sleep(5_000);
+    last = await captureOnce(url);
+    retried = true;
+    snapshot = await availabilitySince(url, since);
+  }
+  return {
+    url,
+    status: snapshot ? 200 : last.status,
+    ok: Boolean(snapshot),
+    snapshot,
+    retried,
+    error: last.error,
+    seconds: Math.round((Date.now() - startedAt) / 100) / 10,
+  };
+}
+
 async function wayback() {
   if (SKIP_WAYBACK) {
     log("Wayback: skipped (--no-wayback)");
@@ -163,8 +221,9 @@ async function wayback() {
     const result = await capture(url);
     results.push(result);
     log(
-      `Wayback ${index + 1}/${CORE_PATHS.length} ${url} -> HTTP ${result.status || "none"}` +
-        `${result.snapshot ? ` ${result.snapshot}` : ""} (${result.seconds}s)`,
+      `Wayback ${index + 1}/${CORE_PATHS.length} ${url} -> ${result.ok ? "captured" : `HTTP ${result.status || "none"}`}` +
+        `${result.snapshot ? ` ${result.snapshot}` : ""}` +
+        `${result.error ? ` (${result.error})` : ""} (${result.seconds}s)`,
     );
     if (index < CORE_PATHS.length - 1) await sleep(PACING_MS);
   }
@@ -277,8 +336,10 @@ async function main() {
   log(`${urls.length} unique URL(s) across ${perFile.length} sitemap(s)`);
 
   const snapshots = await wayback();
-  const indexNowResult = await indexNow(urls);
-  const gscResults = gscSitemaps();
+  const indexNowResult = WAYBACK_ONLY
+    ? { accepted: 0, results: [], skipped: true }
+    : await indexNow(urls);
+  const gscResults = WAYBACK_ONLY ? [] : gscSitemaps();
 
   const snapOk = snapshots.filter((result) => result.ok).length;
   const gscOk = gscResults.filter((result) => result.ok).length;
@@ -290,18 +351,22 @@ async function main() {
       : `  Wayback: ${snapOk}/${snapshots.length} captured`,
   );
   log(
-    DRY_RUN
-      ? `  IndexNow: ${urls.length} URL(s) would go to ${INDEXNOW_ENDPOINTS.length} endpoint(s)`
-      : `  IndexNow: ${indexNowResult.accepted}/${INDEXNOW_ENDPOINTS.length} endpoint(s) accepted, ${urls.length} URL(s)`,
+    WAYBACK_ONLY
+      ? "  IndexNow: skipped (--wayback-only)"
+      : DRY_RUN
+        ? `  IndexNow: ${urls.length} URL(s) would go to ${INDEXNOW_ENDPOINTS.length} endpoint(s)`
+        : `  IndexNow: ${indexNowResult.accepted}/${INDEXNOW_ENDPOINTS.length} endpoint(s) accepted, ${urls.length} URL(s)`,
   );
   log(
-    DRY_RUN
-      ? `  GSC: ${SITEMAPS.length} sitemap(s) would be submitted`
-      : `  GSC: ${gscOk}/${gscResults.length} sitemap submission(s) accepted`,
+    WAYBACK_ONLY
+      ? "  GSC: skipped (--wayback-only)"
+      : DRY_RUN
+        ? `  GSC: ${SITEMAPS.length} sitemap(s) would be submitted`
+        : `  GSC: ${gscOk}/${gscResults.length} sitemap submission(s) accepted`,
   );
 
   const gscFailed = gscResults.length > 0 && gscOk !== gscResults.length;
-  const indexNowFailed = !DRY_RUN && indexNowResult.accepted === 0;
+  const indexNowFailed = !DRY_RUN && !WAYBACK_ONLY && indexNowResult.accepted === 0;
   if (indexNowFailed || gscFailed) process.exitCode = 1;
 }
 
