@@ -1025,6 +1025,7 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
           const definitiveVideoError =
             apiError?.code === "VIDEO_PRIVATE" ||
             apiError?.code === "VIDEO_NOT_FOUND" ||
+            apiError?.code === "VIDEO_LIVE" ||
             apiError?.code === "UNSUPPORTED_URL" ||
             apiError?.code === "INVALID_URL";
           if (isYouTube && !definitiveVideoError) {

@@ -138,9 +138,11 @@ async function ytdlCoreResolve(videoId: string, canonicalUrl: string): Promise<T
     );
   }
   if (details.isLiveContent === true) {
+    const liveNow = (details as { isLive?: boolean }).isLive === true;
     throw new AppError(
-      "UNSUPPORTED_URL",
-      "Livestreams can't be downloaded — only published videos and Shorts.",
+      "VIDEO_LIVE",
+      liveNow ? LIVE_NOW_MESSAGE : LIVE_ARCHIVE_MESSAGE,
+      liveNow ? LIVE_NOW_HINT : LIVE_ARCHIVE_HINT,
     );
   }
 
@@ -526,6 +528,21 @@ async function isPublicYouTubeVideo(videoId: string): Promise<boolean | null> {
  */
 const liveStateCache = new Map<string, { state: "live" | "archive" | "vod"; expiresAt: number }>();
 
+/**
+ * One voice for every resolver path that meets live content. The player
+ * response, the mirrors and the last-resort probe all used to phrase the same
+ * fact differently; the field shows these verbatim, so they live here once.
+ */
+const LIVE_NOW_MESSAGE =
+  "This is a live stream right now. There is no file until the broadcast ends.";
+const LIVE_NOW_HINT = "Come back after it ends; YouTube then publishes the recording.";
+const LIVE_ARCHIVE_MESSAGE = "This is a recording of a live stream, so there is no downloadable MP4.";
+const LIVE_ARCHIVE_HINT = "A regular upload or Short downloads normally.";
+const LIVE_PENDING_MESSAGE =
+  "This live stream hasn't started yet, or has just ended and is still processing.";
+const LIVE_PENDING_HINT = "No file exists until YouTube publishes the recording.";
+const LIVE_CONTENT_MESSAGE = "This is live-stream content — there is no downloadable MP4.";
+
 async function detectLiveState(videoId: string): Promise<"live" | "archive" | "vod" | null> {
   const cached = liveStateCache.get(videoId);
   if (cached && cached.expiresAt > Date.now()) return cached.state;
@@ -669,20 +686,12 @@ async function innertubePlayer(
   if (status !== "OK" && (liveNowEarly || liveContentEarly)) {
     throw new AppError(
       "VIDEO_LIVE",
-      liveNowEarly
-        ? "This YouTube video is live right now — there is no MP4 until the broadcast ends."
-        : "This is a live-stream recording. YouTube serves it only as a live/HLS stream, so there is no downloadable MP4.",
-      liveNowEarly
-        ? "Once YouTube finishes processing the recording, the same link downloads normally."
-        : "A normal upload or Short resolves as MP4.",
+      liveNowEarly ? LIVE_NOW_MESSAGE : LIVE_ARCHIVE_MESSAGE,
+      liveNowEarly ? LIVE_NOW_HINT : LIVE_ARCHIVE_HINT,
     );
   }
   if (liveNowEarly || status === "LIVE_STREAM_OFFLINE") {
-    throw new AppError(
-      "VIDEO_LIVE",
-      "This live stream has not started yet, or has ended and is still processing.",
-      "No file exists until YouTube publishes the recording.",
-    );
+    throw new AppError("VIDEO_LIVE", LIVE_PENDING_MESSAGE, LIVE_PENDING_HINT);
   }
   if (status === "LOGIN_REQUIRED" || status === "UNPLAYABLE") {
     // A datacenter IP gets "Sign in to confirm you're not a bot" on ordinary
@@ -698,8 +707,8 @@ async function innertubePlayer(
       if (liveState === "live" || liveState === "archive") {
         throw new AppError(
           "VIDEO_LIVE",
-          "This YouTube video is live or a live recording — there is no downloadable MP4.",
-          "A normal upload or Short resolves as MP4.",
+          LIVE_CONTENT_MESSAGE,
+          LIVE_ARCHIVE_HINT,
         );
       }
       throw new AppError(
@@ -724,8 +733,8 @@ async function innertubePlayer(
       if (liveState === "live" || liveState === "archive") {
         throw new AppError(
           "VIDEO_LIVE",
-          "This YouTube video is live or a live recording — there is no downloadable MP4.",
-          "A normal upload or Short resolves as MP4.",
+          LIVE_CONTENT_MESSAGE,
+          LIVE_ARCHIVE_HINT,
         );
       }
       throw new AppError("VIDEO_NOT_FOUND", "That YouTube video wasn't found — it may be deleted or private.");
@@ -778,18 +787,10 @@ async function innertubePlayer(
     // "try another engine" here would send the visitor into a retry loop that
     // can never succeed.
     if (isLiveNow) {
-      throw new AppError(
-        "VIDEO_LIVE",
-        "This YouTube video is live right now — there is no MP4 until the broadcast ends.",
-        "Once YouTube finishes processing the recording, the same link downloads normally.",
-      );
+      throw new AppError("VIDEO_LIVE", LIVE_NOW_MESSAGE, LIVE_NOW_HINT);
     }
     if (wasLive) {
-      throw new AppError(
-        "VIDEO_LIVE",
-        "This is a live-stream recording. YouTube serves it only as a live/HLS stream, so there is no downloadable MP4.",
-        "A normal upload or Short resolves as MP4.",
-      );
+      throw new AppError("VIDEO_LIVE", LIVE_ARCHIVE_MESSAGE, LIVE_ARCHIVE_HINT);
     }
     throw new AppError(
       "PROVIDER_UNAVAILABLE",
@@ -933,7 +934,7 @@ async function pipedStreams(videoId: string, api: string): Promise<TierHit> {
   const data = asRecord(await response.json().catch(() => null));
   if (!data) throw new AppError("PROVIDER_UNAVAILABLE", "Resolving high-speed stream — mirror busy.");
   if (data.livestream === true) {
-    throw new AppError("UNSUPPORTED_URL", "Livestreams can't be downloaded — only published videos and Shorts.");
+    throw new AppError("VIDEO_LIVE", LIVE_NOW_MESSAGE, LIVE_NOW_HINT);
   }
   const video = pipedVideo(data.videoStreams);
   const sdList = Array.isArray(data.videoStreams) ? (data.videoStreams as PipedStream[]) : [];
@@ -1456,18 +1457,10 @@ async function resolveYouTubeStreams(
     // live recording may still be HLS-only. Those are answers, not outages.
     const live = await detectLiveState(id);
     if (live === "live") {
-      throw new AppError(
-        "VIDEO_LIVE",
-        "This YouTube video is live right now — there is no MP4 until the broadcast ends.",
-        "Once YouTube finishes processing the recording, the same link downloads normally.",
-      );
+      throw new AppError("VIDEO_LIVE", LIVE_NOW_MESSAGE, LIVE_NOW_HINT);
     }
     if (live === "archive") {
-      throw new AppError(
-        "VIDEO_LIVE",
-        "This is a live-stream recording. YouTube serves it only as a live/HLS stream, so there is no downloadable MP4.",
-        "A normal upload or Short resolves as MP4.",
-      );
+      throw new AppError("VIDEO_LIVE", LIVE_ARCHIVE_MESSAGE, LIVE_ARCHIVE_HINT);
     }
     // Every engine failed for a reason that is NOT the video (bot-checked
     // datacenter IP, mirror timeout). Surface one stable, user-safe message
