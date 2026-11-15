@@ -553,6 +553,11 @@ async function detectLiveState(videoId: string): Promise<"live" | "archive" | "v
       if (!html.includes("ytInitialPlayerResponse")) continue;
       const liveContent = /"isLiveContent":true/.test(html);
       if (!liveContent) {
+        // A real player response always names the video inside videoDetails; a
+        // consent/bot shell carries the script but not the details. Only a real
+        // one may answer "vod" — otherwise the page-data probe below still gets
+        // its say, which is how a live recording is recognised on such hosts.
+        if (!html.includes('"videoDetails"')) continue;
         const state = "vod" as const;
         liveStateCache.set(videoId, { state, expiresAt: Date.now() + 5 * 60_000 });
         return state;
