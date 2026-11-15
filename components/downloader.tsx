@@ -407,7 +407,9 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
   const [video, setVideo] = useState<VideoInfo | null>(null);
   const [media, setMedia] = useState<MediaPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
-  /** A YouTube provider block stays true for this video: retrying cannot help. */
+  /** Machine code of the last failure, so the field can tell a live stream
+   *  (no retry, no partner link) apart from a provider block. */
+  const [failureCode, setFailureCode] = useState<string | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [seed, setSeed] = useState({ value: initialUrl?.trim() ?? "", nonce: 0 });
@@ -967,6 +969,7 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
       lastFailureRef.current = { url, at: Date.now() };
       setStatus("idle");
       setBackupNote(null);
+      setFailureCode(apiError?.code ?? "UPSTREAM_ERROR");
       setError(message);
       // One inline recovery action is enough: a provider block used to add a
       // toast on every retry, producing the stacked red banners users saw.
@@ -1078,6 +1081,7 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
       lastFailureRef.current = { url, at: Date.now() };
       setStatus("idle");
       setBackupNote(null);
+      setFailureCode(timedOut ? "PROVIDER_UNAVAILABLE" : "UPSTREAM_ERROR");
       setError(message);
       notify({
         kind: "error",
@@ -1168,11 +1172,12 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
           seed={seed}
           busy={isLoading}
           error={error}
+          errorCode={failureCode}
           platform={platform}
           onSubmitUrl={handleGateSubmit}
-          // A provider block is final for this video: no retry button, so the
-          // visitor is not sent round the loop the message just described.
-          onRetry={retryLastResolve}
+          // A live stream has no file to retry for; every other failure gets the
+          // forced second pass through the engine waterfall.
+          onRetry={failureCode === "VIDEO_LIVE" ? undefined : retryLastResolve}
           onNotify={notify}
           copy={t}
         />

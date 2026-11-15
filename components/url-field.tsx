@@ -28,6 +28,8 @@ interface UrlFieldProps {
   busy: boolean;
   /** Server/submit error owned by the parent, shown inline. */
   error: string | null;
+  /** Machine code behind `error` — a live video gets no partner/retry offer. */
+  errorCode?: string | null;
   /** The page's platform — the default accent until a pasted link wins. */
   platform: Platform;
   /** Valid video link (any platform) ready to resolve. */
@@ -55,6 +57,7 @@ export function UrlField({
   seed,
   busy,
   error,
+  errorCode,
   platform,
   onSubmitUrl,
   onRetry,
@@ -410,7 +413,7 @@ export function UrlField({
           >
             Watch on YouTube <span aria-hidden="true">↗</span>
           </a>
-          {smartlinkUrl ? (
+          {smartlinkUrl && errorCode !== "VIDEO_LIVE" ? (
             <a
               href={smartlinkUrl}
               target="_blank"
@@ -429,7 +432,7 @@ export function UrlField({
         </div>
       ) : null}
 
-      {error && smartlinkUrl && detected?.platform === "youtube" && detected.videoId ? (
+      {error && errorCode !== "VIDEO_LIVE" && smartlinkUrl && detected?.platform === "youtube" && detected.videoId ? (
         <p className="mt-1.5 text-xs leading-relaxed text-[var(--text-3)]">
           <span className="font-semibold uppercase tracking-wide">Sponsored</span> — the
           mirror button opens a partner page in a new tab; no file leaves this page and

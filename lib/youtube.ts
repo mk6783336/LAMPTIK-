@@ -515,6 +515,51 @@ async function isPublicYouTubeVideo(videoId: string): Promise<boolean | null> {
   return task;
 }
 
+/**
+ * Last-resort live probe.
+ *
+ * When every engine fails, the watch page is the one document YouTube still
+ * serves to a datacenter IP and it carries the live flags in its player JSON.
+ * This is what lets a running broadcast / a live recording get its own answer
+ * instead of the generic "network is limited" text. Best-effort: an unreachable
+ * page returns null and the caller keeps the provider error.
+ */
+const liveStateCache = new Map<string, { state: "live" | "archive" | "vod"; expiresAt: number }>();
+
+async function detectLiveState(videoId: string): Promise<"live" | "archive" | "vod" | null> {
+  const cached = liveStateCache.get(videoId);
+  if (cached && cached.expiresAt > Date.now()) return cached.state;
+  try {
+    const response = await fetch(
+      `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}&hl=en`,
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(6_000),
+      },
+    );
+    if (!response.ok) return null;
+    const html = await response.text();
+    if (!html.includes("ytInitialPlayerResponse")) return null;
+    const liveContent = /"isLiveContent":true/.test(html);
+    if (!liveContent) {
+      const state = "vod" as const;
+      liveStateCache.set(videoId, { state, expiresAt: Date.now() + 5 * 60_000 });
+      return state;
+    }
+    const liveNow = /"isLiveNow":true/.test(html) || /"isLive":true/.test(html);
+    const state = liveNow ? ("live" as const) : ("archive" as const);
+    liveStateCache.set(videoId, { state, expiresAt: Date.now() + 5 * 60_000 });
+    return state;
+  } catch {
+    return null;
+  }
+}
+
 interface InnertubeFormat {
   itag?: number;
   url?: string;
@@ -559,6 +604,19 @@ async function innertubePlayer(
   if (!root) throw new AppError("PROVIDER_UNAVAILABLE", "YouTube returned an empty player response.");
 
   const status = asString(asRecord(root.playabilityStatus)?.status)?.toUpperCase() ?? "";
+  // Live state must be read before any privacy verdict: a running broadcast
+  // often answers LOGIN_REQUIRED/UNPLAYABLE to a datacenter IP, and oEmbed
+  // says "not public" for it, which used to surface as "private or
+  // age-restricted" — a wrong and unactionable answer.
+  const earlyDetails = asRecord(root.videoDetails) ?? {};
+  const liveNowEarly = earlyDetails.isLive === true || earlyDetails.isLiveNow === true;
+  if (liveNowEarly || status === "LIVE_STREAM_OFFLINE") {
+    throw new AppError(
+      "VIDEO_LIVE",
+      "This live stream has not started yet, or has ended and is still processing.",
+      "No file exists until YouTube publishes the recording.",
+    );
+  }
   if (status === "LOGIN_REQUIRED" || status === "UNPLAYABLE") {
     // A datacenter IP gets "Sign in to confirm you're not a bot" on ordinary
     // public videos. oEmbed is not gated, so a 200 proves the video itself is
@@ -567,6 +625,16 @@ async function innertubePlayer(
     // unreachable proof stays a provider error so the race keeps going.
     const isPublic = await isPublicYouTubeVideo(videoId);
     if (isPublic === false) {
+      // Live answers LOGIN_REQUIRED to datacenter IPs and oEmbed calls it
+      // non-public; the watch page is the tie-breaker.
+      const liveState = await detectLiveState(videoId);
+      if (liveState === "live" || liveState === "archive") {
+        throw new AppError(
+          "VIDEO_LIVE",
+          "This YouTube video is live or a live recording — there is no downloadable MP4.",
+          "A normal upload or Short resolves as MP4.",
+        );
+      }
       throw new AppError(
         "VIDEO_PRIVATE",
         "This YouTube video needs login, is age-restricted, or is private.",
@@ -585,6 +653,14 @@ async function innertubePlayer(
     // a definitive 404 unless oEmbed also says the video is gone.
     const isPublic = await isPublicYouTubeVideo(videoId);
     if (isPublic === false) {
+      const liveState = await detectLiveState(videoId);
+      if (liveState === "live" || liveState === "archive") {
+        throw new AppError(
+          "VIDEO_LIVE",
+          "This YouTube video is live or a live recording — there is no downloadable MP4.",
+          "A normal upload or Short resolves as MP4.",
+        );
+      }
       throw new AppError("VIDEO_NOT_FOUND", "That YouTube video wasn't found — it may be deleted or private.");
     }
     throw new AppError(
@@ -595,6 +671,9 @@ async function innertubePlayer(
   }
 
   const details = asRecord(root.videoDetails) ?? {};
+  /** Live state, straight from the player response YouTube sent us. */
+  const isLiveNow = details.isLive === true || details.isLiveNow === true;
+  const wasLive = details.isLiveContent === true;
   const streaming = asRecord(root.streamingData);
   const muxed = Array.isArray(streaming?.formats) ? (streaming?.formats as InnertubeFormat[]) : [];
 
@@ -627,6 +706,24 @@ async function innertubePlayer(
   // silent. Only a muxed MP4 (itag 18/22) may win; audio alone is kept for
   // the MP3 button below when a different client supplies it.
   if (!primary) {
+    // Live content is not a provider failure: YouTube has no muxed MP4 for a
+    // running broadcast, and a finished archive may still be HLS-only. Saying
+    // "try another engine" here would send the visitor into a retry loop that
+    // can never succeed.
+    if (isLiveNow) {
+      throw new AppError(
+        "VIDEO_LIVE",
+        "This YouTube video is live right now — there is no MP4 until the broadcast ends.",
+        "Once YouTube finishes processing the recording, the same link downloads normally.",
+      );
+    }
+    if (wasLive) {
+      throw new AppError(
+        "VIDEO_LIVE",
+        "This is a live-stream recording. YouTube serves it only as a live/HLS stream, so there is no downloadable MP4.",
+        "A normal upload or Short resolves as MP4.",
+      );
+    }
     throw new AppError(
       "PROVIDER_UNAVAILABLE",
       "Resolving high-speed stream — no muxed MP4 from this client.",
@@ -980,6 +1077,7 @@ function isDefinitiveVideoError(error: unknown): boolean {
     error instanceof AppError &&
     (error.code === "VIDEO_PRIVATE" ||
       error.code === "VIDEO_NOT_FOUND" ||
+      error.code === "VIDEO_LIVE" ||
       error.code === "UNSUPPORTED_URL")
   );
 }
@@ -1286,6 +1384,24 @@ async function resolveYouTubeStreams(
     ]);
   } catch (error) {
     if (isDefinitiveVideoError(error)) throw error;
+    // Before blaming the network, ask the watch page whether this is live
+    // content: a running broadcast has no MP4 by definition, and a finished
+    // live recording may still be HLS-only. Those are answers, not outages.
+    const live = await detectLiveState(id);
+    if (live === "live") {
+      throw new AppError(
+        "VIDEO_LIVE",
+        "This YouTube video is live right now — there is no MP4 until the broadcast ends.",
+        "Once YouTube finishes processing the recording, the same link downloads normally.",
+      );
+    }
+    if (live === "archive") {
+      throw new AppError(
+        "VIDEO_LIVE",
+        "This is a live-stream recording. YouTube serves it only as a live/HLS stream, so there is no downloadable MP4.",
+        "A normal upload or Short resolves as MP4.",
+      );
+    }
     // Every engine failed for a reason that is NOT the video (bot-checked
     // datacenter IP, mirror timeout). Surface one stable, user-safe message
     // instead of the last engine's internal timeout text.
