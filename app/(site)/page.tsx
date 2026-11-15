@@ -217,30 +217,40 @@ export default function HomePage() {
               <div className="min-w-0 lg:col-span-7">
                 <Downloader />
                 <CreatorToolkitBar className="mt-3" />
+
+                {/* The two URLs Search Console still reports as unknown to
+                    Google, linked in the first crawlable block under the tool
+                    instead of only through the sitemap. Real anchors, not
+                    decorative chips: they are the crawl path Googlebot takes
+                    on its next homepage visit. */}
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="micro text-xs text-[var(--text-3)]">More tools</span>
+                  <Link
+                    href="/facebook-video-downloader"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-1.5 text-xs font-medium text-[var(--text-2)] transition-colors duration-200 hover:text-[var(--text)]"
+                  >
+                    Facebook video, HD
+                    <Glyph name="arrow-up-right" className="size-3" />
+                  </Link>
+                  <Link
+                    href="/twitter-video-downloader"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--glass-border)] bg-[var(--glass-bg)] px-3 py-1.5 text-xs font-medium text-[var(--text-2)] transition-colors duration-200 hover:text-[var(--text)]"
+                  >
+                    X / Twitter video, up to 4K
+                    <Glyph name="arrow-up-right" className="size-3" />
+                  </Link>
+                </div>
               </div>
             </div>
 
-            {/* Internal links where the banner stack used to sit. These are the
-                pages with the highest RPM and the clearest intent — X video and
-                the three Tier-1 country pages — so the homepage passes its
-                authority to them instead of to an ad exchange. */}
+            {/* The two money pages now sit as pills directly under the tool;
+                this row keeps the apps hub and the three Tier-1 country pages
+                one hop from the homepage instead of an ad exchange. */}
             <nav
               aria-label="Popular pages"
               className="shell mt-8 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm sm:mt-10"
             >
               <span className="micro text-xs text-[var(--text-3)]">Popular</span>
-              <Link
-                href="/twitter-video-downloader"
-                className="text-[var(--text-2)] underline decoration-[var(--glass-border)] underline-offset-4 transition-colors hover:text-[var(--text)]"
-              >
-                X / Twitter video, up to 4K
-              </Link>
-              <Link
-                href="/facebook-video-downloader"
-                className="text-[var(--text-2)] underline decoration-[var(--glass-border)] underline-offset-4 transition-colors hover:text-[var(--text)]"
-              >
-                Facebook video, HD
-              </Link>
               <Link
                 href="/apps"
                 className="text-[var(--text-2)] underline decoration-[var(--glass-border)] underline-offset-4 transition-colors hover:text-[var(--text)]"

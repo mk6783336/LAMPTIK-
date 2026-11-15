@@ -289,7 +289,7 @@ export default function AppsPage() {
                     className="btn btn-primary h-11 flex-1 gap-2 px-5 text-sm font-semibold"
                   >
                     <Download className="size-4" />
-                    Download extension (.zip)
+                    Download Chrome Extension (.zip)
                   </a>
                   <Link
                     href="#extension-steps"

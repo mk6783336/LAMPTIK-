@@ -33,6 +33,7 @@
     "seo:radar:diff": "node scripts/seo-radar-diff.mjs",
     "seo:outreach": "node scripts/tier1-outreach-radar.mjs",
     "seo:submit": "node scripts/gsc-sitemaps.mjs",
+    "seo:backlinks": "node scripts/auto-backlinks.mjs",
     "seo:gsc": "node scripts/gsc-pages.mjs",
     "seo:scoreboard": "node scripts/seo-scoreboard.mjs",
     "seo:audit": "node scripts/seo-page-sweep.mjs",

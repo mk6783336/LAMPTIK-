@@ -45,7 +45,7 @@ declares the others as translations of the same topic:
 - Deutsch — https://www.lamptik.online/de
 - Français — https://www.lamptik.online/fr
 - Español — https://www.lamptik.online/es
-- Português — https://www.lamptik.online/pt
+- Português — https://www.lamptik.online/pt · Facebook: https://www.lamptik.online/pt/facebook-video-downloader
 
 ## Apps and one-click tools
 
