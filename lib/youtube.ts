@@ -565,6 +565,47 @@ async function detectLiveState(videoId: string): Promise<"live" | "archive" | "v
       // Try the next page shape.
     }
   }
+  // Both watch pages can be replaced by a consent/bot shell on a datacenter
+  // IP, but the page-data API behind them usually still answers. A finished
+  // broadcast dates itself "Streamed live on …"; a normal upload dates
+  // itself with its upload date, so this is a direct live-content signal.
+  try {
+    const response = await fetch(
+      "https://www.youtube.com/youtubei/v1/next?prettyPrint=false",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+          "Accept-Language": "en-US,en;q=0.9",
+        },
+        body: JSON.stringify({
+          context: {
+            client: {
+              clientName: "WEB",
+              clientVersion: "2.20240701.00.00",
+              hl: "en",
+              gl: "US",
+            },
+          },
+          videoId,
+        }),
+        cache: "no-store",
+        signal: AbortSignal.timeout(6_000),
+      },
+    );
+    if (response.ok) {
+      const raw = JSON.stringify(await response.json().catch(() => null));
+      if (/"dateText":\{"simpleText":"Streamed live/.test(raw)) {
+        const state = "archive" as const;
+        liveStateCache.set(videoId, { state, expiresAt: Date.now() + 5 * 60_000 });
+        return state;
+      }
+    }
+  } catch {
+    // No answer: the caller keeps the provider error.
+  }
   return null;
 }
 
