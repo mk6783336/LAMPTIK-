@@ -1,0 +1,122 @@
+name: Weekly backlinks
+
+# Wayback captures, IndexNow submissions and Search Console sitemap pings,
+# once a week, without a human in the loop.
+#
+# The job is deliberately report-only: a rate-limited archive.org or a rejected
+# IndexNow endpoint is a warning in the run summary, not a red build that sends
+# mail every Monday. The one thing it refuses to do is submit URLs for a site
+# that is not serving — a 402/5xx from the host means search engines would be
+# pointed at dead pages, so the sweep is skipped and told why.
+#
+# GSC needs the optional GSC_SERVICE_ACCOUNT_JSON secret (the same service
+# account scripts/gsc-check.mjs uses; GA4_SERVICE_ACCOUNT_JSON is accepted as a
+# fallback). Without it, IndexNow and Wayback still run and the sitemap step is
+# reported as skipped. See docs/google-search-console-setup.md.
+#
+# Run it by hand from Actions → Weekly backlinks → Run workflow, or locally with
+# `npm run seo:backlinks`.
+
+on:
+  schedule:
+    # Mondays 06:40 UTC, after the index check (06:00) and before the page audit
+    # (07:15), so one morning produces one coherent crawl picture.
+    - cron: "40 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never cancel a run halfway: archive.org captures and sitemap PUTs are
+# side effects, and a half-finished submission is harder to read than a late one.
+concurrency:
+  group: weekly-backlinks
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    name: Capture, submit and ping
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      # A paused deployment answers 402 DEPLOYMENT_DISABLED on every route.
+      # Submitting its sitemap would tell Bing and Google to crawl dead pages,
+      # so the run becomes a visible skip instead of a submission.
+      - name: Check the site is serving
+        id: site
+        shell: bash
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
+            https://www.lamptik.online/api/version || true)
+          echo "HTTP $code"
+          if [ "$code" = "200" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::lamptik.online answered $code — skipping discovery rather than submitting URLs for a site that is not serving."
+          fi
+
+      # The Search Console key is a file; GitHub stores it as JSON. A missing
+      # optional secret leaves the step green and the GSC section of the report
+      # says it was skipped.
+      - name: Restore the Search Console key
+        if: steps.site.outputs.ready == 'true'
+        shell: bash
+        env:
+          GSC_KEY: ${{ secrets.GSC_SERVICE_ACCOUNT_JSON }}
+          GA4_KEY: ${{ secrets.GA4_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -euo pipefail
+          key="${GSC_KEY:-$GA4_KEY}"
+          if [ -n "$key" ]; then
+            mkdir -p .scratch
+            umask 077
+            printf '%s' "$key" > .scratch/ga4-key.json
+            echo "GOOGLE_APPLICATION_CREDENTIALS=.scratch/ga4-key.json" >> "$GITHUB_ENV"
+            echo "Search Console service account restored."
+          else
+            echo "::notice::No GSC_SERVICE_ACCOUNT_JSON secret; sitemap pings will be skipped."
+          fi
+
+      # The script paces Wayback at 3s and reports each service separately.
+      # continue-on-error keeps a transient rejection from turning the weekly
+      # job red; the summary below carries the exact failure either way.
+      - name: Capture, submit and ping
+        id: backlinks
+        if: steps.site.outputs.ready == 'true'
+        continue-on-error: true
+        shell: bash
+        env:
+          BACKLINKS_PACING_MS: "3000"
+        run: |
+          set -o pipefail
+          npm run seo:backlinks 2>&1 | tee backlinks.log
+          status=${PIPESTATUS[0]}
+          echo "exit=$status" >> "$GITHUB_OUTPUT"
+          exit "$status"
+
+      - name: Report
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### Weekly backlinks"
+            echo
+            if [ "${{ steps.site.outputs.ready }}" != "true" ]; then
+              echo "Skipped: the site did not answer HTTP 200, so nothing was submitted."
+            elif [ -f backlinks.log ]; then
+              echo "The full run log is below; the script's summary names each service."
+              echo
+              echo '```'
+              tail -40 backlinks.log
+              echo '```'
+            else
+              echo "The sweep did not produce a log."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

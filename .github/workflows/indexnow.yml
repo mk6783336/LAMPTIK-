@@ -19,6 +19,10 @@ on:
       - "extension/**"
       - "scripts/bridge-*"
       - "**.md"
+      # A workflow change does not alter a page, and a push is not the place to
+      # discover that the host is paused: the weekly backlinks job has its own
+      # site guard and reports that condition.
+      - ".github/**"
   workflow_dispatch:
     inputs:
       all:
