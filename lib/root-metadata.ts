@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 
 import { googleSiteVerification } from "@/lib/ads";
 import { ahrefsSiteVerification } from "@/lib/analytics";
-import { monetagVerification } from "@/lib/monetization";
+import { clickaduVerification, monetagVerification } from "@/lib/monetization";
 import { siteConfig, siteUrl } from "@/lib/site";
 import { bingSiteVerification } from "@/lib/verification";
 
@@ -70,6 +70,9 @@ export const rootMetadata: Metadata = {
       // `other` key would replace this one and drop the Ahrefs tag.
       ...(bingSiteVerification ? { "msvalidate.01": bingSiteVerification } : {}),
       ...(monetagVerification ? { monetag: monetagVerification } : {}),
+      // Clickadu's domain proof. The same `other` map matters here too: a
+      // separate `other` key would replace this one and drop the other tags.
+      clckd: clickaduVerification,
     },
   },
 };

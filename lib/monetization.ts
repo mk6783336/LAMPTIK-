@@ -50,6 +50,13 @@ export const smartlinkUrl2 =
 /** Monetag domain-verification token, emitted as `<meta name="monetag">`. */
 export const monetagVerification = process.env.NEXT_PUBLIC_MONETAG_META?.trim() || null;
 
+/**
+ * Clickadu domain-verification token, emitted as `<meta name="clckd">` and
+ * mirrored by the static `/33b4809b6f63bc626ec5a187f0988bcf.html` file.
+ * Public by construction: it is served in every page's `<head>`.
+ */
+export const clickaduVerification = "33b4809b6f63bc626ec5a187f0988bcf";
+
 /** True when at least one Monetag surface is configured. */
 export const adsConfigured = Boolean(smartlinkUrl);
 
