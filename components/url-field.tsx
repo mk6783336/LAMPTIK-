@@ -15,6 +15,7 @@ import type { ToastItem } from "@/components/toast";
 import { PlatformIcon } from "@/components/platform-icons";
 import { cn } from "@/lib/cn";
 import { detectLink, extractLinkText, type DetectedLink } from "@/lib/detect";
+import { isTruncatedYouTubeId, YOUTUBE_TRUNCATED_ID_MESSAGE } from "@/lib/youtube-id";
 import { smartlinkUrl } from "@/lib/monetization";
 import { PLATFORMS, type Platform } from "@/lib/platforms";
 import { ENGLISH_DOWNLOADER_COPY, type DownloaderCopy } from "@/lib/i18n/ui";
@@ -95,6 +96,17 @@ export function UrlField({
     setLocalError(null);
   }, [seed]);
 
+  /** A short YouTube id is a typo, not a provider failure: answer before fetch. */
+  function warnTruncatedYouTube(): void {
+    setLocalError(YOUTUBE_TRUNCATED_ID_MESSAGE);
+    onNotify({
+      kind: "error",
+      title: "Incomplete YouTube link",
+      description: "Re-copy the link from YouTube's Share menu so the full 11-character id is included.",
+    });
+    inputRef.current?.focus();
+  }
+
   function submitLink(link: DetectedLink) {
     if (link.isPhoto) {
       setLocalError("Photo posts can’t be downloaded as video.");
@@ -112,6 +124,11 @@ export function UrlField({
   function handleFormSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
+
+    if (isTruncatedYouTubeId(input)) {
+      warnTruncatedYouTube();
+      return;
+    }
 
     const link = detectLink(input);
     if (!link) {
@@ -159,6 +176,8 @@ export function UrlField({
           description: `Fetching the clean ${PLATFORMS[link.platform].videoNoun} stream…`,
         });
         submitLink(link);
+      } else if (isTruncatedYouTubeId(text)) {
+        warnTruncatedYouTube();
       } else {
         onNotify({
           kind: "error",
@@ -233,6 +252,8 @@ export function UrlField({
         description: `Fetching the clean ${PLATFORMS[link.platform].videoNoun} stream…`,
       });
       submitLink(link);
+    } else if (isTruncatedYouTubeId(text)) {
+      warnTruncatedYouTube();
     }
   }
 

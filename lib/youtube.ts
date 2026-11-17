@@ -4,6 +4,13 @@ import { bridgeEndpoints } from "@/lib/bridge-urls";
 import { AppError } from "@/lib/errors";
 import { asRecord, asString, cleanCaption, DESKTOP_UA, toDuration } from "@/lib/http";
 import { runWaterfall, WATERFALL_TIMEOUT_MS } from "@/lib/load-balancer";
+import {
+  isTruncatedYouTubeId,
+  readYouTubeId,
+  YOUTUBE_ID_RE,
+  YOUTUBE_TRUNCATED_ID_HINT,
+  YOUTUBE_TRUNCATED_ID_MESSAGE,
+} from "@/lib/youtube-id";
 import { ytdlpExtract } from "@/lib/youtube-ytdlp";
 import { INVIDIOUS_DIRECT_HOSTS, isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
 
@@ -60,53 +67,16 @@ export interface ResolvedYouTube {
   streams: YouTubeStreams;
 }
 
-const YT_ID = /^[A-Za-z0-9_-]{11}$/;
-
-function hostIs(hostname: string, base: string): boolean {
-  const host = hostname.toLowerCase();
-  return host === base || host.endsWith(`.${base}`);
-}
-
 /** Accept watch / shorts / youtu.be / embed / live / music links. */
 export function parseYouTubeUrl(raw: string): { id: string; canonicalUrl: string } | null {
-  if (typeof raw !== "string") return null;
-  const input = raw.trim();
-  if (!input || input.length > 2_048) return null;
+  const candidate = readYouTubeId(raw);
+  if (!candidate?.hostMatched || !candidate.id || !YOUTUBE_ID_RE.test(candidate.id)) return null;
+  return { id: candidate.id, canonicalUrl: `https://www.youtube.com/watch?v=${candidate.id}` };
+}
 
-  const candidate = /^https?:\/\//i.test(input) ? input : `https://${input}`;
-  let url: URL;
-  try {
-    url = new URL(candidate);
-  } catch {
-    return null;
-  }
-  const host = url.hostname.toLowerCase();
-
-  let id: string | null = null;
-  if (hostIs(host, "youtu.be")) {
-    id = url.pathname.split("/").filter(Boolean)[0] ?? null;
-  } else if (
-    hostIs(host, "youtube.com") ||
-    hostIs(host, "youtube-nocookie.com") ||
-    hostIs(host, "music.youtube.com")
-  ) {
-    const path = url.pathname;
-    const param = url.searchParams.get("v");
-    if (param && YT_ID.test(param)) {
-      id = param;
-    } else {
-      const segments = path.split("/").filter(Boolean);
-      const head = segments[0]?.toLowerCase();
-      if ((head === "shorts" || head === "embed" || head === "live" || head === "v") && segments[1]) {
-        id = YT_ID.test(segments[1]) ? segments[1] : null;
-      }
-    }
-  } else {
-    return null;
-  }
-
-  if (!id || !YT_ID.test(id)) return null;
-  return { id, canonicalUrl: `https://www.youtube.com/watch?v=${id}` };
+/** The API gets the same explanation as the field when a paste is incomplete. */
+function truncatedYouTubeError(): AppError {
+  return new AppError("INVALID_URL", YOUTUBE_TRUNCATED_ID_MESSAGE, YOUTUBE_TRUNCATED_ID_HINT);
 }
 
 interface TierHit {
@@ -929,6 +899,9 @@ function pipedAudio(streams: unknown): string | null {
 async function pipedStreams(videoId: string, api: string): Promise<TierHit> {
   const response = await fetch(`${api}/streams/${videoId}`, {
     headers: { Accept: "application/json", "User-Agent": DESKTOP_UA },
+    // A mirror hanging must cost its own deadline, not the Netlify function.
+    cache: "no-store",
+    signal: AbortSignal.timeout(4_000),
   });
   if (!response.ok) throw new AppError("PROVIDER_UNAVAILABLE", "Resolving high-speed stream — mirror busy.");
   const data = asRecord(await response.json().catch(() => null));
@@ -963,7 +936,11 @@ async function pipedStreams(videoId: string, api: string): Promise<TierHit> {
 async function invidiousStreams(videoId: string, api: string): Promise<TierHit> {
   const response = await fetch(
     `${api}/api/v1/videos/${videoId}?fields=title,author,lengthSeconds,videoThumbnails,formatStreams`,
-    { headers: { Accept: "application/json", "User-Agent": DESKTOP_UA } },
+    {
+      headers: { Accept: "application/json", "User-Agent": DESKTOP_UA },
+      cache: "no-store",
+      signal: AbortSignal.timeout(4_000),
+    },
   );
   if (!response.ok) throw new AppError("PROVIDER_UNAVAILABLE", "Resolving high-speed stream — mirror busy.");
   const data = asRecord(await response.json().catch(() => null));
@@ -1482,6 +1459,7 @@ export async function startYouTubeResolution(
 ): Promise<ResolvedYouTubeStart> {
   const parsed = parseYouTubeUrl(rawUrl);
   if (!parsed) {
+    if (isTruncatedYouTubeId(rawUrl)) throw truncatedYouTubeError();
     throw new AppError(
       "UNSUPPORTED_URL",
       "That doesn't look like a YouTube video link.",
@@ -1540,6 +1518,7 @@ export async function startYouTubeResolution(
 export async function extractYouTube(rawUrl: string): Promise<ResolvedYouTube> {
   const parsed = parseYouTubeUrl(rawUrl);
   if (!parsed) {
+    if (isTruncatedYouTubeId(rawUrl)) throw truncatedYouTubeError();
     throw new AppError(
       "UNSUPPORTED_URL",
       "That doesn't look like a YouTube video link.",

@@ -879,7 +879,17 @@ export function Downloader({ platform = "tiktok", initialUrl, locale }: Download
     // URL from surrounding words instead of rejecting the paste.
     // (UrlField already submits a detected URL, but direct calls and quirky
     // clipboard text still land here.)
-    const { detectLink: detectIncoming } = await import("@/lib/detect");
+    const { detectLink: detectIncoming, extractLinkText: extractIncoming } = await import("@/lib/detect");
+    const { isTruncatedYouTubeId, YOUTUBE_TRUNCATED_ID_MESSAGE } = await import("@/lib/youtube-id");
+    // A truncated share link never reaches the API. This also covers the
+    // ?shared_url= hand-off, which bypasses UrlField's own submit guard.
+    if (isTruncatedYouTubeId(rawUrl) || isTruncatedYouTubeId(extractIncoming(rawUrl))) {
+      setStatus("idle");
+      setError(YOUTUBE_TRUNCATED_ID_MESSAGE);
+      setFailureCode("INVALID_URL");
+      inputRef.current?.focus();
+      return;
+    }
     const detectedIncoming = detectIncoming(rawUrl);
     const url = detectedIncoming ? detectedIncoming.url : rawUrl.trim();
 
