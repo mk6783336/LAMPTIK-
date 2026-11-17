@@ -46,6 +46,12 @@ export async function GET() {
           bridgeReachable: ytdlp?.bridge.reachable ?? null,
           bridges: ytdlp?.bridges ?? [],
           binaryAvailable: ytdlp?.binaryAvailable ?? null,
+          // Whether this runtime actually received the bridge's shared
+          // secret. A configured bridge that answers 401 while this reads
+          // false is a deployment-variable problem, not a network one.
+          // Length only: never the value, and never a hash of it.
+          bridgeSecretConfigured: Boolean(process.env.BRIDGE_SECRET),
+          bridgeSecretLength: process.env.BRIDGE_SECRET?.length ?? 0,
         },
       },
     },
