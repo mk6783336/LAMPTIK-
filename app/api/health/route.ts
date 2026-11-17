@@ -23,6 +23,10 @@ export const dynamic = "force-dynamic";
  *     is the expected, working state — not an outage.
  *   - `binaryAvailable: null` → the probe hasn't run on this isolate (Vercel
  *     short-circuits it); `false` after a resolve means it is absent.
+ *   - `bridgeSecretConfigured` → whether this runtime received
+ *     `BRIDGE_SECRET`. A bridge that answers 401 while `bridgeReachable` is
+ *     true reads `false` here, which means the deployment variable is
+ *     missing or empty — never a network fault.
  */
 export async function GET() {
   // The probe pings a third-party bridge; a probe failure must never make
