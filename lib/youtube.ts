@@ -31,9 +31,10 @@ import { INVIDIOUS_DIRECT_HOSTS, isKnownLoaderInterstitialUrl } from "@/lib/yout
  *
  * The old loader.to / OceanSaver converter was removed: it now answers an
  * HTML ad card instead of a job id, refuses datacenter IPs and forced every
- * download through a dead provider-access error. Cobalt is not used either —
- * public instances require per-owner JWTs. Nothing here ever buffers media
- * bytes; files stream through `/api/download` chunk-by-chunk.
+ * download through a dead provider-access error. Cobalt is supported only
+ * when an operator supplies a permitted instance (public instances require
+ * Turnstile/JWTs); nothing here ever buffers media bytes — files stream
+ * through `/api/download` chunk-by-chunk.
  */
 
 export interface YouTubeStreams {
@@ -256,6 +257,22 @@ const INNERTUBE_CLIENTS: [InnertubeClient, ...InnertubeClient[]] = [
     },
   },
   {
+    // The version that was originally proven from a datacenter IP. Kept as a
+    // separate client because YouTube gates client versions independently.
+    name: "youtube:innertube-android-legacy",
+    clientId: 3,
+    userAgent: ANDROID_UA,
+    context: {
+      clientName: "ANDROID",
+      clientVersion: "20.10.38",
+      androidSdkVersion: 30,
+      osName: "Android",
+      osVersion: "11",
+      hl: "en",
+      gl: "US",
+    },
+  },
+  {
     name: "youtube:innertube-visionos",
     clientId: 101,
     userAgent: SAFARI_UA,
@@ -314,6 +331,24 @@ const INNERTUBE_CLIENTS: [InnertubeClient, ...InnertubeClient[]] = [
       androidSdkVersion: 32,
       osName: "Android",
       osVersion: "12L",
+      hl: "en",
+      gl: "US",
+    },
+  },
+  {
+    // TVHTML5/ANDROID_TESTSUITE are the two clients most often tried for a
+    // datacenter IP. Keep TESTSUITE even though it currently refuses most
+    // videos: it costs one parallel request and can recover when YouTube
+    // changes the Android gate.
+    name: "youtube:innertube-android-testsuite",
+    clientId: 30,
+    userAgent: "com.google.android.youtube/1.9 (Linux; U; Android 11; en_US) gzip",
+    context: {
+      clientName: "ANDROID_TESTSUITE",
+      clientVersion: "1.9",
+      androidSdkVersion: 30,
+      osName: "Android",
+      osVersion: "11",
       hl: "en",
       gl: "US",
     },
@@ -636,12 +671,17 @@ async function innertubePlayer(
     }),
   });
   if (!response.ok) {
+    logEngineFailure(client.name, new AppError("PROVIDER_UNAVAILABLE", "player request failed"), response.status);
     throw new AppError("PROVIDER_UNAVAILABLE", "YouTube didn't answer the metadata request.");
   }
   const root = asRecord(await response.json().catch(() => null));
   if (!root) throw new AppError("PROVIDER_UNAVAILABLE", "YouTube returned an empty player response.");
 
   const status = asString(asRecord(root.playabilityStatus)?.status)?.toUpperCase() ?? "";
+  const statusReason = asString(asRecord(root.playabilityStatus)?.reason) ?? "";
+  if (status !== "OK") {
+    logEngineFailure(client.name, new Error(`${status || "NO_STATUS"}: ${statusReason}`), response.status);
+  }
   // Live state must be read before any privacy verdict: a running broadcast
   // often answers LOGIN_REQUIRED/UNPLAYABLE to a datacenter IP, and oEmbed
   // says "not public" for it, which used to surface as "private or
@@ -782,6 +822,152 @@ async function innertubePlayer(
   };
 }
 
+/* ------------------------------------------------------------------
+ * Tier 2b: the mobile watch page itself.
+ *
+ * The player API is the first thing YouTube bot-checks on a datacenter IP;
+ * the HTML watch page is a different edge path and often still carries a
+ * complete `ytInitialPlayerResponse`, including the muxed itag 18 URL. This
+ * runs as one more racer, not a blocking hop, so a login wall costs only its
+ * own deadline. It never turns a page refusal into a video verdict.
+ * ------------------------------------------------------------------ */
+
+function balancedJsonAt(text: string, start: number): string | null {
+  let depth = 0;
+  let quoted = false;
+  let escaped = false;
+  for (let i = start; i < text.length; i += 1) {
+    const ch = text[i];
+    if (quoted) {
+      if (escaped) escaped = false;
+      else if (ch === "\\") escaped = true;
+      else if (ch === '"') quoted = false;
+      continue;
+    }
+    if (ch === '"') quoted = true;
+    else if (ch === "{") depth += 1;
+    else if (ch === "}") {
+      depth -= 1;
+      if (depth === 0) return text.slice(start, i + 1);
+    }
+  }
+  return null;
+}
+
+function initialPlayerResponse(html: string): Record<string, unknown> | null {
+  for (const marker of ["ytInitialPlayerResponse =", '\"ytInitialPlayerResponse\":', "ytInitialPlayerResponse="]) {
+    const at = html.indexOf(marker);
+    if (at < 0) continue;
+    const brace = html.indexOf("{", at + marker.length);
+    if (brace < 0) continue;
+    const json = balancedJsonAt(html, brace);
+    if (!json) continue;
+    try {
+      return asRecord(JSON.parse(json));
+    } catch {
+      // A truncated/challenge page: try the next marker.
+    }
+  }
+  return null;
+}
+
+function watchPageHit(root: Record<string, unknown>, videoId: string): TierHit {
+  const status = asString(asRecord(root.playabilityStatus)?.status)?.toUpperCase() ?? "";
+  const details = asRecord(root.videoDetails) ?? {};
+  if (details.isLive === true || details.isLiveNow === true) {
+    throw new AppError("VIDEO_LIVE", LIVE_NOW_MESSAGE, LIVE_NOW_HINT);
+  }
+  if (status !== "OK") {
+    throw new AppError(
+      "PROVIDER_UNAVAILABLE",
+      `YouTube watch page refused playback (${status || "no status"}).`,
+    );
+  }
+  const streaming = asRecord(root.streamingData);
+  const formats = Array.isArray(streaming?.formats) ? (streaming.formats as InnertubeFormat[]) : [];
+  let sd: string | null = null;
+  let hd: string | null = null;
+  for (const format of formats) {
+    const url = typeof format.url === "string" && format.url.includes("googlevideo.com") ? format.url : null;
+    if (!url || !(format.mimeType ?? "").includes("video/mp4")) continue;
+    if (format.itag === 18 || format.qualityLabel === "360p") sd = sd ?? url;
+    else if (format.itag === 22 || format.qualityLabel === "720p") hd = hd ?? url;
+  }
+  // The acceptance target is the muxed 640x360 file; use 720p only when the
+  // page did not expose itag 18.
+  const video = sd ?? hd;
+  if (!video) {
+    throw new AppError("PROVIDER_UNAVAILABLE", "YouTube watch page exposed no muxed MP4.");
+  }
+  const thumbArray = asRecord(details.thumbnail);
+  const thumbs = Array.isArray(thumbArray?.thumbnails) ? thumbArray.thumbnails : [];
+  const thumb =
+    (thumbs as Array<{ url?: unknown }>).reduce<string | null>(
+      (best, entry) => (typeof entry.url === "string" && entry.url ? entry.url : best),
+      null,
+    ) ?? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+  return {
+    id: videoId,
+    title: cleanCaption(asString(details.title) ?? `YouTube video ${videoId}`, 200),
+    author: asString(details.author) ?? "YouTube",
+    duration: toDuration(details.lengthSeconds),
+    thumbnail: thumb,
+    streams: { video, videoSd: null, audio: null },
+  };
+}
+
+async function watchPageStreams(videoId: string): Promise<TierHit> {
+  const pages = [
+    {
+      name: "youtube:watch-mobile",
+      url: `https://m.youtube.com/watch?v=${encodeURIComponent(videoId)}&hl=en&gl=US`,
+      userAgent:
+        "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Mobile Safari/537.36",
+    },
+    {
+      name: "youtube:watch-desktop",
+      url: `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}&hl=en&gl=US&bpctr=9999999999&has_verified=1`,
+      userAgent: DESKTOP_UA,
+    },
+  ];
+  const attempts = pages.map(async (page) => {
+    try {
+      const response = await fetch(page.url, {
+        headers: {
+          "User-Agent": page.userAgent,
+          Accept: "text/html,application/xhtml+xml",
+          "Accept-Language": "en-US,en;q=0.9",
+          Cookie: "CONSENT=YES+1",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(EXTERNAL_TIMEOUT_MS),
+      });
+      if (!response.ok) {
+        logEngineFailure(page.name, new AppError("PROVIDER_UNAVAILABLE", "watch page request failed"), response.status);
+        throw new AppError("PROVIDER_UNAVAILABLE", `YouTube watch page answered ${response.status}.`);
+      }
+      const html = await response.text();
+      const root = initialPlayerResponse(html);
+      if (!root) {
+        logEngineFailure(page.name, new AppError("PROVIDER_UNAVAILABLE", "no player payload on page"));
+        throw new AppError("PROVIDER_UNAVAILABLE", "YouTube watch page carried no player payload.");
+      }
+      const hit = watchPageHit(root, videoId);
+      return hit;
+    } catch (error) {
+      if (!(error instanceof AppError) || error.code === "PROVIDER_UNAVAILABLE") {
+        logEngineFailure(page.name, error);
+      }
+      throw error;
+    }
+  });
+  try {
+    return await Promise.any(attempts);
+  } catch {
+    throw new AppError("PROVIDER_UNAVAILABLE", "Both YouTube watch pages refused playback.");
+  }
+}
+
 /* ------------------------------------------------------------------ Tier 3 */
 
 /**
@@ -811,7 +997,28 @@ function mirrorList(name: string, defaults: readonly string[]): string[] {
 const PIPED_APIS = mirrorList("YT_PIPED_APIS", [
   "https://api.piped.private.coffee",
   "https://pipedapi.ducks.party",
+  "https://pipedapi.kavin.rocks",
 ]);
+
+/**
+ * Cobalt is optional, not a default. Every public instance listed by
+ * cobalt.directory currently answers `error.api.auth.jwt.missing` unless the
+ * caller has solved Turnstile; hard-coding those hosts would only spend a
+ * dead 8-second racer on every video. An operator who runs (or has permission
+ * to use) an instance can opt in with COBALT_API_URL or YT_COBALT_APIS,
+ * comma-separated for failover, plus COBALT_API_KEY when required.
+ */
+function cobaltApis(): string[] {
+  const raw = [process.env.COBALT_API_URL, process.env.YT_COBALT_APIS]
+    .filter((value): value is string => Boolean(value))
+    .join(",");
+  return raw
+    .split(/[\s,]+/)
+    .map((entry) => entry.trim().replace(/\/+$/, ""))
+    .filter((entry) => /^https:\/\/[^\s]{4,2048}$/.test(entry));
+}
+
+const COBALT_APIS = cobaltApis();
 
 const INVIDIOUS_APIS = mirrorList("YT_INVIDIOUS_APIS", [
   "https://inv.nadeko.net",
@@ -901,9 +1108,12 @@ async function pipedStreams(videoId: string, api: string): Promise<TierHit> {
     headers: { Accept: "application/json", "User-Agent": DESKTOP_UA },
     // A mirror hanging must cost its own deadline, not the Netlify function.
     cache: "no-store",
-    signal: AbortSignal.timeout(4_000),
+    signal: AbortSignal.timeout(EXTERNAL_TIMEOUT_MS),
   });
-  if (!response.ok) throw new AppError("PROVIDER_UNAVAILABLE", "Resolving high-speed stream — mirror busy.");
+  if (!response.ok) {
+    logEngineFailure(`youtube:piped:${new URL(api).hostname}`, new AppError("PROVIDER_UNAVAILABLE", "stream request failed"), response.status);
+    throw new AppError("PROVIDER_UNAVAILABLE", "Resolving high-speed stream — mirror busy.");
+  }
   const data = asRecord(await response.json().catch(() => null));
   if (!data) throw new AppError("PROVIDER_UNAVAILABLE", "Resolving high-speed stream — mirror busy.");
   if (data.livestream === true) {
@@ -939,10 +1149,13 @@ async function invidiousStreams(videoId: string, api: string): Promise<TierHit> 
     {
       headers: { Accept: "application/json", "User-Agent": DESKTOP_UA },
       cache: "no-store",
-      signal: AbortSignal.timeout(4_000),
+      signal: AbortSignal.timeout(EXTERNAL_TIMEOUT_MS),
     },
   );
-  if (!response.ok) throw new AppError("PROVIDER_UNAVAILABLE", "Resolving high-speed stream — mirror busy.");
+  if (!response.ok) {
+    logEngineFailure(`youtube:invidious:${new URL(api).hostname}`, new AppError("PROVIDER_UNAVAILABLE", "stream request failed"), response.status);
+    throw new AppError("PROVIDER_UNAVAILABLE", "Resolving high-speed stream — mirror busy.");
+  }
   const data = asRecord(await response.json().catch(() => null));
   if (!data) throw new AppError("PROVIDER_UNAVAILABLE", "Resolving high-speed stream — mirror busy.");
   const formats = Array.isArray(data.formatStreams) ? data.formatStreams : [];
@@ -981,6 +1194,66 @@ async function invidiousStreams(videoId: string, api: string): Promise<TierHit> 
  * request must return MP4/WebM bytes, not the Cloudflare/HTML page that dead
  * mirrors answer with.
  */
+async function cobaltResolve(videoId: string, canonicalUrl: string): Promise<TierHit> {
+  if (COBALT_APIS.length === 0) {
+    throw new AppError("PROVIDER_UNAVAILABLE", "No permitted Cobalt instance is configured.");
+  }
+  const attempts = COBALT_APIS.map(async (api) => {
+    const headers: Record<string, string> = {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "User-Agent": DESKTOP_UA,
+    };
+    const key = process.env.COBALT_API_KEY?.trim();
+    if (key) headers.Authorization = `Api-Key ${key}`;
+    try {
+      const response = await fetch(api, {
+        method: "POST",
+        headers,
+        cache: "no-store",
+        signal: AbortSignal.timeout(EXTERNAL_TIMEOUT_MS),
+        body: JSON.stringify({
+          url: canonicalUrl,
+          videoQuality: "360",
+          youtubeVideoCodec: "h264",
+          filenameStyle: "basic",
+        }),
+      });
+      const data = asRecord(await response.json().catch(() => null));
+      if (!response.ok) {
+        const code = asString(asRecord(data?.error)?.code) ?? "request failed";
+        logEngineFailure(`youtube:cobalt:${new URL(api).hostname}`, new Error(code), response.status);
+        throw new AppError("PROVIDER_UNAVAILABLE", `Cobalt answered ${response.status}: ${code}`);
+      }
+      const status = asString(data?.status);
+      const url = asString(data?.url);
+      if ((status === "tunnel" || status === "redirect") && url && /^https:\/\//.test(url)) {
+        return {
+          id: videoId,
+          title: `YouTube video ${videoId}`,
+          author: "YouTube",
+          duration: 0,
+          thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+          streams: { video: url, videoSd: null, audio: null },
+        } satisfies TierHit;
+      }
+      const code = asString(asRecord(data?.error)?.code) ?? status ?? "no stream";
+      logEngineFailure(`youtube:cobalt:${new URL(api).hostname}`, new Error(code), response.status);
+      throw new AppError("PROVIDER_UNAVAILABLE", `Cobalt exposed no stream (${code}).`);
+    } catch (error) {
+      if (!(error instanceof AppError)) {
+        logEngineFailure(`youtube:cobalt:${new URL(api).hostname}`, error);
+      }
+      throw error;
+    }
+  });
+  try {
+    return await Promise.any(attempts);
+  } catch {
+    throw new AppError("PROVIDER_UNAVAILABLE", "Every permitted Cobalt instance failed.");
+  }
+}
+
 async function invidiousDirectStream(videoId: string, canonicalUrl: string): Promise<TierHit> {
   const candidates = await Promise.all(
     INVIDIOUS_DIRECT_HOSTS.map(async (host) => {
@@ -994,7 +1267,7 @@ async function invidiousDirectStream(videoId: string, canonicalUrl: string): Pro
           },
           redirect: "follow",
           cache: "no-store",
-          signal: AbortSignal.timeout(4_500),
+          signal: AbortSignal.timeout(EXTERNAL_TIMEOUT_MS),
         });
         if (!response.ok) {
           await response.body?.cancel().catch(() => undefined);
@@ -1105,12 +1378,35 @@ async function oembedMeta(videoId: string, canonicalUrl: string): Promise<TierHi
 }
 
 /** Hard wall-clock bound around a provider that manages its own polling. */
+function logEngineFailure(engine: string, error: unknown, status?: number): void {
+  const detail =
+    error instanceof AppError
+      ? `${error.code}: ${error.message}`
+      : error instanceof Error
+        ? error.message
+        : String(error);
+  const line = `[youtube-resolve] engine=${engine}${status === undefined ? "" : ` status=${status}`} ${detail.replace(/\s+/g, " ").slice(0, 240)}`;
+  // These lines are the Netlify function log's diagnosis trail: engine name,
+  // real HTTP status, and the reason that racer lost.
+  console.error(line);
+}
+
+function traced<T>(engine: string, task: Promise<T>): Promise<T> {
+  return task.catch((error) => {
+    logEngineFailure(engine, error);
+    throw error;
+  });
+}
+
+/** Hard wall-clock bound around a provider that manages its own polling. */
 function withDeadline<T>(promise: Promise<T>, timeoutMs: number, name: string): Promise<T> {
   return Promise.race([
     promise,
     new Promise<never>((_resolve, reject) => {
       setTimeout(() => {
-        reject(new AppError("PROVIDER_UNAVAILABLE", `${name} timed out after ${timeoutMs}ms.`));
+        const error = new AppError("PROVIDER_UNAVAILABLE", `${name} timed out after ${timeoutMs}ms.`);
+        logEngineFailure(name, error);
+        reject(error);
       }, timeoutMs);
     }),
   ]);
@@ -1337,7 +1633,10 @@ async function withBridgeAudio(
 // mid-extraction and reported PROVIDER_UNAVAILABLE for videos it then resolved
 // fine on a second attempt. 16 s fits just under the bridge's own 15 s ceiling,
 // so a genuinely unavailable video still fails inside the 60 s function.
-const RESOLVE_BUDGET_MS = 16_000;
+const RESOLVE_BUDGET_MS = 30_000;
+
+/** Every mirror / player hop gets a bounded 8s external call on Netlify. */
+const EXTERNAL_TIMEOUT_MS = 8_000;
 
 /**
  * Tier 1 — ANDROID Innertube. This is the engine that actually works from a
@@ -1359,9 +1658,11 @@ async function resolveYouTubeStreams(
   // demand a login. A client missing from the priority list still runs, at the
   // end, so adding one to the table can never silently drop it.
   const FAILOVER_ORDER = [
-    "youtube:innertube-ios",
     "youtube:innertube-tv-samsung",
+    "youtube:innertube-android-testsuite",
     "youtube:innertube-android-vr",
+    "youtube:innertube-android-legacy",
+    "youtube:innertube-ios",
     "youtube:innertube-visionos",
     "youtube:innertube-web-embedded",
     "youtube:innertube-tv-embedded",
@@ -1375,7 +1676,10 @@ async function resolveYouTubeStreams(
 
   try {
     const primary = requireStreams(
-      await withDeadline(innertubePlayer(id, android), PRIMARY_BUDGET_MS, android.name),
+      await traced(
+        android.name,
+        withDeadline(innertubePlayer(id, android), PRIMARY_BUDGET_MS, android.name),
+      ),
     );
     return await withBridgeAudio(primary, canonicalUrl, RESOLVE_BUDGET_MS - (Date.now() - startedAt));
   } catch (error) {
@@ -1388,25 +1692,65 @@ async function resolveYouTubeStreams(
   // old 8 s inner deadline that the race always cut short anyway.
   const failoverBudget = Math.max(1_800, RESOLVE_BUDGET_MS - (Date.now() - startedAt));
 
+  // Every external hop is bounded independently. The order below is the
+  // preferred rescue order: permitted Cobalt → Piped → watch-page HTML →
+  // Innertube spoofs → ytdl-core → yt-dlp bridge → Invidious. They race in
+  // parallel, so a dead mirror can never delay the winner.
   const chains: Array<Promise<TierHit>> = [
-    ...fallbacks.map((client) =>
-      withDeadline(innertubePlayer(id, client), WATERFALL_TIMEOUT_MS, client.name),
-    ),
-    withDeadline(ytdlCoreResolve(id, canonicalUrl), WATERFALL_TIMEOUT_MS, "youtube:ytdl-core"),
-    withDeadline(ytdlpAndroidResolve(id, canonicalUrl), failoverBudget, "youtube:ytdlp-android"),
-    ...INVIDIOUS_APIS.map((api) =>
-      withDeadline(
-        invidiousStreams(id, api),
-        WATERFALL_TIMEOUT_MS,
-        `youtube:invidious:${new URL(api).hostname}`,
+    ...(COBALT_APIS.length > 0
+      ? [
+          traced(
+            "youtube:cobalt",
+            withDeadline(cobaltResolve(id, canonicalUrl), EXTERNAL_TIMEOUT_MS, "youtube:cobalt"),
+          ),
+        ]
+      : []),
+    ...PIPED_APIS.map((api) =>
+      traced(
+        `youtube:piped:${new URL(api).hostname}`,
+        withDeadline(
+          pipedStreams(id, api),
+          EXTERNAL_TIMEOUT_MS,
+          `youtube:piped:${new URL(api).hostname}`,
+        ),
       ),
     ),
-    ...PIPED_APIS.map((api) =>
-      withDeadline(pipedStreams(id, api), WATERFALL_TIMEOUT_MS, `youtube:piped:${new URL(api).hostname}`),
+    traced(
+      "youtube:watch-page",
+      withDeadline(watchPageStreams(id), EXTERNAL_TIMEOUT_MS, "youtube:watch-page"),
+    ),
+    ...fallbacks.map((client) =>
+      traced(
+        client.name,
+        withDeadline(innertubePlayer(id, client), EXTERNAL_TIMEOUT_MS, client.name),
+      ),
+    ),
+    traced(
+      "youtube:ytdl-core",
+      withDeadline(ytdlCoreResolve(id, canonicalUrl), EXTERNAL_TIMEOUT_MS, "youtube:ytdl-core"),
+    ),
+    // The bridge has its own 22s extraction ceiling; the outer budget must
+    // outwait it so a configured bridge is genuinely queried before giving up.
+    traced(
+      "youtube:ytdlp-android",
+      withDeadline(ytdlpAndroidResolve(id, canonicalUrl), failoverBudget, "youtube:ytdlp-android"),
+    ),
+    ...INVIDIOUS_APIS.map((api) =>
+      traced(
+        `youtube:invidious:${new URL(api).hostname}`,
+        withDeadline(
+          invidiousStreams(id, api),
+          EXTERNAL_TIMEOUT_MS,
+          `youtube:invidious:${new URL(api).hostname}`,
+        ),
+      ),
     ),
     // Sits IN the race, not after it: a dead mirror probe must never add its
     // timeout to a resolve that already ran out of function budget.
-    withDeadline(invidiousDirectStream(id, canonicalUrl), WATERFALL_TIMEOUT_MS, "youtube:invidious-direct"),
+    traced(
+      "youtube:invidious-direct",
+      withDeadline(invidiousDirectStream(id, canonicalUrl), EXTERNAL_TIMEOUT_MS, "youtube:invidious-direct"),
+    ),
   ];
 
   let hit: TierHit;
