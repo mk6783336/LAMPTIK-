@@ -97,7 +97,11 @@ export function ytdlpBridgeUrl(): string | null {
  * that can never work on that host).
  */
 function hostingBlocksBinary(): boolean {
-  return Boolean(process.env.VERCEL) || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME);
+  return (
+    Boolean(process.env.VERCEL) ||
+    Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME) ||
+    Boolean(process.env.NETLIFY)
+  );
 }
 
 /**

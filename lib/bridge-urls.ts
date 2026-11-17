@@ -7,6 +7,7 @@
  *
  *   YTDLP_BRIDGE_URL=https://bridge.lamptik.online,https://me-lamptik.hf.space
  *   YTDLP_BRIDGE_BACKUP_URL=https://me-lamptik.hf.space
+ *   BRIDGE_URL / YT_BRIDGE_URL are accepted aliases.
  *
  * The first entry is the primary (normally the residential PC behind a
  * tunnel); the rest are failover, tried in order. Kept free of Node imports so
@@ -30,6 +31,8 @@ export function bridgeEndpoints(): string[] {
     ...normalise(process.env.NEXT_PUBLIC_YTDLP_WORKER_URL),
     ...normalise(process.env.YTDLP_BRIDGE_URL),
     ...normalise(process.env.YTDLP_BRIDGE_BACKUP_URL),
+    ...normalise(process.env.YT_BRIDGE_URL),
+    ...normalise(process.env.BRIDGE_URL),
   ];
 
   const unique: string[] = [];
