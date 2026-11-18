@@ -108,10 +108,11 @@ export function RootDocument({
             symbols already parsed. */}
         <GlyphSprite />
         {children}
-        {/* Monetag MultiTag (zone 312113, quge5.com), after hydration via
-            `next/script` — never during the LCP window. One script per
-            document; the tag registers the Web Push worker served from
-            `/sw.js` (zone 12293328). */}
+        {/* Monetag MultiTag (zone 312113, quge5.com): the official async tag,
+            rendered server-side so it is in the served HTML instead of being
+            injected after hydration. One script per document; the tag
+            registers the Web Push worker served from `/sw.js` (zone
+            12293328). */}
         <MonetagScripts />
         {/* Dismissible partner bar. In flow at the bottom of the document, not
             over a control: it is one 9px-radius strip, remembers a dismissal

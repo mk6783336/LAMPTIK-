@@ -15,9 +15,10 @@
  *
  * Current stack (2026-11-18): one Monetag MultiTag zone (312113) served from
  * quge5.com, the Web Push service worker at `/sw.js` (zone 12293328), and the
- * Direct Link/Smartlink below. The tag loads with `next/script` at
- * `afterInteractive`, so it never competes with the document for the LCP
- * window, and it is the only third-party ad script the document requests.
+ * Direct Link/Smartlink below. The tag is the official async `<script>` in
+ * `components/ads/monetag.tsx`, rendered server-side so it is present in the
+ * served HTML instead of appearing only after hydration, and it is the only
+ * third-party ad script the document requests.
  *
  * Design rules (non-negotiable):
  *   1. The download is never delayed by an ad. The Smartlink opens alongside
