@@ -793,9 +793,12 @@ async function listAppRoutes() {
  * HilltopAds' popunder both hijack the page. Comments are stripped before the
  * scan so history can still be explained in prose without tripping the guard.
  *
- * Monetag is the one allowed network, and its In-Page Push loader
- * `https://nap5k.com/tag.min.js` is therefore NOT on this list — blocking that
- * domain removes the visual ad supply, not a bad actor.
+ * Monetag is the one allowed network, and its MultiTag loader
+ * `https://quge5.com/88/tag.min.js` is therefore NOT on this list — blocking
+ * that domain removes the visual ad supply, not a bad actor.
+ *
+ * Clickadu was removed on purpose (its meta tag and verification file are
+ * gone); the token is listed so neither can be reintroduced unnoticed.
  */
 const BANNED_AD_STRINGS = [
   "bellnewyork.org",
@@ -803,6 +806,8 @@ const BANNED_AD_STRINGS = [
   "idealistic-revenue.com",
   "adsterra",
   "hilltopads",
+  "clickadu",
+  "clckd",
 ];
 
 async function checkBannedAds() {

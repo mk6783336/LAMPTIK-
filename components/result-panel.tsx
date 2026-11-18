@@ -278,10 +278,11 @@ export function ResultPanel({
    *    starts at ~0s. Downloads never wait for a timer again.
    * 2. The panel becomes the 10-second post-download sponsor theater.
    *
-   * Clicking Download produces exactly one thing: the media file. No
-   * Direct Link tab, no pop-under — a download button that also opens an
-   * unrelated tab is what made trust scanners and users read the site as
-   * adware.
+   * The download click is the intentional signal: the file hand-off is
+   * dispatched first, then the capped Smartlink may open alongside it. No
+   * pop-under, no timer, and no second tab beyond the 90-second rate limit —
+   * a download button that fires a tab on every tap is what made trust
+   * scanners and users read the site as adware.
    */
   function startDownload(
     kind: string,

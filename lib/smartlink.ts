@@ -5,7 +5,15 @@ import {
   SMARTLINK_WINDOW_MS,
   smartlinkUrl,
   smartlinkUrl2,
+  smartlinkUrl3,
 } from "@/lib/monetization";
+
+/**
+ * Rotation order: the high-CPM primary (12078941), then the two secondary
+ * zones. Empty entries are dropped so an unset env override cannot leave a
+ * dead link in the rotation.
+ */
+const ROTATION = [smartlinkUrl, smartlinkUrl2, smartlinkUrl3].filter(Boolean);
 
 /**
  * Client-side frequency cap for the click-triggered Monetag Smartlink.
@@ -44,20 +52,21 @@ function writeStamps(stamps: number[]): void {
 }
 
 /**
- * Which Smartlink the next automatic trigger uses.
+ * Which Smartlink the next trigger uses.
  *
- * Both account links earn the same event; alternating them keeps a single
- * zone's frequency from being hit by the same browser. Returns primary when
- * the second link is unset.
+ * Round-robin, starting with the high-CPM primary. Rotating across three zones
+ * keeps a single zone's frequency from being hit by the same browser; with one
+ * link configured the primary is always returned.
  */
 export function nextSmartlinkUrl(now = Date.now()): string {
-  if (!smartlinkUrl2) return smartlinkUrl;
-  return readStamps(now).length % 2 === 0 ? smartlinkUrl : smartlinkUrl2;
+  if (ROTATION.length === 0) return smartlinkUrl;
+  const index = readStamps(now).length % ROTATION.length;
+  return ROTATION[index] ?? smartlinkUrl;
 }
 
 /** True when the visitor has not hit the 90-second or daily cap yet. */
 export function smartlinkAllowed(now = Date.now()): boolean {
-  if (typeof window === "undefined" || (!smartlinkUrl && !smartlinkUrl2)) return false;
+  if (typeof window === "undefined" || ROTATION.length === 0) return false;
   const stamps = readStamps(now);
   const inWindow = stamps.filter((stamp) => now - stamp < SMARTLINK_WINDOW_MS).length;
   return inWindow < SMARTLINK_MAX_PER_WINDOW && stamps.length < SMARTLINK_MAX_PER_DAY;

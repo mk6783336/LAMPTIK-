@@ -72,8 +72,8 @@ export function RootDocument({
             to our own font. */}
         {/* No `manifest.json` link and no install-prompt code: the PWA shell
             was retired when the real Chrome extension and Android app landed
-            (/apps). The one remaining service worker, `/sw.js`, is the ad
-            network's domain-verification worker — not a PWA stub. */}
+            (/apps). The one service worker, `/sw.js`, is Monetag's Web Push /
+            MultiTag worker — not a PWA stub. */}
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-title" content="LAMP TIK" />
         <link
@@ -108,10 +108,10 @@ export function RootDocument({
             symbols already parsed. */}
         <GlyphSprite />
         {children}
-        {/* Monetag In-Page Push, after first paint and after either 1.5s or the
-            first scroll/pointer move — never during the LCP window, and never
-            the vignette (a full-viewport interstitial this site's ad integrity
-            audit rejects). One script per document. */}
+        {/* Monetag MultiTag (zone 312113, quge5.com), after hydration via
+            `next/script` — never during the LCP window. One script per
+            document; the tag registers the Web Push worker served from
+            `/sw.js` (zone 12293328). */}
         <MonetagScripts />
         {/* Dismissible partner bar. In flow at the bottom of the document, not
             over a control: it is one 9px-radius strip, remembers a dismissal

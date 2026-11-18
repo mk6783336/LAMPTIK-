@@ -4,7 +4,7 @@ import type { NextConfig } from "next";
  * Ad-network Content-Security-Policy.
  *
  * Adsterra and Monetag rotate hundreds of real-time-bidding creative domains
- * (`bellnewyork.org`, `n6wxm.com`, `uplcm.com`, `3nbf4.com`, plus per-auction
+ * (`bellnewyork.org`, `n6wxm.com`, `uplcm.com`, `quge5.com`, `5gvci.com`, plus per-auction
  * CDNs) that cannot be enumerated ahead of time — a tight origin whitelist
  * silently kills live creatives in production. The page policy is therefore
  * deliberately permissive on the five ad-carrying directives (`https:` +
@@ -177,7 +177,7 @@ const nextConfig: NextConfig = {
         // download proxy's `no-store` and let a CDN cache signed media.
         // `sw.js` is excluded: a service worker inherits the CSP of the
         // response that served it, and Monetag's worker importScripts from
-        // 3nbf4.com. The page policy would block that import and the worker
+        // 5gvci.com. The page policy would block that import and the worker
         // would fail to install with a bare "evaluation failed" error.
         source: "/((?!api/|sw\\.js$).*)",
         headers: [
@@ -307,9 +307,9 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
           { key: "Service-Worker-Allowed", value: "/" },
           { key: "Content-Type", value: "application/javascript; charset=utf-8" },
-          // Worker-scoped policy: exactly what Monetag's bundle needs, and
-          // nothing inherited from the page (no 'unsafe-eval', no ad frames).
-          { key: "Content-Security-Policy", value: "script-src 'self' https://3nbf4.com" },
+          // Worker-scoped policy: exactly what Monetag's push worker needs,
+          // and nothing inherited from the page (no 'unsafe-eval', no frames).
+          { key: "Content-Security-Policy", value: "script-src 'self' https://5gvci.com" },
         ],
       },
       {
