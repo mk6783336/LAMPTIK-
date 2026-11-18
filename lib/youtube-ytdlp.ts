@@ -90,6 +90,74 @@ export function ytdlpBridgeUrl(): string | null {
   return primaryBridgeUrl();
 }
 
+/* ------------------------------------------------------------------ */
+/* Bridge health — one cheap probe, shared by every resolve             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The bridge is the strongest engine and also the only one that can be
+ * asleep (a home PC behind a quick tunnel). Asking it blind made every miss
+ * pay its extraction deadline, and made a successful Innertube resolve pay an
+ * audio-enrichment window it could never fill. Reachability is therefore
+ * probed once and cached per isolate.
+ *
+ * `/health` is the endpoint `scripts/bridge-tunnel.mjs` already requires, and
+ * it answers booleans in milliseconds. Any HTTP answer below 500 proves the
+ * tunnel is routing — a bridge refusing with 401/404 is still awake — while a
+ * Cloudflare cold-tunnel status means nothing is behind the hostname.
+ */
+const BRIDGE_HEALTH_TIMEOUT_MS = 1_500;
+const BRIDGE_HEALTH_TTL_MS = 45_000;
+const BRIDGE_COLD_STATUS = new Set([502, 503, 504, 520, 521, 522, 523, 524, 530]);
+
+let bridgeHealth: { base: string; healthy: boolean; expiresAt: number } | null = null;
+let bridgeHealthInFlight: Promise<boolean> | null = null;
+
+async function probeBridge(base: string): Promise<boolean> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), BRIDGE_HEALTH_TIMEOUT_MS);
+  try {
+    const response = await fetch(`${base.replace(/\/+$/, "")}/health`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    await response.body?.cancel().catch(() => undefined);
+    return !BRIDGE_COLD_STATUS.has(response.status);
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Is the configured bridge reachable right now? Cached for 45 s and
+ * single-flight, so a burst of resolves pays for at most one probe, and a
+ * sleeping tunnel is known to be asleep before any engine spends a timeout
+ * on it.
+ */
+export async function bridgeHealthy(): Promise<boolean> {
+  const base = primaryBridgeUrl();
+  if (!base) return false;
+  const now = Date.now();
+  if (bridgeHealth && bridgeHealth.base === base && bridgeHealth.expiresAt > now) {
+    return bridgeHealth.healthy;
+  }
+  if (!bridgeHealthInFlight) {
+    bridgeHealthInFlight = probeBridge(base)
+      .then((healthy) => {
+        bridgeHealth = { base, healthy, expiresAt: Date.now() + BRIDGE_HEALTH_TTL_MS };
+        return healthy;
+      })
+      .finally(() => {
+        bridgeHealthInFlight = null;
+      });
+  }
+  return bridgeHealthInFlight;
+}
+
 /**
  * Vercel's serverless runtime ships no Python and no yt-dlp executable. The
  * probe therefore short-circuits there instead of paying an ENOENT spawn on

@@ -2,6 +2,8 @@
 
 import { ArrowRight, ClipboardPaste, Link2, Loader2, X, Zap } from "lucide-react";
 import {
+  startTransition,
+  useDeferredValue,
   useEffect,
   useMemo,
   useRef,
@@ -44,14 +46,39 @@ interface UrlFieldProps {
 }
 
 /**
+ * A paste can carry a whole share sheet, a tracking wrapper, or the contents
+ * of a 200 KB document. Detection is a set of regexes over every character of
+ * the value, so a hostile or merely huge clipboard is clipped to a URL-sized
+ * window BEFORE it reaches the parser — the difference between a one-frame
+ * paste and a frozen field on a mid-range phone.
+ */
+const MAX_PASTED_CHARS = 4_096;
+
+function clipPastedText(text: string): string {
+  const trimmed = text.trim();
+  return trimmed.length > MAX_PASTED_CHARS ? trimmed.slice(0, MAX_PASTED_CHARS) : trimmed;
+}
+
+/**
  * The URL input is intentionally isolated from the rest of the downloader:
  * typing or pasting only re-renders this small component — never the whole
  * page, the result panel, or the toast stack. Keystroke latency stays at one
  * frame on mobile.
  *
- * Multi-platform: detection runs live against TikTok / Instagram / Facebook
- * shapes. A link from ANY platform is greeted (badge + accent shift), never
- * rejected — /api/fetch resolves all three.
+ * Three rules keep that promise on a slow phone:
+ *   1. The controlled `input` value stays an URGENT update, so the caret and
+ *      the painted character never wait behind a derivation.
+ *   2. Detection reads a `useDeferredValue` copy of the value. That is React's
+ *      own debounce lane: the keystroke or paste paints first, the badge /
+ *      accent / platform validation follows in a low-priority render, and a
+ *      long URL cannot stretch the input's frame.
+ *   3. Paste commits and the resolve they trigger run inside `startTransition`,
+ *      so the field shows the pasted link before the panel re-renders into its
+ *      loading state. Nothing about a paste blocks the gesture that made it.
+ *
+ * Multi-platform: detection runs against TikTok / Instagram / Facebook /
+ * YouTube shapes. A link from ANY platform is greeted (badge + accent shift),
+ * never rejected — /api/fetch resolves all of them.
  */
 export function UrlField({
   inputRef,
@@ -74,8 +101,14 @@ export function UrlField({
   const [isHydrated, setIsHydrated] = useState(false);
 
 
-  /** Live detection: null until the text contains a supported video link. */
-  const detected = useMemo(() => detectLink(input), [input]);
+  /**
+   * Live detection, one render behind the field: null until the deferred text
+   * contains a supported video link. Submit still validates the LIVE value
+   * (`detectLink(input)` in the handlers below), so deferring can never make a
+   * bad link look good — it only keeps the keystroke off the critical path.
+   */
+  const deferredInput = useDeferredValue(input);
+  const detected = useMemo(() => detectLink(deferredInput), [deferredInput]);
   /** Accent priority: detected platform > page platform. */
   const accent = detected?.platform ?? platform;
   const accentConfig = PLATFORMS[accent];
@@ -163,20 +196,26 @@ export function UrlField({
         return;
       }
 
-      const link = detectLink(text);
-      const value = extractLinkText(text);
-      setInput(value);
-      setLocalError(null);
+      const pasted = clipPastedText(text);
+      const link = detectLink(pasted);
+      const value = extractLinkText(pasted);
+      // Paint the pasted link first, then let the resolve re-render the panel.
+      startTransition(() => {
+        setInput(value);
+        setLocalError(null);
+      });
       inputRef.current?.focus();
 
       if (link) {
-        onNotify({
-          kind: "success",
-          title: "Link pasted",
-          description: `Fetching the clean ${PLATFORMS[link.platform].videoNoun} stream…`,
+        startTransition(() => {
+          onNotify({
+            kind: "success",
+            title: "Link pasted",
+            description: `Fetching the clean ${PLATFORMS[link.platform].videoNoun} stream…`,
+          });
+          submitLink(link);
         });
-        submitLink(link);
-      } else if (isTruncatedYouTubeId(text)) {
+      } else if (isTruncatedYouTubeId(pasted)) {
         warnTruncatedYouTube();
       } else {
         onNotify({
@@ -217,17 +256,20 @@ export function UrlField({
       const text = await navigator.clipboard.readText();
       // The visitor may have started typing while the clipboard was read.
       if (!text.trim() || inputRef.current?.value) return;
-      const link = detectLink(text);
+      const pasted = clipPastedText(text);
+      const link = detectLink(pasted);
       if (!link) return;
 
-      setInput(extractLinkText(text));
-      setLocalError(null);
-      onNotify({
-        kind: "success",
-        title: "Link pasted",
-        description: `Fetching the clean ${PLATFORMS[link.platform].videoNoun} stream…`,
+      startTransition(() => {
+        setInput(extractLinkText(pasted));
+        setLocalError(null);
+        onNotify({
+          kind: "success",
+          title: "Link pasted",
+          description: `Fetching the clean ${PLATFORMS[link.platform].videoNoun} stream…`,
+        });
+        submitLink(link);
       });
-      submitLink(link);
     } catch {
       // Blocked, empty or unsupported: the field simply stays idle.
     }
@@ -238,21 +280,28 @@ export function UrlField({
     const text = event.clipboardData.getData("text");
     if (!text.trim()) return;
 
-    const link = detectLink(text);
-    const value = extractLinkText(text);
+    const pasted = clipPastedText(text);
+    const link = detectLink(pasted);
+    const value = extractLinkText(pasted);
 
     event.preventDefault();
-    setInput(value);
-    setLocalError(null);
+    // The paste itself is one shot: commit the text in a transition so the
+    // field paints immediately, then run the parent's resolve behind it.
+    startTransition(() => {
+      setInput(value);
+      setLocalError(null);
+    });
 
     if (link) {
-      onNotify({
-        kind: "success",
-        title: "Link pasted",
-        description: `Fetching the clean ${PLATFORMS[link.platform].videoNoun} stream…`,
+      startTransition(() => {
+        onNotify({
+          kind: "success",
+          title: "Link pasted",
+          description: `Fetching the clean ${PLATFORMS[link.platform].videoNoun} stream…`,
+        });
+        submitLink(link);
       });
-      submitLink(link);
-    } else if (isTruncatedYouTubeId(text)) {
+    } else if (isTruncatedYouTubeId(pasted)) {
       warnTruncatedYouTube();
     }
   }

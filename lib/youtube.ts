@@ -11,7 +11,7 @@ import {
   YOUTUBE_TRUNCATED_ID_HINT,
   YOUTUBE_TRUNCATED_ID_MESSAGE,
 } from "@/lib/youtube-id";
-import { ytdlpExtract } from "@/lib/youtube-ytdlp";
+import { bridgeHealthy, ytdlpExtract } from "@/lib/youtube-ytdlp";
 import { INVIDIOUS_DIRECT_HOSTS, isKnownLoaderInterstitialUrl } from "@/lib/youtube-stream-url";
 
 /**
@@ -413,8 +413,16 @@ function extractVisitorData(html: string): string | null {
   return /^[A-Za-z0-9_%=-]{20,200}$/.test(value) ? value : null;
 }
 
+/**
+ * Whole-probe budget for the session token. Three pages × 3.5 s used to keep a
+ * cold isolate busy for 10.5 s fetching an OPTIONAL token; the token is worth a
+ * few seconds, never a resolve.
+ */
+const VISITOR_DATA_BUDGET_MS = 4_000;
+
 async function loadVisitorData(videoId: string): Promise<string | null> {
   const now = Date.now();
+  const deadline = now + VISITOR_DATA_BUDGET_MS;
   // The embed page usually carries visitorData, but a consent/challenge page
   // can replace it. The watch page and the homepage carry the same ytcfg
   // token, so try all three before giving up on a session context.
@@ -424,6 +432,8 @@ async function loadVisitorData(videoId: string): Promise<string | null> {
     "https://www.youtube.com/",
   ];
   for (const page of pages) {
+    const remaining = deadline - Date.now();
+    if (remaining < 400) break;
     try {
       const response = await fetch(page, {
         headers: {
@@ -432,7 +442,7 @@ async function loadVisitorData(videoId: string): Promise<string | null> {
           "Accept-Language": "en-US,en;q=0.9",
         },
         cache: "no-store",
-        signal: AbortSignal.timeout(3_500),
+        signal: AbortSignal.timeout(Math.min(3_500, remaining)),
       });
       if (!response.ok) {
         await response.body?.cancel().catch(() => undefined);
@@ -450,6 +460,19 @@ async function loadVisitorData(videoId: string): Promise<string | null> {
   return null;
 }
 
+/**
+ * How long the player request waits for that session token before going
+ * without it.
+ *
+ * The token is a SECOND round trip in front of the player request. On a cold
+ * isolate that used to mean every first resolve paid for up to 10.5 s of
+ * embed-page loading before the ~300 ms Innertube call even started. It is an
+ * optimization, not a requirement (a missing token is a soft downgrade), so a
+ * short beat is the right trade: the player request goes out either way, and
+ * a token that arrives late is cached for the next resolve.
+ */
+const VISITOR_DATA_WAIT_MS = 1_200;
+
 async function visitorDataToken(videoId: string): Promise<string | null> {
   if (visitorDataCache && visitorDataCache.expiresAt > Date.now()) return visitorDataCache.value;
   if (!visitorDataInFlight) {
@@ -457,7 +480,16 @@ async function visitorDataToken(videoId: string): Promise<string | null> {
       visitorDataInFlight = null;
     });
   }
-  return visitorDataInFlight;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const fallback = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), VISITOR_DATA_WAIT_MS);
+    (timer as unknown as { unref?: () => void }).unref?.();
+  });
+  try {
+    return (await Promise.race([visitorDataInFlight, fallback])) ?? null;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 const PUBLIC_VIDEO_TTL_MS = 10 * 60_000;
@@ -1054,6 +1086,21 @@ async function ytdlpAndroidResolve(videoId: string, canonicalUrl: string): Promi
   };
 }
 
+/**
+ * Health-gated bridge racer.
+ *
+ * When the tunnel is up this is the first engine to be queried (the race is
+ * parallel, so it starts in the same tick as the mirrors instead of queueing
+ * behind their 8 s timeouts); when it is down it fails before spending a byte
+ * of extraction budget.
+ */
+async function bridgeAndroidResolve(videoId: string, canonicalUrl: string): Promise<TierHit> {
+  if (!(await bridgeHealthy())) {
+    throw new AppError("PROVIDER_UNAVAILABLE", "yt-dlp bridge is not reachable.");
+  }
+  return ytdlpAndroidResolve(videoId, canonicalUrl);
+}
+
 interface PipedStream {
   url?: unknown;
   quality?: unknown;
@@ -1598,6 +1645,10 @@ async function withBridgeAudio(
   if (bridgeEndpoints().length === 0) return hit;
   const budget = Math.min(remainingMs, AUDIO_ENRICH_MAX_MS);
   if (budget < AUDIO_ENRICH_MIN_BUDGET_MS) return hit;
+  // A sleeping bridge cannot fill this window, so ask the cached health probe
+  // first: a dead tunnel now costs ~1 ms instead of the full enrichment budget
+  // added to an otherwise-finished 300 ms resolve.
+  if (!(await bridgeHealthy())) return hit;
   try {
     const bridge = await withDeadline(ytdlpExtract(canonicalUrl), budget, "youtube:ytdlp-audio");
     if (!bridge.audio) return hit;
@@ -1731,9 +1782,11 @@ async function resolveYouTubeStreams(
     ),
     // The bridge has its own 22s extraction ceiling; the outer budget must
     // outwait it so a configured bridge is genuinely queried before giving up.
+    // It is health-gated so a sleeping tunnel rejects in milliseconds instead
+    // of holding the race open for that whole deadline.
     traced(
       "youtube:ytdlp-android",
-      withDeadline(ytdlpAndroidResolve(id, canonicalUrl), failoverBudget, "youtube:ytdlp-android"),
+      withDeadline(bridgeAndroidResolve(id, canonicalUrl), failoverBudget, "youtube:ytdlp-android"),
     ),
     ...INVIDIOUS_APIS.map((api) =>
       traced(

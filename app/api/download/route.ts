@@ -91,6 +91,46 @@ const BLOCKED_TYPES =
   /^(application\/(?:json|problem\+json|xml|xhtml\+xml|javascript)|text\/|audio\/(?:mpegurl|x-mpegurl)|application\/(?:vnd\.apple\.mpegurl|x-mpegurl))/i;
 const YOUTUBE_CONVERTER_HOSTS = new Set(["loader.to", "oceansaver.in"]);
 
+/**
+ * Platform CDNs whose first byte can be trusted without a probe.
+ *
+ * Guard #3 (`validateAndReplay`) reads the upstream's first chunk before the
+ * response headers are written, so a JSON/HTML error document can never be
+ * attached as an `.mp4`. That safety costs a full round trip on EVERY proxied
+ * download: the visitor's browser cannot start until the CDN's first byte has
+ * already travelled to our function and back.
+ *
+ * The hosts below are the ones the resolver just read, and they answer with a
+ * definite `video/*` (or `audio/*`) type AND a real multi-megabyte
+ * `Content-Length` — evidence strictly stronger than the sniff. Only in that
+ * exact case is the sniff skipped, so the attachment headers leave together
+ * with the CDN's first byte. Unknown hosts, `application/octet-stream`, a
+ * missing length and every 206 resume keep the original validated path.
+ */
+const TRUSTED_MEDIA_HOSTS = [
+  /(^|\.)tiktokcdn\.com$/,
+  /(^|\.)tiktokcdn-us\.com$/,
+  /(^|\.)tiktokv\.com$/,
+  /(^|\.)tikwm\.com$/,
+  /(^|\.)cdninstagram\.com$/,
+  /(^|\.)fbcdn\.net$/,
+];
+
+function isTrustedMediaHost(value: string): boolean {
+  try {
+    const host = new URL(value).hostname.toLowerCase();
+    return TRUSTED_MEDIA_HOSTS.some((pattern) => pattern.test(host));
+  } catch {
+    return false;
+  }
+}
+
+/** A content type that names the requested media outright, not a guess. */
+function isDefiniteMediaType(contentType: string, kind: DownloadKind): boolean {
+  const base = contentType.split(";")[0]?.trim().toLowerCase() ?? "";
+  return kind === "video" ? base.startsWith("video/") : base.startsWith("audio/");
+}
+
 function isGooglevideoUrl(value: string): boolean {
   try {
     const host = new URL(value).hostname.toLowerCase();
@@ -704,6 +744,30 @@ async function attemptMedia(request: NextRequest, args: AttemptArgs, allowHeal: 
     return recoverFromFailure(request, args, allowHeal);
   }
 
+  // Direct CDN fast path: when the upstream answers with its OWN
+  // `Content-Disposition: attachment`, the visitor's browser can take the
+  // transfer from its own IP — no relay through this function, no Netlify
+  // egress cap, no second round trip.
+  //
+  // This is deliberately NOT a blind 302: the attachment semantics were just
+  // observed on the LIVE response we are holding (same URL, same object), so
+  // Chrome's download manager receives the file behaviour already proven here
+  // instead of an HTML page. Only signed public CDN URLs reach this branch —
+  // IP-bound googlevideo requests always arrive as 206 (`Range: bytes=0-`) and
+  // are excluded by `!isPartial`.
+  const cdnAttachment = /^attachment\b/i.test((upstream.headers.get("content-disposition") ?? "").trim());
+  if (
+    !isPartial &&
+    cdnAttachment &&
+    contentLength !== null &&
+    contentLength >= MIN_MEDIA_BYTES &&
+    !isBridgeStreamUrl(upstreamUrl)
+  ) {
+    await upstream.body.cancel().catch(() => undefined);
+    countTransferStarted({ delivery: "direct", platform, kind, status: 302, bytes: contentLength });
+    return handOffToCdn(upstreamFinalUrl);
+  }
+
   // A bridge hop always hands off: the response just validated is the signed
   // attachment URL itself, so no extra probe is needed and the Edge function
   // stops being the bottleneck for a large video.
@@ -725,18 +789,31 @@ async function attemptMedia(request: NextRequest, args: AttemptArgs, allowHeal: 
     return verifiedBinaryHandoff(upstreamFinalUrl, platform, kind, request);
   }
 
-  // Guard #3: sniff the first chunk (JSON/HTML start bytes).
+  // Guard #3: sniff the first chunk (JSON/HTML start bytes) — except on the
+  // trusted fast path below, where the headers alone are conclusive and the
+  // sniff's round trip is pure latency in front of Chrome's download manager.
+  const trustedStream =
+    !isPartial &&
+    contentLength !== null &&
+    contentLength >= MIN_MEDIA_BYTES &&
+    isTrustedMediaHost(upstreamFinalUrl) &&
+    isDefiniteMediaType(upstreamType, kind);
+
   let stream: ReadableStream<Uint8Array>;
-  try {
-    const validated = await validateAndReplay(upstream.body, isPartial);
-    if (!validated.valid) {
+  if (trustedStream) {
+    stream = upstream.body;
+  } else {
+    try {
+      const validated = await validateAndReplay(upstream.body, isPartial);
+      if (!validated.valid) {
+        return recoverFromFailure(request, args, allowHeal);
+      }
+      stream = validated.stream;
+    } catch {
+      // Stalled upstream before any data: nothing was streamed yet, so the
+      // failure path (never an attachable body) still applies.
       return recoverFromFailure(request, args, allowHeal);
     }
-    stream = validated.stream;
-  } catch {
-    // Stalled upstream before any data: nothing was streamed yet, so the
-    // failure path (never an attachable body) still applies.
-    return recoverFromFailure(request, args, allowHeal);
   }
 
   const mediaType = baseMediaType(upstreamType, kind);
