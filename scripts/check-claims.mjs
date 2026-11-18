@@ -793,9 +793,10 @@ async function listAppRoutes() {
  * HilltopAds' popunder both hijack the page. Comments are stripped before the
  * scan so history can still be explained in prose without tripping the guard.
  *
- * Monetag is the one allowed network, and its MultiTag loader
- * `https://quge5.com/88/tag.min.js` is therefore NOT on this list — blocking
- * that domain removes the visual ad supply, not a bad actor.
+ * Monetag is the one allowed network. Its MultiTag loader
+ * (`https://quge5.com/88/tag.min.js`) is NOT on this list either: the tag was
+ * retired from the app on 2026-11-18, so nothing loads it, and listing the
+ * domain here would misdescribe a merely-unused host as a bad actor.
  *
  * Clickadu was removed on purpose (its meta tag and verification file are
  * gone); the token is listed so neither can be reintroduced unnoticed.

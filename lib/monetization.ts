@@ -1,6 +1,6 @@
 /**
- * Monetization engine — one network (Monetag): a MultiTag zone plus the
- * click-triggered Smartlink.
+ * Monetization engine — one network (Monetag): the click-triggered Smartlink,
+ * with no ad script on page load.
  *
  * Why the old display stack went away (2026-11-14):
  *
@@ -13,20 +13,21 @@
  *   the only line that paid. So: no Adsterra, no HilltopAds, no banner frames,
  *   no side rails.
  *
- * Current stack (2026-11-18): one Monetag MultiTag zone (312113) served from
- * quge5.com, the Web Push service worker at `/sw.js` (zone 12293328), and the
- * Direct Link/Smartlink below. The tag is the official async `<script>` in
- * `components/ads/monetag.tsx`, mounted once per document and injected on the
- * visitor's first gesture (pointerdown/keydown) — a cold visit makes zero
- * requests to any ad host, so it never competes with first paint or input
- * latency — and it is the only third-party ad script the document requests.
+ * Current stack (2026-11-18): the Direct Link/Smartlink rotation below, plus
+ * the Web Push service worker at `/sw.js` (zone 12293328). There is NO ad
+ * script on page load: the Monetag MultiTag (zone 312113) was removed because
+ * its 105 KB loader and its ad hosts (`quge5.com`, `6opo.com`, and the
+ * `ekhay.com` vignette the zone injected) competed with first paint and froze
+ * the UI on mobile while a creative hung. A cold visit now makes zero
+ * requests to any ad network — every monetized surface is a click the visitor
+ * makes, on an action button that already exists for its own sake.
  *
  * Design rules (non-negotiable):
  *   1. The download is never delayed by an ad. The Smartlink opens alongside
  *      the click, after the file hand-off has been dispatched.
  *   2. Our own UI never paints over the page: no vignette element, no social
- *      bar, no overlay of our own. Which formats the MultiTag zone serves is
- *      configured in the Monetag dashboard, not here.
+ *      bar, no overlay of our own — and no third-party script that can paint
+ *      one for us.
  *   3. Capped for automatic triggers only. The Smartlink is rate-limited in
  *      `lib/smartlink.ts` — one auto-trigger per 90 seconds and ten per day per
  *      browser — so a burst of five format clicks is not taxed five times.
@@ -55,23 +56,6 @@ export const smartlinkUrl3 =
 
 /** Monetag domain-verification token, emitted as `<meta name="monetag">`. */
 export const monetagVerification = process.env.NEXT_PUBLIC_MONETAG_META?.trim() || null;
-
-/**
- * Monetag MultiTag zone id, emitted as `data-zone` on the tag. The Web Push
- * worker at `/sw.js` has its own zone (12293328), so the two are configured
- * independently in the Monetag dashboard.
- */
-export const monetagZoneId =
-  process.env.NEXT_PUBLIC_MONETAG_ZONE_ID?.trim() || "312113";
-
-/**
- * Official MultiTag loader for `monetagZoneId`.
- *
- * quge5.com is the account's MultiTag domain (the push worker is served from
- * 5gvci.com instead). The snippet puts the zone in `data-zone`, not in the URL.
- */
-export const monetagTagUrl =
-  process.env.NEXT_PUBLIC_MONETAG_TAG_URL?.trim() || "https://quge5.com/88/tag.min.js";
 
 /** True when at least one Monetag surface is configured. */
 export const adsConfigured = Boolean(smartlinkUrl);

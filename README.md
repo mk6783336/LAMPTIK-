@@ -78,11 +78,10 @@ declares the others as translations of the same topic:
 
 One network: Monetag. Visual partner cards sit under the tool, between content sections,
 in the result panel and in a dismissible bottom bar; each is labelled *Sponsored · Ad*
-and opens a Smartlink in a new tab. The MultiTag zone (`quge5.com`, zone `312113`) is
-the official async tag, injected only on the visitor's first gesture (pointerdown or
-keydown) so a cold load makes zero ad-network requests and nothing third-party can
-block parsing, first paint or typing; its Web Push worker (zone `12293328`) is served
-from `/sw.js`.
+and opens a Smartlink in a new tab. No ad script loads on page load: the MultiTag
+(`quge5.com`, zone `312113`) was removed, so a cold visit makes zero requests to any
+ad network and nothing third-party can block parsing, first paint or typing. The Web
+Push worker (zone `12293328`) is still served from `/sw.js`.
 
 The Smartlink rotation starts with the high-CPM primary (zone `12078941`), then the two
 secondary zones. The trigger on a download click is capped in `localStorage` at one open

@@ -1,5 +1,4 @@
 import { AhrefsAnalytics } from "@/components/ahrefs-analytics";
-import { MonetagScripts } from "@/components/ads/monetag";
 import { VisualAdSlot } from "@/components/ads/visual-ad-slot";
 import { ConsentModeScript } from "@/components/consent-mode";
 import { GoogleAnalytics } from "@/components/google-analytics";
@@ -108,13 +107,12 @@ export function RootDocument({
             symbols already parsed. */}
         <GlyphSprite />
         {children}
-        {/* Monetag MultiTag (zone 312113, quge5.com): one script per document,
-            injected on the visitor's FIRST gesture (pointerdown/keydown) and
-            never on page load — a cold visit makes zero requests to any ad
-            host, so nothing third-party can sit between the visitor and the
-            first paint. The tag registers the Web Push worker served from
-            `/sw.js` (zone 12293328). */}
-        <MonetagScripts />
+        {/* No ad script is rendered here — deliberately. The Monetag MultiTag
+            (quge5.com, zone 312113) was removed because its 105 KB loader and
+            its ad hosts competed with first paint and froze the UI on mobile
+            while a creative hung. `public/sw.js` (Web Push, zone 12293328) is
+            still served for a future push client, but nothing on this page
+            requests it. */}
         {/* Dismissible partner bar. In flow at the bottom of the document, not
             over a control: it is one 9px-radius strip, remembers a dismissal
             for the session, and the audit checks it cannot cover the CTA. */}
