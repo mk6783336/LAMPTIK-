@@ -109,7 +109,7 @@ export function RootDocument({
         <GlyphSprite />
         {children}
         {/* Monetag MultiTag (zone 312113, quge5.com): one script per document,
-            created on the first idle frame after hydration (1.5 s cap) so no
+            created on the first idle frame after hydration (1.2 s cap) so no
             ad request or ad execution sits between a visitor and the first
             paint. The tag registers the Web Push worker served from `/sw.js`
             (zone 12293328). */}

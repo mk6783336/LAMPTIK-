@@ -60,6 +60,24 @@ function clipPastedText(text: string): string {
 }
 
 /**
+ * Run the resolve once the pasted text has had a turn to commit.
+ *
+ * `startTransition` lowers the priority of an UPDATE, but the function handed
+ * to it still runs synchronously in the same event turn — so the parent's
+ * submit work (state, analytics, history bookkeeping) was competing with the
+ * far more urgent job of showing the pasted link. One macrotask boundary is
+ * enough to let the field paint first; it costs a few milliseconds before the
+ * request starts, against a resolve measured in hundreds.
+ */
+function afterPasteCommit(task: () => void): void {
+  if (typeof window === "undefined") {
+    task();
+    return;
+  }
+  window.setTimeout(task, 0);
+}
+
+/**
  * The URL input is intentionally isolated from the rest of the downloader:
  * typing or pasting only re-renders this small component — never the whole
  * page, the result panel, or the toast stack. Keystroke latency stays at one
@@ -72,9 +90,11 @@ function clipPastedText(text: string): string {
  *      own debounce lane: the keystroke or paste paints first, the badge /
  *      accent / platform validation follows in a low-priority render, and a
  *      long URL cannot stretch the input's frame.
- *   3. Paste commits and the resolve they trigger run inside `startTransition`,
- *      so the field shows the pasted link before the panel re-renders into its
- *      loading state. Nothing about a paste blocks the gesture that made it.
+ *   3. The pasted TEXT is committed as an urgent update (it is what the visitor
+ *      is looking at, and it must paint in the same frame as the gesture),
+ *      while the resolve it triggers runs inside `startTransition`. The panel's
+ *      loading state is therefore rendered after the link is on screen, never
+ *      in front of it.
  *
  * Multi-platform: detection runs against TikTok / Instagram / Facebook /
  * YouTube shapes. A link from ANY platform is greeted (badge + accent shift),
@@ -199,11 +219,10 @@ export function UrlField({
       const pasted = clipPastedText(text);
       const link = detectLink(pasted);
       const value = extractLinkText(pasted);
-      // Paint the pasted link first, then let the resolve re-render the panel.
-      startTransition(() => {
-        setInput(value);
-        setLocalError(null);
-      });
+      // Urgent: the pasted text paints in this frame. Only the resolve below is
+      // low priority, so the panel can never keep the link off screen.
+      setInput(value);
+      setLocalError(null);
       inputRef.current?.focus();
 
       if (link) {
@@ -213,8 +232,8 @@ export function UrlField({
             title: "Link pasted",
             description: `Fetching the clean ${PLATFORMS[link.platform].videoNoun} stream…`,
           });
-          submitLink(link);
         });
+        afterPasteCommit(() => submitLink(link));
       } else if (isTruncatedYouTubeId(pasted)) {
         warnTruncatedYouTube();
       } else {
@@ -260,16 +279,17 @@ export function UrlField({
       const link = detectLink(pasted);
       if (!link) return;
 
+      // Text first (urgent), resolve second (after this event turn).
+      setInput(extractLinkText(pasted));
+      setLocalError(null);
       startTransition(() => {
-        setInput(extractLinkText(pasted));
-        setLocalError(null);
         onNotify({
           kind: "success",
           title: "Link pasted",
           description: `Fetching the clean ${PLATFORMS[link.platform].videoNoun} stream…`,
         });
-        submitLink(link);
       });
+      afterPasteCommit(() => submitLink(link));
     } catch {
       // Blocked, empty or unsupported: the field simply stays idle.
     }
@@ -285,12 +305,9 @@ export function UrlField({
     const value = extractLinkText(pasted);
 
     event.preventDefault();
-    // The paste itself is one shot: commit the text in a transition so the
-    // field paints immediately, then run the parent's resolve behind it.
-    startTransition(() => {
-      setInput(value);
-      setLocalError(null);
-    });
+    // The text is urgent (it paints in this frame); the resolve is not.
+    setInput(value);
+    setLocalError(null);
 
     if (link) {
       startTransition(() => {
@@ -299,8 +316,8 @@ export function UrlField({
           title: "Link pasted",
           description: `Fetching the clean ${PLATFORMS[link.platform].videoNoun} stream…`,
         });
-        submitLink(link);
       });
+      afterPasteCommit(() => submitLink(link));
     } else if (isTruncatedYouTubeId(pasted)) {
       warnTruncatedYouTube();
     }

@@ -1690,6 +1690,16 @@ const RESOLVE_BUDGET_MS = 30_000;
 const EXTERNAL_TIMEOUT_MS = 8_000;
 
 /**
+ * How long Tier 1 runs before the configured bridge is also asked.
+ *
+ * The primary Innertube client answers in ~300 ms when it answers at all, so
+ * a short head start means the common resolve still finishes without spawning
+ * yt-dlp, while a bot-checked one gets the bridge started ~2 s earlier than
+ * waiting out the full `PRIMARY_BUDGET_MS` and the failover queue.
+ */
+const BRIDGE_HEAD_START_MS = 600;
+
+/**
  * Tier 1 — ANDROID Innertube. This is the engine that actually works from a
  * datacenter IP in 2026: it answers itag 18 (progressive MP4 with audio), the
  * AAC ladder for the MP3 button and a real `lengthSeconds` in ~300 ms. Every
@@ -1725,23 +1735,64 @@ async function resolveYouTubeStreams(
     ...defined.filter((client) => !FAILOVER_ORDER.includes(client.name)),
   ];
 
-  try {
-    const primary = requireStreams(
-      await traced(
-        android.name,
-        withDeadline(innertubePlayer(id, android), PRIMARY_BUDGET_MS, android.name),
-      ),
-    );
-    return await withBridgeAudio(primary, canonicalUrl, RESOLVE_BUDGET_MS - (Date.now() - startedAt));
-  } catch (error) {
-    // A private / deleted / livestream answer is definitive — never retried.
-    if (isDefinitiveVideoError(error)) throw error;
-  }
-
   // What is left of the function budget. A blocked music video spends it in
   // the yt-dlp bridge, so the bridge gets the whole window instead of the
   // old 8 s inner deadline that the race always cut short anyway.
   const failoverBudget = Math.max(1_800, RESOLVE_BUDGET_MS - (Date.now() - startedAt));
+
+  /**
+   * The bridge, started at most ONCE per resolve.
+   *
+   * This is the fast path the failover order could not express: when the
+   * tunnel is configured and healthy it is the strongest engine left, so it is
+   * raced against Tier 1 instead of waiting for the primary client's deadline
+   * and the public Piped/Invidious racers. `BRIDGE_HEAD_START_MS` keeps the
+   * common case cheap — a ~300 ms Innertube win clears the timer below and
+   * never spawns yt-dlp at all.
+   *
+   * `bridgeOnce` memoizes the promise so the later failover race joins the
+   * SAME extraction rather than paying for a second yt-dlp run.
+   */
+  let bridgeTask: Promise<TierHit> | null = null;
+  const bridgeOnce = (): Promise<TierHit> => {
+    if (!bridgeTask) {
+      bridgeTask = traced(
+        "youtube:ytdlp-android",
+        withDeadline(bridgeAndroidResolve(id, canonicalUrl), failoverBudget, "youtube:ytdlp-android"),
+      );
+    }
+    return bridgeTask;
+  };
+
+  const primaryTask = traced(
+    android.name,
+    withDeadline(innertubePlayer(id, android), PRIMARY_BUDGET_MS, android.name),
+  );
+
+  let bridgeTimer: ReturnType<typeof setTimeout> | null = null;
+  const earlyBridge =
+    bridgeEndpoints().length > 0
+      ? new Promise<TierHit>((resolve, reject) => {
+          bridgeTimer = setTimeout(() => {
+            bridgeOnce().then(resolve, reject);
+          }, BRIDGE_HEAD_START_MS);
+          (bridgeTimer as unknown as { unref?: () => void }).unref?.();
+        })
+      : null;
+
+  try {
+    const winner = earlyBridge
+      ? await firstDefinitiveHit(primaryTask, earlyBridge)
+      : await primaryTask;
+    // Tier 1 answered first: do not spend a yt-dlp extraction nobody needs.
+    if (bridgeTimer) clearTimeout(bridgeTimer);
+    const primary = requireStreams(winner);
+    return await withBridgeAudio(primary, canonicalUrl, RESOLVE_BUDGET_MS - (Date.now() - startedAt));
+  } catch (error) {
+    if (bridgeTimer) clearTimeout(bridgeTimer);
+    // A private / deleted / livestream answer is definitive — never retried.
+    if (isDefinitiveVideoError(error)) throw error;
+  }
 
   // Every external hop is bounded independently. The order below is the
   // preferred rescue order: permitted Cobalt → Piped → watch-page HTML →
@@ -1782,12 +1833,10 @@ async function resolveYouTubeStreams(
     ),
     // The bridge has its own 22s extraction ceiling; the outer budget must
     // outwait it so a configured bridge is genuinely queried before giving up.
-    // It is health-gated so a sleeping tunnel rejects in milliseconds instead
-    // of holding the race open for that whole deadline.
-    traced(
-      "youtube:ytdlp-android",
-      withDeadline(bridgeAndroidResolve(id, canonicalUrl), failoverBudget, "youtube:ytdlp-android"),
-    ),
+    // Health-gated (a sleeping tunnel rejects in milliseconds) and memoized
+    // (`bridgeOnce`), so a bridge that already started during Tier 1 is raced
+    // again here rather than extracted twice.
+    bridgeOnce(),
     ...INVIDIOUS_APIS.map((api) =>
       traced(
         `youtube:invidious:${new URL(api).hostname}`,

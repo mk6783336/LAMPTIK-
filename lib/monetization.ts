@@ -17,7 +17,7 @@
  * quge5.com, the Web Push service worker at `/sw.js` (zone 12293328), and the
  * Direct Link/Smartlink below. The tag is the official async `<script>` in
  * `components/ads/monetag.tsx`, mounted once per document and created on the
- * first idle frame after hydration (1.5 s cap) so it never competes with
+ * first idle frame after hydration (1.2 s cap) so it never competes with
  * first paint or input latency, and it is the only third-party ad script the
  * document requests.
  *

@@ -21,7 +21,7 @@ import { monetagTagUrl, monetagZoneId } from "@/lib/monetization";
  *      the only interaction that has to feel instant.
  *
  * Now: the tag is created after hydration, on the first `requestIdleCallback`
- * gap (1.5 s cap, see `lib/idle.ts`), so no third-party connection is opened
+ * gap (1.2 s cap, see `lib/idle.ts`), so no third-party connection is opened
  * and no ad code competes with first paint or input latency. The element still
  * gets the official `async` + `data-zone` + `data-cfasync` shape Monetag's
  * snippet specifies, and the `getElementById` guard keeps it at exactly one
@@ -38,7 +38,7 @@ const TAG_ID = "monetag-multitag";
  * tag still starts on a browser that never reports idle (Safari < 15.4, or a
  * page kept busy by the preview player).
  */
-const TAG_IDLE_TIMEOUT_MS = 1_500;
+const TAG_IDLE_TIMEOUT_MS = 1_200;
 
 export function MonetagScripts() {
   useEffect(() => {
