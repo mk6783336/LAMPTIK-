@@ -1,5 +1,12 @@
 # Moving `lamptik.online` DNS to Cloudflare (for `bridge.lamptik.online`)
 
+> **2026-11-18 — dormant.** The zone moved back to Netlify nameservers, so
+> `bridge.lamptik.online` has no DNS and the named tunnel below serves nothing.
+> Production uses a Cloudflare Quick Tunnel instead, and
+> `scripts/bridge-autostart.ps1` publishes the new hostname to Netlify on every
+> restart. The record table and steps are kept for a future migration; nothing
+> here is active today.
+
 A Cloudflare named tunnel only serves a hostname whose zone lives in the same
 Cloudflare account. `lamptik.online` is currently on Namecheap DNS, so the zone
 has to move first. This is a nameserver change, not a website move: Vercel

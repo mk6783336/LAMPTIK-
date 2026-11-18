@@ -1,4 +1,4 @@
-# Install (or remove) the logon autostart for the bridge + named tunnel.
+# Install (or remove) the logon autostart for the bridge + quick tunnel.
 #
 #   powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-bridge-autostart.ps1
 #   powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-bridge-autostart.ps1 -Uninstall
@@ -34,7 +34,7 @@ if (-not (Test-Path $starter)) {
 # ASCII, not UTF-16: Windows Script Host treats a BOM-less ASCII file as ANSI
 # and runs it; a mismatched encoding is the classic "cannot find script" error.
 $content = @"
-' LAMP TIK - starts the yt-dlp bridge and its Cloudflare tunnel at logon.
+' LAMP TIK - starts the yt-dlp bridge and its Cloudflare quick tunnel at logon.
 ' Installed by scripts/install-bridge-autostart.ps1. Delete this file to disable.
 Set sh = CreateObject("WScript.Shell")
 sh.Run "powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File ""$starter""", 0, False

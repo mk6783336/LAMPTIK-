@@ -233,19 +233,21 @@ Vercel as `YTDLP_BRIDGE_URL`, keep the terminal and the PC awake, and the
 Vercel resolver will use your residential connection. The URL **changes every
 time the tunnel restarts**; update the Vercel variable then.
 
-### Permanent hostname (named tunnel)
+### Hostname stability
 
-A named tunnel fixes the rotating URL. One already exists for this deployment:
+A Quick Tunnel's hostname changes every time `cloudflared` restarts, so the
+value in Netlify has to follow it. `scripts/bridge-autostart.ps1` does that: it
+starts the tunnel, reads the assigned `https://….trycloudflare.com` hostname,
+writes it to Netlify as `YTDLP_BRIDGE_URL`, and triggers the build Netlify
+requires before an environment change takes effect. When the hostname has not
+changed, it triggers nothing.
 
-```bash
-cloudflared tunnel --config .scratch/cloudflared-bridge.yml run lamptik-bridge
-```
-
-It publishes `https://bridge.lamptik.online` — a CNAME to
-`1914e86b-….cfargotunnel.com` — so restarting the PC never changes the value in
-Vercel. It answers whenever the PC, the bridge and the tunnel are running; see
-[DNS-MIGRATION.md](DNS-MIGRATION.md) for the DNS side and the verification
-commands.
+A named tunnel would avoid the rotating hostname, and one still exists
+(`.scratch/cloudflared-bridge.yml`, hostname `bridge.lamptik.online`), but it
+cannot serve while `lamptik.online` is on Netlify nameservers: Cloudflare only
+routes a tunnel hostname inside a zone that lives in the same Cloudflare
+account. Reviving it means moving the zone back to Cloudflare — see
+[DNS-MIGRATION.md](DNS-MIGRATION.md).
 
 For a host outside this PC, a small VPS with the same Dockerfile works too.
 
@@ -261,11 +263,22 @@ npm run bridge:autostart
 That writes `LampTik Bridge.vbs` into the user's Startup folder — no
 administrator rights, no console window — and starts the services immediately.
 At every logon it runs `scripts/bridge-autostart.ps1`, which starts only what
-is missing: the bridge with `BRIDGE_SECRET` read from `.env.local`, then the
-named tunnel, and logs the result to `.scratch/bridge-autostart.log`.
+is missing: the bridge with `BRIDGE_SECRET` read from `.env.local`, then a
+Quick Tunnel, then it repoints Netlify at the new hostname. The log is
+`.scratch/bridge-autostart.log`; the current hostname is cached in
+`.scratch/bridge-url.txt`.
 
-Verified cold (both processes killed, launcher run): the bridge and tunnel were
-back and `https://bridge.lamptik.online/health` answered `200` in ~4 s.
+One-time setup for the Netlify side, in `.env.local` (gitignored):
+
+| Name | Where to get it |
+| --- | --- |
+| `NETLIFY_AUTH_TOKEN` | Netlify → Applications → Personal access tokens |
+| `NETLIFY_SITE_ID` | Project configuration → General → Site information |
+
+Without them the bridge and tunnel still start; the script only logs that it
+cannot repoint production. A token that expired is logged as HTTP 401, and the
+site keeps resolving through the JavaScript engines until a new one is pasted
+in. The token created for this setup expires after 90 days.
 
 Remove the entry with:
 
