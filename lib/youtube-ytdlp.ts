@@ -105,8 +105,13 @@ export function ytdlpBridgeUrl(): string | null {
  * it answers booleans in milliseconds. Any HTTP answer below 500 proves the
  * tunnel is routing — a bridge refusing with 401/404 is still awake — while a
  * Cloudflare cold-tunnel status means nothing is behind the hostname.
+ *
+ * One budget for EVERY gate, primary or backup: a healthy tunnel answers in
+ * 1.65-2.0 s through the Cloudflare hop (measured against the live quick
+ * tunnel), so the old 1.5 s and 2.5 s deadlines declared working bridges dead.
+ * 4 s clears the worst sample by 2x and still skips a sleeping PC quickly.
  */
-const BRIDGE_HEALTH_TIMEOUT_MS = 1_500;
+const BRIDGE_PROBE_TIMEOUT_MS = 4_000;
 const BRIDGE_HEALTH_TTL_MS = 45_000;
 const BRIDGE_COLD_STATUS = new Set([502, 503, 504, 520, 521, 522, 523, 524, 530]);
 
@@ -115,7 +120,7 @@ let bridgeHealthInFlight: Promise<boolean> | null = null;
 
 async function probeBridge(base: string): Promise<boolean> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), BRIDGE_HEALTH_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), BRIDGE_PROBE_TIMEOUT_MS);
   try {
     const response = await fetch(`${base.replace(/\/+$/, "")}/health`, {
       method: "GET",
@@ -186,7 +191,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function postResolve(bridgeUrl: string, canonicalUrl: string): Promise<Response> {
+function postResolve(bridgeUrl: string, canonicalUrl: string, timeoutMs: number): Promise<Response> {
   const bridgeSecret = process.env.BRIDGE_SECRET;
   return fetch(bridgeUrl.replace(/\/+$/, ""), {
     method: "POST",
@@ -196,7 +201,7 @@ function postResolve(bridgeUrl: string, canonicalUrl: string): Promise<Response>
       ...(bridgeSecret ? { "x-bridge-secret": bridgeSecret } : {}),
     },
     cache: "no-store",
-    signal: AbortSignal.timeout(BRIDGE_TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
     body: JSON.stringify({ url: canonicalUrl, client: "android" }),
   });
 }
@@ -209,16 +214,49 @@ async function opaqueEdgeFailure(response: Response): Promise<boolean> {
 }
 
 /**
+ * One POST, plus the single retry a transport blip earns.
+ *
+ * `deadline` is absolute wall clock shared by BOTH attempts: a retry that
+ * outlives the caller's budget is worse than no retry, because the outer race
+ * aborts it mid-extraction anyway. Only transport-shaped failures qualify — a
+ * QUIC rotation rejects the socket (TypeError) and Cloudflare answers an HTML
+ * 5xx — while the bridge's own refusals arrive as JSON and are final. A hung
+ * attempt aborts with a DOMException, which is never retried.
+ */
+async function postResolveWithRetry(
+  bridgeUrl: string,
+  canonicalUrl: string,
+  deadline: number,
+): Promise<Response> {
+  for (let attempt = 0; ; attempt += 1) {
+    const remaining = deadline - Date.now();
+    if (remaining < 1) {
+      throw new AppError("PROVIDER_UNAVAILABLE", "yt-dlp bridge timed out.");
+    }
+    const last = attempt > 0;
+    try {
+      const response = await postResolve(bridgeUrl, canonicalUrl, remaining);
+      if (last || !(await opaqueEdgeFailure(response))) return response;
+    } catch (error) {
+      if (last || !(error instanceof TypeError)) throw error;
+    }
+    await sleep(Math.min(EDGE_RETRY_DELAY_MS, Math.max(0, deadline - Date.now())));
+  }
+}
+
+/**
  * POST { url } → JSON { url | video, duration, title, uploader, thumbnail }.
  * The exact wire format any `yt-dlp -j` HTTP wrapper (or a cobalt instance
  * in JSON mode) can emit; unknown fields are ignored, missing ones error.
  */
 async function bridgeExtract(bridgeUrl: string, canonicalUrl: string): Promise<YtdlpHit> {
-  let response = await postResolve(bridgeUrl, canonicalUrl);
-  if (await opaqueEdgeFailure(response)) {
-    await sleep(EDGE_RETRY_DELAY_MS);
-    response = await postResolve(bridgeUrl, canonicalUrl);
-  }
+  // One extraction window shared by the attempt and its retry, so the pair can
+  // never outlast the resolve budget the caller raced it inside.
+  const response = await postResolveWithRetry(
+    bridgeUrl,
+    canonicalUrl,
+    Date.now() + BRIDGE_TIMEOUT_MS,
+  );
   if (!response.ok) {
     throw new AppError("PROVIDER_UNAVAILABLE", `yt-dlp bridge answered ${response.status}.`);
   }
@@ -393,14 +431,6 @@ export interface YtdlpEngineHealth {
 const bridgeAlive = new Map<string, { reachable: boolean; expiresAt: number }>();
 const BRIDGE_ALIVE_TTL_MS = 20_000;
 const BRIDGE_ALIVE_TIMEOUT_MS = 8_000;
-/**
- * Failover probe deadline. The primary is a home PC behind a Cloudflare
- * tunnel: when it is asleep the TCP connect either hangs or is refused, and
- * waiting the full extraction budget there would lose the resolve. 2.5s is
- * enough for a healthy tunnel to answer `/health` (measured 0.3-1.5s).
- */
-const BRIDGE_FAILOVER_PROBE_MS = 2_500;
-
 async function bridgeReachable(base: string, timeoutMs: number, useCache: boolean): Promise<boolean> {
   const now = Date.now();
   if (useCache) {
@@ -437,7 +467,7 @@ async function bridgeExtractWithFailover(canonicalUrl: string): Promise<YtdlpHit
 
   let lastError: unknown = null;
   for (const base of bridges) {
-    if (!(await bridgeReachable(base, BRIDGE_FAILOVER_PROBE_MS, true))) continue;
+    if (!(await bridgeReachable(base, BRIDGE_PROBE_TIMEOUT_MS, true))) continue;
     try {
       return await bridgeExtract(base, canonicalUrl);
     } catch (error) {
