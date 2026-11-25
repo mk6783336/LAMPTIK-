@@ -6,6 +6,11 @@
 > `scripts/bridge-autostart.ps1` publishes the new hostname to Netlify on every
 > restart. The record table and steps are kept for a future migration; nothing
 > here is active today.
+>
+> The named tunnel itself is still healthy and routed: Cloudflare reports
+> `bridge.lamptik.online is already configured to route to your tunnel`, and a
+> test connector registered four HTTP/2 connections. `npm run bridge:named`
+> starts it and refuses (with this checklist) until the hostname resolves.
 
 A Cloudflare named tunnel only serves a hostname whose zone lives in the same
 Cloudflare account. `lamptik.online` is currently on Namecheap DNS, so the zone

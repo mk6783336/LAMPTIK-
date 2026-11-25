@@ -242,12 +242,25 @@ writes it to Netlify as `YTDLP_BRIDGE_URL`, and triggers the build Netlify
 requires before an environment change takes effect. When the hostname has not
 changed, it triggers nothing.
 
-A named tunnel would avoid the rotating hostname, and one still exists
-(`.scratch/cloudflared-bridge.yml`, hostname `bridge.lamptik.online`), but it
-cannot serve while `lamptik.online` is on Netlify nameservers: Cloudflare only
-routes a tunnel hostname inside a zone that lives in the same Cloudflare
-account. Reviving it means moving the zone back to Cloudflare — see
-[DNS-MIGRATION.md](DNS-MIGRATION.md).
+A named tunnel avoids the rotating hostname entirely. `lamptik-bridge`
+(`1914e86b-…`) already exists, its credentials are in `~/.cloudflared/`, and
+Cloudflare already routes `bridge.lamptik.online` to it: run
+
+```bash
+npm run bridge:named              # --write-env also updates .env.local
+```
+
+It regenerates the connector config, starts the tunnel over HTTP/2 and waits
+for `https://bridge.lamptik.online/health`. Because the hostname never changes,
+Netlify's `YTDLP_BRIDGE_URL` is written once and no rebuild is needed per
+restart.
+
+It refuses to start while `bridge.lamptik.online` does not resolve, and prints
+the checklist: a Cloudflare Tunnel only serves a hostname inside a Cloudflare
+zone, and `lamptik.online` is on Netlify nameservers today. Reviving it means
+moving the zone back to Cloudflare — see [DNS-MIGRATION.md](DNS-MIGRATION.md).
+Delegating just the subdomain is not a shortcut: Cloudflare offers subdomain
+zones on Enterprise only.
 
 For a host outside this PC, a small VPS with the same Dockerfile works too.
 

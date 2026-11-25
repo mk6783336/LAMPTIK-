@@ -27,6 +27,7 @@
     "extension:package": "node scripts/package-extension.mjs",
     "extension:build": "node scripts/build-extension.mjs",
     "bridge:tunnel": "node scripts/bridge-tunnel.mjs",
+    "bridge:named": "node scripts/bridge-named.mjs",
     "bridge:autostart": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-bridge-autostart.ps1",
     "downloads:totals": "node scripts/download-totals.mjs",
     "seo:radar": "node scripts/seo-intelligence.mjs",
